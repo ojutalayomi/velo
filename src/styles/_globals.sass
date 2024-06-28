@@ -1,0 +1,39 @@
+@mixin flex($flex-direction: row, $align-items: center, $justify-content: center)
+    align-items: $align-items
+    display: flex
+    flex-direction: $flex-direction
+    justify-content: $justify-content
+
+$Black: rgba(0, 0, 0)
+$Dark: #292929
+$font-name: 'Roboto', sans-serif
+$bg-color: #1a1a1a
+$Tomato: #ff6257
+$transparent: rgba(0, 0, 0, 0)
+$blurcolor: rgba(0, 0, 0, 0.274)
+$Dark_Slate_Grey: hsla(234, 29%, 20%, 0.993)
+$Charcoal_Grey: hsl(235, 18%, 26%)
+$Grey: hsl(231, 7%, 60%)
+$White: hsl(0, 0%, 100%)
+
+@mixin spin
+    @keyframes spin 
+        0% 
+            transform: rotate(0deg)
+        100%  
+            transform: rotate(360deg)
+
+@mixin slideup
+    @keyframes slideup
+        0%
+            transform: translateY(100%)
+            opacity: 0
+        100%
+            transform: translateY(0)
+            opacity: 1
+@mixin slidedown
+    @keyframes slidedown
+        0%
+            transform: translateY(0%)
+        100%
+            transform: translateY(100%)

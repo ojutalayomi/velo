@@ -1,0 +1,33 @@
+@import '_globals'
+
+nav
+    backdrop-filter: blur(75px)
+    box-shadow: 0px 0px 1px 0px black
+    padding: 0px 10px
+    position: sticky
+    top: 0
+    z-index: 5
+    #nav
+        @include flex(row,center,space-between)
+        position: relative
+        .nav
+            .fa-arrow-left
+                cursor: pointer
+            .img,svg
+                padding: 10px
+        .nav-center
+            .searchbar
+                background: $White
+                border-radius: 20px
+                filter: drop-shadow(0 0 0.1em $Dark_Slate_Grey)
+                @include flex(row,center,space-between)
+                gap: 10px
+                height: 70%
+                padding: 7px 5px
+                input
+                    background: none
+                    border: none
+                    height: 90%
+                    outline: none
+        .notification
+            padding: 10px

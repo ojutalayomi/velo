@@ -1,0 +1,240 @@
+@import '_globals'
+
+.pre-blog
+    position: relative
+    width: 100%
+    .blog
+        // backdrop-filter: blur(10px)
+        border-radius: 10px
+        box-shadow: 0px 0px 1px 0px black
+        margin: 10px
+        padding: 20px
+        .a_tag
+            color: unset
+            text-decoration: none
+        .blogger-details
+            @include flex(row,center,space-between)
+            margin: 10px 0
+            .blog-top-left
+                @include flex(row,center,normal)
+                gap: 5px
+                .v
+                    margin: 0
+                .blogger-img
+                    @include flex(column,stretch,normal)
+                    img
+                        border-radius: 50%
+                        max-height: 35px
+                        max-width: 35px
+                .blog-maker
+                    font-size: 0.9em
+                    .blog-maker-name
+                        @include flex(row,center,flex-start)
+                        flex-wrap: wrap
+                    .blog-username,.blog-time
+                        filter: opacity(0.5)
+                        font-size: small
+            .blog-top-right
+                @include flex
+                gap: 15px
+                margin: 0 20px 0 0
+                .pre-ellipsis
+                    border-radius: 50%
+                    cursor: pointer
+                    .three-dots
+                        border-radius: 50%
+                        transition: .5s cubic-bezier(0.55, 0.055, 0.675, 0.19)
+                        g
+                            .pathEllip
+                                fill: $Dark_Slate_Grey
+                        &:hover
+                            stroke: $Tomato
+                            .pathEllip
+                                fill: $White
+                    .ellipsis
+                        font-size: 2em
+                    .show
+                        display: inline !important
+                    .ellipsis-dropdown
+                        background-color: #f2f2f2
+                        border-radius: 10px
+                        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2)
+                        display: none
+                        outline: 0.5px solid white
+                        overflow: auto
+                        position: absolute
+                        right: 65px
+                        z-index: 3
+                        p
+                            align-items: center
+                            cursor: pointer
+                            display: flex
+                            gap: 10px
+                            justify-content: flex-start
+                            padding: 10px
+                            .svgcpy
+                                fill: none
+                                stroke: $Dark_Slate_Grey
+                            &:hover,&::after
+                                background: #00000030
+        .blog-contents
+            font-size: 1em
+            margin: 10px 0
+            pre
+                cursor: pointer
+                overflow: auto
+                text-wrap: pretty
+                white-space: pre-wrap
+            .showMore
+                color: $Tomato
+                cursor: pointer
+        pre[class*=language-]
+            border-radius: 10px
+        .grid-set
+            align-items: center
+            display: grid
+            grid-gap: 1px
+            grid-template-columns: repeat(2, 1fr)
+            grid-template-rows: repeat(2, 1fr)
+            overflow: auto
+            img
+                width: 100%
+        .flex-set
+            @include flex
+            img
+                flex: 1
+                width: 200px
+        .blog-image-s
+            border-radius: 10px
+            margin: 10px 0
+            overflow: hidden
+            .flex-media
+                @include flex
+                background: #0000005e
+                height: 100%
+                width: 100%
+            video
+                width: 100%
+            &::-webkit-scrollbar
+                height: 0px
+        .blog-time
+            filter: opacity(0.5)
+            font-size: small
+        .reaction-panel
+            @include flex(row,center,space-between)
+            margin: 10px 0
+            padding: 0 10px
+            .blog-foot
+                gap: 10px
+                cursor: pointer
+                .clicked
+                    stroke: $Tomato !important
+                    path
+                        stroke: $Tomato !important
+                        fill: $Tomato !important
+                @media (min-width: 500px)
+                    &:hover
+                        div
+                            color: $Tomato
+                        svg
+                            border-radius: 50%
+                            path
+                                stroke: $Tomato !important
+                            .comment-icon-path1
+                                fill: $Tomato
+            #like
+                @include flex
+                svg
+                    height: 23px
+                    width: 23px
+                    path
+                        fill: none
+                        stroke: $Dark_Slate_Grey
+                .likes
+                    font-size: 0.8em
+            #comment
+                @include flex
+                svg
+                    height: 30px
+                    width: 30px
+                .comments
+                    font-size: 0.8em
+            #share
+                @include flex
+                svg
+                    height: 40px
+                    width: 25px
+                .shares
+                    font-size: 0.8em
+            #bookmark
+                @include flex
+                svg
+                    height: 20px
+                    width: 20px
+                    path
+                        fill: none
+                        stroke: $Dark_Slate_Grey
+                .bookmarks
+                    font-size: 0.8em
+
+#postpage
+    height: 100%
+    overflow: auto
+    padding: 1px 10px
+    .pre-blog
+        .blog
+            margin: 5px 10px
+            padding: 10px 20px
+    .commentSection
+        .commentHeader,.noComments
+            margin-top: 10px
+            text-align: center
+        .pre-blog
+            margin: 10px 0
+
+.commentBar
+    @include flex(row,center,space-between)
+    backdrop-filter: blur(75px)
+    bottom: 0
+    box-shadow: 0px 0px 1px 0px black
+    gap: 10px
+    padding: 7px 10px
+    position: sticky
+    z-index: 5
+    // &:focus-within
+    //     position: absolute
+    img
+        border-radius: 50%
+        padding: 5px
+    .commentBarContent
+        @include flex(row,normal,flex-end)
+        flex: 1
+        gap: 15px
+        overflow: hidden
+        padding: 0 20px
+        &:focus-within
+            textarea
+                border-bottom: 1px solid $Tomato
+            .smile-emoji,.upload-emoji
+                display: block
+        textarea
+            background: transparent
+            border: none
+            font-size: 0.8em
+            $height: 30px
+            height: $height
+            line-height: 1em /* This ensures the height of the textarea matches the line height */
+            max-height: 150px
+            outline: none
+            padding-top: calc(($height - 1em) / 2) /* Adjust 100px to your desired height */
+            padding-bottom: calc(($height - 1em) / 2) /* Adjust 100px to your desired height */
+            width: 100%
+            &::-webkit-scrollbar
+                width: 0px
+            &:-internal-autofill-selected
+                background: none
+        svg
+            height: 30px
+            width: 30px
+        .smile-emoji,.upload-emoji
+            display: none                            

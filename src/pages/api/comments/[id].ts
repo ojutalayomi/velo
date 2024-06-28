@@ -1,0 +1,65 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { MongoClient, ServerApiVersion } from 'mongodb'
+
+const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true
+  },
+  connectTimeoutMS: 60000,
+  maxPoolSize: 10
+});
+
+export default async function handle(req: NextApiRequest, res: NextApiResponse){
+    if(req.method === 'GET'){
+
+        try {
+    
+            const token = req.query.id;
+            const pass = decodeURIComponent(req.cookies.user ? req.cookies.user : '').replace(/"/g, '');
+            // await client.connect();
+            console.log('Server is ready for work');
+
+            // Get the collection
+            const collection = client.db('mydb').collection('Users');
+            const commentsCollection = client.db('mydb').collection('Posts(Comments)');
+
+
+            // console.log('165', tokenn)
+            const comments = await commentsCollection.find({ ParentId: token }).toArray();
+            const user = await collection.findOne({ loginToken: pass });
+            if (comments) {
+                for (let i = 0; i < comments.length; i++) {
+                    // console.log(comments[i])
+                    
+                    const usr = await collection.findOne({ username: comments[i].Username });
+                    comments[i].DisplayPicture = usr?.displayPicture;
+                    
+                }
+                
+
+                if (user) {
+                    const message = "Success";
+                    res.status(200).json({ comments, message });
+                } else {
+                    const message = "Sign in";
+                    res.status(200).json({ comments, message });
+                }
+
+
+            } else {
+                // Return an error message if no comment is not found
+                const message = "No comments";
+                res.status(404).json(message);
+            }
+          } catch (err) {
+            console.error('Error: ', err);
+            res.status(500).json({ error: err });
+          }
+        
+    } else {
+        res.status(405).json({ message: 'Method Not Allowed' });
+    }
+}

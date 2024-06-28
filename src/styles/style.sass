@@ -1,0 +1,169 @@
+@use '_home'
+@use '_post'
+@use '_navbar'
+@use '_error'
+@use '_explore'
+@import '_globals'
+
+*
+    padding: 0
+    margin: 0
+    box-sizing: border-box
+
+body
+    background: url(/greybg.jpg)
+    font-family: $font-name
+    height: 100vh
+    .loader
+        animation: spin 2s linear infinite
+        border: 5px dotted #0b173d
+        border-bottom-color: #34A853
+        border-left-color: #FBBC05
+        border-right-color: #4285F4
+        border-top-color: #EB4335
+        border-radius: 50%
+        display: none
+        height: 25px
+        position: relative
+        width: 25px
+        @include spin
+    .show
+        display: inline
+    .hidden
+        display: none !important
+    .link
+        text-decoration: none
+    #root
+        height: 100%
+        @include flex(row,stretch,space-between)
+        place-items: center
+        position: relative
+        @media (max-width: 500px)
+            @include flex(column,stretch,space-between)
+        .h-hide
+            display: none
+        #detail,#pre-home
+            flex: 1
+            height: 100%
+            overflow: auto
+        #sidebar
+            backdrop-filter: blur(75px)
+            box-shadow: 0px 20px 20px 0px rgba(0, 0, 0, 0.2)
+            display: none
+            height: 100%
+            overflow: auto
+            @media (min-width: 500px)
+                display: block
+            &::-webkit-scrollbar
+                width: 0px
+            .brandname
+                color: var(--Dark_Slate_Grey)
+                padding: 0.5em
+                text-align: center
+                &::after
+                    content: 'N'
+                @media (min-width: 769px)
+                    text-align: unset
+                    &::after
+                        content: 'Noow'
+            .active
+                border-right: 2px solid $Tomato
+                color: $Tomato
+                #Layer_1
+                    fill: $Tomato
+                svg .hov
+                    stroke: $Tomato
+                svg .hov-1
+                    fill: $Tomato
+            .sidebar
+                padding: 0.5em 1em
+                &:hover
+                    color: $Tomato
+                    #Layer_1
+                        fill: $Tomato
+                    svg 
+                        .hov
+                            stroke: $Tomato
+                        .hov-1
+                            fill: $Tomato
+                #Layer_1:hover
+                    fill: $Tomato
+                .sidebar-icon
+                    cursor: pointer
+                    @include flex(row, center, center)
+                    gap: 10px
+                    margin: 0.5em 0
+                    @media (min-width: 769px)
+                        @include flex(row, center, flex-start)
+                    .rt
+                        display: none
+                        @media (min-width: 769px)
+                            display: block
+            .user
+                padding: 0.5em 1em
+                img
+                    border: 2px solid $Dark_Slate_Grey
+                    border-radius: 50%
+                    padding: 2px
+        #bottombar
+            bottom: 0px
+            box-shadow: 0px 0px 1px 0px black
+            display: none
+            position: absolute
+            width: 100%
+            @media (max-width: 499px)
+                display: block
+            .show
+                @include slideup
+                animation: slideup 0.5s ease-in forwards
+                display: block !important
+            .hide
+                @include slidedown
+                animation: slidedown 0.5s ease-out forwards
+                // display: none
+            #more
+                backdrop-filter: blur(75px)
+                border-radius: 20px 20px 0 0
+                bottom: 0
+                padding: 0.5em 1em
+                position: fixed
+                width: 100%
+                z-index: 3
+                .head
+                    text-align: center
+                .bottombar
+                    .bottombar-icon
+                        cursor: pointer
+                        @include flex(row, center, flex-start)
+                        gap: 10px
+                        margin: 0.5em 0
+                .user
+                    padding: 0.5em 0em
+                    img
+                        border: 2px solid $Dark_Slate_Grey
+                        border-radius: 50%
+                        padding: 2px
+            #content
+                @include flex(row,stretch,space-evenly)
+                backdrop-filter: blur(75px)
+                bottom: 0
+                box-shadow: 0px 20px 20px 0px rgba(0, 0, 0, 0.2)
+                overflow: auto
+                width: 100%
+                .active
+                    color: $Tomato
+                    .bottombar-icon
+                        border-bottom: 2px solid $Tomato
+                        #Layer_1
+                            fill: $Tomato
+                        svg .hov
+                            stroke: $Tomato
+                        svg .hov-1
+                            fill: $Tomato
+                .bottombar
+                    padding: 0.5em 1em
+                    .bottombar-icon
+                        .rt
+                            display: none
+                        img
+                            border-radius: 50%

@@ -114,7 +114,7 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
           
           <div className='user'>
               <div className='img'>
-                  <Image src='./default.jpeg' className='displayPicture' width={40} height={40} alt='Display Picture'/>
+                  <Image src='/default.jpeg' className='displayPicture' width={40} height={40} alt='Display Picture'/>
               </div>
           </div>
         </div>

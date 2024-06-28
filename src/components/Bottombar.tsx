@@ -79,7 +79,7 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
             </div>
             <div className='user'>
               <div className='img'>
-                  <Image src='./default.jpeg' className='displayPicture' width={40} height={40} alt='Display Picture'/>
+                  <Image src='/default.jpeg' className='displayPicture' width={40} height={40} alt='Display Picture'/>
               </div>
             </div>
           </div>
@@ -127,7 +127,7 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
             <div className={`bottombar ft fft rout `}>
               <div className='bottombar-icon'  onClick={() => handleClickMore('open')}>
                 <div className='img'>
-                    <Image src='./default.jpeg' className='displayPicture' width={30} height={30} alt=''/>
+                    <Image src='/default.jpeg' className='displayPicture' width={30} height={30} alt=''/>
                 </div>
               </div>
             </div>

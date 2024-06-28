@@ -510,6 +510,7 @@ body .hidden {
   display: none !important;
 }
 body .link {
+  cursor: pointer;
   text-decoration: none;
 }
 body #root {

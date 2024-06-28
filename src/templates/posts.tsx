@@ -76,12 +76,12 @@ const Posts: React.FC<PostComponentProps> = (props) => {
         <div className='blogger-details'>
           <div className='blog-top-left'>
             <div className={ postData.Verified ? 'blogger-img v' : 'blogger-img'}>
-              <Image src={ postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture} className='pdp' width='35' height='35' alt='blogger' />
+              <Image src={ postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture} className='pdp' width={35} height={35} alt='blogger' />
             </div>
             <div className='blog-maker'>
               <div className='blog-maker-name'>
                 <div className='name'><span>{postData.NameOfPoster}</span></div>
-                {postData.Verified ? <Image src='/verified.svg' className='verified' alt='Verified tag'/> : null}
+                {postData.Verified ? <Image src='/verified.svg' className='verified' width={20} height={20} alt='Verified tag'/> : null}
                 {window.location.pathname.includes('posts') ? null : <div className='blog-username'>@{postData.Username}</div>}
               </div>
               {window.location.pathname.includes('posts') ? <div className='blog-username'>@{postData.Username}</div> : <div className='blog-time'>{time}</div>}

@@ -5,6 +5,8 @@
 !src/**
 !velo/
 !velo/**
+!public
+!public/**
 !.eslintrc.json
 !next.config.mjs
 !package-lock.json

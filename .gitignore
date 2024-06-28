@@ -3,6 +3,7 @@
 !.gitignore
 !src/
 !src/**
+!velo/
 !velo/**
 !.eslintrc.json
 !next.config.mjs

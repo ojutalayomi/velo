@@ -10,11 +10,11 @@ const NavBar: React.FC<{route: string}> = ({route}) => {
         <>
             <nav>
                 <div id='nav'>
-                    <div className='nav'>
+                    <div className='nav px-2.5 py-1.5'>
                         {route !== 'home' ? 
                             <FontAwesomeIcon onClick={() => router.back()} icon={'arrow-left'} className='icon-arrow-left' size="1x" /> :
                             <div className='img'>
-                                <Image src='vite.svg' className='displayPicture' width={25} height={25} alt='logo'/>
+                                <Image src='/velo9.png' className='displayPicture' width={25} height={25} alt='logo'/>
                             </div>}
                         
                     </div>

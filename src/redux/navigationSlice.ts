@@ -1,10 +1,10 @@
-// redux/navigationSlice.js
+// redux/navigationSlice.ts
 import { createSlice } from '@reduxjs/toolkit';
 
 const navigationSlice = createSlice({
   name: 'navigation',
   initialState: {
-    activeRoute: 'home',
+    activeRoute: window.location.pathname.replace('/',''),
     isMoreShown: false,
   },
   reducers: {

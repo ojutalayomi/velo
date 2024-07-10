@@ -49,20 +49,31 @@
   margin: 10px;
   padding: 20px;
 }
+.pre-blog .blog::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-backdrop-filter: blur(5px);
+          backdrop-filter: blur(5px);
+  z-index: -1;
+}
 .pre-blog .blog .a_tag {
   color: unset;
   text-decoration: none;
 }
 .pre-blog .blog .blogger-details {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: space-between;
   margin: 10px 0;
 }
 .pre-blog .blog .blogger-details .blog-top-left {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: normal;
   gap: 5px;
@@ -72,7 +83,7 @@
 }
 .pre-blog .blog .blogger-details .blog-top-left .blogger-img {
   align-items: stretch;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   justify-content: normal;
 }
@@ -86,18 +97,24 @@
 }
 .pre-blog .blog .blogger-details .blog-top-left .blog-maker .blog-maker-name {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: flex-start;
   flex-wrap: wrap;
 }
-.pre-blog .blog .blogger-details .blog-top-left .blog-maker .blog-username, .pre-blog .blog .blogger-details .blog-top-left .blog-maker .blog-time {
+.pre-blog .blog .blogger-details .blog-top-left .blog-maker .blog-maker-name .name::after {
+  content: ".";
+}
+.pre-blog .blog .blogger-details .blog-top-left .blog-maker .blog-maker-name .blog-username {
+  color: #ff6257;
+}
+.pre-blog .blog .blogger-details .blog-top-left .blog-maker .blog-time {
   filter: opacity(0.5);
   font-size: small;
 }
 .pre-blog .blog .blogger-details .blog-top-right {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
   gap: 15px;
@@ -135,7 +152,7 @@
   overflow: auto;
   position: absolute;
   right: 65px;
-  z-index: 3;
+  z-index: 1;
 }
 .pre-blog .blog .blogger-details .blog-top-right .pre-ellipsis .ellipsis-dropdown p {
   align-items: center;
@@ -166,6 +183,9 @@
   color: #ff6257;
   cursor: pointer;
 }
+.pre-blog .blog abbr {
+  text-decoration: none;
+}
 .pre-blog .blog pre[class*=language-] {
   border-radius: 10px;
 }
@@ -182,7 +202,7 @@
 }
 .pre-blog .blog .flex-set {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
 }
@@ -197,7 +217,7 @@
 }
 .pre-blog .blog .blog-image-s .flex-media {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
   background: rgba(0, 0, 0, 0.368627451);
@@ -216,7 +236,7 @@
 }
 .pre-blog .blog .reaction-panel {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: space-between;
   margin: 10px 0;
@@ -249,7 +269,7 @@
 }
 .pre-blog .blog .reaction-panel #like {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
 }
@@ -266,7 +286,7 @@
 }
 .pre-blog .blog .reaction-panel #comment {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
 }
@@ -279,7 +299,7 @@
 }
 .pre-blog .blog .reaction-panel #share {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
 }
@@ -292,7 +312,7 @@
 }
 .pre-blog .blog .reaction-panel #bookmark {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
 }
@@ -327,7 +347,7 @@
 
 .commentBar {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: space-between;
   -webkit-backdrop-filter: blur(75px);
@@ -336,7 +356,8 @@
   box-shadow: 0px 0px 1px 0px black;
   gap: 10px;
   padding: 7px 10px;
-  position: sticky;
+  position: fixed;
+  width: 100%;
   z-index: 5;
 }
 .commentBar img {
@@ -345,7 +366,7 @@
 }
 .commentBar .commentBarContent {
   align-items: normal;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: flex-end;
   flex: 1;
@@ -389,14 +410,13 @@ nav {
   -webkit-backdrop-filter: blur(75px);
           backdrop-filter: blur(75px);
   box-shadow: 0px 0px 1px 0px black;
-  padding: 0px 10px;
   position: sticky;
   top: 0;
   z-index: 5;
 }
 nav #nav {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: space-between;
   position: relative;
@@ -412,7 +432,7 @@ nav #nav .nav-center .searchbar {
   border-radius: 20px;
   filter: drop-shadow(0 0 0.1em hsla(234, 29%, 20%, 0.993));
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: space-between;
   gap: 10px;
@@ -431,7 +451,7 @@ nav #nav .notification {
 
 #error-page {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   justify-content: center;
   height: 100%;
@@ -439,7 +459,7 @@ nav #nav .notification {
 
 #explore-page .no-trends {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   justify-content: center;
 }
@@ -452,7 +472,7 @@ nav #nav .notification {
 }
 #explore-page .no-trends .info {
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   justify-content: center;
   border-radius: 10px;
@@ -482,6 +502,12 @@ body {
   font-family: "Roboto", sans-serif;
   height: 100vh;
 }
+body .verified {
+  border: none !important;
+}
+body .username {
+  color: #ff6257;
+}
 body .loader {
   animation: spin 2s linear infinite;
   border: 5px dotted #0b173d;
@@ -503,7 +529,7 @@ body .loader {
     transform: rotate(360deg);
   }
 }
-body .show {
+body .show, body .load {
   display: inline;
 }
 body .hidden {
@@ -513,10 +539,45 @@ body .link {
   cursor: pointer;
   text-decoration: none;
 }
+body .user {
+  border-radius: 20px;
+  cursor: pointer;
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 0 0.5em;
+  padding: 0.5em;
+  position: relative;
+}
+body .user img {
+  border: 2px solid hsla(234, 29%, 20%, 0.993);
+  border-radius: 50%;
+  padding: 2px;
+}
+body .user .names {
+  font-size: small;
+}
+body .user .three-dots {
+  position: relative;
+}
+body .user .ellipsis-popup {
+  background: hsl(0, 0%, 100%);
+  border-radius: 10px;
+  bottom: 50px;
+  box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, 0.4117647059);
+  display: none;
+  padding: 10px;
+  position: absolute;
+  text-wrap: nowrap;
+}
+body .user .ellipsis-popup p {
+  text-align: left;
+}
 body #root {
   height: 100%;
   align-items: stretch;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: space-between;
   place-items: center;
@@ -525,7 +586,7 @@ body #root {
 @media (max-width: 500px) {
   body #root {
     align-items: stretch;
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     justify-content: space-between;
   }
@@ -536,7 +597,7 @@ body #root .h-hide {
 body #root #detail, body #root #pre-home {
   flex: 1;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
 body #root #sidebar {
   -webkit-backdrop-filter: blur(75px);
@@ -544,7 +605,8 @@ body #root #sidebar {
   box-shadow: 0px 20px 20px 0px rgba(0, 0, 0, 0.2);
   display: none;
   height: 100%;
-  overflow: auto;
+  overflow: visible;
+  position: relative;
 }
 @media (min-width: 500px) {
   body #root #sidebar {
@@ -554,20 +616,23 @@ body #root #sidebar {
 body #root #sidebar::-webkit-scrollbar {
   width: 0px;
 }
+body #root #sidebar .show {
+  align-items: flex-start;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+}
 body #root #sidebar .brandname {
   color: var(--Dark_Slate_Grey);
-  padding: 0.5em;
+  padding: 0.5em 1em;
   text-align: center;
-}
-body #root #sidebar .brandname::after {
-  content: "N";
 }
 @media (min-width: 769px) {
   body #root #sidebar .brandname {
     text-align: unset;
   }
   body #root #sidebar .brandname::after {
-    content: "Noow";
+    content: "Velo";
   }
 }
 body #root #sidebar .active {
@@ -604,7 +669,7 @@ body #root #sidebar .sidebar #Layer_1:hover {
 body #root #sidebar .sidebar .sidebar-icon {
   cursor: pointer;
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: center;
   gap: 10px;
@@ -613,7 +678,7 @@ body #root #sidebar .sidebar .sidebar-icon {
 @media (min-width: 769px) {
   body #root #sidebar .sidebar .sidebar-icon {
     align-items: center;
-    display: flex;
+    display: flex !important;
     flex-direction: row;
     justify-content: flex-start;
   }
@@ -627,19 +692,16 @@ body #root #sidebar .sidebar .sidebar-icon .rt {
   }
 }
 body #root #sidebar .user {
-  padding: 0.5em 1em;
-}
-body #root #sidebar .user img {
-  border: 2px solid hsla(234, 29%, 20%, 0.993);
-  border-radius: 50%;
-  padding: 2px;
+  bottom: 0;
+  position: fixed;
 }
 body #root #bottombar {
   bottom: 0px;
   box-shadow: 0px 0px 1px 0px black;
   display: none;
-  position: absolute;
+  position: fixed;
   width: 100%;
+  z-index: 1;
 }
 @media (max-width: 499px) {
   body #root #bottombar {
@@ -671,6 +733,9 @@ body #root #bottombar .hide {
     transform: translateY(100%);
   }
 }
+body #root #bottombar .ellipsis-popup {
+  width: 100%;
+}
 body #root #bottombar #more {
   -webkit-backdrop-filter: blur(75px);
           backdrop-filter: blur(75px);
@@ -687,7 +752,7 @@ body #root #bottombar #more .head {
 body #root #bottombar #more .bottombar .bottombar-icon {
   cursor: pointer;
   align-items: center;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: flex-start;
   gap: 10px;
@@ -701,9 +766,12 @@ body #root #bottombar #more .user img {
   border-radius: 50%;
   padding: 2px;
 }
+body #root #bottombar #more .user .names .username {
+  font-size: smaller;
+}
 body #root #bottombar #content {
   align-items: stretch;
-  display: flex;
+  display: flex !important;
   flex-direction: row;
   justify-content: space-evenly;
   -webkit-backdrop-filter: blur(75px);
@@ -736,4 +804,10 @@ body #root #bottombar #content .bottombar .bottombar-icon .rt {
 }
 body #root #bottombar #content .bottombar .bottombar-icon img {
   border-radius: 50%;
+  height: 25px;
+  width: 25px;
+}
+body #root #bottombar #content .bottombar .bottombar-icon svg {
+  height: 25px;
+  width: 25px;
 }/*# sourceMappingURL=style.css.map */

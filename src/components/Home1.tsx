@@ -6,11 +6,11 @@ import { PostData } from '../templates/PostProps';
 import NavBar from '../templates/navbar';
 
 const Homepage: React.FC = () => {
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string[] | null>(null);
 
-    const [postsLoading, setpostsLoading] = useState<boolean>(false);
+    const [postsLoading, setpostsLoading] = useState<boolean>(true);
     const [postsError, setpostsError] = useState<string | null>(null);
     const [postsSuccess, setpostsSuccess] = useState<PostData[] | null>(null);
 

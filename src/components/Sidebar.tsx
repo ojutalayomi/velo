@@ -1,7 +1,10 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import Image from "next/image";
+import { useSelector } from 'react-redux';
+import { useUser } from '@/hooks/useUser';
 
 interface SidebarProps {
   activeRoute: string;
@@ -11,8 +14,11 @@ interface SidebarProps {
 }
 
 const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
+  const { userdata, loading, error, refetchUser } = useUser();
+  const [isPopUp,setPopUp] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
+  const routes = ['accounts/login','accounts/signup','accounts/signup/1','accounts/signup/2','accounts/forgot-password','accounts/reset-password']
 
   useEffect(() => {
     // console.log(location)
@@ -21,15 +27,28 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
     setActiveRoute(pathname?.slice(1) || '');
   }, [router, pathname, setActiveRoute]);
 
+  // useEffect(() => {
+  //     const handleClick = () => setPopUp(false);
+  //     window.addEventListener('click', handleClick);
+    
+  //     return () => {
+  //       window.removeEventListener('click', handleClick);
+  //     }; 
+  // }, []);
+
   const handleClick = (route: string) => {
     router.push(route);
     setActiveRoute(route);
   };
 
+  const handlePopUp = () => {
+    setPopUp(!isPopUp);
+  };
+
     return (
       <>
-        <div id='sidebar'>
-          <h1 className='brandname'></h1>
+        <div id='sidebar' className={routes.includes(activeRoute) ? 'hidden' : ''}>
+          <h1 className="brandname text-lg after:content-['V']"></h1>
           <div className={`sidebar ft fft rout ${activeRoute === 'home' ? 'active' : ''}`} data-route='home'>
             <div className='sidebar-icon'  onClick={() => handleClick('home')}>
               <svg width='30px' height='30px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -112,11 +131,36 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
           </div>
           
           
-          <div className='user'>
+          <div className='user hover:bg-slate-200 w-full' onClick={handlePopUp}>
               <div className='img'>
-                  <Image src='/default.jpeg' className='displayPicture' width={40} height={40} alt='Display Picture'/>
+                {/* https://s3.amazonaws.com/profile-display-images/ */}
+                {!loading 
+                ? 
+                <Image src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} className='displayPicture' width={30} height={30} alt='Display Picture'/>
+                : 
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>}
               </div>
+              <div className='names flex flex-col items-'>
+                <div className='flex items-'>
+                  <p>{userdata.firstname !== '' ? userdata.firstname : 'John Doe'}</p>
+                  {userdata.verified ? <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/> : null}
+                </div>
+                <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>
+              </div>
+              <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots'>
+                  <g><path className='pathEllip' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
+              </svg>
+            <span className={`ellipsis-popup ${isPopUp ? 'show' : ''}`}>
+              <p className='hover:bg-slate-200'>
+                <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
+              </p>
+              <p className='hover:bg-slate-200'>
+                <Link href='/accounts/login'>Add another account?</Link>
+              </p>
+            </span>
           </div>
+          {/* <a href="/api/auth/login">Login</a>
+          <a href="/api/auth/logout">Logout</a> */}
         </div>
       </>
     );

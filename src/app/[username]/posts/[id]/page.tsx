@@ -9,10 +9,10 @@ import NavBar from '../../../../templates/navbar';
 
 const PostContent: React.FC = () => {
     const params = useParams();
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<Post>();
-    const [loading1, setLoading1] = useState<boolean>(false);
+    const [loading1, setLoading1] = useState<boolean>(true);
     const [error1, setError1] = useState<string | null>(null);
     const [success1, setSuccess1] = useState<Comments>();
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -20,7 +20,6 @@ const PostContent: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            setLoading1(true);
           if(params && params.id){
             try {
                 const postsResponse = await getPost(params.id);
@@ -30,6 +29,16 @@ const PostContent: React.FC = () => {
             } finally {
                 setLoading(false);
             }
+          }
+        };
+
+        fetchData();
+    }, [params,params?.id]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading1(true);
+          if(params && params.id){
             try {
                 const commentsResponse = await getComments(params.id);
                 setSuccess1(commentsResponse);
@@ -90,7 +99,7 @@ const PostContent: React.FC = () => {
 
             </div>
             <div className='commentBar'>
-                <Image src='vite.svg' className='userPhoto' width={35} height={35} alt='logo'/>
+                <Image src='/default.jpeg' className='userPhoto' width={35} height={35} alt='logo'/>
                 <div className='commentBarContent'>
                     <textarea className='make-comment' ref={textAreaRef} placeholder='Comment here...'></textarea>
                     <svg xmlns='http://www.w3.org/2000/svg' className='smile-emoji' viewBox='0 0 24 24' fill='none'>

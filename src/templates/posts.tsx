@@ -2,22 +2,26 @@
 import React, { useEffect, useState } from 'react';
 import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from './PostProps';
 import Image from "next/image";
+import { useUser } from '@/hooks/useUser';
 // import { v4 as uuidv4 } from 'uuid';
 import ImageDiv from './imageDiv';
 import VideoDiv from './videoDiv';
 import { useRouter } from 'next/navigation';
 import { Location } from 'history';
+import { useSelector } from 'react-redux';
+import { setActiveRoute, setMoreStatus } from '../redux/navigationSlice';
 
 type PostComponentProps = Post | PostProps;
 
 const Posts: React.FC<PostComponentProps> = (props) => {
   const postData = 'post' in props ? props.post : props.postData;
-  const [activePost, setActivePost] = useState(false);
+  const { activeRoute, isMoreShown } = useSelector((state: any) => state.navigation);
+  const [activePost, setActivePost] = useState<string>('');
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isliked, setLiked] = useState(false);
   const [isShared, setShared] = useState(false);
   const [isBookmarked, setBookmarked] = useState(false);
-  const [time, setTime] = useState(timeFormatter(postData.TimeOfPost));
+  const [time, setTime] = useState<any>();
   const router = useRouter();
 
   useEffect(() => {
@@ -46,8 +50,9 @@ const Posts: React.FC<PostComponentProps> = (props) => {
   };
 
   const handleActivePost = (route: string) => {
-    activePost ? null : router.push(route);
-    setActivePost(!activePost);
+    const [username,posts,id] = route.split('/');
+    activePost === id ? null : router.push(route);
+    setActivePost(id);
   }
 
   const handleClick = (clicked: string) => {
@@ -72,7 +77,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
 
   return (
     <div className='pre-blog' id={postData.PostID.slice(0,-4)}>
-      <div className='blog' data-id={postData.PostID}>
+      <div className='blog select-none' data-id={postData.PostID}>
         <div className='blogger-details'>
           <div className='blog-top-left'>
             <div className={ postData.Verified ? 'blogger-img v' : 'blogger-img'}>
@@ -82,7 +87,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
               <div className='blog-maker-name'>
                 <div className='name'><span>{postData.NameOfPoster}</span></div>
                 {postData.Verified ? <Image src='/verified.svg' className='verified' width={20} height={20} alt='Verified tag'/> : null}
-                {window.location.pathname.includes('posts') ? null : <div className='blog-username'>@{postData.Username}</div>}
+                {window.location.pathname.includes('posts') ? null : <div className='blog-username text-xs'>@{postData.Username}</div>}
               </div>
               {window.location.pathname.includes('posts') ? <div className='blog-username'>@{postData.Username}</div> : <div className='blog-time'>{time}</div>}
             </div>
@@ -151,8 +156,8 @@ const Posts: React.FC<PostComponentProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className='blog-contents' onClick={() => handleActivePost(`/${postData.Username}/posts/${postData.PostID}`)}>
-          {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? <><pre>{postData.Caption.substring(0, 250)}...</pre> <span className='showMore'>show more</span></> : <pre>{postData.Caption}</pre>}
+        <div className='blog-contents' onClick={() => handleActivePost(`${postData.Username}/posts/${postData.PostID}`)}>
+          {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? <><abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption.substring(0, 250)}...</pre></abbr> <span className='showMore'>show more</span></> : <abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption}</pre></abbr>}
         </div>
         {/* {showMore} */}
         <div className={postData.Image && postData.Image.length > 3 ? 'blog-image-s grid-set' : (postData.Image.length > 0 && postData.Image.length <= 3) ? 'blog-image-s flex-set' : ''}>

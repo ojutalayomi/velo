@@ -1,0 +1,270 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: url(/greybg-dark.png);
+}
+body .secondary {
+  height: 100%;
+  width: 100%;
+}
+body .secondary h1 {
+  text-align: center;
+}
+body .secondary abbr {
+  font-size: 50px;
+  text-align: center;
+  text-decoration: none;
+}
+body .secondary .containeer {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: space-between;
+  height: 100%;
+  text-align: center;
+  width: 100%;
+}
+body .secondary .containeer .velo {
+  background: linear-gradient(1deg, black, transparent);
+  align-items: stretch;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  width: 50%;
+}
+@media (max-width: 499px) {
+  body .secondary .containeer .velo {
+    display: none !important;
+  }
+}
+body .secondary .containeer .velo .brandname {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: center;
+  color: hsl(0, 0%, 100%);
+}
+body .secondary .containeer .velo .brandname img {
+  filter: drop-shadow(1px 1px 1px #000);
+}
+body .secondary .containeer .sub-container {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+}
+body .secondary .containeer .sub-container .child {
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  font-size: 11px;
+  max-width: 585px;
+  padding: 10px 15px;
+}
+@media (min-width: 769px) {
+  body .secondary .containeer .sub-container .child {
+    align-items: stretch;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    width: 60%;
+  }
+}
+body .secondary .containeer .sub-container .child .or {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+body .secondary .containeer .sub-container .child .or hr {
+  width: 45%;
+}
+body .secondary .containeer .sub-container .child .item {
+  color: white;
+  margin: 10px;
+}
+body .secondary .containeer .sub-container .child .item h1 {
+  font-size: 25px;
+}
+body .secondary .containeer .sub-container .child .item h2 {
+  font-size: 15px;
+}
+body .secondary .containeer .sub-container .child .item .otherOptions {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: space-between;
+}
+body .secondary .containeer .sub-container .child .item .otherOptions .google, body .secondary .containeer .sub-container .child .item .otherOptions .facebook {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 1px 1px 4px 0px rgba(0, 2, 50, 0.568627451);
+  cursor: pointer;
+  filter: drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.6470588235));
+  gap: 10px;
+  height: 40px;
+  padding: 10px;
+  width: 48%;
+}
+body .secondary .containeer .sub-container .child .item .otherOptions .google:disabled:hover, body .secondary .containeer .sub-container .child .item .otherOptions .facebook:disabled:hover {
+  background: revert;
+  cursor: not-allowed;
+}
+body .secondary .containeer .sub-container .child .item .otherOptions .google b, body .secondary .containeer .sub-container .child .item .otherOptions .facebook b {
+  color: hsl(234, 29%, 20%);
+  font-size: 15px;
+}
+body .secondary .containeer .sub-container .child .item .otherOptions .google svg, body .secondary .containeer .sub-container .child .item .otherOptions .facebook svg {
+  height: 20px;
+  width: 20px;
+}
+@media (min-width: 769px) {
+  body .secondary .containeer .sub-container .child .item .otherOptions .google:hover, body .secondary .containeer .sub-container .child .item .otherOptions .facebook:hover {
+    background: tomato;
+    color: white;
+  }
+}
+body .secondary .containeer .sub-container .child .item form .input-tags:focus-within label {
+  color: tomato;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags:focus-within .input1, body .secondary .containeer .sub-container .child .item form .input-tags:focus-within .input2 {
+  outline: 2px solid tomato;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags label {
+  display: block;
+  margin: 5px 0;
+  text-align: left;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags .error {
+  color: red;
+  font-size: smaller;
+  margin-top: 10px;
+  text-align: start;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags .warning {
+  color: red;
+  font-size: smaller;
+  margin-top: 5px;
+  text-align: start;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags .input1 {
+  color: hsl(234, 29%, 20%);
+  border: none;
+  border-radius: 5px;
+  box-shadow: 1px 1px 4px 0px rgba(0, 2, 50, 0.568627451);
+  color: rgb(0, 0, 0);
+  height: 40px;
+  padding: 5px 10px;
+  width: 100%;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags .input2 {
+  background: white;
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 1px 1px 4px 0px rgba(0, 2, 50, 0.568627451);
+  color: rgb(0, 0, 0);
+  height: 40px;
+  padding: unset;
+  width: 100%;
+  overflow: auto;
+  position: relative;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags .input2 .icon-eye {
+  color: hsl(234, 29%, 20%);
+  padding: 10px 15px;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags .input2 input {
+  border: none;
+  height: 100%;
+  outline: none;
+  padding: 5px 10px;
+  width: 100%;
+}
+body .secondary .containeer .sub-container .child .item form .input-tags .input2 input:placeholder {
+  color: hsl(234, 29%, 20%);
+}
+body .secondary .containeer .sub-container .child .item form .forgot-password {
+  margin: 10px 0;
+}
+body .secondary .containeer .sub-container .child .item form .forgot-password a {
+  color: white;
+  text-decoration: none;
+}
+body .secondary .containeer .sub-container .child .item form .forgot-password a:hover {
+  text-decoration: underline;
+}
+body .secondary .containeer .sub-container .child .item form .buttons {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: space-between;
+}
+body .secondary .containeer .sub-container .child .item form .buttons .previous, body .secondary .containeer .sub-container .child .item form .buttons .next, body .secondary .containeer .sub-container .child .item form .buttons .submit {
+  width: 48%;
+}
+body .secondary .containeer .sub-container .child .item form .previous, body .secondary .containeer .sub-container .child .item form .next, body .secondary .containeer .sub-container .child .item form .submit {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 1px 1px 4px 0px rgba(0, 2, 50, 0.568627451);
+  color: rgb(0, 0, 0);
+  height: 40px;
+  padding: 10px;
+  width: 100%;
+  background: tomato;
+  color: white;
+  cursor: pointer;
+  margin: 10px 0 0;
+}
+body .secondary .containeer .sub-container .child .item form .previous:disabled, body .secondary .containeer .sub-container .child .item form .next:disabled, body .secondary .containeer .sub-container .child .item form .submit:disabled {
+  background: revert;
+  cursor: not-allowed;
+}
+body .secondary .containeer .sub-container .child .item form .previous:disabled:hover, body .secondary .containeer .sub-container .child .item form .next:disabled:hover, body .secondary .containeer .sub-container .child .item form .submit:disabled:hover {
+  background: revert;
+  cursor: not-allowed;
+}
+body .secondary .containeer .sub-container .child .item form .previous .loader, body .secondary .containeer .sub-container .child .item form .next .loader, body .secondary .containeer .sub-container .child .item form .submit .loader {
+  animation: spin 2s linear infinite;
+  border: 5px dotted #0b173d;
+  border-bottom-color: #34A853;
+  border-left-color: #FBBC05;
+  border-right-color: #4285F4;
+  border-top-color: #EB4335;
+  border-radius: 50%;
+  display: none;
+  height: 25px;
+  position: relative;
+  width: 25px;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+body .secondary .containeer .sub-container .child .item form .previous .show, body .secondary .containeer .sub-container .child .item form .next .show, body .secondary .containeer .sub-container .child .item form .submit .show {
+  display: inline;
+}/*# sourceMappingURL=accounts.css.map */

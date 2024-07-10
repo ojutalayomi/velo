@@ -1,7 +1,10 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from "next/image";
+import { useSelector } from 'react-redux';
+import { useUser } from '@/hooks/useUser';
 
 interface BottombarProps {
   activeRoute: string;
@@ -11,8 +14,11 @@ interface BottombarProps {
 }
 
 const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
+  const { userdata, loading, error, refetchUser } = useUser();
+  const [isPopUp,setPopUp] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
+  const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
 
   useEffect(() => {
     // console.log(location)
@@ -26,13 +32,17 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
     setActiveRoute(route);
   };
 
+  const handlePopUp = () => {
+    setPopUp(!isPopUp);
+  };
+
   const handleClickMore = (command: string) => {
     command === 'close' ? setMoreStatus(false) : setMoreStatus(true);
   };
 
     return (
       <>
-        <div id='bottombar' className={ pathname?.includes('posts') ? 'hidden' : '' }>
+        <div id='bottombar' className={ pathname?.includes('posts') || routes.includes(activeRoute) ? 'hidden' : '' }>
 
           <div id='more' className={isMoreShown ? 'show' : 'hide'}>
             <div className='head'>More...</div>
@@ -77,11 +87,34 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
                 <div className='feedback rt'>Feedback</div>
               </div>
             </div>
-            <div className='user'>
+            <div className='user' onClick={handlePopUp}>
               <div className='img'>
-                  <Image src='/default.jpeg' className='displayPicture' width={40} height={40} alt='Display Picture'/>
+                {/* https://s3.amazonaws.com/profile-display-images/ */}
+                {!loading 
+                ? 
+                <Image src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} className='displayPicture' width={30} height={30} alt='Display Picture'/>
+                : 
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader load'></div></div>}
               </div>
-            </div>
+              <div className='names flex flex-col items-center'>
+                <div className='flex items-'>
+                  <p>{userdata.firstname !== '' ? userdata.firstname : 'John Doe'}</p>
+                  {userdata.verified ? <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/> : null}
+                </div>
+                <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>
+              </div>
+              <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots'>
+                  <g><path className='pathEllip' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
+              </svg>
+              <span className={`ellipsis-popup ${isPopUp ? 'show' : ''}`}>
+                <p className='hover:bg-slate-200'>
+                  <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
+                </p>
+                <p className='hover:bg-slate-200'>
+                  <Link href='/accounts/login'>Add another account?</Link>
+                </p>
+              </span>
+          </div>
           </div>
 
           <div id='content'>
@@ -127,7 +160,11 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
             <div className={`bottombar ft fft rout `}>
               <div className='bottombar-icon'  onClick={() => handleClickMore('open')}>
                 <div className='img'>
-                    <Image src='/default.jpeg' className='displayPicture' width={30} height={30} alt=''/>
+                {!loading 
+                ? 
+                <Image src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} className='displayPicture' width={30} height={30} alt='Display Picture'/>
+                : 
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader load'></div></div>}
                 </div>
               </div>
             </div>

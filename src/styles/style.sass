@@ -14,6 +14,10 @@ body
     background: url(/greybg.jpg)
     font-family: $font-name
     height: 100vh
+    .verified
+        border: none !important
+    .username
+        color: $Tomato
     .loader
         animation: spin 2s linear infinite
         border: 5px dotted #0b173d
@@ -27,13 +31,39 @@ body
         position: relative
         width: 25px
         @include spin
-    .show
+    .show,.load
         display: inline
     .hidden
         display: none !important
     .link
         cursor: pointer
         text-decoration: none
+    .user
+        border-radius: 20px
+        cursor: pointer
+        @include flex(row,center,space-between)
+        margin: 0 0.5em
+        padding: 0.5em
+        position: relative
+        img
+            border: 2px solid $Dark_Slate_Grey
+            border-radius: 50%
+            padding: 2px
+        .names
+            font-size: small
+        .three-dots
+            position: relative
+        .ellipsis-popup
+            background: $White
+            border-radius: 10px
+            bottom: 50px
+            box-shadow: 0px 0px 10px 2px #00000069
+            display: none
+            padding: 10px
+            position: absolute
+            text-wrap: nowrap
+            p
+                text-align: left
     #root
         height: 100%
         @include flex(row,stretch,space-between)
@@ -46,27 +76,28 @@ body
         #detail,#pre-home
             flex: 1
             height: 100%
-            overflow: auto
+            overflow: hidden
         #sidebar
             backdrop-filter: blur(75px)
             box-shadow: 0px 20px 20px 0px rgba(0, 0, 0, 0.2)
             display: none
             height: 100%
-            overflow: auto
+            overflow: visible
+            position: relative
             @media (min-width: 500px)
                 display: block
             &::-webkit-scrollbar
                 width: 0px
+            .show
+                @include flex(column,flex-start,center)
             .brandname
                 color: var(--Dark_Slate_Grey)
-                padding: 0.5em
+                padding: 0.5em 1em
                 text-align: center
-                &::after
-                    content: 'N'
                 @media (min-width: 769px)
                     text-align: unset
                     &::after
-                        content: 'Noow'
+                        content: 'Velo'
             .active
                 border-right: 2px solid $Tomato
                 color: $Tomato
@@ -101,17 +132,15 @@ body
                         @media (min-width: 769px)
                             display: block
             .user
-                padding: 0.5em 1em
-                img
-                    border: 2px solid $Dark_Slate_Grey
-                    border-radius: 50%
-                    padding: 2px
+                bottom: 0
+                position: fixed
         #bottombar
             bottom: 0px
             box-shadow: 0px 0px 1px 0px black
             display: none
-            position: absolute
+            position: fixed
             width: 100%
+            z-index: 1
             @media (max-width: 499px)
                 display: block
             .show
@@ -122,6 +151,8 @@ body
                 @include slidedown
                 animation: slidedown 0.5s ease-out forwards
                 // display: none
+            .ellipsis-popup
+                width: 100%
             #more
                 backdrop-filter: blur(75px)
                 border-radius: 20px 20px 0 0
@@ -144,6 +175,9 @@ body
                         border: 2px solid $Dark_Slate_Grey
                         border-radius: 50%
                         padding: 2px
+                    .names
+                        .username
+                            font-size: smaller
             #content
                 @include flex(row,stretch,space-evenly)
                 backdrop-filter: blur(75px)
@@ -168,3 +202,8 @@ body
                             display: none
                         img
                             border-radius: 50%
+                            height: 25px
+                            width: 25px
+                        svg
+                            height: 25px
+                            width: 25px

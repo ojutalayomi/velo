@@ -1,8 +1,10 @@
 import type { Metadata,Viewport } from "next";
 import { Inter } from "next/font/google";
 import '@/styles/style.css';
+import './globals.css';
 import ClientComponents from "./clientComps";
 import React, {useState} from "react";
+import { UserProvider } from '@auth0/nextjs-auth0/client';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,11 +25,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={inter.className}>
-          <div id='root'>
-          <ClientComponents>{children}</ClientComponents>
-          </div>
-      </body>
+      <UserProvider>
+        <body className='selection:bg-pink-300'>
+            <div id='root'>
+            <ClientComponents>{children}</ClientComponents>
+            </div>
+        </body>
+      </UserProvider>
     </html>
   );
 }

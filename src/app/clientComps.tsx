@@ -1,4 +1,5 @@
 'use client'
+import { useUser } from '@auth0/nextjs-auth0/client';
 import Sidebar from '@/components/Sidebar';
 import Bottombar from '@/components/Bottombar';
 import Root from '@/components/Root';
@@ -14,6 +15,7 @@ interface ClientComponentsProps {
 }
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
+    const { user } = useUser();
     const [activeRoute, setActiveRouteState] = useState<string>('home');
     const [isMoreShown, setMoreStatus] = useState(false);
     const [error, setError] = useState(null);
@@ -35,6 +37,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             <Provider store={store}>
                 <Sidebar isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
+                {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
                 <div id='detail' className={activeRoute === 'home' || activeRoute === '' ? 'h-hide' : ''}  onClick={() => handleClickMore('close')}>
                     <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                         {children}

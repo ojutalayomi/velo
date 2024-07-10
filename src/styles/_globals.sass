@@ -1,6 +1,6 @@
 @mixin flex($flex-direction: row, $align-items: center, $justify-content: center)
     align-items: $align-items
-    display: flex
+    display: flex !important
     flex-direction: $flex-direction
     justify-content: $justify-content
 
@@ -15,6 +15,16 @@ $Dark_Slate_Grey: hsla(234, 29%, 20%, 0.993)
 $Charcoal_Grey: hsl(235, 18%, 26%)
 $Grey: hsl(231, 7%, 60%)
 $White: hsl(0, 0%, 100%)
+
+@mixin input_button($padding: 10px)
+    border: none
+    border-radius: 5px
+    box-shadow: 1px 1px 4px 0px #00023291
+    color: $Black
+    height: 40px
+    // min-width: 280px
+    padding: $padding
+    width: 100%
 
 @mixin spin
     @keyframes spin 

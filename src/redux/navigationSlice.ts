@@ -4,7 +4,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const navigationSlice = createSlice({
   name: 'navigation',
   initialState: {
-    activeRoute: window.location.pathname.replace('/',''),
+    activeRoute: 'home',
     isMoreShown: false,
   },
   reducers: {

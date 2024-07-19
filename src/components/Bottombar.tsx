@@ -43,7 +43,7 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
 
     return (
       <>
-        <div id='bottombar' className={`bg-slate-200 dark:bg-zinc-900 p-1.5 ${pathname?.includes('posts') || routes.includes(activeRoute) && 'hidden'} `}>
+        <div id='bottombar' className={`bg-slate-200 dark:bg-zinc-900 px-1.5 py-1 ${pathname?.includes('posts') || routes.includes(activeRoute) && 'hidden'} `}>
 
           <div id='more' className={isMoreShown ? 'show' : 'hide'}>
             <div className='head'>More...</div>

@@ -38,7 +38,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 <Sidebar isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-                <div id='detail' className={activeRoute === 'home' || activeRoute === '' ? 'h-hide' : ''}  onClick={() => handleClickMore('close')}>
+                <div id='detail' className={activeRoute === 'home' || activeRoute === '' ? 'hidden' : ''}  onClick={() => handleClickMore('close')}>
                     <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                         {children}
                     </ErrorBoundary>

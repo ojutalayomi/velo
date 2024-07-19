@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 
-type Theme = 'light' | 'dark' | 'system'
+export type Theme = 'light' | 'dark' | 'system'
 
-interface ThemeContextType {
+export interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
 }

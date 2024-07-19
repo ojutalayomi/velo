@@ -75,7 +75,7 @@ const PostContent: React.FC = () => {
     }, []);
 
     return(
-        <>
+        <div className='flex flex-col h-full w-full'>
             <NavBar route='post'/>
             <div id='postpage' className='dark:text-slate-200'>
                 {loading0 ? 
@@ -101,7 +101,7 @@ const PostContent: React.FC = () => {
                 </div>
 
             </div>
-            <div className='commentBar'>
+            <div className='commentBar relative w-full'>
                 <Image src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} className='userPhoto' width={35} height={35} alt='logo'/>
                 <div className='commentBarContent'>
                     <textarea className='make-comment' ref={textAreaRef} placeholder='Comment here...'></textarea>
@@ -121,7 +121,7 @@ const PostContent: React.FC = () => {
                 </div>
             </div>
 
-        </>
+        </div>
     )
 }
 export default PostContent;

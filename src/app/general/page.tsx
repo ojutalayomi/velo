@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 import { useTheme } from '@/app/providers';
-import { handleThemeChange1 } from '@/components/ThemeToggle.tsx';
+import { handleThemeChange1 } from '@/components/ThemeToggle';
 import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -12,7 +12,7 @@ const SettingsPage = () => {
     const [isOpen,setOpen] = useState<boolean>(false);
     const [isChecked, setIsChecked] = useState(false);
   
-    const handleCheckboxChange = (event) => {
+    const handleCheckboxChange = (event: { target: { checked: any; }; }) => {
         const check = event.target.checked;
         setIsChecked(check);
         handleThemeChange();

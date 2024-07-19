@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useTheme } from '@/app/providers'
+import { useTheme, Theme } from '@/app/providers'
 
-export const handleThemeChange1 = (value: string, isOpen: boolean, setTheme: () => void, setOpen: () => void) => {
+export const handleThemeChange1 = (value: string, isOpen: boolean, setTheme: (theme: Theme) => void, setOpen: React.Dispatch<React.SetStateAction<boolean>>) => {
   setOpen(!isOpen)
   const selectedTheme = value as 'light' | 'dark' | 'system'
   if (selectedTheme === 'system') {

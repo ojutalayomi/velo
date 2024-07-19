@@ -1,0 +1,99 @@
+'use client'
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useUser } from '@/hooks/useUser';
+import { useTheme } from '@/app/providers';
+import { handleThemeChange1 } from '@/components/ThemeToggle.tsx';
+import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut } from 'lucide-react';
+
+const SettingsPage = () => {
+    const { userdata, loading, error, refetchUser } = useUser();
+    const { theme, setTheme } = useTheme()
+    const [isOpen,setOpen] = useState<boolean>(false);
+    const [isChecked, setIsChecked] = useState(false);
+  
+    const handleCheckboxChange = (event) => {
+        const check = event.target.checked;
+        setIsChecked(check);
+        handleThemeChange();
+    };
+
+    const handleThemeChange = () => {
+        const value = !isChecked ? 'dark' : 'light';
+        handleThemeChange1(value,isOpen,setTheme,setOpen)
+    }
+  const settingsCategories = [
+    {
+      title: 'Account',
+      items: [
+        { icon: <User size={20} />, label: 'Personal Information', hasChevron: true },
+        { icon: <Bell size={20} />, label: 'Notifications', hasChevron: true },
+        { icon: <Lock size={20} />, label: 'Privacy and Security', hasChevron: true },
+      ]
+    },
+    {
+      title: 'Preferences',
+      items: [
+        { icon: <Moon size={20} />, label: 'Dark Mode', hasToggle: true },
+        { icon: <HelpCircle size={20} />, label: 'Help & Support', hasChevron: true },
+      ]
+    },
+  ];
+
+  return (
+    <div className="bg-gray-100 dark:bg-neutral-950 dark:text-slate-200 min-h-screen">
+      {/* Header */}
+      <header className="bg-white dark:bg-neutral-900 dark:border-black-200 px-2 py-4 border-b border-gray-200">
+        <h1 className="text-xl font-semibold">Settings</h1>
+      </header>
+
+      {/* Settings List */}
+      <main className="p-4">
+        {settingsCategories.map((category, categoryIndex) => (
+          <div key={categoryIndex} className="mb-6">
+            <h2 className="text-lg font-medium mb-2 px-2">{category.title}</h2>
+            <div className="bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-sm">
+              {category.items.map((item, itemIndex) => (
+                <div 
+                  key={itemIndex}
+                  className={`flex items-center justify-between p-4 ${
+                    itemIndex !== category.items.length - 1 ? 'border-b border-gray-200' : ''
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <span className="mr-3 text-gray-500">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </div>
+                  {item.hasChevron && <ChevronRight size={20} className="text-gray-400" />}
+                  {item.hasToggle && (
+                    <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                      <input type="checkbox" checked={isChecked} onChange={handleCheckboxChange} name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                      <label htmlFor="toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Logout/in Button */}
+        <button className="w-full bg-red-500 text-white py-3 rounded-lg flex items-center justify-center mt-6">
+          {userdata.username === '' ?
+            <>
+            <span>Log In</span>
+            <LogIn size={20} className="mr-2" />
+            </> 
+            :
+            <>
+            <LogOut size={20} className="mr-2" />
+            <span>Log Out</span>
+            </>
+          }
+        </button>
+      </main>
+    </div>
+  );
+};
+
+export default SettingsPage;

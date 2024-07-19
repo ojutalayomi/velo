@@ -424,9 +424,6 @@ nav #nav {
 nav #nav .nav .fa-arrow-left {
   cursor: pointer;
 }
-nav #nav .nav .img, nav #nav .nav svg {
-  padding: 10px;
-}
 nav #nav .nav-center .searchbar {
   background: hsl(0, 0%, 100%);
   border-radius: 20px;
@@ -532,7 +529,7 @@ body .loader {
 body .show, body .load {
   display: inline;
 }
-body .hidden {
+body .hiddenn {
   display: none !important;
 }
 body .link {
@@ -607,11 +604,7 @@ body #root #sidebar {
   height: 100%;
   overflow: visible;
   position: relative;
-}
-@media (min-width: 500px) {
-  body #root #sidebar {
-    display: block;
-  }
+  z-index: 2;
 }
 body #root #sidebar::-webkit-scrollbar {
   width: 0px;
@@ -693,7 +686,7 @@ body #root #sidebar .sidebar .sidebar-icon .rt {
 }
 body #root #sidebar .user {
   bottom: 0;
-  position: fixed;
+  position: sticky;
 }
 body #root #bottombar {
   bottom: 0px;

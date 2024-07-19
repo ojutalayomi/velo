@@ -1,10 +1,12 @@
 import type { Metadata,Viewport } from "next";
 import { Inter } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import '@/styles/style.css';
 import './globals.css';
 import ClientComponents from "./clientComps";
 import React, {useState} from "react";
 import { UserProvider } from '@auth0/nextjs-auth0/client';
+import { ThemeProvider } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,11 +28,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="manifest" href="/manifest.json" />
       </head>
       <UserProvider>
-        <body className='selection:bg-pink-300'>
+        <ThemeProvider>
+          <body className='selection:bg-tomatom-300 dark:bg-bgDark'>
+            <SpeedInsights />
             <div id='root'>
             <ClientComponents>{children}</ClientComponents>
             </div>
-        </body>
+          </body>
+        </ThemeProvider>
       </UserProvider>
     </html>
   );

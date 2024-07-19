@@ -25,6 +25,24 @@ body {
     )
     rgb(var(--background-start-rgb));
 } */
+.cls-1{fill:none;stroke:#020202;stroke-miterlimit:10;stroke-width:1.91px;}
+.cls-2{fill:#020202;}
+.dark.pathEllip{fill:#e2e8f0}
+.dark\:fill-slate-200:where(.dark, .dark *) {
+  fill: #e2e8f0 !important;
+}
+.dark\:stroke-slate-200:where(.dark, .dark *) {
+  stroke: #e2e8f0 !important;
+}
+.toggle-checkbox:checked {
+  @apply right-0 border-green-400;
+  right: 0;
+  border-color: #ff6257;
+}
+.toggle-checkbox:checked + .toggle-label {
+  @apply bg-brand;
+  background-color: #ff6257;
+}
 
 @layer utilities {
   .text-balance {

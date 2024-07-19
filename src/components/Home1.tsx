@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { getStatus, getPosts } from './getStatus';
 import Posts from '../templates/posts';
 import { PostData } from '../templates/PostProps';
-import NavBar from '../templates/navbar';
+import NavBar from './navbar';
 
 const Homepage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
@@ -50,7 +50,7 @@ const Homepage: React.FC = () => {
     return (
       <>
         <NavBar route='home'/>
-        <div id='home'>
+        <div id='home' className='dark:text-slate-200'>
 
             <div className='pre-status'>
                 <div className='status'>
@@ -65,7 +65,7 @@ const Homepage: React.FC = () => {
                 </div>
             </div>
 
-            <div className='h3'>
+            <div className='h3 dark:!text-slate-200'>
                 <h3>Connect with friends and the world around you on noow.</h3>
             </div>
 

@@ -1,4 +1,4 @@
-import { MediaProps } from "./ImgVidProps";
+import { MediaProps } from "../components/ImgVidProps";
 
 const VideoDiv: React.FC<MediaProps> = ({media,host}) => {
     const hostname: string = 'https://s3.amazonaws.com/post-s/';

@@ -5,7 +5,7 @@ import NavBar from './navbar';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 
-const NoTrend: react.FC = () => {
+const NoTrend: React.FC = () => {
   return (
     <div className='no-trends dark:text-slate-200'>
       <div className='header'>

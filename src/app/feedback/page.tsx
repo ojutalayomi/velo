@@ -55,7 +55,7 @@ const FeedbackPage = () => {
 
           <button 
             className="w-full py-2 px-4 rounded-lg flex items-center justify-center space-x-2 bg-zinc-950 dark:border dark:border-slate-200 dark:hover:bg-gray-700 hover:bg-gray-200 text-white transition duration-300"
-            onClick={() => window.open('https://x.com/messages?recipient_id=1150785912697176064', '_blank')}
+            onClick={() => window.open('https://x.com/messages/compose?recipient_id=1150785912697176064', '_blank')}
           >
             <X size={24} />
             <span>Send Direct Message</span>

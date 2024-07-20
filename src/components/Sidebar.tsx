@@ -38,7 +38,7 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
   // }, []);
 
   const handleClick = (route: string) => {
-    router.push(route);
+    router.push(`/${route}`);
     setActiveRoute(route);
   };
 

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook';
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -12,7 +13,21 @@ export interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>('light');
+
+  useHotkeys('cmd+m', () => {
+    // console.log('Cmmd');
+    let thm = '' as 'light' | 'dark' | 'system';
+    theme === 'light' ? thm = 'dark' : thm = 'light'; 
+    setTheme(thm);
+  });
+
+  useHotkeys('ctrl+m', () => {
+    // console.log('Cmmd');
+    let thm = '' as 'light' | 'dark' | 'system';
+    theme === 'light' ? thm = 'dark' : thm = 'light'; 
+    setTheme(thm);
+  });
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') as Theme | null

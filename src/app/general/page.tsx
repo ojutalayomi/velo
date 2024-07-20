@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 import { useTheme } from '@/app/providers';
@@ -11,6 +11,10 @@ const SettingsPage = () => {
     const { theme, setTheme } = useTheme()
     const [isOpen,setOpen] = useState<boolean>(false);
     const [isChecked, setIsChecked] = useState(false);
+
+    useEffect(() => {
+      theme === 'dark' ? setIsChecked(true) : setIsChecked(false);
+    },[theme])
   
     const handleCheckboxChange = (event: { target: { checked: any; }; }) => {
         const check = event.target.checked;
@@ -79,7 +83,7 @@ const SettingsPage = () => {
 
         {/* Logout/in Button */}
         <button className="w-full bg-red-500 text-white py-3 rounded-lg flex items-center justify-center mt-6">
-          {userdata.username === '' ?
+          {error ?
             <>
             <span>Log In</span>
             <LogIn size={20} className="mr-2" />

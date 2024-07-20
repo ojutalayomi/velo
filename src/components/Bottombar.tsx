@@ -118,7 +118,7 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
             </span>
           </div>
           :
-          <div className='dark:text-slate-200'>
+          <div className='dark:text-slate-200 flex items-center justify-between'>
             <p className='flex items-center hover:bg-slate-200'>
               <LogIn size={25} className="mr-2" />
               <Link href='/accounts/login'>Log in</Link>

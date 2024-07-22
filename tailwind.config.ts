@@ -31,8 +31,14 @@ const config: Config = {
       fill: {
         'tom': '#e2e8f0',
       },
+      height: {
+        'auto': 'auto',
+      },
       stroke: {
         'tom': '#e2e8f0',
+      },
+      width: {
+        'auto': 'auto',
       }
     },
     screens: {

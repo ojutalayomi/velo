@@ -6,6 +6,7 @@ const navigationSlice = createSlice({
   initialState: {
     activeRoute: typeof window !== 'undefined' ? window.location.pathname.replace('/','') : 'home',
     isMoreShown: false,
+    chaT: false,
   },
   reducers: {
     setActiveRoute: (state, action) => {
@@ -14,8 +15,11 @@ const navigationSlice = createSlice({
     setMoreStatus: (state, action) => {
       state.isMoreShown = action.payload;
     },
+    showChat: (state, action) => {
+      state.chaT = action.payload;
+    }
   },
 });
 
-export const { setActiveRoute, setMoreStatus } = navigationSlice.actions;
+export const { setActiveRoute, setMoreStatus, showChat } = navigationSlice.actions;
 export default navigationSlice.reducer;

@@ -166,14 +166,14 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
                   </p>
                 </span>
                 </>
-              : <div className='dark:text-slate-200'>
+              : <div className='dark:text-slate-200 flex flex-col gap-2'>
                   <p className='flex items-center hover:bg-slate-200'>
                     <LogIn size={25} className="mr-2" />
-                    <Link href='/accounts/login'>Log in</Link>
+                    <Link href='/accounts/login' className='hidden tablets1:!flex'>Log in</Link>
                   </p>
                   <p className='flex items-center hover:bg-slate-200'>
                     <User size={25} className="mr-2" />
-                    <Link href='/accounts/signup'>Sign up</Link>
+                    <Link href='/accounts/signup' className='hidden tablets1:!flex'>Sign up</Link>
                   </p>
                 </div>
                 }

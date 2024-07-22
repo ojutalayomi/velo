@@ -4,11 +4,13 @@ import { getStatus, getPosts } from './getStatus';
 import Posts from '../templates/posts';
 import { PostData } from '../templates/PostProps';
 import NavBar from './navbar';
+import { RefreshCw } from 'lucide-react';
 
 const Homepage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string[] | null>(null);
+    const [reload,setReload] = useState<boolean>(false);
 
     const [postsLoading, setpostsLoading] = useState<boolean>(true);
     const [postsError, setpostsError] = useState<string | null>(null);
@@ -29,7 +31,8 @@ const Homepage: React.FC = () => {
         };
 
         fetchData();
-    }, []);
+        if (reload) fetchData();
+    }, [reload]);
     useEffect(() => {
         const fetchData = async () => {
             setpostsLoading(true);
@@ -45,7 +48,8 @@ const Homepage: React.FC = () => {
         };
 
         fetchData();
-    }, []);
+        if (reload) fetchData();
+    }, [reload]);
     
     return (
       <>
@@ -61,7 +65,7 @@ const Homepage: React.FC = () => {
                             <div key={index} id={`status-${index}`} className='status-child' style={{ backgroundImage: `url(https://s3.amazonaws.com/profile-display-images/${status})`}} ></div>
                         ))) 
                     : 
-                    error && <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '10%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>}
+                    error && <RefreshCw size={30}/>}
                 </div>
             </div>
 
@@ -77,7 +81,8 @@ const Homepage: React.FC = () => {
                             <Posts key={post._id} postData={post}/>
                         )))
                     :
-                    postsError && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '80%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>
+                    postsError && <div className='flex flex-col items-center justify-center w-full h-3/4'>
+                        <RefreshCw className='cursor-pointer' size={30} onClick={() => setReload(true)}/><h1>Reload</h1></div>
                 }
             </>
         </div>

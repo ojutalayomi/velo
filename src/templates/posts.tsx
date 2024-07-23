@@ -51,7 +51,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
 
   const handleActivePost = (route: string) => {
     const [username,posts,id] = route.split('/');
-    activePost === id ? null : router.push(route);
+    activePost === id ? null : router.push('/'+route);
     setActivePost(id);
   }
 

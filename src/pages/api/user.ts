@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { MongoClient, ServerApiVersion } from 'mongodb'
 import { SignJWT } from 'jose'
 import cookie from 'cookie'
-import fs from 'fs'
+import { promises as fs } from 'fs'
 import { fileURLToPath } from 'url'
 import path, { dirname } from 'path'
 import bcrypt from 'bcrypt'
@@ -28,8 +28,9 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Read the HTML email template file
-const emailTemplateSource = fs.readFileSync(path.join(__dirname, '../../../public/emails.hbs'), 'utf8');
+// Read the HTML email template file 
+const filepath = path.join(process.cwd(), 'public/emails.hbs');
+const emailTemplateSource = await fs.readFile(filepath, 'utf8');
 
 // Create a Handlebars template
 const template = handlebars.compile(emailTemplateSource);

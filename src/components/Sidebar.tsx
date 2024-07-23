@@ -48,7 +48,7 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
 
     return (
       <>
-        <div id='sidebar' className={`${routes.includes(activeRoute) && 'hidden'} tablets:!flex flex-col `}>
+        <div id='sidebar' className={`${routes.includes(activeRoute) && 'hidden'} hidden tablets:flex flex-col `}>
           <h1 className="brandname dark:text-slate-200 dark:after:text-slate-200 text-lg after:content-['V']"></h1>
           <div className='flex-1'>
             <div className={`sidebar ft dark:text-slate-200 rout ${activeRoute === 'home' ? 'active' : ''}`} data-route='home'>
@@ -135,8 +135,19 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
           
           
           <div className={`user ${!error &&'hover:bg-slate-200 dark:hover:bg-neutral-900'} tablets1:items-center !justify-center tablets1:!justify-between !m-0 w-full`} onClick={handlePopUp}>
-              {error ?
-              <>
+              {!loading && !userdata.username ?
+                <div className='dark:text-slate-200 flex flex-col gap-2'>
+                  <p className='flex items-center hover:text-brand'>
+                    <LogIn size={25} className="mr-2" />
+                    <Link href='/accounts/login' className='hidden tablets1:!flex'>Log in</Link>
+                  </p>
+                  <p className='flex items-center hover:text-brand'>
+                    <User size={25} className="mr-2" />
+                    <Link href='/accounts/signup' className='hidden tablets1:!flex'>Sign up</Link>
+                  </p>
+                </div>
+              : 
+                <>
                 <div className='img'>
                   {/* https://s3.amazonaws.com/profile-display-images/ */}
                   {!loading 
@@ -157,7 +168,7 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
                 <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots hidden tablets1:!block'>
                     <g><path className='pathEllip dark:fill-tom' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
                 </svg>
-                <span className={`ellipsis-popup ${isPopUp ? 'show' : ''} left-2.5 dark:bg-neutral dark:text-slate-200`}>
+                <span className={`ellipsis-popup ${isPopUp ? 'show' : ''} left-2.5 dark:!bg-neutral-950 dark:text-slate-200`}>
                   <p className='hover:bg-slate-200'>
                     <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
                   </p>
@@ -166,16 +177,6 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
                   </p>
                 </span>
                 </>
-              : <div className='dark:text-slate-200 flex flex-col gap-2'>
-                  <p className='flex items-center hover:bg-slate-200'>
-                    <LogIn size={25} className="mr-2" />
-                    <Link href='/accounts/login' className='hidden tablets1:!flex'>Log in</Link>
-                  </p>
-                  <p className='flex items-center hover:bg-slate-200'>
-                    <User size={25} className="mr-2" />
-                    <Link href='/accounts/signup' className='hidden tablets1:!flex'>Sign up</Link>
-                  </p>
-                </div>
                 }
           </div>
           {/* <a href="/api/auth/login">Login</a>

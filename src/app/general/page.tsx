@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
 import { useTheme } from '@/app/providers';
 import { handleThemeChange1 } from '@/components/ThemeToggle';
@@ -47,7 +48,7 @@ const SettingsPage = () => {
   return (
     <div className="bg-gray-100 dark:bg-neutral-950 dark:text-slate-200 min-h-screen">
       {/* Header */}
-      <header className="bg-white dark:bg-neutral-900 dark:border-black-200 px-2 py-4 border-b border-gray-200">
+      <header className="bg-white dark:bg-neutral-900 dark:border-black-200 px-2 py-2 border-b border-gray-200">
         <h1 className="text-xl font-semibold">Settings</h1>
       </header>
 
@@ -82,19 +83,21 @@ const SettingsPage = () => {
         ))}
 
         {/* Logout/in Button */}
-        <button className="w-full bg-red-500 text-white py-3 rounded-lg flex items-center justify-center mt-6">
-          {error ?
-            <>
-            <span>Log In</span>
-            <LogIn size={20} className="mr-2" />
-            </> 
-            :
-            <>
-            <LogOut size={20} className="mr-2" />
-            <span>Log Out</span>
-            </>
-          }
-        </button>
+        <Link href={`/accounts/${!loading && !userdata.username ? 'login' : 'logout'}`}>
+          <button className="w-full bg-red-500 text-white py-3 rounded-lg flex gap-2 items-center justify-center mt-6">
+            {!loading && !userdata.username ?
+              <>
+              <span>Log In</span>
+              <LogIn size={20} className="mr-2" />
+              </> 
+              :
+              <>
+              <LogOut size={20} className="mr-2" />
+              <span>Log Out</span>
+              </>
+            }
+          </button>
+        </Link>
       </main>
     </div>
   );

@@ -6,7 +6,7 @@ const navigationSlice = createSlice({
   initialState: {
     activeRoute: typeof window !== 'undefined' ? window.location.pathname.replace('/','') : 'home',
     isMoreShown: false,
-    chaT: false,
+    chaT: 'hidden',
   },
   reducers: {
     setActiveRoute: (state, action) => {

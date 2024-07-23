@@ -6,7 +6,6 @@ import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '@/app/fontAwesomeLibrary';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -14,6 +13,9 @@ import 'swiper/css/navigation';
 import { Pagination, Navigation } from 'swiper/modules';
 import { MessageSquare, Users, Hash, Search, Phone } from 'lucide-react';
 import NavBar from '@/components/navbar';
+import { useDispatch, useSelector } from 'react-redux';
+import { showChat } from '@/redux/navigationSlice';
+import { RootState } from '@/redux/store'; 
 
 type filteredChatsProps = {
   id: number;
@@ -23,36 +25,48 @@ type filteredChatsProps = {
   unread: number;
 }[]
 
+type FilteredChatsProps = {
+  filteredChats: () => Array<{
+    id: number;
+    type: string;
+    name: string;
+    lastMessage: string;
+    timestamp: string;
+    unread: number;
+  }>;
+};
+
 interface Props {
-  filteredChats: filteredChatsProps
+  filteredChats: FilteredChatsProps
 }
 
-const ChatListPage = ({filteredChats}: Props) => {
+interface NavigationState {
+  chaT: string;
+}
+
+const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats}) => {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
+  const openChat = (id: number) => {
+    router.push(`/chats/${id}`);
+    dispatch(showChat(''));
+  }
   return (
-    <div className="flex-grow p-4 h-full">
-      {/* <div className="mb-4 relative">
-        <input
-          type="text"
-          placeholder="Search chats..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full p-2 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300"
-        />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-      </div> */}
-      <div className="space-y-2">
-        {filteredChats.map(chat => (
-          <div key={chat.id} className="bg-white p-3 rounded-lg shadow-sm flex items-center space-x-3">
+    <div className="flex-grow p-4 h-full overflow-auto">
+      <div className="flex flex-col gap-1 mb-10 tablets1:mb-0">
+        {filteredChats().map(chat => (
+          <div key={chat.id} className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden" onClick={() => openChat(chat.id)}>
             <Image src={`/300x300.png?${40 + chat.id}`} height={40} width={40} alt={chat.name} className="w-12 h-12 rounded-full" />
             <div className="flex-grow">
               <div className="flex justify-between items-baseline">
                 <h2 className="font-semibold">{chat.name}</h2>
                 <span className="text-sm text-gray-500">{chat.timestamp}</span>
               </div>
-              <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
+              <p className="text-sm text-wrap text-gray-600 truncate">{chat.lastMessage}</p>
             </div>
             {chat.unread > 0 && (
-              <div className="bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {chat.unread}
               </div>
             )}
@@ -72,6 +86,25 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const conversations = [
+    // Direct Chats
+    { id: 1, type: 'chat', name: 'John Doe', lastMessage: 'Hey, how are you?', timestamp: '2m ago', unread: 2 },
+    { id: 2, type: 'chat', name: 'Jane Smith', lastMessage: 'See you tomorrow!', timestamp: '1h ago', unread: 0 },
+    { id: 3, type: 'chat', name: 'Bob Johnson', lastMessage: 'Can you send me that file?', timestamp: '3h ago', unread: 1 },
+    { id: 4, type: 'chat', name: 'Alice Brown', lastMessage: 'Thanks for your help!', timestamp: 'Yesterday', unread: 0 },
+    { id: 5, type: 'chat', name: 'Charlie Wilson', lastMessage: "Let's meet at 3 PM", timestamp: '2d ago', unread: 0 },
+    
+    // Channels
+    { id: 6, type: 'channel', name: 'announcements', lastMessage: 'New product launch next week!', timestamp: '30m ago', unread: 5 },
+    { id: 7, type: 'channel', name: 'general', lastMessage: "Who's up for lunch?", timestamp: '1h ago', unread: 2 },
+    { id: 8, type: 'channel', name: 'tech-support', lastMessage: 'Server maintenance scheduled for tonight', timestamp: '2h ago', unread: 0 },
+    
+    // Groups
+    { id: 9, type: 'group', name: 'Project Alpha', lastMessage: 'Meeting notes uploaded', timestamp: '45m ago', unread: 3 },
+    { id: 10, type: 'group', name: 'Family', lastMessage: "Dad: Who's bringing the cake?", timestamp: '4h ago', unread: 1 },
+    { id: 11, type: 'group', name: 'Hiking Club', lastMessage: 'Weather looks good for Saturday!', timestamp: 'Yesterday', unread: 0 },
+  ];
+
   const chats = [
     { id: 1, name: 'John Doe', lastMessage: 'Hey, how are you?', timestamp: '2m ago', unread: 2 },
     { id: 2, name: 'Jane Smith', lastMessage: 'See you tomorrow!', timestamp: '1h ago', unread: 0 },
@@ -84,6 +117,20 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
     chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const filterConversations = (type: string) => {
+    if(type !== 'all'){
+      return conversations.filter(conv => 
+        conv.type === type && 
+        (conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    } else {
+      return conversations.filter(conv => 
+        conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+  };
 
   const tabs = ['All', 'Chats', 'Groups', 'Channels'];
 
@@ -97,7 +144,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
     <div className='flex items-center justify-between'>
       <div className='9f4q9d4a h-full bg-white/55 dark:bg-black/55 flex flex-col min-h-screen w-full tablets:w-2/4'>
         <div className='flex gap-4 items-center justify-between w-full my-1 px-3 py-2'>
-          <FontAwesomeIcon onClick={() => router.back()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="xl" />
+          <FontAwesomeIcon onClick={() => router.push('/home')} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="xl" />
           <div className='dark:text-slate-200 flex flex-1 items-center justify-between'>
             {loading ? <div className='animate-pulse'>loading...</div> : 
             <div>{userdata ? userdata.username : 'Username'}</div>}
@@ -128,7 +175,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           ))}
         </div>
         <Swiper onSwiper={updateSwiper} onSlideChange={onSlideChange} slidesPerView={1} spaceBetween={10} modules={[Pagination, Navigation]} className="dark:text-slate-200 !flex flex-col flex-grow w-full" id='vufqnuju'>
-          <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
+          <SwiperSlide className='flex flex-col flex-grow max-h-77 self-stretch justify-center' style={{ height: 'auto' }}>
             {!ayo ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
@@ -143,12 +190,11 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                   </button>
                 </div>
               </div>
-              : <ChatListPage filteredChats={filteredChats}/>
+              : <ChatListPage filteredChats={() => filterConversations('all')}/>
             }
           </SwiperSlide>
-          <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
+          <SwiperSlide className='flex flex-col flex-grow max-h-77 self-stretch justify-center' style={{ height: 'auto' }}>
               {!ayo ?
-                <>
                 <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No chats available</h3>
@@ -162,39 +208,45 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                       </button>
                     </div>
                 </div>
-                </>
-                : <ChatListPage filteredChats={filteredChats}/>
+                : <ChatListPage filteredChats={() => filterConversations('chat')}/>
               }
           </SwiperSlide>
-          <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
-            <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
-              <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No groups available</h3>
-              <p className="mt-1 text-sm text-gray-500">Get started by creating or joining a new group.</p>
-              <div className="mt-6">
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                >
-                  New Group
-                </button>
+          <SwiperSlide className='flex flex-col flex-grow max-h-77 self-stretch justify-center' style={{ height: 'auto' }}>
+            {!ayo ?
+              <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
+                <Users className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No groups available</h3>
+                <p className="mt-1 text-sm text-gray-500">Get started by creating or joining a new group.</p>
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
+                  >
+                    New Group
+                  </button>
+                </div>
               </div>
-            </div>
+              : <ChatListPage filteredChats={() => filterConversations('group')}/>
+            }
           </SwiperSlide>
-          <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
-            <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
-              <Hash className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No channels available</h3>
-              <p className="mt-1 text-sm text-gray-500">Get started by creating a new channel.</p>
-              <div className="mt-6">
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                >
-                  New Channel
-                </button>
+          <SwiperSlide className='flex flex-col flex-grow max-h-77
+           self-stretch justify-center' style={{ height: 'auto' }}>
+            {!ayo ?
+              <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
+                <Hash className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No channels available</h3>
+                <p className="mt-1 text-sm text-gray-500">Get started by creating a new channel.</p>
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
+                  >
+                    New Channel
+                  </button>
+                </div>
               </div>
-            </div>
+              : <ChatListPage filteredChats={() => filterConversations('channel')}/>
+            }
           </SwiperSlide>
         </Swiper>
       </div>

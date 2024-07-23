@@ -29,8 +29,9 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
   }, [pathname,setActiveRoute,router]);
 
   const handleClick = (route: string) => {
-    router.push(route);
+    router.push('/'+route);
     setActiveRoute(route);
+    setMoreStatus(false);
   };
 
   const handlePopUp = () => {
@@ -43,10 +44,10 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
 
     return (
       <>
-        <div id='bottombar' className={`bg-slate-200 dark:bg-zinc-900 px-1.5 py-1 ${pathname?.includes('posts') || routes.includes(activeRoute) && 'hidden'} `}>
+        <div id='bottombar' className={`bg-slate-200 dark:bg-zinc-900 px-1.5 ${pathname?.includes('posts') || pathname?.includes('chats') || routes.includes(activeRoute) && 'hidden'} `}>
 
-          <div id='more' className={isMoreShown ? 'show' : 'hide'}>
-            <div className='head'>More...</div>
+          <div id='more' className={`left-0 ${isMoreShown ? 'show' : 'hide'}`}>
+            <div className='head dark:text-slate-50'>More...</div>
             <div className={`bottombar ft dark:text-slate-200 rout ${activeRoute === 'general' ? 'active' : ''}`} data-route='general'>
               <div className='bottombar-icon'  onClick={() => handleClick('general')}>
                 <svg width='30px' height='30px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -88,47 +89,47 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
                 <div className='feedback rt'>Feedback</div>
               </div>
             </div>
-            {error ? 
+            {!loading && !userdata.username ?
+            <div className='dark:text-slate-200 flex items-center justify-between'>
+              <p className='flex items-center'>
+                <LogIn size={25} className="mr-2" />
+                <Link href='/accounts/login'>Log in</Link>
+              </p>
+              <p className='flex items-center'>
+                <User size={25} className="mr-2" />
+                <Link href='/accounts/signup'>Sign up</Link>
+              </p>
+            </div> 
+            :
             <div className='user' onClick={handlePopUp}>
-            <div className='img'>
-              {/* https://s3.amazonaws.com/profile-display-images/ */}
-              {!loading 
-              ? 
-              <Image src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} className='displayPicture' width={30} height={30} alt='Display Picture'/>
-              : 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader load'></div></div>}
-            </div>
-            <div className='names flex flex-col items-center'>
-              <div className='flex items-'>
-                <p>{userdata.firstname !== '' ? userdata.firstname : 'John Doe'}</p>
-                {userdata.verified ? <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/> : null}
+              <div className='img'>
+                {/* https://s3.amazonaws.com/profile-display-images/ */}
+                {!loading 
+                ? 
+                <Image src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} className='displayPicture' width={30} height={30} alt='Display Picture'/>
+                : 
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader load'></div></div>}
               </div>
-              <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>
+              <div className='names flex flex-col items-center'>
+                <div className='flex dark:text-slate-200'>
+                  <p>{userdata.firstname !== '' ? userdata.firstname : 'John Doe'}</p>
+                  {userdata.verified ? <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/> : null}
+                </div>
+                <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>
+              </div>
+              <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots'>
+                  <g><path className='pathEllip dark:fill-tom' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
+              </svg>
+              <span className={`ellipsis-popup ${isPopUp ? 'show' : ''} dark:!bg-zinc-900 dark:text-slate-200`}>
+                <p className='hover:bg-slate-200'>
+                  <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
+                </p>
+                <p className='hover:bg-slate-200'>
+                  <Link href='/accounts/login'>Add another account?</Link>
+                </p>
+              </span>
             </div>
-            <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots'>
-                <g><path className='pathEllip' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
-            </svg>
-            <span className={`ellipsis-popup ${isPopUp ? 'show' : ''} dark:!bg-zinc-900 dark:text-slate-200`}>
-              <p className='hover:bg-slate-200'>
-                <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
-              </p>
-              <p className='hover:bg-slate-200'>
-                <Link href='/accounts/login'>Add another account?</Link>
-              </p>
-            </span>
-          </div>
-          :
-          <div className='dark:text-slate-200 flex items-center justify-between'>
-            <p className='flex items-center hover:bg-slate-200'>
-              <LogIn size={25} className="mr-2" />
-              <Link href='/accounts/login'>Log in</Link>
-            </p>
-            <p className='flex items-center hover:bg-slate-200'>
-              <User size={25} className="mr-2" />
-              <Link href='/accounts/signup'>Sign up</Link>
-            </p>
-          </div>
-          }
+            }
           </div>
 
           <div id='content' className='!shadow-none'>

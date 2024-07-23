@@ -34,6 +34,10 @@ const config: Config = {
       height: {
         'auto': 'auto',
       },
+      maxHeight: {
+        '77': '77dvh',
+        '78': '78dvh',
+      },
       stroke: {
         'tom': '#e2e8f0',
       },

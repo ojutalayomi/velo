@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Read the HTML email template file
-const emailTemplateSource = path.join(process.cwd(), 'public/emails.hbs');
+const emailTemplateSource = fs.readFileSync(path.join(__dirname, '../../../public/emails.hbs'), 'utf8');
 
 // Create a Handlebars template
 const template = handlebars.compile(emailTemplateSource);

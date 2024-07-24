@@ -3,6 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from './PostProps';
 import Image from "next/image";
 import { useUser } from '@/hooks/useUser';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/swiper-bundle.css';
+import { Navigation, Pagination } from 'swiper/modules';
 // import { v4 as uuidv4 } from 'uuid';
 import ImageDiv from '../components/imageDiv';
 import VideoDiv from './videoDiv';
@@ -157,18 +162,22 @@ const Posts: React.FC<PostComponentProps> = (props) => {
           </div>
         </div>
         <div className='blog-contents' onClick={() => handleActivePost(`${postData.Username}/posts/${postData.PostID}`)}>
-          {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? <><abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption.substring(0, 250)}...</pre></abbr> <span className='showMore'>show more</span></> : <abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption}</pre></abbr>}
+          {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? <><abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption.substring(0, 250)}... <span className='showMore'>show more</span></pre></abbr></> : <abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption}</pre></abbr>}
         </div>
         {/* {showMore} */}
-        <div className={postData.Image && postData.Image.length > 3 ? 'blog-image-s grid-set' : (postData.Image.length > 0 && postData.Image.length <= 3) ? 'blog-image-s flex-set' : ''}>
-          {postData.Image 
+        <Swiper pagination={{ clickable: true, dynamicBullets: true, }} navigation={true} modules={[ Navigation, Pagination ]} slidesPerView={1} spaceBetween={5} className="!flex rounded-lg bg-neutral-600 border-2 border-black dark:bg-neutral-950 flex-grow w-full">
+        {postData.Image 
           ? postData.Image.map((media,index) => (
                 media.includes('png') || media.includes('jpg') || media.includes('jpeg') ?
-                  (!media.includes('https') && !media.startsWith('/') ? <div className='flex-media' key={media+index} id={`${media.length}`}><ImageDiv media={media} host={true}/></div> : <div className='flex-media' key={media+index} id={`${media.length}`}><ImageDiv media={media} host={false}/></div>)
-                : (!media.includes('https') && !media.startsWith('/') ? <div className='flex-media' key={media+index} id={`${media.length}`}><VideoDiv media={media} host={true}/></div> : <div className='flex-media' key={media+index} id={`${media.length}`}><VideoDiv media={media} host={false}/></div>)
+                  ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
+                      <ImageDiv media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
+                    </SwiperSlide>)
+                : ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
+                      <VideoDiv media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
+                    </SwiperSlide>)
             )) 
           : null}
-        </div>
+        </Swiper>
         {window.location.pathname.includes('posts') ? <div className='blog-time'>{timeFormatter(postData.TimeOfPost)}</div> : null}
         <div className='reaction-panel'>
           <div className='blog-foot' id='like'>

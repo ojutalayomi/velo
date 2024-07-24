@@ -34,6 +34,32 @@ body {
 .dark\:stroke-slate-200:where(.dark, .dark *) {
   stroke: #e2e8f0 !important;
 }
+.blog .swiper-wrapper{
+  align-items: center !important;
+}
+.blog .swiper-wrapper img, .blog .swiper-wrapper video{
+  margin: auto;
+}
+.swiper-button-prev ,.swiper-button-next {
+  color: #ff6257;
+  display: none;
+}
+.swiper-button-disabled {
+  color: #ff6257ba;
+}
+.swiper-pagination-bullet {
+  background: #ff6257ba;
+  opacity: 1;
+}
+@media (min-width: 500px){
+  .swiper-button-prev ,.swiper-button-next {
+    display: block;
+  }
+}
+.swiper-pagination-bullet-active-main {
+  @apply bg-brand;
+  background: #ff6257;
+}
 .toggle-checkbox:checked {
   @apply right-0 border-green-400;
   right: 0;

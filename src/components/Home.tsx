@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { setActiveRoute, setMoreStatus } from '../redux/navigationSlice';
+import { useUser } from '@/hooks/useUser';
 import Home from './Home1';
 
 // interface RootProps {
@@ -12,6 +13,7 @@ import Home from './Home1';
 // }
 
 const Root: React.FC = () => {
+  const { userdata, loading, error, refetchUser } = useUser();
   const { activeRoute, isMoreShown } = useSelector((state: any) => state.navigation);
   const router = useRouter();
   const pathname = usePathname();
@@ -33,7 +35,7 @@ const Root: React.FC = () => {
 
     return (
       <>
-        <div id="pre-home" className={activeRoute === 'home' || activeRoute === '' ? '' : 'h-hide'}  onClick={() => handleClickMore('close')}>
+        <div id="pre-home" className={`tablets:w-3/5 ${activeRoute === 'home' || activeRoute === '' && 'h-hide'}`}  onClick={() => handleClickMore('close')}>
           <Home />
         </div>
       </>

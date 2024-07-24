@@ -48,7 +48,7 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
 
     return (
       <>
-        <div id='sidebar' className={`${routes.includes(activeRoute) && 'hidden'} hidden tablets:flex flex-col `}>
+        <div id='sidebar' className={`${routes.includes(activeRoute) && '!hidden'} hidden tablets:flex flex-col `}>
           <h1 className="brandname dark:text-slate-200 dark:after:text-slate-200 text-lg after:content-['V']"></h1>
           <div className='flex-1'>
             <div className={`sidebar ft dark:text-slate-200 rout ${activeRoute === 'home' ? 'active' : ''}`} data-route='home'>

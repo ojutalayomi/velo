@@ -38,6 +38,12 @@ const config: Config = {
         '77': '77dvh',
         '78': '78dvh',
       },
+      margin: {
+        'auto': 'auto',
+      },
+      padding: {
+        'auto': 'auto',
+      },
       stroke: {
         'tom': '#e2e8f0',
       },

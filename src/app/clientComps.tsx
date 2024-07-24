@@ -8,6 +8,7 @@ import Error from './error';
 import { useState, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../redux/store';
+import { usePathname } from 'next/navigation';
 // import { useactiveRoute } from 'next/navigation';
 
 interface ClientComponentsProps {
@@ -15,6 +16,7 @@ interface ClientComponentsProps {
 }
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
+    const pathname = usePathname();
     const { user } = useUser();
     const [activeRoute, setActiveRouteState] = useState<string>('home');
     const [isMoreShown, setMoreStatus] = useState(false);
@@ -38,7 +40,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 <Sidebar isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-                <div id='detail' className={activeRoute === 'home' || activeRoute === '' ? 'hidden' : ''}  onClick={() => handleClickMore('close')}>
+                <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets:block`}  onClick={() => handleClickMore('close')}>
                     <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                         {children}
                     </ErrorBoundary>

@@ -100,14 +100,14 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const token = await new SignJWT(newUserdata)
       .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('1d')
+      .setExpirationTime('15d')
       .sign(secret);
 
     res.setHeader('Set-Cookie', cookie.serialize('velo_12', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
       sameSite: 'strict',
-      maxAge: 3600 * 24,
+      maxAge: 3600 * 24 * 15,
       path: '/',
     }));
 

@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { setActiveRoute, setMoreStatus } from '../redux/navigationSlice';
+import { useUser } from '@/hooks/useUser';
 import Home from './Home1';
 
 interface RootProps {
@@ -10,6 +13,8 @@ interface RootProps {
 }
 
 const Root: React.FC<RootProps> = ({ activeRoute, setActiveRoute, setMoreStatus }) => {
+  const { userdata, loading, error, refetchUser } = useUser();
+  const { isMoreShown } = useSelector((state: any) => state.navigation);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -19,7 +24,7 @@ const Root: React.FC<RootProps> = ({ activeRoute, setActiveRoute, setMoreStatus 
       const route = pathname ? pathname.slice(1) || '' : ''; 
       setActiveRoute(route);
     }
-  }, [router, setActiveRoute, setMoreStatus, pathname]);
+  }, [router, pathname, setActiveRoute, setMoreStatus]);
 
 
   const handleClickMore = (command: string) => {
@@ -30,7 +35,7 @@ const Root: React.FC<RootProps> = ({ activeRoute, setActiveRoute, setMoreStatus 
 
     return (
       <>
-        <div id="pre-home" className={activeRoute === 'home' || activeRoute === '' ? '' : 'h-hide'}  onClick={() => handleClickMore('close')}>
+        <div id="pre-home" className={`tablets:w-3/5 !flex-[1_1_20%] ${activeRoute === 'home' || activeRoute === '' ? '' : 'h-hide'}`}  onClick={() => handleClickMore('close')}>
           <Home />
         </div>
       </>

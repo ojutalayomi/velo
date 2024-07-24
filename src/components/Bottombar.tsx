@@ -11,10 +11,11 @@ interface BottombarProps {
   activeRoute: string;
   isMoreShown: boolean;
   setActiveRoute: (status: string) => void;
+  setLoad: (status: boolean) => void;
   setMoreStatus: (status: boolean) => void;
 }
 
-const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
+const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
   const { userdata, loading, error, refetchUser } = useUser();
   const [isPopUp,setPopUp] = useState<boolean>(false);
   const router = useRouter();
@@ -29,6 +30,7 @@ const Root: React.FC<BottombarProps> = ({ activeRoute, isMoreShown, setActiveRou
   }, [pathname,setActiveRoute,router]);
 
   const handleClick = (route: string) => {
+    setLoad(true);
     router.push('/'+route);
     setActiveRoute(route);
     setMoreStatus(false);

@@ -8,6 +8,15 @@ const __dirname = dirname(__filename);
 import path from 'path';
 
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/home',
+        permanent: true,
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {

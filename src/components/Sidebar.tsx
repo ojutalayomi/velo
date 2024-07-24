@@ -11,10 +11,11 @@ interface SidebarProps {
   activeRoute: string;
   isMoreShown: boolean;
   setActiveRoute: (status: string) => void;
+  setLoad: (status: boolean) => void;
   setMoreStatus: (status: boolean) => void;
 }
 
-const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
+const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
   const { userdata, loading, error, refetchUser } = useUser();
   const [isPopUp,setPopUp] = useState<boolean>(false);
   const router = useRouter();
@@ -38,6 +39,7 @@ const Root: React.FC<SidebarProps> = ({ activeRoute, isMoreShown, setActiveRoute
   // }, []);
 
   const handleClick = (route: string) => {
+    setLoad(true);
     router.push(`/${route}`);
     setActiveRoute(route);
   };

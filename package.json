@@ -59,6 +59,7 @@
     "@types/jquery": "^3.5.30",
     "@types/json5": "^2.2.0",
     "@types/multer-s3": "^3.0.3",
+    "@types/next-pwa": "^5.6.9",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18",

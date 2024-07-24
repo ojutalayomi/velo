@@ -5,10 +5,11 @@ import Bottombar from '@/components/Bottombar';
 import Root from '@/components/Root';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Error from './error';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../redux/store';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import Loading from './loading'; 
 // import { useactiveRoute } from 'next/navigation';
 
 interface ClientComponentsProps {
@@ -17,10 +18,18 @@ interface ClientComponentsProps {
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const router = useRouter();
     const { user } = useUser();
-    const [activeRoute, setActiveRouteState] = useState<string>('home');
+    const path = pathname?.replace('/','') || '';
+    const [activeRoute, setActiveRouteState] = useState<string>(path);
     const [isMoreShown, setMoreStatus] = useState(false);
     const [error, setError] = useState(null);
+    const [load,setLoad] = useState<boolean>(false);
+
+    useEffect(() => {
+        setLoad(false)
+    }, [pathname, searchParams]);
 
     const setActiveRoute = useCallback((route: string) => {
         setActiveRouteState(route);
@@ -37,15 +46,15 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     return(
         <>
             <Provider store={store}>
-                <Sidebar isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
+                <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
                 <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets:block`}  onClick={() => handleClickMore('close')}>
                     <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
-                        {children}
+                        {load ? <Loading /> : children}
                     </ErrorBoundary>
                 </div>
-                <Bottombar isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
+                <Bottombar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
             </Provider>
         </>
     )

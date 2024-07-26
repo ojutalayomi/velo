@@ -8,7 +8,7 @@ import Error from './error';
 import { useState, useCallback, useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../redux/store';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Loading from './loading'; 
 // import { useactiveRoute } from 'next/navigation';
 
@@ -18,7 +18,6 @@ interface ClientComponentsProps {
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const router = useRouter();
     const { user } = useUser();
     const path = pathname?.replace('/','') || '';
@@ -29,7 +28,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
 
     useEffect(() => {
         setLoad(false)
-    }, [pathname, searchParams]);
+    }, [pathname]);
 
     const setActiveRoute = useCallback((route: string) => {
         setActiveRouteState(route);

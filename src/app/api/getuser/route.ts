@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
         email: user?.email,
         username: user?.username,
         dp: user?.displayPicture,
-        verified: user?.verified
+        verified: user?.verified,
+        chatid: user?.userId
     };
 
     return NextResponse.json(newUserdata);

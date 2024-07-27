@@ -7,6 +7,7 @@ interface userData {
     username: string,
     dp: string,
     verified: boolean
+    chatid: string,
 };
 
 const userdata: userData = {
@@ -15,7 +16,8 @@ const userdata: userData = {
     email: '',
     username: '',
     dp: '',
-    verified: false
+    verified: false,
+    chatid: ''
 }
 
 const userSlice = createSlice({

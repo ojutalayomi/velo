@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { MongoClient, ServerApiVersion } from 'mongodb'
 import { SignJWT } from 'jose'
 import cookie from 'cookie'
+import { UAParser } from 'ua-parser-js'
 import { promises as fs } from 'fs'
 import { fileURLToPath } from 'url'
 import path, { dirname } from 'path'
@@ -67,6 +68,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     const collection = client.db('mydb').collection('Users');
+    const tokenCollection = client.db('mydb').collection('Tokens');
     const user = await collection.findOne({ $or: [{ username: UsernameOrEmail }, { email: UsernameOrEmail }] });
 
     if (!user) {
@@ -82,7 +84,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    const { firstname, lastname, email, username, displayPicture, verified } = user;
+    const { firstname, lastname, email, username, displayPicture, verified, userId } = user;
 
     const randomToken = generateRandomToken(10);
     const time = new Date().toLocaleString();
@@ -92,16 +94,27 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     await collection.updateOne(
       { email },
-      { $set: { lastLogin: formattedDate, loginToken: randomToken } }
+      { $set: { lastLogin: formattedDate } }
     );
 
-    const newUserdata = { firstname, lastname, email, username, dp: displayPicture, verified };
+    const newUserdata = { firstname, lastname, email, username, dp: displayPicture, verified, userId };
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT(newUserdata)
+    const token = await new SignJWT({ userId: user._id })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('15d')
       .sign(secret);
+    
+    // Extract device information
+    const parser = new UAParser(req.headers['user-agent']);
+    const deviceInfo = parser.getResult();
+
+    await tokenCollection.insertOne({
+      userId: user.userId,
+      token,
+      deviceInfo,
+      createdAt: new Date()
+    });
 
     res.setHeader('Set-Cookie', cookie.serialize('velo_12', token, {
       httpOnly: true,

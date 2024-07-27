@@ -127,7 +127,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                   <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
                 </p>
                 <p className='hover:bg-slate-200'>
-                  <Link href='/accounts/login'>Add another account?</Link>
+                  <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`}>Add another account?</Link>
                 </p>
               </span>
             </div>

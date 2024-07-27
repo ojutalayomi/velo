@@ -5,7 +5,7 @@ import SwiperCore from 'swiper';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '@/app/fontAwesomeLibrary';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -45,11 +45,12 @@ interface NavigationState {
 }
 
 const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats}) => {
+  const { userdata, loading, error, refetchUser } = useUser();
   const router = useRouter();
   const dispatch = useDispatch();
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const openChat = (id: number) => {
-    router.push(`/chats/${id}`);
+    router.push(`/chats/${userdata.userid+'+'+id}`);
     dispatch(showChat(''));
   }
   return (

@@ -2,17 +2,19 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
+import {usePathname} from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { useTheme } from '@/app/providers';
 import { handleThemeChange1 } from '@/components/ThemeToggle';
 import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut } from 'lucide-react';
 
 const SettingsPage = () => {
+    const pathname = usePathname();
     const { userdata, loading, error, refetchUser } = useUser();
     const { theme, setTheme } = useTheme()
     const [isOpen,setOpen] = useState<boolean>(false);
     const [isChecked, setIsChecked] = useState(false);
-
+    const pathTo = pathname !== '' ? 'login?backto='+pathname : 'login';
     useEffect(() => {
       theme === 'dark' ? setIsChecked(true) : setIsChecked(false);
     },[theme])
@@ -83,7 +85,8 @@ const SettingsPage = () => {
         ))}
 
         {/* Logout/in Button */}
-        <Link href={`/accounts/${!loading && !userdata.username ? 'login' : 'logout'}`}>
+        {/* {`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} */}
+        <Link href={`/accounts/${!loading && !userdata.username ? pathTo : 'logout'}`}>
           <button className="w-full bg-red-500 text-white py-3 rounded-lg flex gap-2 items-center justify-center mt-6">
             {!loading && !userdata.username ?
               <>

@@ -79,6 +79,9 @@ const Posts: React.FC<PostComponentProps> = (props) => {
     search: '',
     hash: ''
   };
+  const fullscreen = () => {
+    router.push(`/${postData.Username}/photo`);
+  }
 
   return (
     <div className='pre-blog' id={postData.PostID.slice(0,-4)}>
@@ -86,7 +89,10 @@ const Posts: React.FC<PostComponentProps> = (props) => {
         <div className='blogger-details'>
           <div className='blog-top-left'>
             <div className={ postData.Verified ? 'blogger-img v' : 'blogger-img'}>
-              <Image src={ postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture} className='pdp' width={35} height={35} alt='blogger' />
+              <Image 
+                src={ postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture}
+                onClick={fullscreen}
+                className='pdp cursor-pointer' width={35} height={35} alt='blogger' />
             </div>
             <div className='blog-maker'>
               <div className='blog-maker-name'>

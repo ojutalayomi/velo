@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './fontAwesomeLibrary';
@@ -20,6 +20,10 @@ const initialFormData: FormData = {
 
 const Login: React.FC = () => {
     const dispatch = useDispatch();
+    const pathname = usePathname();
+    const router = useRouter()
+    const searchParams = useSearchParams();
+    const backTo = searchParams?.get('backTo');
     const userData = useSelector((state: any) => state.user.userdata);
     const [formData, setFormData] = useState<FormData>(initialFormData);
     const [isEye, setIsEye] = useState(true);
@@ -27,11 +31,10 @@ const Login: React.FC = () => {
     const [errors, setErrors] = useState<FormData>(initialFormData);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<boolean>(false);
-    const router = useRouter();
 
     useEffect(() => {
-        if(success && !error) window.location.href = '/home';
-    }, [success,error,router]);
+        if(success && !error) router.push(backTo || '/home');
+    }, [success, error, router, backTo]);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;

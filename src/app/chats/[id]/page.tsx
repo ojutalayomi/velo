@@ -1,12 +1,13 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Send } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
-import { RootState } from '@/redux/store'; 
+import { RootState } from '@/redux/store';
+import { useUser } from '@/hooks/useUser'; 
 
 interface NavigationState {
   chaT: string;
@@ -15,6 +16,8 @@ interface NavigationState {
 const ChatPage: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const params = useParams<{ chat: string }>()
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const [messages, setMessages] = useState([
     { id: 1, text: "Hey there!", sender: "John" },
@@ -22,6 +25,24 @@ const ChatPage: React.FC = () => {
     { id: 3, text: "I'm doing great, thanks for asking!", sender: "John" },
   ]);
   const [newMessage, setNewMessage] = useState('');
+
+  useEffect(() => {
+      const handleInput = () => {
+          const textArea = textAreaRef.current;
+          if (textArea) {
+              textArea.style.height = '30px';
+              textArea.style.height = `${textArea.scrollHeight}px`;
+          }
+      };
+
+      const textArea = textAreaRef.current;
+      if (textArea) {
+          textArea.addEventListener('input', handleInput);
+          return () => {
+              textArea.removeEventListener('input', handleInput);
+          };
+      }
+  }, []);
 
   const handleSendMessage = () => {
     if (newMessage.trim() !== '') {
@@ -51,14 +72,14 @@ const ChatPage: React.FC = () => {
             ))}
           </div>
           <div className="flex">
-            <input
-              type="text"
+            <textarea
               placeholder="Type a message..."
               value={newMessage}
+              ref={textAreaRef}
               onChange={(e) => setNewMessage(e.target.value)}
               // onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               className="dark:bg-zinc-900 dark:text-slate-200 flex-grow mr-2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
-            />
+            ></textarea>
             <button
               onClick={handleSendMessage}
               className="bg-brand text-white p-2 rounded-lg hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"

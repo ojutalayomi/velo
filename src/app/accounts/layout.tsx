@@ -1,7 +1,7 @@
 import type { Metadata,Viewport } from "next";
 import { Inter } from "next/font/google";
 import '../../styles/accounts.css';
-import React, {useState} from "react";
+import React from "react";
 import Image from 'next/image';
 import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { WhatsApp, X } from "@/components/icons";
@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode;}>) {
-
+  
     return (
         <div className='secondary font-sans'>
             <div className='containeer'>

@@ -9,14 +9,14 @@ export default function Error({
   error: Error & { digest?: string } | null,
   reset: () => void
 }) {
-  useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error)
-  }, [error])
+  // useEffect(() => {
+  //   // Log the error to an error reporting service
+  //   console.error(error)
+  // }, [error])
  
   return (
     <div>
-      <h2>Something went wrong!</h2>
+      <h1>An error occured!</h1>
       <button
         onClick={
           // Attempt to recover by trying to re-render the segment

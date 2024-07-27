@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from "next/image";
 import { useSelector } from 'react-redux';
@@ -16,11 +16,12 @@ interface SidebarProps {
 }
 
 const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
+  const params = useParams<{ chat: string }>()
   const { userdata, loading, error, refetchUser } = useUser();
   const [isPopUp,setPopUp] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
-  const routes = ['accounts/login','accounts/signup','accounts/signup/1','accounts/signup/2','accounts/forgot-password','accounts/reset-password']
+  const routes = ['accounts/login','accounts/signup','accounts/signup/1','accounts/signup/2','accounts/forgot-password','accounts/reset-password','accounts/logout']
 
   useEffect(() => {
     // console.log(location)
@@ -37,6 +38,8 @@ const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setAc
   //       window.removeEventListener('click', handleClick);
   //     }; 
   // }, []);
+
+  
 
   const handleClick = (route: string) => {
     setLoad(true);
@@ -141,7 +144,7 @@ const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setAc
                 <div className='dark:text-slate-200 flex flex-col gap-2'>
                   <p className='flex items-center hover:text-brand'>
                     <LogIn size={25} className="mr-2" />
-                    <Link href='/accounts/login' className='hidden tablets1:!flex'>Log in</Link>
+                    <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='hidden tablets1:!flex'>Log in</Link>
                   </p>
                   <p className='flex items-center hover:text-brand'>
                     <User size={25} className="mr-2" />

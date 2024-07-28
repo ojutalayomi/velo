@@ -100,7 +100,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const newUserdata = { firstname, lastname, email, username, dp: displayPicture, verified, userId };
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ userId: user._id })
+    const token = await new SignJWT({ userId: user.userId })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('15d')
       .sign(secret);

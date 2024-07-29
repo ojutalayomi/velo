@@ -50,14 +50,14 @@ const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats}) => {
   const dispatch = useDispatch();
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const openChat = (id: number) => {
-    router.push(`/chats/${userdata.userid+'+'+id}`);
+    router.push(`/chats/${userdata.chatid+'+'+id}`);
     dispatch(showChat(''));
   }
   return (
     <div className="flex-grow p-4 h-full overflow-auto">
       <div className="flex flex-col gap-1 mb-10 tablets1:mb-0">
         {filteredChats().map(chat => (
-          <div key={chat.id} className="bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden" onClick={() => openChat(chat.id)}>
+          <div key={chat.id} className="bg-white dark:bg-zinc-900 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden" onClick={() => openChat(chat.id)}>
             <Image src={`/300x300.png?${40 + chat.id}`} height={40} width={40} alt={chat.name} className="w-12 h-12 rounded-full" />
             <div className="flex-grow">
               <div className="flex justify-between items-baseline">
@@ -81,7 +81,7 @@ const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats}) => {
 export default function App({ children }: Readonly<{ children: React.ReactNode;}>) {
   const { userdata, loading, error, refetchUser } = useUser();
   const router = useRouter();
-  const swiperr = useSwiper();
+  // const swiperr = useSwiper();
   const ayo = true;
   const [swiper, updateSwiper] = useState<SwiperCore | null>(null);
   const [activeTab, setActiveTab] = useState('All');
@@ -145,13 +145,13 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
     <div className='flex items-center justify-between'>
       <div className='9f4q9d4a h-full bg-white/55 dark:bg-black/55 flex flex-col min-h-screen w-full tablets:w-2/4'>
         <div className='flex gap-4 items-center justify-between w-full my-1 px-3 py-2'>
-          <FontAwesomeIcon onClick={() => router.push('/home')} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="xl" />
+          <FontAwesomeIcon onClick={() => router.push('/home')} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           <div className='dark:text-slate-200 flex flex-1 items-center justify-between'>
             {loading ? <div className='animate-pulse'>loading...</div> : 
             <div>{userdata ? userdata.username : 'Username'}</div>}
             <Phone size={21} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           </div>
-          <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="xl" />
+          <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
         </div>
         {/*  */}
         <div className='dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3'>

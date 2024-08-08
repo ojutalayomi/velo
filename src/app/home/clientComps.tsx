@@ -3,11 +3,8 @@ import React from 'react';
 import Image from 'next/image';
 import { ImageContent } from './imageContent';
 
-interface ClientComponentsProps {
-    children: React.ReactNode;
-}
 
-const ClientComponents = ({children}: ClientComponentsProps) => {
+const ClientComponents = () => {
 
   return (
     <>
@@ -44,7 +41,6 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         </div>
       </div>
     </div>
-    <div className='absolute flex items-center justify-center w-dvh h-dvh'>{children}</div>
     </>
   );
 };

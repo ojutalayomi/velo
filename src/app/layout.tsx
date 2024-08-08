@@ -7,6 +7,7 @@ import ClientComponents from "./clientComps";
 import React, {useState} from "react";
 import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { ThemeProvider } from "./providers";
+import { usePathname } from 'next/navigation';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
   initialScale: 1.0
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode;}>) {
+export default function RootLayout({ children, modal }: Readonly<{ children: React.ReactNode; modal: React.ReactNode;}>) {
 
   return (
     <html lang="en">
@@ -29,10 +30,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <UserProvider>
         <ThemeProvider>
-          <body className='selection:bg-tomatom-300 dark:bg-bgDark'>
+          <body className='selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black'>
             <SpeedInsights />
             <div id='root'>
             <ClientComponents>{children}</ClientComponents>
+            {modal}
             </div>
           </body>
         </ThemeProvider>

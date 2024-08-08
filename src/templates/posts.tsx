@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { Location } from 'history';
 import { useSelector } from 'react-redux';
 import { setActiveRoute, setMoreStatus } from '../redux/navigationSlice';
+import Link from 'next/link';
 
 type PostComponentProps = Post | PostProps;
 
@@ -89,10 +90,11 @@ const Posts: React.FC<PostComponentProps> = (props) => {
         <div className='blogger-details'>
           <div className='blog-top-left'>
             <div className={ postData.Verified ? 'blogger-img v' : 'blogger-img'}>
-              <Image 
-                src={ postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture}
-                onClick={fullscreen}
-                className='pdp cursor-pointer' width={35} height={35} alt='blogger' />
+              <Link href={`/${postData.Username}/photo`} shallow>
+                <Image 
+                  src={ postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture}
+                  className='pdp cursor-pointer' width={35} height={35} alt='blogger' />
+              </Link>
             </div>
             <div className='blog-maker'>
               <div className='blog-maker-name'>

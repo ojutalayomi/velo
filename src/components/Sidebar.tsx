@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from "next/image";
@@ -22,6 +22,24 @@ const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setAc
   const router = useRouter();
   const pathname = usePathname();
   const routes = ['accounts/login','accounts/signup','accounts/signup/1','accounts/signup/2','accounts/forgot-password','accounts/reset-password','accounts/logout']
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Function to handle click events
+  const handleClickOutside = (event: any) => {
+    if (ref.current && !ref.current.contains(event.target as Node)) {
+      setPopUp(false);
+    }
+  };
+
+  useEffect(() => {
+    // Add the click event listener when the component mounts
+    document.addEventListener('click', handleClickOutside);
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     // console.log(location)
@@ -139,7 +157,7 @@ const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setAc
           </div>
           
           
-          <div className={`user ${!error &&'hover:bg-slate-200 dark:hover:bg-neutral-900'} tablets1:items-center !justify-center tablets1:!justify-between !m-0 w-full`} onClick={handlePopUp}>
+          <div ref={ref} className={`user ${!error &&'hover:bg-slate-200 dark:hover:bg-neutral-900'} tablets1:items-center !justify-center tablets1:!justify-between !m-0 w-full`} onClick={handlePopUp}>
               {!loading && !userdata.username ?
                 <div className='dark:text-slate-200 flex flex-col gap-2'>
                   <p className='flex items-center hover:text-brand'>
@@ -164,20 +182,28 @@ const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setAc
                 </div>
                 
                 <div className='names flex-col  hidden tablets1:!flex'>
-                  <div className='flex dark:text-slate-200'>
-                    <p>{userdata.firstname !== '' ? userdata.firstname : 'John Doe'}</p>
-                    {userdata.verified ? <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/> : null}
-                  </div>
-                  <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>
+                <div className='flex dark:text-slate-200'>
+                  {loading ? 
+                    <p className='animation-pulse bg-[#9E9E9E] round-full'></p> :
+                    <>
+                      <p>{userdata.firstname}</p>
+                      {userdata.verified && 
+                        <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                      }
+                    </>
+                  }
+                </div>
+
+                {loading ? <p className='animation-pulse bg-[#9E9E9E] round-full'></p> : <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>}
                 </div>
                 <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots hidden tablets1:!block'>
                     <g><path className='pathEllip dark:fill-tom' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
                 </svg>
-                <span className={`ellipsis-popup ${isPopUp ? 'show' : ''} left-2.5 dark:!bg-neutral-950 dark:text-slate-200`}>
-                  <p className='hover:bg-slate-200'>
+                <span ref={ref} className={`ellipsis-popup ${isPopUp ? 'show' : ''} left-2.5 dark:!bg-neutral-950 dark:text-slate-200`}>
+                  <p className='dark:hover:bg-slate-900 hover:bg-slate-200'>
                     <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
                   </p>
-                  <p className='hover:bg-slate-200'>
+                  <p className='dark:hover:bg-slate-900 hover:bg-slate-200'>
                     <Link href='/accounts/login'>Add another account?</Link>
                   </p>
                 </span>

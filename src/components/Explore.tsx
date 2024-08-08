@@ -11,7 +11,7 @@ const seededRandom = (seed: number) => {
 };
 
 const generateExploreItems = () => {
-  return Array(15).fill(null).map((_, i) => ({
+  return Array(25).fill(null).map((_, i) => ({
     id: i,
     type: i % 5 === 0 ? 'video' : 'image',
     likes: Math.floor(seededRandom(i) * 1000000),

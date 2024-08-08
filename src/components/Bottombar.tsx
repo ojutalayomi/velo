@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef,useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from "next/image";
@@ -21,6 +21,24 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
   const router = useRouter();
   const pathname = usePathname();
   const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Function to handle click events
+  const handleClickOutside = (event: any) => {
+    if (ref.current && !ref.current.contains(event.target as Node)) {
+      setPopUp(false);
+    }
+  };
+
+  useEffect(() => {
+    // Add the click event listener when the component mounts
+    document.addEventListener('click', handleClickOutside);
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     // console.log(location)
@@ -103,7 +121,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
               </p>
             </div> 
             :
-            <div className='user' onClick={handlePopUp}>
+            <div ref={ref} className='user' onClick={handlePopUp}>
               <div className='img'>
                 {/* https://s3.amazonaws.com/profile-display-images/ */}
                 {!loading 
@@ -122,7 +140,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
               <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots'>
                   <g><path className='pathEllip dark:fill-tom' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
               </svg>
-              <span className={`ellipsis-popup ${isPopUp ? 'show' : ''} dark:!bg-zinc-900 dark:text-slate-200`}>
+              <span ref={ref} className={`ellipsis-popup ${isPopUp ? 'show' : ''} dark:!bg-zinc-900 dark:text-slate-200`}>
                 <p className='hover:bg-slate-200'>
                   <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
                 </p>

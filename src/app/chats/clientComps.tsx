@@ -143,7 +143,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
 
   return (
     <div className='flex items-center justify-between'>
-      <div className='9f4q9d4a h-full bg-white/55 dark:bg-black/55 flex flex-col min-h-screen w-full tablets:w-2/4'>
+      <div className='9f4q9d4a h-full bg-white/55 dark:bg-black/55 flex flex-col min-h-screen w-full tablets1:w-2/4'>
         <div className='flex gap-4 items-center justify-between w-full my-1 px-3 py-2'>
           <FontAwesomeIcon onClick={() => router.push('/home')} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           <div className='dark:text-slate-200 flex flex-1 items-center justify-between'>
@@ -176,7 +176,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           ))}
         </div>
         <Swiper onSwiper={updateSwiper} onSlideChange={onSlideChange} slidesPerView={1} spaceBetween={10} modules={[Pagination, Navigation]} className="dark:text-slate-200 !flex flex-col flex-grow w-full" id='vufqnuju'>
-          <SwiperSlide className='flex flex-col flex-grow max-h-77 self-stretch justify-center' style={{ height: 'auto' }}>
+          <SwiperSlide className='flex flex-col flex-grow max-h-77 tablets1:max-h-79 self-stretch justify-center' style={{ height: 'auto' }}>
             {!ayo ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />

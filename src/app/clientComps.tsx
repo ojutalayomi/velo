@@ -10,6 +10,7 @@ import { Provider } from 'react-redux';
 import { store } from '../redux/store';
 import { usePathname, useRouter } from 'next/navigation';
 import Loading from './loading'; 
+import UserPhoto from "@/components/UserPhoto";
 // import { useactiveRoute } from 'next/navigation';
 
 interface ClientComponentsProps {
@@ -18,6 +19,7 @@ interface ClientComponentsProps {
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const pathname = usePathname();
+    const isModalRoute  = pathname?.endsWith('/photo');
     const router = useRouter();
     const { user } = useUser();
     const path = pathname?.replace('/','') || '';
@@ -48,9 +50,10 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-                <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets:block`}  onClick={() => handleClickMore('close')}>
+                <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets1:block`}  onClick={() => handleClickMore('close')}>
                     <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                         {load ? <Loading /> : children}
+                        {isModalRoute && <UserPhoto />}
                     </ErrorBoundary>
                 </div>
                 <Bottombar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />

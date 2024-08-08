@@ -1,6 +1,6 @@
 import type { Metadata,Viewport } from "next";
 import { Inter } from "next/font/google";
-import '../../styles/accounts.css';
+import '@/styles/accounts.css';
 import React from "react";
 import Image from 'next/image';
 import { UserProvider } from '@auth0/nextjs-auth0/client';
@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Accounts | Velo",
-  description: "Created by Ayomide",
+  description: "Sign Up, Login into your account today.",
 };
 
 export const viewport: Viewport = {

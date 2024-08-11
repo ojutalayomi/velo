@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Copy, Ellipsis, Reply, Send, TextQuote, Trash2, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
+import MessageTab from './MessageTab';
 // import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
@@ -19,11 +20,6 @@ type Message = {
   text: string,
 }
 
-type Props = {
-  message: Message,
-  setQuote: React.Dispatch<React.SetStateAction<QuoteProp>>
-}
-
 type QuoteProp = {
   message: Message,
   state: boolean | undefined
@@ -36,82 +32,6 @@ const initialQuoteState = {
     text: '',
   },
   state: false
-}
-
-
-const MessageTab = ({message,setQuote}:Props) => {
-  const [isCopied, setIsCopied] = useState(false);
-  const [options,openOptions] = useState<boolean>(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const ref1 = useRef<SVGSVGElement>(null);
-
-  // Function to handle click events
-  const handleClickOutside = (event: any) => {
-    if (ref.current && !ref.current.contains(event.target as Node)) openOptions(false);
-    if (ref1.current && !ref1.current.contains(event.target as Node)) openOptions(false);
-  };
-
-  useEffect(() => {
-    // Add the click event listener when the component mounts
-    document.addEventListener('click', handleClickOutside);
-
-    // Clean up the event listener when the component unmounts
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(message.text);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false),3000);
-      openOptions(false);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
-    }
-  };
-  return(
-    <div className={`dark:text-gray-400 flex flex-col mb-1`}>
-
-      <div className={`flex flex-1 ${message.sender === "You" ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
-        <div
-          className={`mb-1 p-2 rounded-lg overflow-auto w-full flex ${
-            message.sender === "You" ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
-          } text-left`}
-        >
-          {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
-          {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-          <div className={'dark:text-white'}>{message.text}</div>
-        </div>
-        <Ellipsis ref={ref1} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(!options)}/>
-        <div ref={ref} className={`absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${message.sender === 'You' ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}>
-          <div className='flex gap-1 items-center cursor-pointer' 
-          onClick={() => setQuote({
-            message: {
-            text: message.text,
-            id: message.id,
-            sender: message.sender
-          }, state: true
-          })}>
-            <TextQuote size={20} className='dark:text-gray-400'/>
-            <span className='text-xs dark:text-white'>Quote</span>
-          </div>
-          <div className='flex gap-1 items-center cursor-pointer' onClick={copyToClipboard}>
-            <Copy size={20} className='dark:text-gray-400'/>
-            <span className='text-xs dark:text-white'>{isCopied ? 'Copied!' : 'Copy message'}</span>
-          </div>
-          <div className='flex gap-1 items-center cursor-pointer' onClick={() => console.log('.')}>
-            <Trash2 size={20} className='dark:text-gray-400'/>
-            <span className='text-xs dark:text-white'>Delete</span>
-          </div>
-        </div>
-      </div>
-
-      <div className={`${message.sender === "You" ? "text-right" : "text-left"} text-slate-600 text-sm`}>Time</div>
-
-    </div>
-  )
 }
 
 const ChatPage: React.FC = () => {

@@ -11,7 +11,7 @@ const seededRandom = (seed: number) => {
 };
 
 const generateExploreItems = () => {
-  return Array(25).fill(null).map((_, i) => ({
+  return Array(30).fill(null).map((_, i) => ({
     id: i,
     type: i % 5 === 0 ? 'video' : 'image',
     likes: Math.floor(seededRandom(i) * 1000000),
@@ -23,9 +23,9 @@ const Explore = () => {
   const exploreItems = useMemo(() => generateExploreItems(), []);
 
   return (
-    <div className="bg-white dark:bg-neutral-950 min-h-screen">
+    <div className="bg-white dark:bg-neutral-950 h-full min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 bg-white dark:bg-neutral-900 dark:border-black-200 border-b border-gray-300 p-4 z-10">
+      <header className="sticky top-0 bg-white dark:bg-neutral-900 dark:border-black-200 border-b border-gray-300 px-4 py-2 z-10">
         <div className="max-w-screen-sm mx-auto">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -39,7 +39,7 @@ const Explore = () => {
       </header>
 
       {/* Explore Grid */}
-      <main className="max-w-screen-sm mx-auto p-1">
+      <main className="h-[93%] max-w-screen-sm mx-auto overflow-auto p-1">
         <div className="grid grid-cols-3 gap-1">
           {exploreItems.map((item) => (
             <div key={item.id} className="relative aspect-square">

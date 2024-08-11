@@ -1,4 +1,3 @@
-// src/app/api/logout/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { cookies } from 'next/headers';

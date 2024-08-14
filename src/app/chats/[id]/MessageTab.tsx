@@ -22,22 +22,24 @@ type QuoteProp = {
 const MessageTab = ({message,setQuote}:Props) => {
   const [isCopied, setIsCopied] = useState(false);
   const [options,openOptions] = useState<boolean>(false);
-  const ref = React.useRef<HTMLElement | SVGElement>(null) as MutableRefObject<HTMLElement | SVGElement | null>;
+  const svgRef = useRef<SVGSVGElement>(null);
+  const optionsRef = useRef<HTMLDivElement>(null);
 
-  // Function to handle click events
-  const handleClickOutside = (event: any) => {
-    if (ref.current && !ref.current.contains(event.target as Node)){ openOptions(false)};
-  };
 
   useEffect(() => {
-    // Add the click event listener when the component mounts
+    const handleClickOutside = (event: any) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target as Node) && options) {
+        openOptions(false);
+      } else if (svgRef.current && !svgRef.current.contains(event.target as Node) && options) {
+        openOptions(false);
+      }
+    };
     document.addEventListener('click', handleClickOutside);
 
-    // Clean up the event listener when the component unmounts
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, []);
+  }, [options]);
 
   const copyToClipboard = async () => {
     try {
@@ -62,8 +64,8 @@ const MessageTab = ({message,setQuote}:Props) => {
           {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
           <div className={'dark:text-white'}>{message.text}</div>
         </div>
-        <Ellipsis ref={ref as React.Ref<SVGSVGElement>} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
-        <div ref={ref as React.Ref<HTMLDivElement>} className={`absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${message.sender === 'You' ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}>
+        <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
+        <div ref={optionsRef} className={`absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${message.sender === 'You' ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}>
           <div className='flex gap-1 items-center cursor-pointer' 
           onClick={() => setQuote({
             message: {

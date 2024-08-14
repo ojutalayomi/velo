@@ -176,7 +176,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           ))}
         </div>
         <Swiper onSwiper={updateSwiper} onSlideChange={onSlideChange} slidesPerView={1} spaceBetween={10} modules={[Pagination, Navigation]} className="dark:text-slate-200 !flex flex-col flex-grow w-full" id='vufqnuju'>
-          <SwiperSlide className='flex flex-col flex-grow max-h-77 tablets1:max-h-79 self-stretch justify-center' style={{ height: 'auto' }}>
+          <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
             {!ayo ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
@@ -194,7 +194,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
               : <ChatListPage filteredChats={() => filterConversations('all')}/>
             }
           </SwiperSlide>
-          <SwiperSlide className='flex flex-col flex-grow max-h-77 self-stretch justify-center' style={{ height: 'auto' }}>
+          <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
               {!ayo ?
                 <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
@@ -212,7 +212,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                 : <ChatListPage filteredChats={() => filterConversations('chat')}/>
               }
           </SwiperSlide>
-          <SwiperSlide className='flex flex-col flex-grow max-h-77 self-stretch justify-center' style={{ height: 'auto' }}>
+          <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
             {!ayo ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <Users className="mx-auto h-12 w-12 text-gray-400" />
@@ -230,7 +230,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
               : <ChatListPage filteredChats={() => filterConversations('group')}/>
             }
           </SwiperSlide>
-          <SwiperSlide className='flex flex-col flex-grow max-h-77
+          <SwiperSlide className='flex flex-col flex-grow
            self-stretch justify-center' style={{ height: 'auto' }}>
             {!ayo ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">

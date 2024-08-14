@@ -39,10 +39,6 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const handleReset = () => {
       setError(null);
     };
-    
-    const handleClickMore = (command: string) => {
-      command === 'close' ? setMoreStatus(false) : setMoreStatus(true);
-    };
 
     return(
         <>
@@ -50,7 +46,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-                <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets1:block`}  onClick={() => handleClickMore('close')}>
+                <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets1:block`}>
                     <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                         {load ? <Loading /> : children}
                         {isModalRoute && <UserPhoto />}

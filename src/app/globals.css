@@ -72,6 +72,7 @@ body {
 #vufqnuju .swiper-wrapper{
   align-items: stretch;
   flex-grow: 1;
+  max-height: 79dvh;
 }
 
 @layer utilities {

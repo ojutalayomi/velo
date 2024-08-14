@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { Copy, Ellipsis, Reply, Send, TextQuote, Trash2, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
@@ -95,7 +95,7 @@ const ChatPage: React.FC = () => {
         <div className="h-96 overflow-y-auto p-4 flex flex-col flex-1">
           <div className="mb-4 flex-1">
             {messages.map((message) => (
-              <>
+              <Fragment key={message.id}>
               {message.quotedMessage !== 0 && (
                 <div className={`flex m-1 ${message.sender === "You" ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
                   <div className={`bg-brand border-white dark:text-white rounded-lg text-xs p-2`}>
@@ -104,7 +104,7 @@ const ChatPage: React.FC = () => {
                 </div>
               )}
               <MessageTab key={message.id} message={message} setQuote={setQuote}/>
-              </>
+              </Fragment>
             ))}
           </div>
         </div>

@@ -1,11 +1,14 @@
-import { MediaProps } from "./ImgVidProps";
+import { ImageProps } from "./ImgVidProps";
+import Link from 'next/link';
 import Image from "next/image";
 
-const ImageDiv: React.FC<MediaProps> = ({media,host}) => {
+const ImageDiv: React.FC<ImageProps> = ({media,link = '',host}) => {
     const hostname: string = 'https://s3.amazonaws.com/post-s/';
     return(
         <>
-            <Image src={host ? hostname + media : media} height={300} width={300} style={{ width: '100%', height: 'auto' }} alt=""/>
+            <Link href={link}>
+                <Image src={host ? hostname + media : media} height={300} width={300} className="cursor-pointer h-full w-full" alt=""/>
+            </Link>
         </>
     )
 }

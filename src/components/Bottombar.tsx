@@ -68,7 +68,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
         <div id='bottombar' className={`bg-slate-200 dark:bg-zinc-900 ${pathname?.includes('posts') || pathname?.includes('chats') || routes.includes(activeRoute) && 'hidden'} `}>
 
           <div className={`bg-black/50 h-[100dvh] ${!isMoreShown && 'hidden'} top-0 fixed z-[1] w-[100dvw]`}>
-            <div ref={ref1} id='more' className={`left-0 bg-white dark:bg-black/70 ${isMoreShown ? 'show' : 'hide'} font-light leading-normal`}>
+            <div ref={ref1} onClick={(event) => event.stopPropagation()} id='more' className={`left-0 bg-white dark:bg-black/70 ${isMoreShown ? 'show' : 'hide'} font-light leading-normal`}>
               <div className='head dark:text-slate-50'>--</div>
               <div className={`bottombar ft dark:text-slate-200 rout ${activeRoute === 'general' ? 'active' : ''}`} data-route='general'>
                 <div className='bottombar-icon'  onClick={() => handleClick('general')}>

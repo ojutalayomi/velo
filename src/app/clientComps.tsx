@@ -11,6 +11,7 @@ import { store } from '../redux/store';
 import { usePathname, useRouter } from 'next/navigation';
 import Loading from './loading'; 
 import UserPhoto from "@/components/UserPhoto";
+import VideoPlayer from '@/components/PostPreview';
 // import { useactiveRoute } from 'next/navigation';
 
 interface ClientComponentsProps {
@@ -20,6 +21,7 @@ interface ClientComponentsProps {
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const pathname = usePathname();
     const isModalRoute  = pathname?.endsWith('/photo');
+    const isModalRoute1  = pathname?.includes('/photo/');
     const router = useRouter();
     const { user } = useUser();
     const path = pathname?.replace('/','') || '';
@@ -50,6 +52,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                     <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                         {load ? <Loading /> : children}
                         {isModalRoute && <UserPhoto />}
+                        {isModalRoute1 && <VideoPlayer />}
                     </ErrorBoundary>
                 </div>
                 <Bottombar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />

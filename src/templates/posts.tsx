@@ -173,19 +173,21 @@ const Posts: React.FC<PostComponentProps> = (props) => {
           {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? <><abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption.substring(0, 250)}... <span className='showMore'>show more</span></pre></abbr></> : <abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption}</pre></abbr>}
         </div>
         {/* {showMore} */}
-        <Swiper pagination={{ clickable: true, dynamicBullets: true, }} navigation={true} modules={[ Navigation, Pagination ]} slidesPerView={1} spaceBetween={5} className="!flex rounded-lg bg-neutral-600 border-2 border-black dark:bg-neutral-950 flex-grow w-full">
-        {postData.Image 
-          ? postData.Image.map((media,index) => (
-                media.includes('png') || media.includes('jpg') || media.includes('jpeg') ?
-                  ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
-                      <ImageDiv media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
-                    </SwiperSlide>)
-                : ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
-                      <VideoDiv media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
-                    </SwiperSlide>)
-            )) 
-          : null}
-        </Swiper>
+        {postData?.Image.length > 0 &&
+          <Swiper pagination={{ clickable: true, dynamicBullets: true, }} navigation={true} modules={[ Navigation, Pagination ]} slidesPerView={1} spaceBetween={5} className="!flex rounded-lg bg-neutral-600 dark:bg-neutral-950 flex-grow w-full">
+          {postData.Image 
+            ? postData.Image.map((media,index) => (
+                  media.includes('png') || media.includes('jpg') || media.includes('jpeg') ?
+                    ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
+                        <ImageDiv link={`/${postData.Username}/posts/${postData.PostID}/photo/${index}`} media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
+                      </SwiperSlide>)
+                  : ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
+                        <VideoDiv link={`/${postData.Username}/posts/${postData.PostID}/photo/${index}`} media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
+                      </SwiperSlide>)
+              )) 
+            : null}
+          </Swiper>
+        }
         {window.location.pathname.includes('posts') ? <div className='blog-time'>{timeFormatter(postData.TimeOfPost)}</div> : null}
         <div className='reaction-panel'>
           <div className='blog-foot' id='like'>

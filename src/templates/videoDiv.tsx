@@ -91,7 +91,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
   return (
     <>
     <div className="h-full relative">
-      <Link href={link}>
+      <Link href={link} className={link !== '' ? '' : 'contents'} onClick={(e) => link === '' && e.preventDefault()}>
         <video
           ref={videoRef}
           className="cursor-pointer h-full w-full"

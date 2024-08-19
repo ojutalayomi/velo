@@ -42,6 +42,18 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
       setError(null);
     };
 
+    useEffect(() => {
+        const handleContextMenu = (event: MouseEvent) => {
+            event.preventDefault();
+        };
+
+        document.addEventListener('contextmenu', handleContextMenu);
+
+        return () => {
+            document.removeEventListener('contextmenu', handleContextMenu);
+        };
+    }, []);
+
     return(
         <>
             <Provider store={store}>

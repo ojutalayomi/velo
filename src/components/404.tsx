@@ -1,21 +1,11 @@
 'use client'
-import { useEffect } from 'react'
-import { Home, RefreshCw } from 'lucide-react';
+import React from 'react';
 import {useRouter} from 'next/navigation';
- 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string } | null,
-  reset: () => void
-}) {
-  const router = useRouter();
-  useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error)
-  }, [error])
- 
+import { Home, RefreshCw } from 'lucide-react';
+
+const NotFound: React.FC = () => {
+    const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center text-gray-800">
       <h1 className="text-6xl font-bold mb-4">404</h1>
@@ -32,7 +22,7 @@ export default function Error({
           Go Home
         </button>
         <button 
-          onClick={() => reset()}
+          onClick={() => window.location.reload()}
           className="flex items-center bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-300"
         >
           <RefreshCw size={18} className="mr-2" />
@@ -41,4 +31,6 @@ export default function Error({
       </div>
     </div>
   );
-}
+};
+
+export default NotFound;

@@ -1,3 +1,4 @@
+'use client'
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Switch, Slider } from '@/components/ui';

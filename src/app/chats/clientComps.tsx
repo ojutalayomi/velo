@@ -11,7 +11,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { Pagination, Navigation } from 'swiper/modules';
-import { MessageSquare, Users, Hash, Search, Phone } from 'lucide-react';
+import { MessageSquare, Users, Hash, Search, Phone, LockKeyholeOpen, LockKeyhole } from 'lucide-react';
 import NavBar from '@/components/navbar';
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
@@ -81,8 +81,7 @@ const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats}) => {
 export default function App({ children }: Readonly<{ children: React.ReactNode;}>) {
   const { userdata, loading, error, refetchUser } = useUser();
   const router = useRouter();
-  // const swiperr = useSwiper();
-  const ayo = true;
+  const [ayo,setAyo] = useState<boolean>();
   const [swiper, updateSwiper] = useState<SwiperCore | null>(null);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,6 +150,9 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             <div>{userdata ? userdata.username : 'Username'}</div>}
             <Phone size={21} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           </div>
+          <button onClick={() => setAyo(!ayo)} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out">
+            {ayo ? <LockKeyhole size={24} /> : <LockKeyholeOpen size={24} />}
+          </button>
           <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
         </div>
         {/*  */}
@@ -187,7 +189,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                     type="button"
                     className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
                   >
-                    New Group
+                    Start Chat
                   </button>
                 </div>
               </div>

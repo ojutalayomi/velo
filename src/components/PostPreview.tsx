@@ -11,18 +11,6 @@ import { useRouter } from 'next/navigation';
 import ImageDiv from './imageDiv';
 import { useParams } from 'next/navigation';
 import { SwiperModule } from 'swiper/types';
-let datas: PostData | null;
-
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-
-  return {
-    title: datas?.Username,
-    description: datas?.Caption,
-    openGraph: {
-      images: [{ url: datas?.DisplayPicture! }],
-    },
-  }
-}
 
 interface Params {
   username?: string;
@@ -36,7 +24,6 @@ const PostPreview: React.FC = () => {
   const [toFetch,setToFetch] = useState<boolean>(true)
   const indexInt = parseInt(index || '0');
   const router = useRouter();
-  const [modules, setModules] = useState<SwiperModule[]>([]);
   const [swiper, updateSwiper] = useState<SwiperCore | null>(null);
   const [currentIndex, setCurrentIndex] = useState(indexInt)
   const [reload,setReload] = useState<boolean>(false);
@@ -57,7 +44,6 @@ const PostPreview: React.FC = () => {
           if(id) {
             const postResponse = await getPost(id);
             setpostSuccess(postResponse.post);
-            datas = postResponse.post;
           }
       } catch (error) {
           setpostError((error as Error).message);
@@ -78,15 +64,6 @@ const PostPreview: React.FC = () => {
       if (toFetch) fetchData();
       if (reload) fetchData();
   }, [params, id, reload, fetchData, toFetch]);
-
-  useEffect(() => {
-    const setModule = () => {
-      if (checkLength()) {
-        setModules([Navigation, Pagination]);
-      }
-    }
-    setModule();
-  }, [postSuccess?.Image,checkLength]);
 
   const onSlideChange = () => {
     if (swiper) {
@@ -151,7 +128,12 @@ const PostPreview: React.FC = () => {
           {postLoading ?<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>
               :
               postSuccess ? (
-                <Swiper onSwiper={updateSwiper} onSlideChange={onSlideChange} pagination={{ clickable: true, dynamicBullets: true, }} navigation={checkLength()} modules={modules} slidesPerView={1} spaceBetween={5} className="!flex rounded-lg bg-neutral-950 border-2 border-black dark:bg-neutral-950 flex-grow w-full t29jez">
+                <Swiper 
+                onSwiper={updateSwiper} onSlideChange={onSlideChange} 
+                pagination={{ clickable: checkLength(), dynamicBullets: checkLength(), }} navigation={checkLength()} 
+                modules={checkLength() ? [Navigation, Pagination] : []} 
+                slidesPerView={1} spaceBetween={5} 
+                className="!flex rounded-lg bg-neutral-950 border-2 border-black dark:bg-neutral-950 flex-grow w-full t29jez">
                 {postSuccess 
                   ? postSuccess?.Image.map((media,index) => (
                         media.includes('png') || media.includes('jpg') || media.includes('jpeg') ?

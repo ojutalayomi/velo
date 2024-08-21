@@ -3,12 +3,12 @@
   "name": "Velo App",
   "icons": [
     {
-      "src": "velo9.png",
+      "src": "velo11.png",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "velo10.png",
+      "src": "velo11.png",
       "type": "image/png",
       "sizes": "192x192"
     },
@@ -21,5 +21,5 @@
   "start_url": "./home",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ff6257"
+  "background_color": "#000000"
 }

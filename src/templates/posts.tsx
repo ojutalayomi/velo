@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from './PostProps';
 import Image from "next/image";
 import { useUser } from '@/hooks/useUser';
@@ -73,13 +73,13 @@ const Posts: React.FC<PostComponentProps> = (props) => {
     }
   };
 
-  const to: Location = {
-    pathname: `/${postData.Username}/posts/${postData.PostID}`,
-    state: { postData },
-    key: '',
-    search: '',
-    hash: ''
-  };
+  const checkLength = useCallback(() => {
+    if(postData?.Image) {
+      return postData?.Image.length > 1;
+    }
+    return false;
+  }, [postData?.Image])
+
   const fullscreen = () => {
     router.push(`/${postData.Username}/photo`);
   }
@@ -174,7 +174,12 @@ const Posts: React.FC<PostComponentProps> = (props) => {
         </div>
         {/* {showMore} */}
         {postData?.Image.length > 0 &&
-          <Swiper pagination={{ clickable: true, dynamicBullets: true, }} navigation={true} modules={[ Navigation, Pagination ]} slidesPerView={1} spaceBetween={5} className="!flex rounded-lg bg-neutral-600 dark:bg-neutral-950 flex-grow w-full">
+          <Swiper 
+          pagination={{ clickable: checkLength(), dynamicBullets: checkLength(), }} 
+          navigation={checkLength()} 
+          modules={checkLength() ? [Navigation, Pagination] : []} 
+          slidesPerView={1} spaceBetween={5} 
+          className="!flex rounded-lg bg-neutral-600 dark:bg-neutral-950 flex-grow w-full">
           {postData.Image 
             ? postData.Image.map((media,index) => (
                   media.includes('png') || media.includes('jpg') || media.includes('jpeg') ?

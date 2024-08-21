@@ -56,10 +56,14 @@ body {
   background: #ff6257ba !important;
   opacity: 1;
 }
-@media (min-width: 500px){
+@media (min-width: 769px){
   .swiper-button-prev ,.swiper-button-next {
-    display: block;
+    display: flex;
   }
+}
+.swiper-button-prev:after,
+.swiper-button-next:after {
+  font-size: 2rem;
 }
 .swiper-pagination-bullet-active-main {
   @apply bg-brand;
@@ -82,7 +86,6 @@ body {
 
 .t29jez img, .t29jez video{
   flex: 1;
-  width: auto;
 }
 
 @layer utilities {

@@ -26,7 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <div className='velo !justify-between'>
                 <div className="flex flex-col justify-evenly text-left items-start mx-auto my-0 h-5/6">
                   <div className='brandname !justify-start w-3/4'>
-                    <Image src='/velo9.png' className="-ml-5 -mr-3" height={100} width={70} alt='brand logo'/>
+                    <Image src='/velo11.png' className="-ml-5 -mr-3" height={100} width={70} alt='brand logo'/>
                     <abbr className='!text-3xl font-light' title="Velo is?">Velo</abbr>
                   </div>
                   <div className="flex flex-col gap-1 text-white">

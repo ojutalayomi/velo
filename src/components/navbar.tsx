@@ -16,7 +16,7 @@ const NavBar: React.FC<{route: string}> = ({route}) => {
                         {route !== 'home' ? 
                             <FontAwesomeIcon onClick={() => router.back()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="1x" /> :
                             <div className='img' style={{padding: '0px !important'}}>
-                                <Image src='/velo9.png' className='displayPicture' width={25} height={25} alt='logo'/>
+                                <Image src='/velo11.png' className='displayPicture' width={25} height={25} alt='logo'/>
                             </div>}
                         
                     </div>

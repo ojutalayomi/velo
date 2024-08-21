@@ -115,7 +115,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
         </div>
         {/* Volume control */}
         <div className="flex items-center" style={{ gap: '10px',}}>
-          <button onClick={toggleMute}>
+          <button onClick={toggleMute} className="text-white">
             {isMuted || volume === 0 ? <VolumeX size={24} /> : <Volume2 size={24} />}
           </button>
           <input
@@ -126,10 +126,10 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
             value={isMuted ? 0 : volume}
             onChange={handleVolumeChange}
             style={{ backgroundColor: '#374151',height: '0.25rem',}}
-            className={`w-24 h-1 bg-gray-700 rounded-lg ${isMuted && 'hidden'} tablets1:hidden appearance-none cursor-pointer`}
+            className={`w-24 h-1 bg-gray-700 rounded-lg ${isMuted && '!hidden'} hidden tablets1:block appearance-none cursor-pointer`}
           />
         </div>
-        <span className="ml-2 text-sm text-white">
+        <span className="ml-2 text-xs tablets:text-sm text-white">
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
       </div>

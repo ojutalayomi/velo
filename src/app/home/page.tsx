@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Moon, Search, Sun } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
-import { ImageContent } from '../../components/imageContent';
+import ImageContent from '@/components/imageContent';
 
 const Interface = () => {
   const { userdata, loading, error, refetchUser } = useUser();

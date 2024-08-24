@@ -128,7 +128,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             <div>{userdata ? userdata.username : 'Username'}</div>}
             <Phone size={21} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           </div>
-          <button onClick={() => setAyo(!ayo)} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out">
+          <button onClick={() => setAyo(!ayo)} className={`text-gray-600 ${userdata.username !== 'Ojutalayo' && 'hidden'} hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}>
             {ayo ? <LockKeyhole size={24} /> : <LockKeyholeOpen size={24} />}
           </button>
           <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />

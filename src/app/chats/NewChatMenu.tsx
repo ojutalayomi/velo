@@ -5,6 +5,8 @@ import Image from 'next/image';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Users, Hash } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import { useDispatch, useSelector } from 'react-redux';
+import { showChat } from '@/redux/navigationSlice';
 import ImageContent, { UserProfileLazyLoader }  from '@/components/imageContent';
 
 interface Props {
@@ -17,6 +19,7 @@ interface NewChatMenuProps {
 
 const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     const router = useRouter();
+    const dispatch = useDispatch();
     const {userdata, loading, error, refetchUser} = useUser();
     const [searchQuery, setSearchQuery] = useState('');
     const [noUser, setNoUser] = useState(false);
@@ -44,6 +47,11 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
           } catch (error) {
             console.error('Error searching people:', error);
           }
+    }
+
+    const openChat = (id: number) => {
+      router.push(`/chats/${userdata.chatid+'+'+id}`);
+      dispatch(showChat(''));
     }
 
     useEffect(() => {
@@ -93,7 +101,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
           <div className='text-sm dark:text-slate-200'>You</div>
           {loading 
           ? <UserProfileLazyLoader />
-          : <ImageContent userdata={userdata}/>
+          : <ImageContent userdata={userdata} onClick={() => openChat(userdata.id)}/>
           }
           {noUser ?
             <div className='text-center text-sm dark:text-slate-200'>Oops! No user found<br/>Check for correct spelling.</div>
@@ -112,7 +120,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
             </div>
           ) : (
             results.map((person: any, index: any) => (
-              <ImageContent key={index} userdata={person}/>
+              <ImageContent key={index} userdata={person} onClick={() => openChat(person.id)}/>
             ))
           )}
           </div>

@@ -1,6 +1,6 @@
 'use client'
 import React, { Fragment, useEffect, useRef, useState } from 'react';
-import { Copy, Ellipsis, Reply, Send, TextQuote, Trash2, X } from 'lucide-react';
+import { Copy, Ellipsis, Reply, Send, Settings, TextQuote, Trash2, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from './MessageTab';
@@ -39,7 +39,7 @@ const ChatPage: React.FC = () => {
   const dispatch = useDispatch();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
-  // const params = useParams<{ chat: string }>();
+  const params = useParams<{ id: string }>();
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const [messages, setMessages] = useState([
     { id: 1, text: "Hey there!", sender: "John", quotedMessage: 0 },
@@ -88,9 +88,15 @@ const ChatPage: React.FC = () => {
 
   return (
     <div className={`bg-white tablets1:bg-white tablets1:flex ${chaT} dark:bg-black/55 shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden absolute tablets1:relative tablets1:w-auto h-full w-full z-10`}>
-        <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-start p-2 border-b">
-          <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-          <h2 className="text-lg font-semibold text-center">Chat with John</h2>
+        <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 border-b">
+          <div className='flex gap-4 items-center justify-start'>
+            <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
+            <h2 className="text-lg font-semibold text-center">John</h2>
+          </div>
+          <Settings 
+          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+          onClick={() => router.push(`/chats/${params?.id}/settings`)}
+          />
         </div>
         <div className="h-96 overflow-y-auto p-4 flex flex-col flex-1">
           <div className="mb-4 flex-1">

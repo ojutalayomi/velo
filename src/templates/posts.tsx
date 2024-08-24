@@ -57,7 +57,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
 
   const handleActivePost = (route: string) => {
     const [username,posts,id] = route.split('/');
-    activePost === id ? null : router.push('/'+route);
+    activePost === id ? null : router.push(route);
     setActivePost(id);
   }
 
@@ -169,7 +169,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className='blog-contents' onClick={() => handleActivePost(`${postData.Username}/posts/${postData.PostID}`)}>
+        <div className='blog-contents' onClick={() => handleActivePost(`/${postData.Username}/posts/${postData.PostID}`)}>
           {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? <><abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption.substring(0, 250)}... <span className='showMore'>show more</span></pre></abbr></> : <abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption}</pre></abbr>}
         </div>
         {/* {showMore} */}

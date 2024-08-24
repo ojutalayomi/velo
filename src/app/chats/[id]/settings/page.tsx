@@ -1,9 +1,11 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Switch, Slider } from '@/components/ui';
 import ChatSystem  from '@/lib/class/chatSystem';
 import { ChatSettings } from '@/lib/types/type';
+import ChatRepository from '@/lib/class/ChatRepository';
+import Chat from '@/lib/class/chatAttr';
 
 interface ChatSettingsPageProps {
   chatSystem: ChatSystem;
@@ -12,13 +14,27 @@ interface Params {
     id?: string;
 }
 
-const chatSystem = new ChatSystem();
+const chatRepository = new ChatRepository();
+
+const chatSystem = new ChatSystem(chatRepository);
 
 const ChatSettingsPage: React.FC = ({ }) => {
     const params = useParams() as Params;
     const { id } = params;
-    const chat = chatSystem.getChat(parseInt(id || ''));
-    const [chatSettings, setChatSettings] = useState<ChatSettings | undefined>(chat?.chatSettings);
+    const [chat, setChat] = useState<Chat | undefined>(undefined);
+    const [chatSettings, setChatSettings] = useState<ChatSettings | undefined>(undefined);
+
+    useEffect(() => {
+        const fetchChat = async () => {
+          if (id) {
+            const fetchedChat = await chatSystem.getChatById(parseInt(id));
+            setChat(fetchedChat);
+            setChatSettings(fetchedChat?.chatSettings);
+          }
+        };
+    
+        fetchChat();
+      }, [id]);
 
   const handleSettingsChange = (
     field: keyof ChatSettings,
@@ -31,11 +47,15 @@ const ChatSettingsPage: React.FC = ({ }) => {
   };
 
   if (!chat || !chatSettings) {
-    return <div>Loading...</div>;
+    return (
+      <div className='flex flex-col items-center h-full w-full'>
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow">
+    <div className="p-6 bg-white rounded-lg shadow w-full">
       <h2 className="text-2xl font-bold mb-4">Chat Settings</h2>
       <div className="space-y-4">
         <div className="flex items-center justify-between">

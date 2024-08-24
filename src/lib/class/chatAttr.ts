@@ -1,7 +1,7 @@
 import { ChatAttributes, ChatSettings, User } from "../types/type";
 
 
-export default class Chat {
+class Chat {
     constructor({
         id, name, lastMessage, timestamp, unread, chatId, chatType, participants,
         chatSettings, messageId, senderId, messageContent, messageType, isRead,
@@ -51,3 +51,5 @@ export default class Chat {
     archived: boolean;
     lastUpdated: string;
 }
+
+export default Chat;

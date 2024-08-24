@@ -84,6 +84,14 @@ body {
   max-height: 79dvh;
 }
 
+.slide-in {
+  transform: translateX(100%);
+}
+
+.slide-in-active {
+  transform: translateX(0);
+}
+
 .t29jez img, .t29jez video{
   flex: 1;
 }

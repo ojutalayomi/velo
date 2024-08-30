@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ServerApiVersion } from 'mongodb'
+import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb'
 import { SignJWT } from 'jose'
 import cookie from 'cookie'
 import { UAParser } from 'ua-parser-js'
@@ -12,6 +12,41 @@ import handlebars from 'handlebars'
 import nodemailer from 'nodemailer'
 import { timeFormatter } from '@/templates/PostProps'
 
+interface Schema {
+  _id?: ObjectId,
+  time?: string,
+  userId?: string,
+  firstname?: string,
+  lastname?: string,
+  email?: string,
+  username?: string,
+  password?: string,
+  displayPicture?: string,
+  isEmailConfirmed?: true,
+  confirmationToken?: null,
+  signUpCount?: 1,
+  lastLogin?: string,
+  loginToken?: string,
+  lastResetAttempt?: {
+    [x: string]: string
+  },
+  resetAttempts?: 6,
+  password_reset_time?: string,
+  theme?: string,
+  verified?: true,
+  followers?: [],
+  following?: [],
+  bio?: string,
+  coverPhoto?: string,
+  dob?: string,
+  lastUpdate?: string[],
+  location?: string,
+  noOfUpdates?: 9,
+  website?: string,
+  resetToken?: string,
+  resetTokenExpiry?: number,
+  name?: string
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,7 +81,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
-  const { query } = req.query;
+  const { query, search } = req.query;
 
   if (!query) {
     return res.status(400).json({ error: 'Query parameter is required' });
@@ -67,20 +102,26 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     const collection = client.db('mydb').collection('Users');
-    const users = await collection.find({
-      $or: [
-        { name: { $regex: query, $options: 'i' } },
-        { username: { $regex: query, $options: 'i' } }
-      ]
-    }).toArray();
-
+    let users;
+    if(search){
+      const data = await collection.findOne({_id: new ObjectId(decodeURIComponent(query as string))});
+      users = [data];
+    } else {
+      users = await collection.find({
+        $or: [
+          { name: { $regex: decodeURIComponent(query as string), $options: 'i' } },
+          { username: { $regex: decodeURIComponent(query as string), $options: 'i' } }
+        ]
+      }).toArray();
+    }
+  
     if (!users) {
       return res.status(401).json({ error: 'Invalid username or email' });
     }
 
     const attributesToRemove = ["password", "password_reset_time", "loginToken"];
 
-    const newUsers = users.map(obj => {
+    const newUsers = users.map((obj: any) => {
         let newObj = { ...obj };
         attributesToRemove.forEach(attr => delete newObj[attr]);
         return newObj;

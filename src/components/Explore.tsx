@@ -40,7 +40,7 @@ const Explore = () => {
 
       {/* Explore Grid */}
       <main className="h-[93%] max-w-screen-sm mx-auto overflow-auto p-1">
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 tablets:grid-cols-4 tablets1:grid-cols-5 gap-1">
           {exploreItems.map((item) => (
             <div key={item.id} className="relative aspect-square">
               <Image

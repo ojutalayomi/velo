@@ -1,5 +1,5 @@
 import type { Metadata,Viewport } from "next";
-import { Inter } from "next/font/google";
+import { myCustomFont } from '../lib/fonts'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import '@/styles/style.css';
 import './globals.css';
@@ -8,8 +8,6 @@ import React, {useState} from "react";
 import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { ThemeProvider } from "./providers";
 import { usePathname } from 'next/navigation';
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Velo App",
@@ -31,9 +29,9 @@ export default function RootLayout({ children, modal }: Readonly<{ children: Rea
       </head>
       <UserProvider>
         <ThemeProvider>
-          <body className='selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black'>
+          <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
             <SpeedInsights />
-            <div id='root'>
+            <div id='root' >
             <ClientComponents>{children}</ClientComponents>
             {modal}
             </div>

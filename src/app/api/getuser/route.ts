@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { MongoClient, ServerApiVersion } from 'mongodb'
+import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb'
 
 const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
 let client: MongoClient;
+
+interface Payload {
+  _id: ObjectId,
+  exp: number
+}
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get('velo_12')?.value;
@@ -13,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const payload = await verifyToken(token);
+    const payload = await verifyToken(token) as unknown as Payload;
     
     if (!client) {
       client = new MongoClient(uri, {
@@ -26,25 +31,21 @@ export async function GET(request: NextRequest) {
         maxPoolSize: 10
       });
       await client.connect();
-    }
-    console.log("Mongoconnection. You successfully connected to MongoDB!");
-
-    const tokenCollection = client.db('mydb').collection('Tokens');
-    const tokenDoc = await tokenCollection.findOne({ userId: payload?.userId });
-    if (!tokenDoc) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      console.log("Mongoconnection: You successfully connected to MongoDB!");
     }
 
     const userCollection = client.db('mydb').collection('Users');
-    const user = await userCollection.findOne({ userId: tokenDoc.userId });
+    const user = await userCollection.findOne({ _id: new ObjectId(payload._id) });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
     const newUserdata = {
+        _id: user?._id,
         firstname: user?.firstname,
         lastname: user?.lastname,
+        name: user?.name,
         email: user?.email,
         username: user?.username,
         dp: user?.displayPicture,

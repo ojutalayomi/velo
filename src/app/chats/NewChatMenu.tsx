@@ -7,7 +7,20 @@ import { Users, Hash } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
+import { ConvoType, setConversations, addConversation } from '@/redux/chatSlice';
 import ImageContent, { UserProfileLazyLoader }  from '@/components/imageContent';
+import { UserData } from '@/redux/userSlice';
+import ChatSystem from '@/lib/class/chatSystem';
+import ChatRepository from '@/lib/class/ChatRepository'; 
+import NewChatModal from './NewChatModal';
+import { RootState } from '@/redux/store';
+
+type ChatType = "Chats" | "Groups" | "Channels";
+type ChatSettingsTheme = "light" | "dark";
+
+const chatRepository = new ChatRepository();
+
+const chatSystem = new ChatSystem(chatRepository);
 
 interface Props {
   [x: string]: any
@@ -17,41 +30,87 @@ interface NewChatMenuProps {
   openCreatePage: Dispatch<SetStateAction<boolean>>;
 }
 
+interface ConvoTypeProp {
+  conversations: ConvoType[];
+}
+
 const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     const router = useRouter();
     const dispatch = useDispatch();
     const {userdata, loading, error, refetchUser} = useUser();
+    const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
     const [searchQuery, setSearchQuery] = useState('');
     const [noUser, setNoUser] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState<Props>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
     const setSearch = async (arg: string) => {
-        try {
-            setSearchQuery(arg);
-            setNoUser(false);
-            setIsLoading(true);
-            if(arg){
-              const response = await fetch(`/api/users?query=${encodeURIComponent(arg)}`);
-              if (!response.ok) {
-                throw new Error('Failed to fetch');
-              }
-              const data = await response.json();
-              data.length < 1 ? setNoUser(true) : setNoUser(false);
-              setResults(data);
-              setIsLoading(false);
-            } else {
-              setResults([]);
-              setNoUser(false);
-              setIsLoading(false);
-            }
-          } catch (error) {
-            console.error('Error searching people:', error);
+      try {
+        setSearchQuery(arg);
+        setNoUser(false);
+        setIsLoading(true);
+        if(arg){
+          const response = await fetch(`/api/users?query=${encodeURIComponent(arg)}`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch');
           }
+          const data = await response.json();
+          data.length < 1 ? setNoUser(true) : setNoUser(false);
+          const newData = data.filter((user: UserData) => 
+            user.username !== userdata.username
+          );
+          setResults(newData);
+          setIsLoading(false);
+        } else {
+          setResults([]);
+          setNoUser(false);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error searching people:', error);
+      }
+    }
+    const createNewChat = async (arg: string) => {
+  
+      const newChatAttributes = {
+        name: newPerson.name,
+        chatType: arg as ChatType,
+        participants: [
+          userdata._id as string,
+          newPerson._id  as string,
+        ],
+        lastMessageId: '',
+        unreadCounts: {
+          [userdata._id]: 0,
+          [newPerson._id]: 1,
+        },
+        favorite: false,
+        pinned: false,
+        deleted: false,
+        archived: false,
+      };
+  
+      const result = await chatSystem.addChat(newChatAttributes);
+      setIsModalOpen(false);
+      openCreatePage(false);
+      dispatch(addConversation({
+        id: result._id,
+        type: result.chatType,
+        name: result.name,
+        lastMessage: '',
+        timestamp: result.timestamp,
+        unread: 0
+      }));
+      router.push(`/chats/${result._id}`);
+      dispatch(showChat(''));
     }
 
-    const openChat = (id: number) => {
-      router.push(`/chats/${userdata.chatid+'+'+id}`);
-      dispatch(showChat(''));
+    const openChat = (_id: string) => {
+      const filteredResults = results.filter((user: UserData) => user._id === _id )
+      const newData = _id === userdata._id ? userdata : filteredResults[0];
+      setNewPerson(newData);
+      setIsModalOpen(true);
     }
 
     useEffect(() => {
@@ -101,13 +160,13 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
           <div className='text-sm dark:text-slate-200'>You</div>
           {loading 
           ? <UserProfileLazyLoader />
-          : <ImageContent userdata={userdata} onClick={() => openChat(userdata.id)}/>
+          : <ImageContent userdata={userdata} onClick={openChat}/>
           }
           {noUser ?
             <div className='text-center text-sm dark:text-slate-200'>Oops! No user found<br/>Check for correct spelling.</div>
             :
             (results.length > 1 ? 
-              <div className='text-center text-sm dark:text-slate-200'>Others</div>
+              <div className='text-sm dark:text-slate-200'>Others</div>
             : '')
           }
           {isLoading ? (
@@ -120,10 +179,16 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
             </div>
           ) : (
             results.map((person: any, index: any) => (
-              <ImageContent key={index} userdata={person} onClick={() => openChat(person.id)}/>
+              <ImageContent key={index} userdata={person} onClick={openChat}/>
             ))
           )}
           </div>
+          <NewChatModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={createNewChat}
+            username={newPerson?.username}
+          />
         </>
     )
 }

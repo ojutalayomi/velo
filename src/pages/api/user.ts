@@ -100,7 +100,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const newUserdata = { firstname, lastname, email, username, dp: displayPicture, verified, userId };
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ userId: user.userId })
+    const token = await new SignJWT({ _id: user._id })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('15d')
       .sign(secret);
@@ -110,10 +110,10 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const deviceInfo = parser.getResult();
 
     await tokenCollection.insertOne({
-      userId: user.userId,
+      userId: user._id,
       token,
       deviceInfo,
-      createdAt: new Date()
+      createdAt: new Date().toISOString()
     });
 
     res.setHeader('Set-Cookie', cookie.serialize('velo_12', token, {

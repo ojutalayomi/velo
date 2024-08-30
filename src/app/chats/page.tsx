@@ -13,15 +13,15 @@ interface NavigationState {
 }
 
 const ChatPage: React.FC = () => {
-  const router = useRouter();
-  const dispatch = useDispatch();
-  const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
-  useEffect(() => {
-    dispatch(showChat('hidden'));
-  }, [dispatch]);
+  // const router = useRouter();
+  // const dispatch = useDispatch();
+  // const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
+  // useEffect(() => {
+  //   dispatch(showChat('hidden'));
+  // }, [dispatch]);
 
   return (
-    <div className={`bg-white tablets1:bg-white/55 tablets1:flex ${chaT} dark:bg-black/55 shadow-md flex flex-col min-h-screen flex-1 rounded-lg overflow-hidden absolute tablets1:relative tablets1:w-auto h-full w-full z-10`}>
+    <div className={`bg-white tablets1:bg-white/55 tablets1:flex hidden dark:bg-black/55 shadow-md flex-col min-h-screen flex-1 rounded-lg overflow-hidden absolute tablets1:relative tablets1:w-auto h-full w-full`}>
         <div className="p-4 flex flex-col flex-1 justify-center gap-2 items-center">
           <h1 className='dark:text-white font-semibold text-2xl'>Select a message</h1>
           <p className='dark:text-slate-200 text-sm text-center'>Choose from your existing conversations, start a new one, or just keep swimming.</p>

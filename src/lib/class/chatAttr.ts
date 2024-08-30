@@ -1,13 +1,40 @@
-import { ChatAttributes, ChatSettings, User } from "../types/type";
+import { ObjectId } from "mongodb";
+import { ChatAttributes, ChatSettings, NewChatResponse, User } from "../types/type";
 
 
-class Chat {
+export class Newchat {
     constructor({
-        id, name, lastMessage, timestamp, unread, chatId, chatType, participants,
+        _id, name, lastMessageId, timestamp, unreadCounts, 
+        chatType, participants, chatSettings, lastUpdated,
+    }: NewChatResponse) {
+        this._id = _id;
+        this.name = name;
+        this.lastMessageId = lastMessageId;
+        this.timestamp = timestamp;
+        this.unreadCounts = unreadCounts;
+        this.chatType = chatType;
+        this.participants = participants;
+        this.chatSettings = chatSettings;
+        this.lastUpdated = lastUpdated;
+    }
+    _id: ObjectId | string | undefined;
+    name: string;
+    lastMessageId: string; // Assuming ObjectId is converted to string
+    timestamp: string;
+    unreadCounts: { [participantId: string]: number; };
+    chatType: 'Chats' | 'Groups' | 'Channels';
+    participants: string[]; // Assuming participants are represented by their IDs
+    chatSettings: ChatSettings
+    lastUpdated: string | Date | undefined;
+}
+
+export default class Chat {
+    constructor({
+        _id, name, lastMessage, timestamp, unread, chatId, chatType, participants,
         chatSettings, messageId, senderId, messageContent, messageType, isRead,
         reactions, attachments, favorite, pinned, deleted, archived, lastUpdated,
     }: ChatAttributes) {
-        this.id = id;
+        this._id = _id;
         this.name = name;
         this.lastMessage = lastMessage;
         this.timestamp = timestamp;
@@ -29,7 +56,7 @@ class Chat {
         this.archived = archived;
         this.lastUpdated = lastUpdated;
     }
-    id: number;
+    _id: ObjectId | undefined;
     name: string;
     lastMessage: string;
     timestamp: string;
@@ -51,5 +78,3 @@ class Chat {
     archived: boolean;
     lastUpdated: string;
 }
-
-export default Chat;

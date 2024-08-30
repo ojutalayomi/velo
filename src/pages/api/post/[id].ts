@@ -16,7 +16,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
     if(req.method === 'GET'){
 
       try{
-        const cookie = decodeURIComponent(req.cookies.user ? req.cookies.user : '').replace(/"/g, '');
+        const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
         const id = req.query.id;
         await client.connect();
         console.log('Connected to post.app');

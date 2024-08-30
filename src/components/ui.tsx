@@ -27,11 +27,11 @@ export const Switch: React.FC<SwitchProps> = ({ id, checked, onChange }) => {
           id={id}
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
-          className="checked:bg-blue-500 outline-none focus:outline-none right-4 checked:right-0 duration-200 ease-in absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+          className="checked:bg-brand outline-none focus:outline-none right-4 checked:right-0 duration-200 ease-in absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label
           htmlFor={id}
-          className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
+          className={`block ${checked ? 'bg-brand' : ' bg-gray-300'} overflow-hidden h-6 rounded-full cursor-pointer`}
         />
       </div>
     );

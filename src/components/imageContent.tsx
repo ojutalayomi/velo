@@ -22,10 +22,10 @@ export const UserProfileLazyLoader = () => {
   );
 };
 
-const ImageContent: React.FC<Props> = ({userdata}) => {
+const ImageContent: React.FC<Props> = ({userdata,onClick}) => {
     const url = 'https://s3.amazonaws.com/profile-display-images/';
     return (
-      <div className="flex items-center">
+      <div className="cursor-pointer flex items-center" onClick={() => onClick(userdata._id)}>
         <Image 
           src={
           userdata.dp || userdata.displayPicture  
@@ -39,8 +39,13 @@ const ImageContent: React.FC<Props> = ({userdata}) => {
           width={40} height={40} alt='Display Picture'
         />
         <div>
-          <p className="font-bold dark:text-slate-200 text-sm">@{userdata.username ? userdata.username : 'useranme'}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{userdata.name ? userdata.name : `${userdata.firstname} ${userdata.lastname}`}</p>
+          <p className="flex items-center font-bold dark:text-slate-200 text-sm">
+            {userdata.name ? userdata.name : `${userdata.firstname} ${userdata.lastname}`}
+            {userdata?.verified && 
+              <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+            }
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">@{userdata.username ? userdata.username : 'useranme'}</p>
         </div>
       </div>
     )

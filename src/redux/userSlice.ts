@@ -1,23 +1,27 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-interface userData {
-    firstname: string,
-    lastname: string,
-    email: string,
-    username: string,
-    dp: string,
-    verified: boolean
-    chatid: string,
+export interface UserData {
+  _id: string,
+  firstname: string,
+  lastname: string,
+  name: string,
+  email: string,
+  username: string,
+  dp: string,
+  verified: boolean
+  chatid: string,
 };
 
-const userdata: userData = {
-    firstname: '',
-    lastname: '',
-    email: '',
-    username: '',
-    dp: '',
-    verified: false,
-    chatid: ''
+const userdata: UserData = {
+  firstname: '',
+  lastname: '',
+  email: '',
+  username: '',
+  dp: '',
+  verified: false,
+  chatid: '',
+  _id: '',
+  name: ''
 }
 
 const userSlice = createSlice({

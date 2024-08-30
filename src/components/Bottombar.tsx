@@ -144,7 +144,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                 </svg>
                 <span ref={ref} className={`ellipsis-popup ${isPopUp ? 'show' : ''} dark:!bg-zinc-900 dark:text-slate-200`}>
                   <p className='hover:bg-slate-200'>
-                    <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.usename !== '' ? userdata.username : 'johndoe'}</b></Link>
+                    <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</b></Link>
                   </p>
                   <p className='hover:bg-slate-200'>
                     <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`}>Add another account?</Link>

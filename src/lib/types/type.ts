@@ -67,6 +67,7 @@ export interface NewChat {
     name: string;
     chatType: 'Chats' | 'Groups' | 'Channels';
     participants: string[]; // Assuming participants are represented by their IDs
+    participantsImg?: { [participantId: string]: string };
     lastMessageId: string; // Assuming ObjectId is converted to string
     unreadCounts: { [participantId: string]: number };
     favorite: boolean;

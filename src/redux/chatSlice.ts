@@ -15,6 +15,7 @@ export interface ConvoType {
   lastMessage: string;
   timestamp: string;
   unread: number;
+  displayPicture: string
 }
 
 const settings = {
@@ -105,7 +106,11 @@ export const fetchChats = async ( dispatch: Dispatch ) => {
 
     function filter(param: string) {
       const filteredResults = chats.messages.filter((msg: MessageAttributes) => msg._id === param );
-      return filteredResults[0].content;
+      if(filteredResults.length > 0 ) { 
+        return filteredResults[0].content;
+      } else {
+        return [];
+      }
     }
 
     const conversations = chats.chats.map(convo => ({
@@ -115,6 +120,7 @@ export const fetchChats = async ( dispatch: Dispatch ) => {
       lastMessage: filter(convo.lastMessageId),
       timestamp: convo.lastUpdated!,
       unread: convo.unreadCounts[chats.requestId],
+      displayPicture: Object.entries(convo.participantsImg!).find(([key, value]) => key !== chats.requestId)?.[1]
     }));
     dispatch(setConversations(conversations));
     dispatch(setMessages(chats.messages));

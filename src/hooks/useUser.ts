@@ -48,7 +48,7 @@ export const useUser = (): UseUserReturn => {
         setLoading(true);
         try {
             const response = await fetch('/api/getuser');
-            fetchChats(dispatch)
+            await fetchChats(dispatch);
             if (!response.ok) {
             throw new Error('Failed to fetch user data');
             }

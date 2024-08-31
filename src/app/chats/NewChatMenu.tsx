@@ -80,6 +80,10 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
           userdata._id as string,
           newPerson._id  as string,
         ],
+        participantsImg: {
+          [userdata._id]: '',
+          [newPerson._id]: '',
+        },
         lastMessageId: '',
         unreadCounts: {
           [userdata._id]: 0,

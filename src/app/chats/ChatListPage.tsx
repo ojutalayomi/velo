@@ -16,6 +16,7 @@ type FilteredChatsProps = {
       lastMessage: string;
       timestamp: string;
       unread: number;
+      displayPicture: string
     }>;
 };
 
@@ -27,6 +28,7 @@ interface Props {
     lastMessage: string;
     timestamp: string;
     unread: number;
+    displayPicture: string
   }
 }
 
@@ -75,6 +77,7 @@ const Card: React.FC<Props> = ({chat}) => {
   const { userdata, loading, error, refetchUser } = useUser();
   const router = useRouter();
   const dispatch = useDispatch();
+  const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   
   const openChat = (id: number) => {
@@ -91,7 +94,15 @@ const Card: React.FC<Props> = ({chat}) => {
 
   return(
     <div key={chat.id} className="bg-white dark:bg-zinc-900 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden" onClick={() => openChat(chat.id)}>
-      <Image src={`/300x300.png?${40 + chat.id}`} height={40} width={40} alt={chat.name} className="w-12 h-12 rounded-full" />
+      <Image src={
+          chat.displayPicture  
+          ?  (
+            chat.displayPicture.includes('ila-') 
+            ? '/default.jpeg'
+            : url +  chat.displayPicture
+          )
+          : '/default.jpeg'} 
+          height={40} width={40} alt={chat.name} className="w-12 h-12 rounded-full" />
       <div className="flex-grow">
         <div className="flex justify-between items-baseline">
           <h2 className="font-semibold">{chat.name}</h2>

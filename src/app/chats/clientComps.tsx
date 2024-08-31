@@ -14,7 +14,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { Pagination, Navigation } from 'swiper/modules';
-import { MessageSquare, Users, Hash, Search, Phone, LockKeyholeOpen, LockKeyhole } from 'lucide-react';
+import { MessageSquare, Users, Hash, Search, Phone, LockKeyholeOpen, LockKeyhole, MessageCirclePlus } from 'lucide-react';
 import ChatListPage from './ChatListPage';
 import NewChatMenu from './NewChatMenu';
 
@@ -31,13 +31,13 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
   const dispatch = useDispatch();
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
-  const [ayo,setAyo] = useState<boolean>();
+  const [ayo,setAyo] = useState<boolean>(true);
   const [swiper, updateSwiper] = useState<SwiperCore | null>(null);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [createPage, openCreatePage] = useState(false);
 
-
+  // console.log(conversations);
   const filterConversations = (type: string) => {
     if(type !== 'all'){
       return conversations.filter(conv => 
@@ -75,8 +75,9 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             <div>{userdata ? userdata.username : 'Username'}</div>}
             <Phone size={21} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           </div>
+          <MessageCirclePlus size={21} onClick={() => create('chat')} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           <button onClick={() => setAyo(!ayo)} className={`text-gray-600 ${userdata.username !== 'Ojutalayo' && 'hidden'} hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}>
-            {ayo ? <LockKeyhole size={24} /> : <LockKeyholeOpen size={24} />}
+            {ayo ? <LockKeyhole size={21} /> : <LockKeyholeOpen size={21} />}
           </button>
           <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
         </div>

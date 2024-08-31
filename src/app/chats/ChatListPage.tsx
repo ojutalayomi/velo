@@ -88,7 +88,7 @@ const Card: React.FC<Props> = ({chat}) => {
   useEffect(() => {
       const interval = setInterval(() => {
           setTime(updateLiveTime('getlivetime', chat.timestamp));
-      }, 1000);
+      }, 10000);
       return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
   }, [chat.timestamp]);
 

@@ -36,7 +36,7 @@ export const chatRepository = {
         const entries = Object.entries(chat);
         entries.pop();
         const a = Object.fromEntries(entries);
-        for (let i = 0; i < a.participantsImg.length; i++) {
+        for (let i = 0; i < a.participants.length; i++) {
           a.participantsImg.participants[i] = func(a.participants[i]);
         };
         return a;

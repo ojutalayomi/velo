@@ -27,17 +27,25 @@ export const chatRepository = {
       const chats = await client.db(MONGODB_DB).collection('chats').find({ participants: payload._id }).toArray();
       const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as MessageAttributes[];
       
-      const func = async (_id: string) => {
+      const func = async (_id: string): Promise<string> => {
         const user = await client.db(MONGODB_DB).collection('Users').findOne({ _id: new ObjectId(_id) });
         return user?.displayPicture;
       }
 
-      const newChats = chats.map(chat => {
+      const newChats = chats.map(async chat => {
         const entries = Object.entries(chat);
         entries.pop();
-        const a = Object.fromEntries(entries);
+        const a = Object.fromEntries(entries) as unknown as NewChat;
+        console.log(a)
+        if (a.participantsImg) {
+          a.participantsImg = {};
+        }
+
         for (let i = 0; i < a.participants.length; i++) {
-          a.participantsImg.participants[i] = func(a.participants[i]);
+          let j = a.participants[i];
+          if (a.participantsImg) {
+            a.participantsImg[j] = await func(a.participants[i]);
+          }
         };
         return a;
       }) as unknown as NewChat[];

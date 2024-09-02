@@ -103,7 +103,7 @@ export interface NewChatSettings {
 
 export interface MessageAttributes {
     _id?: ObjectId | string;
-    chatId: ObjectId | undefined; // Reference to the chat in Chats collection
+    chatId: ObjectId | string; // Reference to the chat in Chats collection
     senderId: string;
     receiverId: string;
     content: string;
@@ -112,6 +112,7 @@ export interface MessageAttributes {
     isRead: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
     reactions: string[];
     attachments: string[];
+    quotedMessage: string;
 }
 
 export interface Err {
@@ -155,8 +156,10 @@ export interface Schema {
 }
 
 export type AllChats = {
-  chats: NewChat[],
-  chatSettings: NewChatSettings[],
-  messages: MessageAttributes[],
-  requestId: string
+    chats: NewChat[],
+    chatSettings: {
+    [key: string]: NewChatSettings;
+    };
+    messages: MessageAttributes[],
+    requestId: string
 }

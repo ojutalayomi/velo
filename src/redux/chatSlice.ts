@@ -9,13 +9,17 @@ const chatRepository = new ChatRepository();
 const chatSystem = new ChatSystem(chatRepository);
 
 export interface ConvoType {
-  id: number;
+  id: string;
   type: string;
   name: string;
   lastMessage: string;
   timestamp: string;
   unread: number;
   displayPicture: string
+}
+
+interface ChatSetting {
+  [x: string]: NewChatSettings
 }
 
 const settings = {
@@ -39,7 +43,10 @@ const settings = {
   isBlocked: false,
   lastSeen: ""
 }
-const Time = async (params: string | Date ) => {
+const stt = {
+  '': settings
+}
+export const Time = (params: string | Date ) => {
   const dateObj = new Date(params);
   
   // Define options for formatting the date
@@ -60,13 +67,49 @@ const Time = async (params: string | Date ) => {
   return formattedDateStr;
 }
 
+export function updateLiveTime(response: "countdown" | "getlivetime", Time: string): string {
+
+  const time = new Date(Time).getTime();
+  const now = new Date().getTime();
+  let distance: number;
+
+  if(response === "countdown"){
+    // Find the distance between now an the count down date
+    distance = time - now;
+  } else if(response === "getlivetime"){
+    // Find the distance between now an the count up date
+    distance = now - time;
+  } else {
+    throw new Error("Invalid response type. Expected 'countdown' or 'getlivetime'.");
+  }
+  
+  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  let liveTime: string;
+  
+  if (days > 0) {
+  const [date/*,time*/] = Time.split(',');
+    liveTime = date;
+  } else if (hours > 0) {
+    liveTime = hours + (hours === 1 ? " hr" : " hrs");
+  } else if (minutes > 0) {
+    liveTime = minutes + (minutes === 1 ? " min" : " mins");
+  } else {
+    liveTime = seconds + (seconds === 1 ? " sec" : " secs");
+  }
+  return liveTime;
+}
+
 
 const chatSlice = createSlice({
   name: 'chat',
   initialState: {
     conversations: [] as unknown as ConvoType[],
     messages: [] as unknown as MessageAttributes[],
-    settings: settings,
+    settings: stt as unknown as ChatSetting,
     loading: false,
     error: 'hidden',
   },
@@ -77,14 +120,20 @@ const chatSlice = createSlice({
     addConversation: (state, action) => {
       state.conversations.push(action.payload);
     },
+    deleteConversation: (state, action) => {
+      state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
+    },
     setMessages: (state, action) => {
       state.messages = action.payload;
     },
     addMessages: (state, action) => {
       state.messages.push(action.payload);
     },
+    deleteMessage: (state, action) => {
+      state.messages = state.messages.filter(msg => msg._id !== action.payload);
+    },
     setSettings: (state, action) => {
-      state.loading = action.payload;
+      state.settings = action.payload;
     },
     setLoading: (state, action) => {
       state.loading = action.payload;
@@ -95,7 +144,7 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setConversations, addConversation, setMessages, addMessages, setSettings, setLoading, setError } = chatSlice.actions;
+export const { setConversations, addConversation, deleteConversation, setMessages, addMessages, deleteMessage, setSettings, setLoading, setError } = chatSlice.actions;
 export default chatSlice.reducer;
 
 // Fetch chats on app load
@@ -109,19 +158,31 @@ export const fetchChats = async ( dispatch: Dispatch ) => {
       if(filteredResults.length > 0 ) { 
         return filteredResults[0].content;
       } else {
-        return [];
+        return 'Start chatting now';
       }
     }
+    const uid = chats.requestId;
+    const conversations = chats.chats.map(convo => {
+      const unreadCount = convo.unreadCounts ? convo.unreadCounts[uid] : undefined;
+      // console.log(convo.unreadCounts)
+      const displayPicture = convo.participantsImg
+        ? (Object.entries(convo.participantsImg).length > 1 ? 
+            Object.entries(convo.participantsImg).find(([key, value]) => key !== uid)?.[1]
+            : convo.participantsImg[uid])
+        : undefined;
 
-    const conversations = chats.chats.map(convo => ({
-      id: convo._id,
-      type: convo.chatType,
-      name: convo.name,
-      lastMessage: filter(convo.lastMessageId),
-      timestamp: convo.lastUpdated!,
-      unread: convo.unreadCounts[chats.requestId],
-      displayPicture: Object.entries(convo.participantsImg!).find(([key, value]) => key !== chats.requestId)?.[1]
-    }));
+      return {
+        id: convo._id,
+        type: convo.chatType,
+        name: convo.name,
+        lastMessage: filter(convo.lastMessageId),
+        timestamp: Time(convo.lastUpdated as Date),
+        unread: unreadCount,
+        displayPicture: displayPicture,
+      };
+    });
+    // console.log(conversations)
+
     dispatch(setConversations(conversations));
     dispatch(setMessages(chats.messages));
     dispatch(setSettings(chats.chatSettings));

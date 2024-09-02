@@ -28,31 +28,31 @@ export const chatRepository = {
       const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as MessageAttributes[];
       
       const func = async (_id: string): Promise<string> => {
-        const user = await client.db(MONGODB_DB).collection('Users').findOne({ _id: new ObjectId(_id) });
+        const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
+        const user = await client.db(MONGODB_DB).collection('Users').findOne({ _id: objectId as ObjectId });
         return user?.displayPicture;
       }
 
-      const newChats = chats.map(async chat => {
+      const newChatsPromises = chats.map(async chat => {
         const entries = Object.entries(chat);
         entries.pop();
         const a = Object.fromEntries(entries) as unknown as NewChat;
-        console.log(a)
-        if (a.participantsImg) {
-          a.participantsImg = {};
+        
+        a.participantsImg = {};
+
+        for (const participant of a.participants) {
+          a.participantsImg[participant] = await func(participant);
         }
-
-        for (let i = 0; i < a.participants.length; i++) {
-          let j = a.participants[i];
-          if (a.participantsImg) {
-            a.participantsImg[j] = await func(a.participants[i]);
-          }
-        };
         return a;
-      }) as unknown as NewChat[];
+      });
 
-      const chatSettings = chats.map(chat => (
-        { chatSettings: chat.chatSettings }
-      )) as unknown as NewChatSettings[];
+      const newChats = await Promise.all(newChatsPromises);
+      // console.log(newChats)
+
+      const chatSettings = chats.reduce((acc, chat) => {
+        acc[`${chat._id}`] = chat.chatSettings;
+        return acc;
+      }, {} as { [key: string]: NewChatSettings });
 
       const newObj = {
         chats: newChats,
@@ -60,6 +60,7 @@ export const chatRepository = {
         messages: messages,
         requestId: payload._id
       }
+      // console.log(newObj)
 
 
       res.status(200).json(newObj);
@@ -228,7 +229,7 @@ export const chatRepository = {
       const newID = new ObjectId(generateRandom16DigitNumber());
       // Messages Collection
       const message = {
-        _id: newID,
+        _id: chatData._id as ObjectId,
         chatId: new ObjectId(chatId as string), // Reference to the chat in Chats collection
         senderId: chatData.senderId,
         receiverId: chatData.receiverId,
@@ -241,6 +242,7 @@ export const chatRepository = {
         }, // Object with participant IDs as keys and their read status as values
         reactions: chatData.reactions || [],
         attachments: chatData.attachments || [],
+        quotedMessage: '0',
       };
       await client.db(MONGODB_DB).collection('chats').updateOne(
         { _id: message.chatId },

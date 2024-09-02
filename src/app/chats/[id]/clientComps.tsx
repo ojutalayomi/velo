@@ -7,18 +7,21 @@ import { useRouter, useParams } from 'next/navigation';
 import MessageTab from './MessageTab';
 // import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
+import { ConvoType, setConversations, setMessages, addMessages, deleteMessage } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
+import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { ObjectId } from 'mongodb';
 
 interface NavigationState {
   chaT: string;
 }
 
 type Message = {
-  id: number,
-  sender: string,
-  text: string,
+  _id: string,
+  senderId: string,
+  content: string,
 }
 
 type QuoteProp = {
@@ -28,11 +31,30 @@ type QuoteProp = {
 
 const initialQuoteState = {
   message: {
-    id: 0,
-    sender: '',
-    text: '',
+    _id: '',
+    senderId: '',
+    content: '',
   },
   state: false
+}
+
+interface ChatSetting {
+  [x: string]: NewChatSettings
+}
+
+interface CHT {
+  messages: MessageAttributes[],
+  settings: ChatSetting,
+  conversations: ConvoType[];
+}
+
+const generateObjectId = () => {
+  const timestamp = Math.floor(new Date().getTime() / 1000).toString(16);
+  const machineId = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+  const processId = Math.floor(Math.random() * 65535).toString(16).padStart(4, '0');
+  const counter = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+  
+  return timestamp + machineId + processId + counter;
 }
 
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
@@ -40,13 +62,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const params = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
+  const { messages , settings, conversations } = useSelector<RootState, CHT>((state) => state.chat);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
   const [load,setLoading] = useState<boolean>();
   const [err,setError] = useState<boolean>();
+  const [newMessage, setNewMessage] = useState('');
   const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
-  const [yours,theirs] = params?.id?.split(/\+|%2B/) ?? [];
+  const pid = params?.id as string;
+  const chat = settings[pid];
+  const friendId = chat?.members.find((id: string) => id !== userdata._id) as string;
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
 
@@ -54,42 +80,28 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     dispatch(showChat(''));
   }, [dispatch]);
   
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hey there!", sender: "John", quotedMessage: 0 },
-    { id: 2, text: "Hi! How are you?", sender: "You", quotedMessage: 0 },
-    { id: 3, text: "I'm doing great, thanks for asking!", sender: "John", quotedMessage: 2 },
-  ]);
-
-  const [newMessage, setNewMessage] = useState('');
+  const Messages = messages.filter( msg => msg.chatId === pid ) as MessageAttributes[];
 
   const fetchData = useCallback(async () => {
       setLoading(true);
 
       try {
-          if(theirs) {
-            const response = await fetch('/api/users?query='+encodeURIComponent(theirs)+'&search=true');
+          if(friendId) {
+            const response = await fetch('/api/users?query='+encodeURIComponent(friendId)+'&search=true');
             if (!response.ok) {
               throw new Error('Failed to fetch');
             }
             const data = await response.json();
             setNewPerson(data[0]);
-          } else {
-            // const response = await fetch('/api/users?query='+encodeURIComponent(yours)+'&search=true');
-            // if (!response.ok) {
-            //   throw new Error('Failed to fetch');
-            // }
-            // const data = await response.json();
-            setNewPerson(userdata);
-            setLoading(false);
           }
       } catch (error) {
           setError(true);
       } finally {
           setLoading(false);
       }
-  }, [theirs, userdata])
+  }, [friendId])
 
-
+  
   useEffect(() => {
     fetchData()
   }, [fetchData])
@@ -112,11 +124,27 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       }
   }, []);
 
-  const handleSendMessage = (id: number) => {
+  const handleSendMessage = (id: string) => {
     if (newMessage.trim() !== '') {
       const textArea = textAreaRef.current;
       if (textArea) textArea.style.height = '40px';
-      setMessages([...messages, { id: messages.length + 1, text: newMessage, sender: "You", quotedMessage: id }]);
+      const msg = { 
+        _id: generateObjectId(),
+        chatId: pid, 
+        senderId: userdata._id,
+        receiverId: friendId,
+        content: newMessage, 
+        timestamp: new Date().toISOString(),
+        messageType: 'Chats',
+        isRead: { 
+          [userdata._id]: true,
+          [friendId]: false 
+        }, // Object with participant IDs as keys and their read status as values
+        reactions: [],
+        attachments: [],
+        quotedMessage: id,
+      }
+      dispatch(addMessages(msg));
       setNewMessage('');
       closeQuote();
     }
@@ -136,7 +164,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 border-b">
         <div className='flex gap-4 items-center justify-start'>
           <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-          <h2 className="text-lg font-semibold text-center">John</h2>
+          {load
+            ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
+            :
+          <h2 className="text-lg font-semibold text-center">{newPerson?.name}</h2>
+          }
         </div>
         <Settings 
         className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
@@ -180,16 +212,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           </div>
         </div>
         <div className="mb-4 mt-4 flex-1">
-          {messages.map((message) => (
-            <Fragment key={message.id}>
-            {message.quotedMessage !== 0 && (
-              <div className={`flex m-1 ${message.sender === "You" ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
+          {Messages.map((message) => (
+            <Fragment key={`${generateObjectId()}`}>
+            {message.quotedMessage !== '' && (
+              <div className={`flex m-1 ${message.senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
                 <div className={`bg-brand border-white dark:text-white rounded-lg text-xs p-2`}>
-                  {messages?.find(m => m.id === message.quotedMessage)?.text.substring(0, 40) || ''}
+                  {Messages?.find(m => m._id as string === message.quotedMessage)?.content.substring(0, 40) || ''}
                 </div>
               </div>
             )}
-            <MessageTab key={message.id} message={message} setQuote={setQuote}/>
+            <MessageTab key={message._id as string} message={message} setQuote={setQuote}/>
             </Fragment>
           ))}
         </div>
@@ -198,7 +230,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           {quote.state &&
             <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 mb-1 p-2 w-full rounded-lg flex items-center justify-between px-2">
 
-            <div className='flex-1'>{quote.message?.text.substring(0, 50)}</div>
+            <div className='flex-1'>{quote.message?.content.substring(0, 50)}</div>
               <X size={20} className='cursor-pointer' onClick={closeQuote}/>
             </div>
           }
@@ -212,7 +244,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             className="dark:bg-zinc-900 dark:text-slate-200 flex-grow h-10 max-h-40 mr-2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
           ></textarea>
           <button
-            onClick={() => handleSendMessage(quote.message.id)}
+            onClick={() => handleSendMessage(quote.message._id)}
             className="bg-brand text-white p-2 rounded-lg max-h-40 hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <Send size={20} />

@@ -27,10 +27,10 @@ export const chatRepository = {
       const chats = await client.db(MONGODB_DB).collection('chats').find({ participants: payload._id }).toArray();
       const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as MessageAttributes[];
       
-      const func = async (_id: string): Promise<string> => {
+      const func = async (_id: string): Promise<any> => {
         const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
         const user = await client.db(MONGODB_DB).collection('Users').findOne({ _id: objectId as ObjectId });
-        return user?.displayPicture;
+        return user;
       }
 
       const newChatsPromises = chats.map(async chat => {
@@ -41,7 +41,14 @@ export const chatRepository = {
         a.participantsImg = {};
 
         for (const participant of a.participants) {
-          a.participantsImg[participant] = await func(participant);
+          const user = await func(participant);
+          if (user) {
+            console.log(a.name, user.name);
+            if (participant !== payload._id) a.name = user.name;
+            a.participantsImg[participant] = user.displayPicture;
+          } else {
+            console.log(`User with ID ${participant} not found.`);
+          }
         }
         return a;
       });
@@ -109,7 +116,7 @@ export const chatRepository = {
     }
   },
 
-  createChat: async (req: NextApiRequest, res: NextApiResponse<NewChatResponse>) => {
+  createChat: async (req: NextApiRequest, res: NextApiResponse<NewChatResponse | { error: string }>) => {
     try {
       const chatData: Omit<NewChat, 'id'> = req.body;
 
@@ -158,7 +165,7 @@ export const chatRepository = {
       await client.db(MONGODB_DB).collection('chats').insertOne(chat);
       // await client.db(MONGODB_DB).collection('chatSettings').insertOne(chatSettings);
 
-      delete (chatSettings as any)._id;
+      // delete (chatSettings as any)._id;
       const formattedChat = {
         _id: chat._id,
         name: chat.name || '',

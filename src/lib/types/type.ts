@@ -60,6 +60,7 @@ export interface NewChatResponse {
     participants: string[];
     chatSettings: ChatSettings
     lastUpdated: Date | string | undefined;
+    displayPicture?: string,
 }
 
 export interface NewChat {

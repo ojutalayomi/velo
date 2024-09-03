@@ -19,16 +19,12 @@ export interface ConvoType {
 }
 
 interface ChatSetting {
-  [x: string]: NewChatSettings
+  [x: string]: NewChatSettings 
 }
 
 const settings = {
-  _id: {
-    oid: ""
-  },
-  chatId: {
-    oid: ""
-  },
+  _id: "",
+  chatId: "",
   isMuted: false,
   isPinned: false,
   isArchived: false,
@@ -110,8 +106,8 @@ const chatSlice = createSlice({
     conversations: [] as unknown as ConvoType[],
     messages: [] as unknown as MessageAttributes[],
     settings: stt as unknown as ChatSetting,
-    loading: false,
-    error: 'hidden',
+    loading: true,
+    error: '',
   },
   reducers: {
     setConversations: (state, action) => {
@@ -119,6 +115,17 @@ const chatSlice = createSlice({
     },
     addConversation: (state, action) => {
       state.conversations.push(action.payload);
+    },
+    editConversation: (state, action) => {
+      const u = action.payload;
+      const key = Object.keys(u)[1];
+      const value = u[key];
+      // console.log({u: u, key: key, value: value})
+      state.conversations = state.conversations.map(convo => 
+        convo.id === u.id 
+          ? { ...convo, [key]: value } 
+          : convo
+      );
     },
     deleteConversation: (state, action) => {
       state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
@@ -128,6 +135,13 @@ const chatSlice = createSlice({
     },
     addMessages: (state, action) => {
       state.messages.push(action.payload);
+    },
+    editMessage: (state, action) => {
+      state.messages = state.messages.map(msg => 
+        msg._id === action.payload.id 
+          ? { ...msg, content: action.payload.content } 
+          : msg
+      );
     },
     deleteMessage: (state, action) => {
       state.messages = state.messages.filter(msg => msg._id !== action.payload);
@@ -144,7 +158,7 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setConversations, addConversation, deleteConversation, setMessages, addMessages, deleteMessage, setSettings, setLoading, setError } = chatSlice.actions;
+export const { setConversations, addConversation, editConversation, deleteConversation, setMessages, addMessages, editMessage, deleteMessage, setSettings, setLoading, setError } = chatSlice.actions;
 export default chatSlice.reducer;
 
 // Fetch chats on app load

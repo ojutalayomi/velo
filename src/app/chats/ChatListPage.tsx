@@ -52,10 +52,10 @@ const Card: React.FC<Props> = ({chat}) => {
   }
 
   useEffect(() => {
-      const interval = setInterval(() => {
-          setTime(updateLiveTime('getlivetime', chat.timestamp));
-      }, 10000);
-      return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
+    const interval = setInterval(() => {
+      setTime(updateLiveTime('getlivetime', chat.timestamp));
+    }, 10000);
+    return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
   }, [chat.timestamp]);
 
   return(
@@ -74,7 +74,7 @@ const Card: React.FC<Props> = ({chat}) => {
           <h2 className="font-semibold">{chat.name}</h2>
           <span className="text-sm text-gray-500">{time}</span>
         </div>
-        <p className="text-sm text-wrap text-gray-600 truncate">{chat.lastMessage}</p>
+        <p className="text-sm text-wrap text-gray-600 truncate">{chat.lastMessage ? chat.lastMessage.substring(0, 40) + (chat.lastMessage.length > 40 ? '...' : '') : 'No message available'}</p>
       </div>
       {chat.unread > 0 && (
         <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">

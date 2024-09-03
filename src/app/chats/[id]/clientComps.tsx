@@ -7,12 +7,13 @@ import { useRouter, useParams } from 'next/navigation';
 import MessageTab from './MessageTab';
 // import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, setConversations, setMessages, addMessages, deleteMessage } from '@/redux/chatSlice';
+import { ConvoType, setConversations, editConversation, setMessages, addMessages, deleteMessage } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
+import { useSocket } from '@/hooks/useSocket';
 import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
-import { ObjectId } from 'mongodb';
+import { Navigation } from 'swiper/modules';
 
 interface NavigationState {
   chaT: string;
@@ -45,7 +46,8 @@ interface ChatSetting {
 interface CHT {
   messages: MessageAttributes[],
   settings: ChatSetting,
-  conversations: ConvoType[];
+  conversations: ConvoType[],
+  loading: boolean
 }
 
 const generateObjectId = () => {
@@ -62,7 +64,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const params = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
-  const { messages , settings, conversations } = useSelector<RootState, CHT>((state) => state.chat);
+  const socket = useSocket();
+  const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
@@ -71,6 +74,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [newMessage, setNewMessage] = useState('');
   const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
   const pid = params?.id as string;
+  const convo = conversations?.filter(c => c.id === pid )[0];
+  const [unReads,setUnreads] = useState<number>(convo?.unread)
   const chat = settings[pid];
   const friendId = chat?.members.find((id: string) => id !== userdata._id) as string;
   const url = 'https://s3.amazonaws.com/profile-display-images/';
@@ -79,27 +84,65 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   useEffect(() => {
     dispatch(showChat(''));
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!socket) return
+
+    socket.on('receive-message', (msg: MessageAttributes) => {
+      dispatch(addMessages(msg));
+      console.log(msg);
+      dispatch(editConversation({ id: convo.id, lastMessage: msg.content }));
+    })
+
+    return () => {
+      socket.off('receive-message')
+    }
+  }, [convo, dispatch, socket])
+
+  useEffect(() => {
+    if (convo && unReads !== 0 && !convoLoading) {
+      setUnreads(0);
+      dispatch(editConversation({ id: convo.id, unread: 0 }));
+    }
+  }, [convo, convoLoading, dispatch, unReads])
   
   const Messages = messages.filter( msg => msg.chatId === pid ) as MessageAttributes[];
 
   const fetchData = useCallback(async () => {
       setLoading(true);
+      const cachedData = localStorage.getItem(friendId);
+      if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          if (Date.now() - parsedData.timestamp < 60000) { // Cache for 1 minute
+          setNewPerson(parsedData.data);
+          setLoading(false);
+          setError(false)
+          return;
+          }
+      }
 
       try {
-          if(friendId) {
-            const response = await fetch('/api/users?query='+encodeURIComponent(friendId)+'&search=true');
-            if (!response.ok) {
-              throw new Error('Failed to fetch');
-            }
-            const data = await response.json();
-            setNewPerson(data[0]);
+        if(friendId) {
+          const response = await fetch('/api/users?query='+encodeURIComponent(friendId)+'&search=true');
+          if (!response.ok) {
+            throw new Error('Failed to fetch');
           }
+          const data = await response.json();
+          localStorage.setItem(data[0]._id, JSON.stringify({
+          data: data[0],
+          timestamp: Date.now()
+          }));
+          setNewPerson(data[0]);
+        } else {
+          setNewPerson(userdata);
+          setLoading(false);
+        }
       } catch (error) {
           setError(true);
       } finally {
           setLoading(false);
       }
-  }, [friendId])
+  }, [friendId, userdata])
 
   
   useEffect(() => {
@@ -126,8 +169,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   const handleSendMessage = (id: string) => {
     if (newMessage.trim() !== '') {
+
       const textArea = textAreaRef.current;
       if (textArea) textArea.style.height = '40px';
+
+      const isRead = friendId ? { [userdata._id]: true, [friendId]: false } : { [userdata._id]: true };
+
       const msg = { 
         _id: generateObjectId(),
         chatId: pid, 
@@ -136,15 +183,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         content: newMessage, 
         timestamp: new Date().toISOString(),
         messageType: 'Chats',
-        isRead: { 
-          [userdata._id]: true,
-          [friendId]: false 
-        }, // Object with participant IDs as keys and their read status as values
+        isRead: isRead, // Object with participant IDs as keys and their read status as values
         reactions: [],
         attachments: [],
         quotedMessage: id,
       }
-      dispatch(addMessages(msg));
+      // dispatch(addMessages(msg));
+      if (msg && socket) {
+        socket.emit('send-message', msg)
+        dispatch(editConversation({ id: convo.id, lastMessage: msg.content }));
+        setNewMessage('')
+      }
       setNewMessage('');
       closeQuote();
     }
@@ -160,8 +209,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }
 
   return (
-    <div className={`bg-white tablets1:bg-white tablets1:flex ${chaT} dark:bg-black/55 shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 border-b">
+    <div className={`bg-bgLight tablets1:flex ${chaT}  dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
+      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 sticky top-0 bottom-0">
         <div className='flex gap-4 items-center justify-start'>
           <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           {load
@@ -226,7 +275,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           ))}
         </div>
       </div>
-      <div className="flex flex-col gap-[5px] p-2">
+      <div className="flex flex-col gap-[5px] p-2 sticky top-0 bottom-0">
           {quote.state &&
             <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 mb-1 p-2 w-full rounded-lg flex items-center justify-between px-2">
 

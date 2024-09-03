@@ -5,6 +5,7 @@ import Image from 'next/image';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Users, Hash } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import { useSocket } from '@/hooks/useSocket';
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
 import { ConvoType, setConversations, addConversation } from '@/redux/chatSlice';
@@ -38,6 +39,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     const router = useRouter();
     const dispatch = useDispatch();
     const {userdata, loading, error, refetchUser} = useUser();
+    const socket = useSocket();
     const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
     const [searchQuery, setSearchQuery] = useState('');
     const [noUser, setNoUser] = useState(false);
@@ -45,6 +47,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     const [results, setResults] = useState<Props>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
+
     const setSearch = async (arg: string) => {
       try {
         setSearchQuery(arg);
@@ -58,7 +61,8 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
           const data = await response.json();
           data.length < 1 ? setNoUser(true) : setNoUser(false);
           const newData = data.filter((user: UserData) => 
-            user.username !== userdata.username
+            user.username !== userdata.username &&
+            !conversations.some(convo => convo.id !== user._id)
           );
           setResults(newData);
           setIsLoading(false);
@@ -71,6 +75,23 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
         console.error('Error searching people:', error);
       }
     }
+
+    useEffect(() => {
+      if (!socket) return
+  
+      socket.on('receive-chat', (chat: ConvoType) => {
+        dispatch(addConversation(chat));
+      })
+  
+      return () => {
+        socket.off('receive-message')
+      }
+    }, [dispatch, socket])
+
+    const closePage = () => {
+      openCreatePage(false);
+    }
+    
     const createNewChat = async (arg: string) => {
   
       const newChatAttributes = {
@@ -81,8 +102,8 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
           newPerson._id  as string,
         ],
         participantsImg: {
-          [userdata._id]: '',
-          [newPerson._id]: '',
+          [userdata._id]: userdata.dp,
+          [newPerson._id]: newPerson.displayPicture,
         },
         lastMessageId: '',
         unreadCounts: {
@@ -96,16 +117,19 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
       };
   
       const result = await chatSystem.addChat(newChatAttributes);
+      if (!result) return;
       setIsModalOpen(false);
-      openCreatePage(false);
-      dispatch(addConversation({
+      closePage();
+      if (socket) socket.emit('addChat', {
         id: result._id,
         type: result.chatType,
         name: result.name,
         lastMessage: '',
         timestamp: result.timestamp,
-        unread: 0
-      }));
+        unread: 0,
+        displayPicture: newPerson.displayPicture,
+      })
+      
       router.push(`/chats/${result._id}`);
       dispatch(showChat(''));
     }
@@ -138,7 +162,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     return (
         <>
           <div className='flex bg-white dark:bg-black top-0 sticky gap-4 items-center justify-between w-full my-1 px-3 py-2'>
-            <FontAwesomeIcon onClick={() => openCreatePage(false)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
+            <FontAwesomeIcon onClick={() => closePage()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
             <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           </div>
           <div className='dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3'>

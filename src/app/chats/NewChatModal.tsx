@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface NewChatModalProps {
     isOpen: boolean;
@@ -8,8 +8,15 @@ interface NewChatModalProps {
 }
 
 const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm, username }) => {
+
+  const [loading, setLoading] = useState<boolean>(false);
   if (!isOpen) return null;
   const chattype = typeof username === 'string' ? 'Chats' : 'Groups';
+  const yes = () => {
+    onConfirm(chattype);
+    setLoading(true);
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full">
@@ -23,13 +30,15 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm,
           <div className="flex justify-end space-x-4">
             <button
               onClick={onClose}
+              disabled={loading}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               No
             </button>
             <button
-              onClick={() => onConfirm(chattype)}
-              className="px-4 py-2 bg-brand/90 border border-transparent rounded-md text-sm font-medium text-white hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              onClick={() => yes()}
+              disabled={loading}
+              className="px-4 py-2 bg-brand/90 border border-transparent rounded-md text-sm font-medium text-white hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand"
             >
               Yes
             </button>

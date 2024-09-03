@@ -76,7 +76,7 @@ const MessageTab = ({message,setQuote}:Props) => {
         >
           {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
           {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-          <div className={'dark:text-white'}>{message.content}</div>
+          <div className={`dark:text-white mobile:text-sm`}>{message.content}</div>
         </div>
         <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
         <div ref={optionsRef} className={`absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${message.senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}>
@@ -103,7 +103,7 @@ const MessageTab = ({message,setQuote}:Props) => {
         </div>
       </div>
 
-      <div className={`${message.senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 text-sm`}>{time}</div>
+      <div className={`${message.senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mobile:text-xs text-sm`}>{time}</div>
 
     </div>
   )

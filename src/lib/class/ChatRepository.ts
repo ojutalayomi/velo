@@ -22,11 +22,11 @@ class ChatRepository {
     // Insert a new chat into the database
     // and return the created ChatAttributes object
     const response = await fetch('/api/chats', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(chatAttributes),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(chatAttributes),
     });
     const createdChat = await response.json();
     return createdChat;

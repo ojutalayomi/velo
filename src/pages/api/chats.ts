@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { randomBytes } from 'crypto';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
 
 const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
@@ -20,18 +20,18 @@ interface Payload {
   _id: string,
   exp: number
 }
+      
+const func = async (_id: string): Promise<any> => {
+  const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
+  const user = await client.db(MONGODB_DB).collection('Users').findOne({ _id: objectId as ObjectId });
+  return user;
+}
 
 export const chatRepository = {
   getAllChats: async (req: NextApiRequest, res: NextApiResponse<AllChats | { error: string }>, payload: Payload) => {
     try {
       const chats = await client.db(MONGODB_DB).collection('chats').find({ participants: payload._id }).toArray();
       const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as MessageAttributes[];
-      
-      const func = async (_id: string): Promise<any> => {
-        const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
-        const user = await client.db(MONGODB_DB).collection('Users').findOne({ _id: objectId as ObjectId });
-        return user;
-      }
 
       const newChatsPromises = chats.map(async chat => {
         const entries = Object.entries(chat);
@@ -43,7 +43,7 @@ export const chatRepository = {
         for (const participant of a.participants) {
           const user = await func(participant);
           if (user) {
-            console.log(a.name, user.name);
+            // console.log(a.name, user.name);
             if (participant !== payload._id) a.name = user.name;
             a.participantsImg[participant] = user.displayPicture;
           } else {
@@ -116,7 +116,7 @@ export const chatRepository = {
     }
   },
 
-  createChat: async (req: NextApiRequest, res: NextApiResponse<NewChatResponse | { error: string }>) => {
+  createChat: async (req: NextApiRequest, res: NextApiResponse<NewChat_ | { error: string }>, payload: Payload) => {
     try {
       const chatData: Omit<NewChat, 'id'> = req.body;
 
@@ -165,20 +165,38 @@ export const chatRepository = {
       await client.db(MONGODB_DB).collection('chats').insertOne(chat);
       // await client.db(MONGODB_DB).collection('chatSettings').insertOne(chatSettings);
 
-      // delete (chatSettings as any)._id;
-      const formattedChat = {
-        _id: chat._id,
-        name: chat.name || '',
-        lastMessageId: chatData.lastMessageId || '',
-        timestamp: new Date().toISOString(),
-        unreadCounts: chatData.unreadCounts,
-        chatType: chatData.chatType as 'Chats' | 'Groups' | 'Channels',
-        participants: chatData.participants || [],
-        chatSettings: chat.chatSettings,
-        lastUpdated: chat.lastUpdated,
-      };
+      const newObj = {
+        chat: await (async () => {
+          const entries = Object.entries(chat);
+          entries.pop();
+          const a = Object.fromEntries(entries) as unknown as NewChat;
+          
+            a.id = `${a._id}`;
+            a.participantsImg = {};
+            delete a._id;
+          
+          await Promise.all(a.participants.map(async (participant) => {
+            const user = await func(participant);
+            if (user) {
+              if (participant !== payload._id) {
+                a.name = user.name;
+              }
+              if (a.participantsImg) {
+                a.participantsImg[participant] = user.displayPicture;
+              }
+            } else {
+              console.log(`User with ID ${participant} not found.`);
+            }
+          }));
+          return a;
+        })(),
+        chatSetting: {
+          [`${chat._id}`]: chatSettings
+        },
+        requestId: payload._id
+      }
 
-      res.status(201).json(formattedChat);
+      res.status(201).json(newObj);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to create chat' } as any);
@@ -347,7 +365,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.query.chatId) {
           return chatRepository.addMessage(req, res);
         } else {
-          return chatRepository.createChat(req, res);
+          return chatRepository.createChat(req, res, payload);
         }
     case 'PUT':
         if (req.query.messageId) {

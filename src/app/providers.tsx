@@ -1,6 +1,9 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { UserProvider } from '@auth0/nextjs-auth0/client';
+import { Provider } from "react-redux";
+import { store } from "@/redux/store";
 import { useHotkeys } from 'react-hotkeys-hook';
 
 export type Theme = 'light' | 'dark' | 'system'
@@ -12,7 +15,7 @@ export interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>('light');
 
   useHotkeys('cmd+m', () => {
@@ -48,11 +51,17 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [theme])
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
+
+    <Provider store={store}>
+      <UserProvider>
+        <ThemeContext.Provider value={{ theme, setTheme }}>
+          {children}
+        </ThemeContext.Provider>
+      </UserProvider>
+    </Provider>
   )
 }
+export default Providers;
 
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext)

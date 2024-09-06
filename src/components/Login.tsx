@@ -7,6 +7,7 @@ import './fontAwesomeLibrary';
 import SignInComponent from './SignInController';
 import { setUserData } from '@/redux/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
+import { fetchChats } from '@/redux/chatSlice';
 
 interface FormData{
     UsernameOrEmail: string,
@@ -34,7 +35,11 @@ const Login: React.FC = () => {
 
     useEffect(() => {
         if(success && !error) router.push(backTo || '/home');
-    }, [success, error, router, backTo]);
+        async function fetchData() {
+            await fetchChats(dispatch);
+        }
+        fetchData();
+    }, [success, error, router, backTo, dispatch]);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;

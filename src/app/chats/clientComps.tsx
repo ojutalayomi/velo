@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import SwiperCore from 'swiper';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
@@ -8,7 +8,7 @@ import '@/app/fontAwesomeLibrary';
 import { useRouter, useParams } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, setConversations } from '@/redux/chatSlice';
+import { addConversation, addMessages, ConvoType, updateConversation, setConversations } from '@/redux/chatSlice';
 import { RootState } from '@/redux/store'; 
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -17,6 +17,8 @@ import { Pagination, Navigation } from 'swiper/modules';
 import { MessageSquare, Users, Hash, Search, Phone, LockKeyholeOpen, LockKeyhole, MessageCirclePlus } from 'lucide-react';
 import ChatListPage from './ChatListPage';
 import NewChatMenu from './NewChatMenu';
+import { useSocket } from '@/hooks/useSocket';
+import { MessageAttributes } from '@/lib/types/type';
 
 interface NavigationState {
   chaT: string;
@@ -29,35 +31,40 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
   const { userdata, loading, error, refetchUser } = useUser();
   const router = useRouter();
   const dispatch = useDispatch();
+  const socket = useSocket(userdata._id);
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
-  const [ayo,setAyo] = useState<boolean>(true);
+  const [ayo, setAyo] = useState<boolean>(true);
   const [swiper, updateSwiper] = useState<SwiperCore | null>(null);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [createPage, openCreatePage] = useState(false);
 
+
   // console.log(conversations);
   const filterConversations = (type: string) => {
-    if(type !== 'all'){
+    if(type !== 'all' && type !== 'Archived'){
       return conversations.filter(conv => 
         conv.type === type && 
         (conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    } else {
-      return conversations.filter(conv => 
-        conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+      )} else if (type === 'Archived'){
+        return conversations.filter(conv =>
+          conv.archived === true
+        );
+      } else {
+        return conversations.filter(conv => 
+          conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
   };
 
   const create = (arg: string) => {
     openCreatePage(true);
   }
 
-  const tabs = ['All', 'Chats', 'Groups', 'Channels'];
+  const tabs = ['All', 'Chats', 'Groups', 'Archived'];
 
   const onSlideChange = () => {
     if (swiper) {
@@ -67,7 +74,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
 
   return (
     <div className={`flex items-center justify-between ${!chaT && 'relative'}`}>
-      <div className='9f4q9d4a h-full bg-white/55 dark:bg-black/55 flex flex-col min-h-screen w-full tablets1:w-2/4 relative'>
+      <div className='9f4q9d4a bg-white/55 dark:bg-black/55 flex flex-col h-screen w-full tablets1:w-2/4 relative'>
         <div className='flex gap-4 items-center justify-between w-full my-1 px-3 py-2'>
           <FontAwesomeIcon onClick={() => router.push('/home')} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           <div className='dark:text-slate-200 flex flex-1 items-center justify-between'>
@@ -77,7 +84,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           </div>
           <MessageCirclePlus size={21} onClick={() => create('chat')} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           <button onClick={() => setAyo(!ayo)} className={`text-gray-600 ${userdata.username !== 'Ojutalayo' && 'hidden'} hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}>
-            {ayo ? <LockKeyhole size={21} /> : <LockKeyholeOpen size={21} />}
+            {ayo ? <LockKeyholeOpen size={21} /> : <LockKeyhole size={21} />}
           </button>
           <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
         </div>
@@ -97,7 +104,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             <div 
               key={tab}
               onClick={() => swiper && swiper.slideTo(tabs.indexOf(tab))}
-              className={` cursor-pointer dark:shadow-slate-200 flex items-center justify-center w-1/4 px-1 py-2 rounded-full shadow-bar ${activeTab === tab ? 'bg-brand text-white' : ''}`}
+              className={` cursor-pointer dark:shadow-slate-200 flex items-center justify-center w-1/4 px-1 py-1 rounded-full shadow-bar ${activeTab === tab ? 'bg-brand text-white' : ''}`}
             >
               {tab}
             </div>
@@ -163,27 +170,27 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           </SwiperSlide>
           <SwiperSlide className='flex flex-col flex-grow
            self-stretch justify-center' style={{ height: 'auto' }}>
-            {!ayo || filterConversations('Channels').length === 0 ?
+            {!ayo || filterConversations('Archived').length === 0 ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <Hash className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No channels available</h3>
-                <p className="mt-1 text-sm text-gray-500">Get started by creating a new channel.</p>
+                <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No archives available</h3>
+                <p className="mt-1 text-sm text-gray-500">Get started by adding chats to your archives.</p>
                 <div className="mt-6">
                   <button
                     type="button"
                     className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                    onClick={() => create('Channels')}
+                    onClick={() => create('Archived')}
                   >
-                    New Channel
+                    Archived Chats
                   </button>
                 </div>
               </div>
-              : <ChatListPage filteredChats={() => filterConversations('Channels')}/>
+              : <ChatListPage filteredChats={() => filterConversations('Archived')}/>
             }
           </SwiperSlide>
         </Swiper>
         {/*  */}
-        <div className={`${createPage ? 'absolute z-[5]' : 'hidden z-[1]'} bg-white dark:bg-black overflow-auto h-full w-full top-0`}>
+        <div className={`${createPage ? 'absolute z-[1]' : 'hidden z-[1]'} bg-gray-100 dark:bg-zinc-900 overflow-auto h-full w-full top-0`}>
           <NewChatMenu openCreatePage={openCreatePage}/>
         </div>
       </div>

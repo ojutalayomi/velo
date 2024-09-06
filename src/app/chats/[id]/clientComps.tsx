@@ -1,19 +1,17 @@
 'use client'
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import Image from 'next/image';
 import { Copy, Ellipsis, Reply, Send, Settings, TextQuote, Trash2, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from './MessageTab';
-// import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, setConversations, editConversation, setMessages, addMessages, deleteMessage } from '@/redux/chatSlice';
+import { ConvoType, setConversations, updateConversation, setMessages, addMessages, deleteMessage } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
 import { useSocket } from '@/hooks/useSocket';
-import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
-import { Navigation } from 'swiper/modules';
 
 interface NavigationState {
   chaT: string;
@@ -64,7 +62,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const params = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
-  const socket = useSocket();
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
@@ -74,8 +71,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [newMessage, setNewMessage] = useState('');
   const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
   const pid = params?.id as string;
+  const socket = useSocket(userdata._id);
   const convo = conversations?.filter(c => c.id === pid )[0];
-  const [unReads,setUnreads] = useState<number>(convo?.unread)
+  // const [unReads,setUnreads] = useState<number>(convo?.unread)
   const chat = settings[pid];
   const friendId = chat?.members.find((id: string) => id !== userdata._id) as string;
   const url = 'https://s3.amazonaws.com/profile-display-images/';
@@ -85,26 +83,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     dispatch(showChat(''));
   }, [dispatch]);
 
-  useEffect(() => {
-    if (!socket) return
-
-    socket.on('receive-message', (msg: MessageAttributes) => {
-      dispatch(addMessages(msg));
-      console.log(msg);
-      dispatch(editConversation({ id: convo.id, lastMessage: msg.content }));
-    })
-
-    return () => {
-      socket.off('receive-message')
-    }
-  }, [convo, dispatch, socket])
 
   useEffect(() => {
-    if (convo && unReads !== 0 && !convoLoading) {
-      setUnreads(0);
-      dispatch(editConversation({ id: convo.id, unread: 0 }));
+    if (convo && convo.unread !== 0 && convoLoading === false) {
+      // setUnreads(0);
+      dispatch(updateConversation({ id: convo.id, updates: { unread: 0 } }));
     }
-  }, [convo, convoLoading, dispatch, unReads])
+  }, [convo, convoLoading, dispatch, convo?.unread])
   
   const Messages = messages.filter( msg => msg.chatId === pid ) as MessageAttributes[];
 
@@ -112,13 +97,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       setLoading(true);
       const cachedData = localStorage.getItem(friendId);
       if (cachedData) {
-          const parsedData = JSON.parse(cachedData);
-          if (Date.now() - parsedData.timestamp < 60000) { // Cache for 1 minute
+        const parsedData = JSON.parse(cachedData);
+        if (Date.now() - parsedData.timestamp < (60000 * 3)) { // Cache for 3 minute
           setNewPerson(parsedData.data);
           setLoading(false);
           setError(false)
           return;
-          }
+        }
       }
 
       try {
@@ -173,7 +158,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       const textArea = textAreaRef.current;
       if (textArea) textArea.style.height = '40px';
 
-      const isRead = friendId ? { [userdata._id]: true, [friendId]: false } : { [userdata._id]: true };
+      const isRead = friendId ? { [userdata._id]: false, [friendId]: true } : { [userdata._id]: true };
 
       const msg = { 
         _id: generateObjectId(),
@@ -190,8 +175,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       }
       // dispatch(addMessages(msg));
       if (msg && socket) {
-        socket.emit('send-message', msg)
-        dispatch(editConversation({ id: convo.id, lastMessage: msg.content }));
+        socket.emit('chatMessage', msg)
+        // dispatch(updateConversation({ id: convo.id, lastMessage: msg.content }));
         setNewMessage('')
       }
       setNewMessage('');
@@ -265,7 +250,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             <Fragment key={`${generateObjectId()}`}>
             {message.quotedMessage !== '' && (
               <div className={`flex m-1 ${message.senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
-                <div className={`bg-brand border-white dark:text-white rounded-lg text-xs p-2`}>
+                <div className={`${message.senderId === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>
                   {Messages?.find(m => m._id as string === message.quotedMessage)?.content.substring(0, 40) || ''}
                 </div>
               </div>

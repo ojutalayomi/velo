@@ -17,7 +17,8 @@ type FilteredChatsProps = {
       lastMessage: string;
       timestamp: string;
       unread: number;
-      displayPicture: string
+      displayPicture: string;
+      lastUpdated: string;
     }>;
 };
 
@@ -29,7 +30,8 @@ interface Props {
     lastMessage: string;
     timestamp: string;
     unread: number;
-    displayPicture: string
+    displayPicture: string;
+    lastUpdated: string;
   }
 }
 
@@ -53,10 +55,10 @@ const Card: React.FC<Props> = ({chat}) => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTime(updateLiveTime('getlivetime', chat.timestamp));
+      setTime(updateLiveTime('getlivetime', chat.lastUpdated));
     }, 10000);
     return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [chat.timestamp]);
+  }, [chat.lastUpdated]);
 
   return(
     <div key={chat.id} className="bg-white dark:bg-zinc-900 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden" onClick={() => openChat(chat.id)}>

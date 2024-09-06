@@ -1,4 +1,4 @@
-import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '../types/type';
+import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from '../types/type';
 
 class ChatRepository {
   // Database-specific operations
@@ -18,7 +18,7 @@ class ChatRepository {
     return chat;
   }
 
-  async createChat(chatAttributes: NewChat): Promise<NewChatResponse> {
+  async createChat(chatAttributes: NewChat): Promise<NewChat_> {
     // Insert a new chat into the database
     // and return the created ChatAttributes object
     const response = await fetch('/api/chats', {

@@ -122,7 +122,7 @@ const Root: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, setAc
                 <div className='general rt'>General</div>
               </div>
             </div>
-            <div className={`sidebar ft dark:text-slate-200 rout ${activeRoute === ':username' ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''}`} data-route='<%= username %>'>
+            <div className={`sidebar ft dark:text-slate-200 rout ${activeRoute === userdata.username ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''}`} data-route={userdata.username}>
               <div className='sidebar-icon'  onClick={() => handleClick(userdata.username)}>
                 <svg xmlns='http://www.w3.org/2000/svg' width='25px' height='25px' viewBox='0 0 24 24' fill='none'>
                   <path className='hov dark:stroke-tom' opacity='0.4' d='M12.1605 10.87C12.0605 10.86 11.9405 10.86 11.8305 10.87C9.45055 10.79 7.56055 8.84 7.56055 6.44C7.56055 3.99 9.54055 2 12.0005 2C14.4505 2 16.4405 3.99 16.4405 6.44C16.4305 8.84 14.5405 10.79 12.1605 10.87Z' stroke='#1C274C' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round'/>

@@ -39,7 +39,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     const router = useRouter();
     const dispatch = useDispatch();
     const {userdata, loading, error, refetchUser} = useUser();
-    const socket = useSocket();
+    const socket = useSocket(userdata?._id);
     const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
     const [searchQuery, setSearchQuery] = useState('');
     const [noUser, setNoUser] = useState(false);
@@ -62,9 +62,10 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
           data.length < 1 ? setNoUser(true) : setNoUser(false);
           const newData = data.filter((user: UserData) => 
             user.username !== userdata.username &&
-            !conversations.some(convo => convo.id !== user._id)
+            !conversations.some(convo => convo.id === user._id)
           );
           setResults(newData);
+          
           setIsLoading(false);
         } else {
           setResults([]);
@@ -75,18 +76,6 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
         console.error('Error searching people:', error);
       }
     }
-
-    useEffect(() => {
-      if (!socket) return
-  
-      socket.on('receive-chat', (chat: ConvoType) => {
-        dispatch(addConversation(chat));
-      })
-  
-      return () => {
-        socket.off('receive-message')
-      }
-    }, [dispatch, socket])
 
     const closePage = () => {
       openCreatePage(false);
@@ -120,17 +109,9 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
       if (!result) return;
       setIsModalOpen(false);
       closePage();
-      if (socket) socket.emit('addChat', {
-        id: result._id,
-        type: result.chatType,
-        name: result.name,
-        lastMessage: '',
-        timestamp: result.timestamp,
-        unread: 0,
-        displayPicture: newPerson.displayPicture,
-      })
+      if (socket) socket.emit('addChat', result)
       
-      router.push(`/chats/${result._id}`);
+      router.push(`/chats/${result.chat.id}`);
       dispatch(showChat(''));
     }
 
@@ -141,13 +122,13 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
       setIsModalOpen(true);
     }
 
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1500);
+    // useEffect(() => {
+    //   const timer = setTimeout(() => {
+    //     setIsLoading(false);
+    //   }, 1500);
   
-      return () => clearTimeout(timer);
-    }, []);
+    //   return () => clearTimeout(timer);
+    // }, []);
     
     const keyHolder = [
       {
@@ -161,7 +142,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     ]
     return (
         <>
-          <div className='flex bg-white dark:bg-black top-0 sticky gap-4 items-center justify-between w-full my-1 px-3 py-2'>
+          <div className='flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full my-1 px-3 py-2'>
             <FontAwesomeIcon onClick={() => closePage()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
             <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           </div>

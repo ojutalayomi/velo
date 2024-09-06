@@ -4,10 +4,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import '@/styles/style.css';
 import './globals.css';
 import ClientComponents from "./clientComps";
-import React, {useState} from "react";
-import { UserProvider } from '@auth0/nextjs-auth0/client';
-import { ThemeProvider } from "./providers";
-import { usePathname } from 'next/navigation';
+import React from "react";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: "Velo App",
@@ -27,17 +25,15 @@ export default function RootLayout({ children, modal }: Readonly<{ children: Rea
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <UserProvider>
-        <ThemeProvider>
-          <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
-            <SpeedInsights />
-            <div id='root' >
-            <ClientComponents>{children}</ClientComponents>
-            {modal}
-            </div>
-          </body>
-        </ThemeProvider>
-      </UserProvider>
+        <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
+          <Providers>
+              <SpeedInsights />
+              <div id='root' >
+              <ClientComponents>{children}</ClientComponents>
+              {modal}
+              </div>
+          </Providers>
+        </body>
     </html>
   );
 }

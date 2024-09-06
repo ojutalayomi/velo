@@ -65,6 +65,7 @@ export interface NewChatResponse {
 
 export interface NewChat {
     _id?: string | ObjectId | undefined; // Assuming ObjectId is converted to string
+    id?: string;
     name: string;
     chatType: 'Chats' | 'Groups' | 'Channels';
     participants: string[]; // Assuming participants are represented by their IDs
@@ -76,6 +77,7 @@ export interface NewChat {
     deleted: boolean;
     archived: boolean;
     lastUpdated?: Date | undefined;
+    timestamp?: Date | undefined;
 }
 
 export interface NewChatSettings {
@@ -161,6 +163,13 @@ export type AllChats = {
     chatSettings: {
     [key: string]: NewChatSettings;
     };
-    messages: MessageAttributes[],
+    messages?: MessageAttributes[],
+    requestId: string
+}
+export type NewChat_ = {
+    chat: NewChat,
+    chatSetting: {
+    [key: string]: NewChatSettings;
+    };
     requestId: string
 }

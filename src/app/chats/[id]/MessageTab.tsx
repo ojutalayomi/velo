@@ -70,7 +70,7 @@ const MessageTab = ({message,setQuote}:Props) => {
 
       <div className={`flex flex-1 ${message.senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
         <div
-          className={`mb-1 p-2 rounded-lg overflow-auto w-full flex ${
+          className={`mb-1 p-2 rounded-lg overflow-auto w-full flex  shadow-md ${
             message.senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
           } text-left`}
         >
@@ -103,7 +103,7 @@ const MessageTab = ({message,setQuote}:Props) => {
         </div>
       </div>
 
-      <div className={`${message.senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mobile:text-xs text-sm`}>{time}</div>
+      <div className={`${message.senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>{time}</div>
 
     </div>
   )

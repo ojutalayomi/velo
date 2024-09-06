@@ -2,7 +2,7 @@
 import ChatRepository from '@/lib/class/ChatRepository';
 import ChatSystem from '@/lib/class/chatSystem';
 import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
-import { createAsyncThunk, createSlice, Dispatch } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
 
 const chatRepository = new ChatRepository();
 
@@ -15,7 +15,12 @@ export interface ConvoType {
   lastMessage: string;
   timestamp: string;
   unread: number;
-  displayPicture: string
+  displayPicture: string;
+  favorite: boolean,
+  pinned: boolean,
+  deleted: boolean,
+  archived: boolean,
+  lastUpdated: string,
 }
 
 interface ChatSetting {
@@ -116,14 +121,18 @@ const chatSlice = createSlice({
     addConversation: (state, action) => {
       state.conversations.push(action.payload);
     },
-    editConversation: (state, action) => {
-      const u = action.payload;
-      const key = Object.keys(u)[1];
-      const value = u[key];
-      // console.log({u: u, key: key, value: value})
+    updateConversation: (state, action) => {
+      const { id, updates } = action.payload;
       state.conversations = state.conversations.map(convo => 
-        convo.id === u.id 
-          ? { ...convo, [key]: value } 
+        convo.id === id
+          ? { 
+              ...convo, 
+              ...Object.fromEntries(
+                Object.entries(updates).map(([key, value]) => 
+                  [key, typeof value === 'function' ? value(convo[key as keyof ConvoType]) : value]
+                )
+              )
+            }
           : convo
       );
     },
@@ -137,7 +146,7 @@ const chatSlice = createSlice({
       state.messages.push(action.payload);
     },
     editMessage: (state, action) => {
-      state.messages = state.messages.map(msg => 
+      state.messages = state.messages?.map(msg => 
         msg._id === action.payload.id 
           ? { ...msg, content: action.payload.content } 
           : msg
@@ -149,6 +158,10 @@ const chatSlice = createSlice({
     setSettings: (state, action) => {
       state.settings = action.payload;
     },
+    addSetting: (state, action) => {
+      const { key, value } = action.payload;
+      state.settings[key] = value;
+    },
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
@@ -158,7 +171,7 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setConversations, addConversation, editConversation, deleteConversation, setMessages, addMessages, editMessage, deleteMessage, setSettings, setLoading, setError } = chatSlice.actions;
+export const { setConversations, addConversation, updateConversation, deleteConversation, setMessages, addMessages, editMessage, deleteMessage, setSettings, addSetting, setLoading, setError } = chatSlice.actions;
 export default chatSlice.reducer;
 
 // Fetch chats on app load
@@ -168,6 +181,7 @@ export const fetchChats = async ( dispatch: Dispatch ) => {
     const chats = await chatSystem.getAllChats();
 
     function filter(param: string) {
+      if(!chats.messages) return;
       const filteredResults = chats.messages.filter((msg: MessageAttributes) => msg._id === param );
       if(filteredResults.length > 0 ) { 
         return filteredResults[0].content;
@@ -176,7 +190,7 @@ export const fetchChats = async ( dispatch: Dispatch ) => {
       }
     }
     const uid = chats.requestId;
-    const conversations = chats.chats.map(convo => {
+    const conversations = chats.chats?.map(convo => {
       const unreadCount = convo.unreadCounts ? convo.unreadCounts[uid] : undefined;
       // console.log(convo.unreadCounts)
       const displayPicture = convo.participantsImg
@@ -190,9 +204,14 @@ export const fetchChats = async ( dispatch: Dispatch ) => {
         type: convo.chatType,
         name: convo.name,
         lastMessage: filter(convo.lastMessageId),
-        timestamp: Time(convo.lastUpdated as Date),
+        timestamp: convo.timestamp,
         unread: unreadCount,
         displayPicture: displayPicture,
+        favorite: convo.favorite,
+        pinned: convo.pinned,
+        deleted: convo.deleted,
+        archived: convo.archived,
+        lastUpdated: Time(convo.lastUpdated as Date),
       };
     });
     // console.log(conversations)

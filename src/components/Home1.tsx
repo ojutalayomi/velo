@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { fetchChats } from '@/redux/chatSlice';
 import { getStatus, getPosts } from './getStatus';
 import Posts from '../templates/posts';
 import { PostData } from '../templates/PostProps';
@@ -18,14 +17,6 @@ const Homepage: React.FC = () => {
     const [postsLoading, setpostsLoading] = useState<boolean>(true);
     const [postsError, setpostsError] = useState<string | null>(null);
     const [postsSuccess, setpostsSuccess] = useState<PostData[] | null>(null);
-  
-    useEffect(() => {
-        async function fetchData() {
-            await fetchChats(dispatch);
-        }
-        fetchData();
-    
-      }, [dispatch]);
 
     useEffect(() => {
         const fetchData = async () => {

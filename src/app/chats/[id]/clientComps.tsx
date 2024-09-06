@@ -78,11 +78,41 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const friendId = chat?.members.find((id: string) => id !== userdata._id) as string;
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
+  const [isOnline, setIsOnline] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     dispatch(showChat(''));
   }, [dispatch]);
 
+  useEffect(() => {
+    if (socket) {
+      socket.on('userStatus', (data: { userId: string, status: string }) => {
+        if (data.userId === friendId) {
+          setIsOnline(data.status === 'online');
+        }
+      });
+
+      socket.on('userTyping', (data: { userId: string, chatId: string }) => {
+        if (data.userId === friendId && data.chatId === pid) {
+          setIsTyping(true);
+        }
+      });
+
+      socket.on('userStopTyping', (data: { userId: string, chatId: string }) => {
+        if (data.userId === friendId && data.chatId === pid) {
+          setIsTyping(false);
+        }
+      });
+
+      return () => {
+        socket.off('userStatus');
+        socket.off('userTyping');
+        socket.off('userStopTyping');
+      };
+    }
+  }, [socket, friendId, pid]);
 
   useEffect(() => {
     if (convo && convo.unread !== 0 && convoLoading === false) {
@@ -193,6 +223,20 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     router.push('/chats');
   }
 
+  const handleTyping = () => {
+    if (socket) {
+      socket.emit('typing', { userId: friendId, chatId: pid });
+      
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit('stopTyping', { userId: friendId, chatId: pid });
+      }, 3000);
+    }
+  };
+
   return (
     <div className={`bg-bgLight tablets1:flex ${chaT}  dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
       <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 sticky top-0 bottom-0">
@@ -201,7 +245,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           {load
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             :
-          <h2 className="text-lg font-semibold text-center">{newPerson?.name}</h2>
+            <div>
+              <h2 className="text-md font-semibold text-center">{newPerson?.name}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {isOnline ? 'Online' : 'Offline'}
+                {isTyping && ' • Typing...'}
+              </p>
+            </div>
           }
         </div>
         <Settings 
@@ -273,7 +323,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             placeholder="Type a message..."
             value={newMessage}
             ref={textAreaRef}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              handleTyping();
+            }}
             // onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             className="dark:bg-zinc-900 dark:text-slate-200 flex-grow h-10 max-h-40 mr-2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
           ></textarea>

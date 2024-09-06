@@ -76,6 +76,22 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           if(data.receiverId) io.to(`user:${data.receiverId}`).emit('newMessage', data)
         })
 
+        socket.on('userOnline', (userId: string) => {
+          io.emit('userStatus', { userId, status: 'online' });
+        });
+
+        socket.on('userOffline', (userId: string) => {
+          io.emit('userStatus', { userId, status: 'offline' });
+        });
+
+        socket.on('typing', (data: { userId: string, chatId: string }) => {
+          socket.to(`user:${data.userId}`).emit('userTyping', data);
+        });
+
+        socket.on('stopTyping', (data: { userId: string, chatId: string }) => {
+          socket.to(`user:${data.userId}`).emit('userStopTyping', data);
+        });
+
         socket.on('disconnect', (reason) => {
           console.log('Client disconnected:', reason);
         });

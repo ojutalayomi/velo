@@ -20,6 +20,7 @@ export const useSocket = (id: string) => {
 
       socketIo.on('connect', () => {
         console.log('Connected to server')
+        socketIo.emit('userOnline', id);
       })
       
       if (socketIo.connected) {
@@ -40,6 +41,7 @@ export const useSocket = (id: string) => {
 
     return () => {
       if (socket) {
+        socket.emit('userOffline', id);
         socket?.emit('leaveChat', id)
         socket.disconnect()
       }

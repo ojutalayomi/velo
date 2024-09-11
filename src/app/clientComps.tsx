@@ -111,10 +111,12 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
 
     const handleTyping = useCallback((data: { userId: string, chatId: string }) => {
         dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: true } } }));
+        console.log('userTyping', data);
     }, [dispatch]);
 
     const handleStopTyping = useCallback((data: { userId: string, chatId: string }) => {
         dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: false } } }));
+        console.log('userStopTyping', data);
     }, [dispatch]);
 
     useEffect(() => {
@@ -123,10 +125,10 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.on('newMessage', handleChatMessage);
         socket.on('userTyping', handleTyping);
         socket.on('userStopTyping', handleStopTyping);
-      socket.on('newChat', handleChat);
-      socket.on('batchUserStatus', (updates: [string, string][]) => {
-        updates.forEach(([userId, status]) => {
-          handleUserStatus({ userId, status });
+        socket.on('newChat', handleChat);
+        socket.on('batchUserStatus', (updates: [string, string][]) => {
+            updates.forEach(([userId, status]) => {
+            handleUserStatus({ userId, status });
         });
       });
   

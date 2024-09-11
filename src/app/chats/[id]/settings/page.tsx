@@ -28,7 +28,6 @@ interface CHT {
   settings: ChatSetting,
   conversations: ConvoType[],
   loading: boolean,
-  isOnline: boolean,
 }
 
 const chatRepository = new ChatRepository();
@@ -39,7 +38,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
   const router = useRouter();
   const params = useParams() as Params;
   const { id } = params;
-  const { messages , settings, conversations, loading: convoLoading, isOnline } = useSelector<RootState, CHT>((state) => state.chat);
+  const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
   const [chat, setChat] = useState<ChatData | 'i'>('i');
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
 

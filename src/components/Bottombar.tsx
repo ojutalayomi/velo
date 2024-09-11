@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Image from "next/image";
 import { useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut } from 'lucide-react';
+import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut, BadgePlus } from 'lucide-react';
 
 interface BottombarProps {
   activeRoute: string;
@@ -180,9 +180,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
             </div>
             <div className={`bottombar ft dark:text-slate-200 rout ${activeRoute === 'create-post' ? 'active' : ''}`} data-action='post-menu' data-route='create-post'>
               <div className='bottombar-icon'  onClick={() => handleClick('create-post')}>
-                <svg width='22px' height='22px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                  <g><path className='hov-1 dark:fill-tom' fill='#1C274C' d='M23 3c-6.62-.1-10.38 2.421-13.05 6.03C7.29 12.61 6 17.331 6 22h2c0-1.007.07-2.012.19-3H12c4.1 0 7.48-3.082 7.94-7.054C22.79 10.147 23.17 6.359 23 3zm-7 8h-1.5v2H16c.63-.016 1.2-.08 1.72-.188C16.95 15.24 14.68 17 12 17H8.55c.57-2.512 1.57-4.851 3-6.78 2.16-2.912 5.29-4.911 9.45-5.187C20.95 8.079 19.9 11 16 11zM4 9V6H1V4h3V1h2v3h3v2H6v3H4z'></path></g>
-                </svg>
+                <BadgePlus size={25}/>
                 <div className='rt'>Post</div>
               </div>
             </div>

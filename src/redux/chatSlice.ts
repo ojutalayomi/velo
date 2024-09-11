@@ -21,6 +21,11 @@ export interface ConvoType {
   deleted: boolean,
   archived: boolean,
   lastUpdated: string,
+  participants: string[],
+  online: boolean,
+  isTyping: {
+    [x: string]: boolean
+  }
 }
 
 interface ChatSetting {
@@ -115,13 +120,13 @@ const chatSlice = createSlice({
     error: '',
   },
   reducers: {
-    setConversations: (state, action) => {
+    setConversations: (state, action: PayloadAction<ConvoType[]>) => {
       state.conversations = action.payload;
     },
-    addConversation: (state, action) => {
+    addConversation: (state, action: PayloadAction<ConvoType>) => {
       state.conversations.push(action.payload);
     },
-    updateConversation: (state, action) => {
+    updateConversation: (state, action: PayloadAction<{id: string, updates: Partial<ConvoType>}>) => {
       const { id, updates } = action.payload;
       state.conversations = state.conversations.map(convo => 
         convo.id === id
@@ -129,43 +134,42 @@ const chatSlice = createSlice({
               ...convo, 
               ...Object.fromEntries(
                 Object.entries(updates).map(([key, value]) => 
-                  [key, typeof value === 'function' ? value(convo[key as keyof ConvoType]) : value]
+                  [key, value]
                 )
               )
             }
           : convo
       );
     },
-    deleteConversation: (state, action) => {
+    deleteConversation: (state, action: PayloadAction<string>) => {
       state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
     },
-    setMessages: (state, action) => {
+    setMessages: (state, action: PayloadAction<MessageAttributes[]>) => {
       state.messages = action.payload;
     },
-    addMessages: (state, action) => {
+    addMessages: (state, action: PayloadAction<MessageAttributes>) => {
       state.messages.push(action.payload);
     },
-    editMessage: (state, action) => {
+    editMessage: (state, action: PayloadAction<{ id: string, content: string }>) => {
       state.messages = state.messages?.map(msg => 
         msg._id === action.payload.id 
           ? { ...msg, content: action.payload.content } 
           : msg
       );
     },
-    deleteMessage: (state, action) => {
-      state.messages = state.messages.filter(msg => msg._id !== action.payload);
+    deleteMessage: (state, action: PayloadAction<string>) => {
+      state.messages = state.messages?.filter(msg => msg._id !== action.payload);
     },
-    setSettings: (state, action) => {
+    setSettings: (state, action: PayloadAction<ChatSetting>) => {
       state.settings = action.payload;
     },
-    addSetting: (state, action) => {
-      const { key, value } = action.payload;
-      state.settings[key] = value;
+    addSetting: (state, action: PayloadAction<{[key: string]: NewChatSettings}>) => {
+      state.settings = { ...state.settings, ...action.payload };
     },
-    setLoading: (state, action) => {
+    setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    setError: (state, action) => {
+    setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload;
     }
   },
@@ -175,54 +179,56 @@ export const { setConversations, addConversation, updateConversation, deleteConv
 export default chatSlice.reducer;
 
 // Fetch chats on app load
-export const fetchChats = async ( dispatch: Dispatch ) => {
+export const fetchChats = async (dispatch: Dispatch) => {
   try {
     dispatch(setLoading(true));
     const chats = await chatSystem.getAllChats();
 
     function filter(param: string) {
-      if(!chats.messages) return;
-      const filteredResults = chats.messages.filter((msg: MessageAttributes) => msg._id === param );
-      if(filteredResults.length > 0 ) { 
-        return filteredResults[0].content;
-      } else {
-        return 'Start chatting now';
-      }
+      if (!chats.messages) return;
+      const filteredResults = chats.messages.filter((msg: MessageAttributes) => msg._id === param);
+      return filteredResults.length > 0 ? filteredResults[0].content : 'Start chatting now';
     }
+
     const uid = chats.requestId;
     const conversations = chats.chats?.map(convo => {
-      const unreadCount = convo.unreadCounts ? convo.unreadCounts[uid] : undefined;
-      // console.log(convo.unreadCounts)
-      const displayPicture = convo.participantsImg
-        ? (Object.entries(convo.participantsImg).length > 1 ? 
-            Object.entries(convo.participantsImg).find(([key, value]) => key !== uid)?.[1]
-            : convo.participantsImg[uid])
+      const participant = convo.participants.find(p => p.id === uid);
+      // const otherParticipant = convo.participants.find(p => p.id !== uid);
+      const displayPicture = convo.participants
+        ? (convo.participants.length > 1
+            ? convo.participants.find(p => p.id !== uid)?.displayPicture
+            : convo.participants.find(p => p.id === uid)?.displayPicture)
         : undefined;
 
       return {
         id: convo._id,
         type: convo.chatType,
         name: convo.name,
-        lastMessage: filter(convo.lastMessageId),
+        lastMessage: filter(participant?.lastMessageId || '') || 'Start chatting now',
         timestamp: convo.timestamp,
-        unread: unreadCount,
-        displayPicture: displayPicture,
-        favorite: convo.favorite,
-        pinned: convo.pinned,
-        deleted: convo.deleted,
-        archived: convo.archived,
-        lastUpdated: Time(convo.lastUpdated as Date),
+        unread: participant?.unreadCount || 0,
+        displayPicture: displayPicture || '',
+        favorite: participant?.favorite || false,
+        pinned: participant?.pinned || false,
+        deleted: participant?.deleted || false,
+        archived: participant?.archived || false,
+        lastUpdated: Time(convo.lastUpdated),
+        participants: convo.participants.map(p => p.id),
+        online: false,
+        isTyping: convo.participants.reduce((p: { [x: string]: boolean }, r) => {
+          p[r.id] = false;
+          return p;
+        }, {} as { [x: string]: boolean })
       };
     });
-    // console.log(conversations)
 
     dispatch(setConversations(conversations));
-    dispatch(setMessages(chats.messages));
+    dispatch(setMessages(chats.messages as MessageAttributes[]));
     dispatch(setSettings(chats.chatSettings));
-    return conversations; // You can return this if needed in the reducer
+    return conversations;
   } catch (error) {
     dispatch(setError('Failed to fetch chats'));
-    throw error; // Rethrow to let createAsyncThunk handle the error state
+    throw error;
   } finally {
     dispatch(setLoading(false));
   }

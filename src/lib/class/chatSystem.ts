@@ -1,4 +1,4 @@
-import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from "../types/type";
+import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from "../types/type";
 import Chat, { Newchat } from "./chatAttr";
 import ChatRepository from './ChatRepository';
 
@@ -15,9 +15,9 @@ class ChatSystem {
     // return chatAttributes.map((attributes) => new Chat(attributes));
   }
 
-  async getChatById(id: string): Promise<Chat | undefined> {
+  async getChatById(id: string): Promise<ChatData | undefined> {
     const chatAttributes = await this.chatRepository.getChatById(id);
-    return chatAttributes ? new Chat(chatAttributes) : undefined;
+    return chatAttributes ? (chatAttributes) : undefined;
   }
 
   async addChat(chatAttributes: NewChat): Promise<NewChat_> {
@@ -29,7 +29,7 @@ class ChatSystem {
     await this.chatRepository.updateChat(id, updatedAttributes);
   }
 
-  async updateChatSettings(id: string, updatedSettings: Partial<ChatSettings>): Promise<any> {
+  async updateChatSettings(id: string, updatedSettings: Partial<NewChatSettings>): Promise<NewChatSettings> {
     return await this.chatRepository.updateChatSettings(id, updatedSettings);
   }
 

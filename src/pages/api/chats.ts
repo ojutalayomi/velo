@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { randomBytes } from 'crypto';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings, Participant } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
 
 const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
@@ -30,34 +30,70 @@ const func = async (_id: string): Promise<any> => {
 export const chatRepository = {
   getAllChats: async (req: NextApiRequest, res: NextApiResponse<AllChats | { error: string }>, payload: Payload) => {
     try {
-      const chats = await client.db(MONGODB_DB).collection('chats').find({ participants: payload._id }).toArray();
+      const chats = await client.db(MONGODB_DB).collection('chats').find({ 'participants.id': payload._id }).toArray();
       const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as MessageAttributes[];
+      
+      const newChatsPromises = chats
+      .filter(chat => chat.participants.some((p: Participant) => p.id === payload._id))
+      .map(async chat => {
+        try {
+          const a = { ...chat }; // Create a copy to avoid modifying the original
+          
+          console.log('Processing chat:', a._id);
 
-      const newChatsPromises = chats.map(async chat => {
-        const entries = Object.entries(chat);
-        entries.pop();
-        const a = Object.fromEntries(entries) as unknown as NewChat;
-        
-        a.participantsImg = {};
+          a.participants = await Promise.all(
+            (a.participants || [])
+              .filter((participant: Participant) => participant !== undefined)
+              .map(async (participant: Participant) => {
+                try {
+                  const user = await func(participant.id);
+                  if (user) {
+                    console.log('User found for participant:', participant.id);
+                    // Set chat name to the other participant's name for DMs
+                    if (a.chatType === 'DMs' && a.participants.length === 2) {
+                      const otherParticipant = a.participants.find((p: Participant) => p.id !== payload._id);
+                      if (otherParticipant.id !== payload._id) {
+                        a.name = user.name; // Assuming user object has a 'name' property
+                      }
+                    }
+                    return {
+                      id: participant.id,
+                      displayPicture: user.displayPicture,
+                      lastMessageId: participant.lastMessageId,
+                      unreadCount: participant.unreadCount,
+                      favorite: participant.favorite,
+                      pinned: participant.pinned,
+                      deleted: participant.deleted,
+                      archived: participant.archived,
+                      chatSettings: participant.chatSettings
+                    };
+                  } else {
+                    console.log(`User with ID ${participant.id} not found.`);
+                    return participant;
+                  }
+                } catch (error) {
+                  console.error(`Error processing participant ${participant.id}:`, error);
+                  return participant;
+                }
+              })
+          );
 
-        for (const participant of a.participants) {
-          const user = await func(participant);
-          if (user) {
-            // console.log(a.name, user.name);
-            if (participant !== payload._id) a.name = user.name;
-            a.participantsImg[participant] = user.displayPicture;
-          } else {
-            console.log(`User with ID ${participant} not found.`);
-          }
+          console.log('Processed chat:', a._id, 'Participants:', a.participants.length);
+          return a as unknown as ChatData;
+        } catch (error) {
+          console.error('Error processing chat:', chat._id, error);
+          return null;
         }
-        return a;
       });
 
-      const newChats = await Promise.all(newChatsPromises);
-      // console.log(newChats)
+      const newChats = (await Promise.all(newChatsPromises)).filter(chat => chat !== null);
+      console.log('Total processed chats:', newChats.length);
 
-      const chatSettings = chats.reduce((acc, chat) => {
-        acc[`${chat._id}`] = chat.chatSettings;
+      const chatSettings = newChats.reduce((acc, chat) => {
+        if (chat && chat.participants && chat.participants.some((p: Participant) => p.id === payload._id)) {
+          const participant = chat.participants.find((p: Participant) => p.id === payload._id);
+          acc[chat._id] = participant?.chatSettings as NewChatSettings;
+        }
         return acc;
       }, {} as { [key: string]: NewChatSettings });
 
@@ -77,33 +113,18 @@ export const chatRepository = {
     }
   },
 
-  getChatById: async (req: NextApiRequest, res: NextApiResponse<ChatAttributes | { error: string }>) => {
+  getChatById: async (req: NextApiRequest, res: NextApiResponse<ChatData | { error: string }>) => {
     try {
       const { id } = req.query;
       const chat = await client.db(MONGODB_DB).collection('chats').findOne({ _id: new ObjectId(id as string) });
       if (chat) {
         // Map the MongoDB document to ChatAttributes
-        const formattedChat: ChatAttributes = {
-          _id: chat._id,
+        const formattedChat: ChatData = {
+          _id: chat._id.toString(),
           name: chat.name || '',
-          lastMessage: chat.lastMessage || '',
-          timestamp: chat.timestamp ? new Date(chat.timestamp).toISOString() : new Date().toISOString(),
-          unread: Boolean(chat.unread),
-          chatId: chat.chatId,
-          chatType: chat.chatType as 'Chats' | 'Groups' | 'Channels',
+          chatType: chat.chatType as 'DMs' | 'Groups' | 'Channels',
           participants: chat.participants || [],
-          chatSettings: chat.chatSettings,
-          messageId: chat.messageId,
-          senderId: chat.senderId,
-          messageContent: chat.messageContent,
-          messageType: chat.messageType,
-          isRead: chat.isRead,
-          reactions: chat.reactions || [],
-          attachments: chat.attachments || [],
-          favorite: Boolean(chat.favorite),
-          pinned: Boolean(chat.pinned),
-          deleted: Boolean(chat.deleted),
-          archived: Boolean(chat.archived),
+          timestamp: chat.timestamp ? new Date(chat.timestamp).toISOString() : new Date().toISOString(),
           lastUpdated: chat.lastUpdated ? new Date(chat.lastUpdated).toISOString() : new Date().toISOString(),
         };
         res.status(200).json(formattedChat);
@@ -149,17 +170,20 @@ export const chatRepository = {
       const chat = {
         _id: newID,
         name: chatData.name || '',
-        chatType: chatData.chatType as 'Chats' | 'Groups' | 'Channels',
-        participants: chatData.participants || [],
-        lastMessageId: chatData.lastMessageId, // Reference to the last message in Messages collection
-        unreadCounts: chatData.unreadCounts, // Object with participant IDs as keys and their unread counts as values
-        favorite: Boolean(chatData.favorite),
-        pinned: Boolean(chatData.pinned),
-        deleted: Boolean(chatData.deleted),
-        archived: Boolean(chatData.archived),
+        chatType: chatData.chatType as 'DMs' | 'Groups' | 'Channels',
+        participants: chatData.participants.map(participantId => ({
+          id: participantId,
+          lastMessageId: chatData.lastMessageId, // Reference to the last message in Messages collection
+          unreadCount: chatData.unreadCounts?.[participantId] || 0,
+          favorite: Boolean(chatData.favorite),
+          pinned: Boolean(chatData.pinned),
+          deleted: Boolean(chatData.deleted),
+          archived: Boolean(chatData.archived),
+          chatSettings: chatSettings,
+          displayPicture: chatData.participantsImg?.[participantId] || '',
+        })),
         timestamp: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
-        chatSettings: chatSettings,
       };
 
       await client.db(MONGODB_DB).collection('chats').insertOne(chat);
@@ -167,32 +191,24 @@ export const chatRepository = {
 
       const newObj = {
         chat: await (async () => {
-          const entries = Object.entries(chat);
-          entries.pop();
-          const a = Object.fromEntries(entries) as unknown as NewChat;
+          const chatCopy = { ...chat, _id: chat._id.toString()};
+          delete (chatCopy as any)._id;
+
           
-            a.id = `${a._id}`;
-            a.participantsImg = {};
-            delete a._id;
-          
-          await Promise.all(a.participants.map(async (participant) => {
-            const user = await func(participant);
+          await Promise.all(chatCopy.participants.map(async (participant, index) => {
+            const user = await func(participant.id);
             if (user) {
-              if (participant !== payload._id) {
-                a.name = user.name;
+              if (participant.id !== payload._id) {
+                chatCopy.name = user.name;
               }
-              if (a.participantsImg) {
-                a.participantsImg[participant] = user.displayPicture;
-              }
+              chatCopy.participants[index].displayPicture = user.displayPicture;
             } else {
-              console.log(`User with ID ${participant} not found.`);
+              console.log(`User with ID ${participant.id} not found.`);
             }
           }));
-          return a;
+          
+          return chatCopy;
         })(),
-        chatSetting: {
-          [`${chat._id}`]: chatSettings
-        },
         requestId: payload._id
       }
 
@@ -218,16 +234,35 @@ export const chatRepository = {
     }
   },
 
-  updateChatSettings: async (req: NextApiRequest, res: NextApiResponse) => {
+  updateChatSettings: async (req: NextApiRequest, res: NextApiResponse, payload: Payload) => {
     try {
       const { id } = req.query;
       const updatedSettings: Partial<ChatSettings> = req.body;
-      await client.db(MONGODB_DB).collection('chatSettings').updateOne(
+      const updateObject: { [key: string]: any } = {};
+      
+      // Create a proper update object
+      Object.keys(updatedSettings).forEach(key => {
+        updateObject[`participants.$[elem].chatSettings.${key}`] = updatedSettings[key as keyof ChatSettings];
+      });
+
+      await client.db(MONGODB_DB).collection('chats').updateOne(
         { _id: new ObjectId(id as string) },
-        { $set: updatedSettings },
-        { upsert: true }
+        { $set: updateObject },
+        { 
+          arrayFilters: [{ "elem.id": payload._id }],
+          upsert: true 
+        }
       );
-      res.status(200).end();
+
+      // Fetch the updated chat to return the new settings
+      const updatedChat = await client.db(MONGODB_DB).collection('chats').findOne(
+        { _id: new ObjectId(id as string) },
+        { projection: { "participants.$[elem].chatSettings": 1 } }
+      );
+
+      const updatedChatSettings = updatedChat?.participants.find((p: Participant) => p.id === payload._id)?.chatSettings;
+
+      res.status(200).json(updatedChatSettings);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to update chat settings' });
@@ -255,7 +290,7 @@ export const chatRepository = {
       // Messages Collection
       const message = {
         _id: chatData._id as ObjectId,
-        chatId: new ObjectId(chatId as string), // Reference to the chat in Chats collection
+        chatId: new ObjectId(chatId as string), // Reference to the chat in DMs collection
         senderId: chatData.senderId,
         receiverId: chatData.receiverId,
         content: chatData.content,

@@ -33,7 +33,7 @@ export interface ChatAttributes {
     timestamp: string; // Consider using a specific date/time type library
     unread: boolean;
     chatId?: string; // Optional chat ID
-    chatType: 'Chats' | 'Groups' | 'Channels';
+    chatType: 'DMs' | 'Groups' | 'Channels';
     participants?: User[]; // Separate type for participants
     chatSettings?: ChatSettings; // Separate type for settings
     messageId?: string;
@@ -56,7 +56,7 @@ export interface NewChatResponse {
     lastMessageId: string;
     timestamp: string;
     unreadCounts: { [participantId: string]: number };
-    chatType: 'Chats' | 'Groups' | 'Channels';
+    chatType: 'DMs' | 'Groups' | 'Channels';
     participants: string[];
     chatSettings: ChatSettings
     lastUpdated: Date | string | undefined;
@@ -67,7 +67,7 @@ export interface NewChat {
     _id?: string | ObjectId | undefined; // Assuming ObjectId is converted to string
     id?: string;
     name: string;
-    chatType: 'Chats' | 'Groups' | 'Channels';
+    chatType: 'DMs' | 'Groups' | 'Channels';
     participants: string[]; // Assuming participants are represented by their IDs
     participantsImg?: { [participantId: string]: string };
     lastMessageId: string; // Assuming ObjectId is converted to string
@@ -159,17 +159,65 @@ export interface Schema {
 }
 
 export type AllChats = {
-    chats: NewChat[],
+    chats: ChatData[],
     chatSettings: {
     [key: string]: NewChatSettings;
     };
     messages?: MessageAttributes[],
     requestId: string
 }
-export type NewChat_ = {
-    chat: NewChat,
-    chatSetting: {
-    [key: string]: NewChatSettings;
-    };
-    requestId: string
+
+export interface Participant {
+    id: string;
+    lastMessageId: string;
+    unreadCount: number;
+    favorite: boolean;
+    pinned: boolean;
+    deleted: boolean;
+    archived: boolean;
+    chatSettings: NewChatSettings;
+    displayPicture: string;
 }
+
+export interface NewChat_ {
+    chat: ChatData;
+    requestId: string;
+}
+
+export interface ChatData {
+    _id: string;
+    name: string;
+    chatType: 'DMs' | 'Groups' | 'Channels';
+    participants: Participant[];
+    timestamp: string;
+    lastUpdated: string;
+}
+
+export interface ConvoType {
+    id: string;
+    type: string;
+    name: string;
+    lastMessage: string;
+    timestamp: string;
+    unread: number;
+    displayPicture: string;
+    favorite: boolean,
+    pinned: boolean,
+    deleted: boolean,
+    archived: boolean,
+    lastUpdated: string,
+    participants: string[],
+    online: boolean,
+    isTyping: {
+      [key: string]: boolean;
+    };
+}
+export type hook<P = any, Q = boolean, R = boolean> = {
+    payload: P,
+    suspense: Q,
+    exit: R
+}
+export const ConvoType: Partial<hook<Partial<ConvoType>>> = {
+    payload: {},
+    suspense: false
+};

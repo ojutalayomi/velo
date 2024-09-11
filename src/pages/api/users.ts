@@ -103,8 +103,11 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     const collection = client.db('mydb').collection('Users');
     let users;
-    if(search){
-      const data = await collection.findOne({_id: new ObjectId(decodeURIComponent(query as string))});
+    if (search) {
+      if (!ObjectId.isValid(query as string)) {
+        return res.status(400).json({ error: 'Invalid ObjectId format' });
+      }
+      const data = await collection.findOne({_id: new ObjectId(query as string)});
       users = [data];
     } else {
       users = await collection.find({

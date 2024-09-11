@@ -580,14 +580,6 @@ body #root {
   place-items: center;
   position: relative;
 }
-@media (max-width: 500px) {
-  body #root {
-    align-items: stretch;
-    display: flex !important;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-}
 body #root .h-hide {
   display: none;
 }
@@ -777,7 +769,7 @@ body #root #bottombar #content .active {
   color: #ff6257;
 }
 body #root #bottombar #content .active .bottombar-icon {
-  border-bottom: 2px solid #ff6257;
+  /* border-bottom: 2px solid #ff6257; */
 }
 body #root #bottombar #content .active .bottombar-icon #Layer_1 {
   fill: #ff6257;
@@ -789,7 +781,7 @@ body #root #bottombar #content .active .bottombar-icon svg .hov-1 {
   fill: #ff6257;
 }
 body #root #bottombar #content .bottombar {
-  padding: 0.5em 1em;
+  padding: 0em 1em;
 }
 body #root #bottombar #content .bottombar .bottombar-icon .rt {
   display: none;

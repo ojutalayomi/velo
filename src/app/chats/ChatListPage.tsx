@@ -7,41 +7,50 @@ import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { timeFormatter } from '@/templates/PostProps';
-import { updateLiveTime } from '@/redux/chatSlice';
+import { updateLiveTime, updateConversation } from '@/redux/chatSlice';
+import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type';
 
 type FilteredChatsProps = {
-    filteredChats: () => Array<{
-      id: string;
-      type: string;
-      name: string;
-      lastMessage: string;
-      timestamp: string;
-      unread: number;
-      displayPicture: string;
-      lastUpdated: string;
-    }>;
+    filteredChats: () => Array<ConvoType>;
 };
 
 interface Props {
-  chat: {
-    id: string;
-    type: string;
-    name: string;
-    lastMessage: string;
-    timestamp: string;
-    unread: number;
-    displayPicture: string;
-    lastUpdated: string;
-  }
+  chat: ConvoType
 }
 
 interface NavigationState {
     chaT: string;
 }
 
+interface ChatState {
+  isTyping: {
+    [key: string]: boolean;
+  };
+}
+
+interface ChatSetting {
+  [x: string]: NewChatSettings
+}
+
+interface CHT {
+  messages: MessageAttributes[],
+  settings: ChatSetting,
+  conversations: ConvoType[],
+  loading: boolean,
+  isOnline: boolean,
+}
 
 const Card: React.FC<Props> = ({chat}) => {
   const [time, setTime] = useState<string>();
+  // const { messages , settings, conversations, loading: convoLoading, isOnline } = useSelector<RootState, CHT>((state) => state.chat);
+  // const convo = conversations?.find(c => c.id === chat.id);
+  const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const [isPinned, setIsPinned] = useState(chat?.pinned);
+  const [isDeleted, setIsDeleted] = useState(chat?.deleted);
+  const [isArchived, setIsArchived] = useState(chat?.archived);
+  const [isHidden, setIsHidden] = useState(false);
+  const [isUnread, setIsUnread] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const { userdata, loading, error, refetchUser } = useUser();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -52,25 +61,77 @@ const Card: React.FC<Props> = ({chat}) => {
     router.push(`/chats/${chat.id}`);
     dispatch(showChat(''));
   }
-
+  // console.log(onlineUsers)
   useEffect(() => {
     const interval = setInterval(() => {
       setTime(updateLiveTime('getlivetime', chat.lastUpdated));
     }, 10000);
-    return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [chat.lastUpdated]);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showDropdown && !(event.target as Element).closest('.dropdown-menu')) {
+        setShowDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [chat.lastUpdated, showDropdown]);
+
+  const options = [
+    { id: 1, name: isPinned ? 'Unpin' : 'Pin', action: () => dispatch(updateConversation({ id: chat.id, updates: { pinned: !isPinned } })) },
+    { id: 2, name: isDeleted ? 'Undeleted' : 'Delete', action: () => dispatch(updateConversation({ id: chat.id, updates: { deleted: !isDeleted } })) },
+    { id: 3, name: isArchived ? 'Unarchive' : 'Archive', action: () => dispatch(updateConversation({ id: chat.id, updates: { archived: !isArchived } })) },
+    { id: 4, name: isHidden ? 'Unhide' : 'Hide', action: () => setIsHidden(!isHidden) },
+    { id: 5, name: isUnread ? 'Mark as read' : 'Mark as unread', action: () => setIsUnread(!isUnread) },
+    { id: 6, name: isBlocked ? 'Unblock' : 'Block', action: () => setIsBlocked(!isBlocked) },
+  ];
+
+  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
 
   return(
-    <div key={chat.id} className="bg-white dark:bg-zinc-900 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden" onClick={() => openChat(chat.id)}>
-      <Image src={
-          chat.displayPicture  
-          ?  (
-            chat.displayPicture.includes('ila-') 
-            ? '/default.jpeg'
-            : url +  chat.displayPicture
-          )
-          : '/default.jpeg'} 
-          height={40} width={40} alt={chat.name} className="w-12 h-12 rounded-full" />
+
+    <div key={chat.id} 
+      className="bg-white dark:bg-zinc-900 hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden transition-colors duration-150 tablets1:duration-300 relative" 
+      onClick={() => openChat(chat.id)} 
+      onContextMenu={(event) => {
+        event.preventDefault();
+        setShowDropdown(chat.id);
+      }}
+    >
+      {showDropdown === chat.id && (
+        <div className="dropdown-menu fixed top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10">
+          <ul className="py-1">
+            {options.map((option) => (
+              <li key={option.id} 
+                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
+                onClick={option.action}
+              >
+                {option.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="relative">
+        <Image src={
+            chat.displayPicture  
+            ?  (
+              chat.displayPicture.includes('ila-') 
+              ? '/default.jpeg'
+              : url +  chat.displayPicture
+            )
+            : '/default.jpeg'} 
+            height={40} width={40} alt={chat.name} className="w-12 h-12 rounded-full" />
+        {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] && (
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+        )}
+      </div>
       <div className="flex-grow">
         <div className="flex justify-between items-baseline">
           <h2 className="font-semibold">{chat.name}</h2>

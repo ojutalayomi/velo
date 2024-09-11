@@ -8,6 +8,7 @@ import SignInComponent from './SignInController';
 import { setUserData } from '@/redux/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchChats } from '@/redux/chatSlice';
+import { useSocket } from '@/hooks/useSocket';
 
 interface FormData{
     UsernameOrEmail: string,
@@ -32,6 +33,7 @@ const Login: React.FC = () => {
     const [errors, setErrors] = useState<FormData>(initialFormData);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<boolean>(false);
+    const socket = useSocket(userData?._id);
 
     useEffect(() => {
         if(success && !error) router.push(backTo || '/home');
@@ -39,7 +41,12 @@ const Login: React.FC = () => {
             await fetchChats(dispatch);
         }
         fetchData();
-    }, [success, error, router, backTo, dispatch]);
+        if (!socket?.connected) {
+            socket?.on('connect', () => {
+                console.log('Connected to server')
+            })
+        }
+    }, [success, error, router, backTo, dispatch, socket]);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;

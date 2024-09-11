@@ -96,7 +96,7 @@ const MessageTab = ({message,setQuote}:Props) => {
             <Copy size={20} className='dark:text-gray-400'/>
             <span className='text-xs dark:text-white'>{isCopied ? 'Copied!' : 'Copy message'}</span>
           </div>
-          <div className='flex gap-1 items-center cursor-pointer' onClick={() => dispatch(deleteMessage(message._id))}>
+          <div className='flex gap-1 items-center cursor-pointer' onClick={() => dispatch(deleteMessage(message._id as string))}>
             <Trash2 size={20} className='dark:text-gray-400'/>
             <span className='text-xs dark:text-white'>Delete</span>
           </div>

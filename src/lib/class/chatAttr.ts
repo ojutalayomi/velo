@@ -22,7 +22,7 @@ export class Newchat {
     lastMessageId: string; // Assuming ObjectId is converted to string
     timestamp: string;
     unreadCounts: { [participantId: string]: number; };
-    chatType: 'Chats' | 'Groups' | 'Channels';
+    chatType: 'DMs' | 'Groups' | 'Channels';
     participants: string[]; // Assuming participants are represented by their IDs
     chatSettings: ChatSettings
     lastUpdated: string | Date | undefined;

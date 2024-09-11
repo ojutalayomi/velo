@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+'use client'
+import React, { useEffect, useState } from 'react';
 
 interface NewChatModalProps {
     isOpen: boolean;
@@ -10,8 +11,12 @@ interface NewChatModalProps {
 const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm, username }) => {
 
   const [loading, setLoading] = useState<boolean>(false);
+  useEffect(() => {
+    if (isOpen) setLoading(false);
+  }, [isOpen]);
+  
   if (!isOpen) return null;
-  const chattype = typeof username === 'string' ? 'Chats' : 'Groups';
+  const chattype = typeof username === 'string' ? 'DMs' : 'Groups';
   const yes = () => {
     onConfirm(chattype);
     setLoading(true);

@@ -59,30 +59,33 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
   
     const handleChat = useCallback((data: NewChat_) => {
         const uid = data.requestId;
-        const unreadCount = data.chat.unreadCounts ? data.chat.unreadCounts[uid] : undefined;
-        
-        const displayPicture = data.chat.participantsImg
-            ? (Object.entries(data.chat.participantsImg).length > 1 ? 
-                Object.entries(data.chat.participantsImg).find(([key, value]) => key !== uid)?.[1]
-                : data.chat.participantsImg[uid])
-            : undefined;
-        
+        const participant = data.chat.participants.find(p => p.id === uid);
+        const otherParticipant = data.chat.participants.find(p => p.id !== uid);
+
         const obj = {
-            id: data.chat.id,
+            id: data.chat._id,
+            type: data.chat.chatType,
             name: data.chat.name,
-            chatType: data.chat.chatType,
-            displayPicture: displayPicture,
-            lastMessage: '', 
-            unread: unreadCount,
-            favorite: data.chat.favorite,
-            pinned: data.chat.pinned,
-            deleted: data.chat.deleted,
-            archived: data.chat.archived,
+            displayPicture: otherParticipant?.displayPicture || '',
+            lastMessage: '',
+            unread: participant?.unreadCount || 0,
+            favorite: participant?.favorite || false,
+            pinned: participant?.pinned || false,
+            deleted: participant?.deleted || false,
+            archived: participant?.archived || false,
             timestamp: data.chat.timestamp,
-            lastUpdated: Time(data.chat.lastUpdated as Date),
-        }
+            lastUpdated: Time(data.chat.lastUpdated),
+            participants: data.chat.participants.map(p => p.id),
+            online: false,
+            isTyping: data.chat.participants.reduce((p: { [x: string]: boolean }, r) => {
+                p[r.id] = false;
+                return p;
+            }, {} as { [x: string]: boolean })
+        };
         dispatch(addConversation(obj));
-        dispatch(addSetting(data.chatSetting))
+        if (participant?.chatSettings) {
+            dispatch(addSetting({ [data.chat._id]: participant.chatSettings }));
+        }
         console.log(data);
     }, [dispatch]);
   
@@ -102,17 +105,37 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
       }
     }, [dispatch, gt, userdata._id]);
 
+    const handleUserStatus = useCallback((data: { userId: string, status: string }) => {
+        dispatch(updateConversation({ id: data.userId, updates: { online: data.status === 'online' } }));
+    }, [dispatch]);
+
+    const handleTyping = useCallback((data: { userId: string, chatId: string }) => {
+        dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: true } } }));
+    }, [dispatch]);
+
+    const handleStopTyping = useCallback((data: { userId: string, chatId: string }) => {
+        dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: false } } }));
+    }, [dispatch]);
+
     useEffect(() => {
       if (!socket) return;
   
-      socket.on('newMessage', handleChatMessage);
+        socket.on('newMessage', handleChatMessage);
+        socket.on('userTyping', handleTyping);
+        socket.on('userStopTyping', handleStopTyping);
       socket.on('newChat', handleChat);
+      socket.on('batchUserStatus', (updates: [string, string][]) => {
+        updates.forEach(([userId, status]) => {
+          handleUserStatus({ userId, status });
+        });
+      });
   
       return () => {
         socket.off('newMessage', handleChatMessage);
         socket.off('newChat', handleChat);
+        socket.off('batchUserStatus');
       };
-    }, [socket, handleChatMessage, handleChat]);
+    }, [socket, handleChatMessage, handleChat, handleUserStatus, handleTyping, handleStopTyping]);
 
     const setActiveRoute = useCallback((route: string) => {
         setActiveRouteState(route);

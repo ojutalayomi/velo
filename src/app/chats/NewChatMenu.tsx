@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { Users, Hash } from 'lucide-react';
+import { Users, Hash, Plus } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useSocket } from '@/hooks/useSocket';
 import { useDispatch, useSelector } from 'react-redux';
@@ -16,7 +16,7 @@ import ChatRepository from '@/lib/class/ChatRepository';
 import NewChatModal from './NewChatModal';
 import { RootState } from '@/redux/store';
 
-type ChatType = "Chats" | "Groups" | "Channels";
+type ChatType = "DMs" | "Groups" | "Channels";
 type ChatSettingsTheme = "light" | "dark";
 
 const chatRepository = new ChatRepository();
@@ -88,16 +88,16 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
         chatType: arg as ChatType,
         participants: [
           userdata._id as string,
-          newPerson._id  as string,
+          ...(newPerson && newPerson._id !== userdata._id ? [newPerson._id as string] : []),
         ],
         participantsImg: {
           [userdata._id]: userdata.dp,
-          [newPerson._id]: newPerson.displayPicture,
+          ...(newPerson && newPerson._id !== userdata._id ? { [newPerson._id]: newPerson.displayPicture } : {}),
         },
         lastMessageId: '',
         unreadCounts: {
           [userdata._id]: 0,
-          [newPerson._id]: 1,
+          ...(newPerson && newPerson._id !== userdata._id ? { [newPerson._id]: 1 } : {}),
         },
         favorite: false,
         pinned: false,
@@ -111,11 +111,20 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
       closePage();
       if (socket) socket.emit('addChat', result)
       
-      router.push(`/chats/${result.chat.id}`);
+      router.push(`/chats/${result.chat._id}`);
       dispatch(showChat(''));
     }
 
     const openChat = (_id: string) => {
+      const existingConvo = conversations.find(convo => 
+        convo.participants.includes(_id) && convo.type === 'DMs'
+      );
+      if (existingConvo) {
+        router.push(`/chats/${existingConvo.id}`);
+        dispatch(showChat(''));
+        closePage();
+        return;
+      }
       const filteredResults = results.filter((user: UserData) => user._id === _id )
       const newData = _id === userdata._id ? userdata : filteredResults[0];
       setNewPerson(newData);
@@ -133,26 +142,26 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
     const keyHolder = [
       {
         tag: 'New Group',
-        icon: <Users className="w-7 h-7 border-gray-400 border-2 rounded-full mr-3 text-gray-400" />
-      },
+        icon: <Users size={28} className="border-gray-400 border-2 rounded-full mr-3 text-gray-400" />,
+        icon2: <Plus size={28} className='text-brand' />
+      }/*,
       {
         tag: 'New Channel',
-        icon: <Hash className="w-7 h-7 border-gray-400 border-2 rounded-full mr-3 text-gray-400" />
-      }
+        icon: <Hash size={28} className="border-gray-400 border-2 rounded-full mr-3 text-gray-400" />,
+        icon2: <Plus size={28} className='text-brand' />
+      }*/
     ]
     return (
         <>
           <div className='flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full my-1 px-3 py-2'>
             <FontAwesomeIcon onClick={() => closePage()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-            <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-          </div>
-          <div className='dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3'>
             <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-2 rounded-full shadow-bar'>
               <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18' fill='none'>
                   <path className='dark:fill-slate-200' fillRule='evenodd' clipRule='evenodd' d='M8.68945 1C12.9293 1 16.3781 4.3727 16.3781 8.51907C16.3781 10.4753 15.6104 12.2595 14.3542 13.5986L16.8261 16.0109C17.0574 16.2371 17.0582 16.6031 16.8269 16.8294C16.7116 16.9436 16.5592 17 16.4076 17C16.2568 17 16.1052 16.9436 15.9892 16.8309L13.4874 14.3912C12.1714 15.4219 10.5028 16.0389 8.68945 16.0389C4.44955 16.0389 1 12.6655 1 8.51907C1 4.3727 4.44955 1 8.68945 1ZM8.68945 2.15821C5.10251 2.15821 2.18433 5.01125 2.18433 8.51907C2.18433 12.0269 5.10251 14.8807 8.68945 14.8807C12.2756 14.8807 15.1938 12.0269 15.1938 8.51907C15.1938 5.01125 12.2756 2.15821 8.68945 2.15821Z' fill='#78828A'></path>
               </svg>
               <input className='bg-transparent border-0 dark:text-slate-200 outline-0 w-full' value={searchQuery} onChange={(e) => setSearch(e.target.value)} type='text' placeholder='Search for people...'/>
             </div>
+            <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           </div>
           {keyHolder.map((attr,key) => (
             <div  key={key} className="flex justify-between items-center my-3 px-3">
@@ -162,7 +171,7 @@ const NewChatMenu: React.FC<NewChatMenuProps> = ({openCreatePage}) => {
                   <p className="font-semibold text-gray-500 dark:text-slate-200 text-sm">{attr.tag}</p>
                 </div>
               </div>
-              <button className="flex flex-col items-center text-brand font-semibold">+</button>
+              <button className="flex flex-col items-center text-brand font-semibold">{attr.icon2}</button>
             </div>
           ))}
           <div className='flex flex-col gap-2 my-3 px-3'>

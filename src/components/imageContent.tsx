@@ -25,7 +25,7 @@ export const UserProfileLazyLoader = () => {
 const ImageContent: React.FC<Props> = ({userdata,onClick}) => {
     const url = 'https://s3.amazonaws.com/profile-display-images/';
     return (
-      <div className="cursor-pointer flex items-center" onClick={() => onClick(userdata._id)}>
+      <div className="cursor-pointer hover:bg-slate-200 hover:dark:bg-zinc-700 transition-colors duration-150 tablets1:duration-300 flex items-center" onClick={() => onClick(userdata._id)}>
         <Image 
           src={
           userdata.dp || userdata.displayPicture  

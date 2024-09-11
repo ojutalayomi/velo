@@ -45,7 +45,7 @@ interface CHT {
   messages: MessageAttributes[],
   settings: ChatSetting,
   conversations: ConvoType[],
-  loading: boolean
+  loading: boolean,
 }
 
 const generateObjectId = () => {
@@ -62,7 +62,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const params = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
-  const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
+  const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
@@ -71,48 +71,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [newMessage, setNewMessage] = useState('');
   const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
   const pid = params?.id as string;
-  const socket = useSocket(userdata._id);
-  const convo = conversations?.filter(c => c.id === pid )[0];
-  // const [unReads,setUnreads] = useState<number>(convo?.unread)
+  const socket = useSocket(userdata._id,pid);
+  const convo = conversations?.find(c => c.id === pid);
   const chat = settings[pid];
-  const friendId = chat?.members.find((id: string) => id !== userdata._id) as string;
+  const friendId = convo?.participants?.find((id: string) => id !== userdata._id);
   const url = 'https://s3.amazonaws.com/profile-display-images/';
-  const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
-  const [isOnline, setIsOnline] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     dispatch(showChat(''));
   }, [dispatch]);
-
-  useEffect(() => {
-    if (socket) {
-      socket.on('userStatus', (data: { userId: string, status: string }) => {
-        if (data.userId === friendId) {
-          setIsOnline(data.status === 'online');
-        }
-      });
-
-      socket.on('userTyping', (data: { userId: string, chatId: string }) => {
-        if (data.userId === friendId && data.chatId === pid) {
-          setIsTyping(true);
-        }
-      });
-
-      socket.on('userStopTyping', (data: { userId: string, chatId: string }) => {
-        if (data.userId === friendId && data.chatId === pid) {
-          setIsTyping(false);
-        }
-      });
-
-      return () => {
-        socket.off('userStatus');
-        socket.off('userTyping');
-        socket.off('userStopTyping');
-      };
-    }
-  }, [socket, friendId, pid]);
 
   useEffect(() => {
     if (convo && convo.unread !== 0 && convoLoading === false) {
@@ -124,45 +93,71 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const Messages = messages.filter( msg => msg.chatId === pid ) as MessageAttributes[];
 
   const fetchData = useCallback(async () => {
-      setLoading(true);
-      const cachedData = localStorage.getItem(friendId);
+    setLoading(true);
+    setError(false);
+
+    const getCachedData = (id: string) => {
+      const cachedData = localStorage.getItem(id);
       if (cachedData) {
         const parsedData = JSON.parse(cachedData);
-        if (Date.now() - parsedData.timestamp < (60000 * 3)) { // Cache for 3 minute
-          setNewPerson(parsedData.data);
-          setLoading(false);
-          setError(false)
-          return;
-        }
-      }
-
-      try {
-        if(friendId) {
-          const response = await fetch('/api/users?query='+encodeURIComponent(friendId)+'&search=true');
-          if (!response.ok) {
-            throw new Error('Failed to fetch');
-          }
-          const data = await response.json();
-          localStorage.setItem(data[0]._id, JSON.stringify({
-          data: data[0],
-          timestamp: Date.now()
-          }));
-          setNewPerson(data[0]);
+        if (Date.now() - parsedData.timestamp < (60000 * 5)) { // Cache for 5 minutes
+          return parsedData.data;
         } else {
-          setNewPerson(userdata);
-          setLoading(false);
+          localStorage.removeItem(id);
         }
-      } catch (error) {
-          setError(true);
-      } finally {
-          setLoading(false);
       }
-  }, [friendId, userdata])
+      return null;
+    };
 
-  
+    const fetchFromAPI = async (id: string) => {
+      const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch');
+      }
+      const data = await response.json();
+      localStorage.setItem(data[0]._id, JSON.stringify({
+        data: data[0],
+        timestamp: Date.now()
+      }));
+      return data[0];
+    };
+
+    try {
+      if (friendId) {
+        const cachedData = getCachedData(friendId);
+        if (cachedData) {
+          setNewPerson(cachedData);
+        } else {
+          const apiData = await fetchFromAPI(friendId);
+          setNewPerson(apiData);
+        }
+      } else if (pid && pid !== userdata._id) {
+        // If friendId is not available, try to fetch using pid
+        const cachedData = getCachedData(pid);
+        if (cachedData) {
+          setNewPerson(cachedData);
+        } else {
+          const apiData = await fetchFromAPI(pid);
+          setNewPerson(apiData);
+        }
+      } else {
+        setNewPerson(userdata);
+      }
+    } catch (error) {
+      setError(true);
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [friendId, userdata, pid]);
+
+  useEffect(() => {
+    console.log('friendId:', friendId);
+  }, [friendId]);
+
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, [fetchData, friendId, pid])
 
   useEffect(() => {
       const handleInput = () => {
@@ -197,7 +192,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         receiverId: friendId,
         content: newMessage, 
         timestamp: new Date().toISOString(),
-        messageType: 'Chats',
+        messageType: 'DMs',
         isRead: isRead, // Object with participant IDs as keys and their read status as values
         reactions: [],
         attachments: [],
@@ -224,17 +219,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }
 
   const handleTyping = () => {
-    if (socket) {
-      socket.emit('typing', { userId: friendId, chatId: pid });
-      
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+    if (!socket || !pid) return;
 
-      typingTimeoutRef.current = setTimeout(() => {
-        socket.emit('stopTyping', { userId: friendId, chatId: pid });
-      }, 3000);
+    socket.emit('typing', { job: 'typing', userId: userdata._id, chatId: pid });
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
     }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit('stopTyping', { job: 'stopTyping', userId: userdata._id, chatId: pid });
+    }, 3000);
   };
 
   return (
@@ -246,10 +241,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             :
             <div>
-              <h2 className="text-md font-semibold text-center">{newPerson?.name}</h2>
+              <h2 className="text-sm font-semibold text-center">{newPerson?.name}</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {isOnline ? 'Online' : 'Offline'}
-                {isTyping && ' • Typing...'}
+                {convo?.online ? 'Online' : 'Offline'}
+                {convo?.isTyping[userdata._id] && ' • Typing...'}
               </p>
             </div>
           }
@@ -260,22 +255,35 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         />
       </div>
       <div className="h-96 overflow-y-auto p-4 flex flex-col flex-1"> 
-        <div className="cursor-pointer flex flex-col gap-2 items-center">
-          {load
-          ? <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
-          : <Image 
-            src={
-            newPerson?.dp || newPerson?.displayPicture  
-            ? (newPerson?.dp ? url+newPerson?.dp : (
-              newPerson?.displayPicture.includes('ila-') 
-              ? '/default.jpeg'
-              : url +  newPerson?.displayPicture
-              )) 
-            : '/default.jpeg'} 
-            className='displayPicture dark:border-slate-200 w-20 h-20 rounded-full' 
-            width={64} height={64} alt='Display Picture'
-          />
-          }
+        <div className="cursor-pointer flex flex-col gap-2 items-center relative">
+          {load ? (
+            <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
+          ) : (
+            <>
+              <div className="relative">
+                <Image 
+                  src={
+                    newPerson?.dp || newPerson?.displayPicture  
+                      ? (newPerson?.dp 
+                          ? url + newPerson.dp 
+                          : (newPerson.displayPicture.includes('ila-') 
+                              ? '/default.jpeg'
+                              : url + newPerson.displayPicture
+                            )
+                        ) 
+                      : '/default.jpeg'
+                  } 
+                  className='displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover' 
+                  width={80} 
+                  height={80} 
+                  alt='Display Picture'
+                />
+                {convo?.online && (
+                  <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-zinc-900"></div>
+                )}
+              </div>
+            </>
+          )}
           
           <div className='text-center'>
             <p className="flex items-center justify-center font-bold dark:text-slate-200 text-sm">
@@ -321,6 +329,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         <div className="flex items-end basis-[content] px-2">
           <textarea
             placeholder="Type a message..."
+            disabled={!socket?.connected}
             value={newMessage}
             ref={textAreaRef}
             onChange={(e) => {
@@ -331,8 +340,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             className="dark:bg-zinc-900 dark:text-slate-200 flex-grow h-10 max-h-40 mr-2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
           ></textarea>
           <button
-            onClick={() => handleSendMessage(quote.message._id)}
-            className="bg-brand text-white p-2 rounded-lg max-h-40 hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+            disabled={!socket?.connected}
+            onClick={() => handleSendMessage(quote.message?._id)}
+            className="bg-brand text-white p-2 rounded-lg max-h-40 hover:bg-tomato focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <Send size={20} />
           </button>

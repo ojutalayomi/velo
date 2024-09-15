@@ -1,10 +1,11 @@
 import { Server as NetServer } from 'http'
 import { NextApiRequest, NextApiResponse } from 'next'
-import { Server as ServerIO } from 'socket.io'
+import { Server as ServerIO, Socket } from 'socket.io'
 import { Socket as NetSocket } from 'net';
 import { MessageAttributes, NewChat_ } from '@/lib/types/type';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import Redis from 'ioredis';
+import { FireExtinguisher } from 'lucide-react';
 
 export const config = {
   api: {
@@ -23,6 +24,9 @@ let io: ServerIO;
 interface ServerIOWithSocket extends ServerIO {
   server?: NetServer
 }
+
+type UserSocket = Socket & { userId?: string };
+
 type NextApiResponseWithSocket = NextApiResponse & {
   socket: NetSocket & {
     server: NetServer & {
@@ -56,7 +60,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         }
       }, BATCH_INTERVAL);
 
-      io.on('connection', async (socket) => {
+      io.on('connection', async (socket: UserSocket) => {
         console.log('New client connected');
 
         // Initialize MongoDB connection
@@ -116,7 +120,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           if(data.chat.participants[1]) io.to(`user:${data.chat.participants[1]}`).emit('newChat', data)
         })
 
-        socket.on('chatMessage', async (data: MessageAttributes, action: {job: string, userId: string, chatId: string }) => {
+        socket.on('chatMessage', async (data: MessageAttributes) => {
           // console.log('Message received:', data)
           
           // Save message to database (pseudo-code)
@@ -129,13 +133,13 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           if (data.receiverId) io.to(`user:${data.receiverId}`).emit('newMessage', data)
         })
 
-        socket.on('typing', (data: { userId: string, chatId: string }) => {
-          io.to(data.chatId.toString()).emit('userTyping', data);
+        socket.on('typing', (data: { userId: string, to: string, chatId: string }) => {
+          io.to(`user:${data.to}`).emit('userTyping', data);
           // console.log('userTyping', data);
         });
 
-        socket.on('stopTyping', (data: { userId: string, chatId: string }) => {
-          io.to(data.chatId.toString()).emit('userStopTyping', data);
+        socket.on('stopTyping', (data: { userId: string, to: string, chatId: string }) => {
+          io.to(`user:${data.to}`).emit('userStopTyping', data);
           // console.log('userStopTyping', data);
         });
 
@@ -149,9 +153,35 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           socket.emit('userStatus', { userId, status: isOnline ? 'online' : 'offline' });
         });
 
-        socket.on('joinChat', (chatId: string) => {
+        socket.on('getRoomMembers', (chatId: string) => {
+          const room = io.sockets.adapter.rooms.get(chatId);
+          if (room) {
+            const members = Array.from(room);
+            console.log(`Members in chat ${chatId}:`, members);
+            socket.emit('roomMembers', { chatId, members });
+          } else {
+            console.log(`Chat ${chatId} not found`);
+            socket.emit('roomMembers', { chatId, members: [] });
+          }
+        });
+        socket.on('joinChat', (data: { chatId: string, userId: string, friendId: string }) => {
+          const { chatId, userId, friendId } = data;
           socket.join(chatId);
-          console.log(`User ${socket.id} joined chat: ${chatId}`);
+          // console.log(`User ${userId} joined chat: ${chatId}`);
+          // console.log(`User ${friendId} was added to the chat: ${chatId}`);
+
+          const room = io.sockets.adapter.rooms.get(chatId);
+          if (room) {
+            const members = Array.from(room);
+            console.log(`Members in chat ${chatId}:`, members);
+          } else {
+            console.log(`Chat ${chatId} not found`);
+          }
+          // Notify other users in the chat room
+          socket.to(chatId).emit('userJoined', { chatId, userId, friendId });
+          
+          // Optionally, you can emit a confirmation to the user who joined
+          socket.emit('joinedChat', { chatId, userId, friendId });
         });
       })
 

@@ -13,7 +13,7 @@ interface NavigationState {
 }
 
 const ChatPage: React.FC = () => {
-  // const router = useRouter();
+  const router = useRouter();
   // const dispatch = useDispatch();
   // const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   // useEffect(() => {
@@ -26,7 +26,7 @@ const ChatPage: React.FC = () => {
           <h1 className='dark:text-white font-semibold text-2xl'>Select a message</h1>
           <p className='dark:text-slate-200 text-sm text-center'>Choose from your existing conversations, start a new one, or just keep swimming.</p>
           <button
-            onClick={() => console.log('new chat')}
+            onClick={() => router.push('/chats/compose')}
             className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-full hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <span>New message</span>

@@ -38,10 +38,10 @@ export const useUser = (): UseUserReturn => {
         if (cachedData) {
             const parsedData = JSON.parse(cachedData);
             if (Date.now() - parsedData.timestamp < 60000) { // Cache for 1 minute
-            dispatch(setUserData(parsedData.data));
-            setLoading(false);
-            setError(null)
-            return;
+                dispatch(setUserData(parsedData.data));
+                setLoading(false);
+                setError(null)
+                return;
             }
         }
         
@@ -49,15 +49,16 @@ export const useUser = (): UseUserReturn => {
         try {
             const response = await fetch('/api/getuser');
             if (!response.ok) {
-            throw new Error('Failed to fetch user data');
+                throw new Error('Failed to fetch user data');
             }
             const fetchedUserData = await response.json();
             dispatch(setUserData(fetchedUserData));
             localStorage.setItem('userData', JSON.stringify({
-            data: fetchedUserData,
-            timestamp: Date.now()
+                data: fetchedUserData,
+                timestamp: Date.now()
             }));
             setError(null)
+            console.log('User data fetched successfully');
         } catch (err) {
           if (retries > 0) {
             console.log(`Retrying... (${retries} attempts left)`);

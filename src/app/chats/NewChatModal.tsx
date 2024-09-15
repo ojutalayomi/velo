@@ -5,10 +5,10 @@ interface NewChatModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: (arg: string) => void;
-    username: string | string[];
+    username?: string | string[];
 }
 
-const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm, username }) => {
+const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm, username = '' }) => {
 
   const [loading, setLoading] = useState<boolean>(false);
   useEffect(() => {
@@ -27,15 +27,14 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm,
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full">
         <div className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Start new chat
+            {username ? `Start new ${chattype}` : 'Start new chat'}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Are you sure you want to start a new chat with <b className='text-brand'>@{username}</b>?
+            {username ? `Are you sure you want to start a new chat with` + <b className='text-brand'>@{username}</b> : 'Are you sure you want to create a new group?'}
           </p>
           <div className="flex justify-end space-x-4">
             <button
               onClick={onClose}
-              disabled={loading}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               No

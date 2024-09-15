@@ -126,7 +126,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           <Pin size={21} 
           className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out {filterConversations('Pinned').length > 0 ? 'block' : 'hidden'}`}
           onClick={() => {
-            const selectedChats = filterConversations('all').filter(chat => chat.pinned);
+            const selectedChats = filterConversations('Pinned');
             if (selectedChats.length > 0) {
               // If there are pinned chats, slide to the Pinned tab
               swiper && swiper.slideTo(tabs.indexOf('Pinned'));
@@ -139,8 +139,8 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           />
         </div>
         <div className="px-3">
-          {filterConversations('Pinned').length > 0 ? (
-            <ChatListPage filteredChats={() => filterConversations('Pinned')}/>
+          {Array.isArray(filterConversations('Pinned')) && filterConversations('Pinned').length > 0 ? (
+            <ChatListPage className='overflow-visible' filteredChats={() => filterConversations('Pinned')}/>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400">No pinned chats</p>
           )}
@@ -151,7 +151,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             {!ayo || filterConversations('all').length === 0 ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No chats, groups or archived chats available</h3>
+                <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No chats or groups available</h3>
                 <p className="mt-1 text-sm text-gray-500">Get started by creating any or you can join any.</p>
                 <div className="mt-6">
                   <button

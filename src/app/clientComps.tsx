@@ -109,15 +109,15 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         dispatch(updateConversation({ id: data.userId, updates: { online: data.status === 'online' } }));
     }, [dispatch]);
 
-    const handleTyping = useCallback((data: { userId: string, chatId: string }) => {
+    const handleTyping = useCallback((data: { userId: string, to: string, chatId: string }) => {
+        if (data.userId === userdata._id) return null;
         dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: true } } }));
-        console.log('userTyping', data);
-    }, [dispatch]);
+    }, [dispatch, userdata._id]);
 
-    const handleStopTyping = useCallback((data: { userId: string, chatId: string }) => {
+    const handleStopTyping = useCallback((data: { userId: string, to: string, chatId: string }) => {
+        if (data.userId === userdata._id) return null;
         dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: false } } }));
-        console.log('userStopTyping', data);
-    }, [dispatch]);
+    }, [dispatch, userdata._id]);
 
     useEffect(() => {
       if (!socket) return;
@@ -128,12 +128,14 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.on('newChat', handleChat);
         socket.on('batchUserStatus', (updates: [string, string][]) => {
             updates.forEach(([userId, status]) => {
-            handleUserStatus({ userId, status });
+                handleUserStatus({ userId, status });
+            });
         });
-      });
   
       return () => {
         socket.off('newMessage', handleChatMessage);
+        socket.off('userTyping', handleTyping);
+        socket.off('userStopTyping', handleStopTyping);
         socket.off('newChat', handleChat);
         socket.off('batchUserStatus');
       };

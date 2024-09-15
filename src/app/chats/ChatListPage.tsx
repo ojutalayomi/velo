@@ -12,6 +12,7 @@ import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type'
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
+    className?: string;
 };
 
 interface Props {
@@ -97,20 +98,43 @@ const Card: React.FC<Props> = ({chat}) => {
   return(
 
     <div key={chat.id} 
-      className="bg-white dark:bg-zinc-900 hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-hidden transition-colors duration-150 tablets1:duration-300 relative" 
+      className="bg-white dark:bg-zinc-900 hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative" 
       onClick={() => openChat(chat.id)} 
       onContextMenu={(event) => {
         event.preventDefault();
         setShowDropdown(chat.id);
       }}
+      onTouchStart={(event) => {
+        if (event.touches.length === 1) {
+          const touch = event.touches[0];
+          const longPressTimer = setTimeout(() => {
+            setShowDropdown(chat.id);
+          }, 500); // 500ms long press
+          
+          const cancelLongPress = () => {
+            clearTimeout(longPressTimer);
+          };
+
+          document.addEventListener('touchend', cancelLongPress);
+          document.addEventListener('touchmove', cancelLongPress);
+
+          return () => {
+            document.removeEventListener('touchend', cancelLongPress);
+            document.removeEventListener('touchmove', cancelLongPress);
+          };
+        }
+      }}
     >
       {showDropdown === chat.id && (
-        <div className="dropdown-menu fixed top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10">
+        <div className="dropdown-menu absolute top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
           <ul className="py-1">
             {options.map((option) => (
               <li key={option.id} 
                 className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
-                onClick={option.action}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  option.action();
+                }}
               >
                 {option.name}
               </li>
@@ -148,9 +172,9 @@ const Card: React.FC<Props> = ({chat}) => {
   )
 }
 
-const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats}) => {
+const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats,className = 'overflow-auto p-4'}) => {
     return (
-      <div className="flex-grow p-4 h-full overflow-auto">
+      <div className={`flex-grow h-full ${className}`}>
         <div className="flex flex-col gap-1 mb-10 tablets1:mb-0">
           {filteredChats().map((chat,key) => (
             <Card key={key} chat={chat} />

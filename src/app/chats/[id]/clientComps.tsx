@@ -74,7 +74,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const socket = useSocket(userdata._id,pid);
   const convo = conversations?.find(c => c.id === pid);
   const chat = settings[pid];
-  const friendId = convo?.participants?.find((id: string) => id !== userdata._id);
+  const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -177,6 +177,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       }
   }, []);
 
+  useEffect(() => {
+    if (socket && pid && userdata._id) {
+      socket.emit('joinChat', { chatId: pid, userId: userdata._id, friendId: friendId })
+
+      socket.on('userJoined', (data: { chatId: string, userId: string }) => {
+        // console.log('userJoined', data);
+      })
+    }
+  }, [friendId, pid, socket, userdata._id]);
+
   const handleSendMessage = (id: string) => {
     if (newMessage.trim() !== '') {
 
@@ -220,15 +230,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   const handleTyping = () => {
     if (!socket || !pid) return;
-
-    socket.emit('typing', { job: 'typing', userId: userdata._id, chatId: pid });
+    const details = { userId: userdata._id, to: friendId, chatId: pid };
+    socket.emit('typing', { userId: userdata._id, to: friendId, chatId: pid });
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', { job: 'stopTyping', userId: userdata._id, chatId: pid });
+      socket.emit('stopTyping', { userId: userdata._id, to: friendId, chatId: pid });
     }, 3000);
   };
 
@@ -244,7 +254,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
               <h2 className="text-sm font-semibold text-center">{newPerson?.name}</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {convo?.online ? 'Online' : 'Offline'}
-                {convo?.isTyping[userdata._id] && ' • Typing...'}
+                {convo?.isTyping[friendId] && ' • Typing...'}
               </p>
             </div>
           }
@@ -329,18 +339,23 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         <div className="flex items-end basis-[content] px-2">
           <textarea
             placeholder="Type a message..."
-            disabled={!socket?.connected}
+            // disabled={!socket?.connected}
             value={newMessage}
             ref={textAreaRef}
             onChange={(e) => {
               setNewMessage(e.target.value);
               handleTyping();
             }}
-            // onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(quote.message?._id);
+              }
+            }}
             className="dark:bg-zinc-900 dark:text-slate-200 flex-grow h-10 max-h-40 mr-2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
           ></textarea>
           <button
-            disabled={!socket?.connected}
+            // disabled={!socket?.connected}
             onClick={() => handleSendMessage(quote.message?._id)}
             className="bg-brand text-white p-2 rounded-lg max-h-40 hover:bg-tomato focus:outline-none focus:ring-2 focus:ring-brand"
           >

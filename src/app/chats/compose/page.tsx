@@ -90,6 +90,11 @@ const NewChatMenu = () => {
           userdata._id as string,
           ...(newPerson && newPerson._id !== userdata._id ? [newPerson._id as string] : []),
         ],
+        groupDescription: '',
+        groupDisplayPicture: '',
+        adminIds: [],
+        inviteLink: '',
+        isPrivate: false,
         participantsImg: {
           [userdata._id]: userdata.dp,
           ...(newPerson && newPerson._id !== userdata._id ? { [newPerson._id]: newPerson.displayPicture } : {}),
@@ -161,7 +166,7 @@ const NewChatMenu = () => {
             <FontAwesomeIcon icon={'ellipsis-h'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           </div>
           {keyHolder.map((attr,key) => (
-            <div  key={key} className="flex justify-between items-center my-3 px-3" onClick={() => {
+            <div  key={key} className="cursor-pointer flex justify-between items-center my-3 px-3" onClick={() => {
               if (attr.tag === 'Create New Group') {
                 router.push(`/chats/compose/group`);
               }

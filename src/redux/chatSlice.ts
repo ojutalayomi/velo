@@ -1,7 +1,7 @@
 // redux/chatSlice.ts
 import ChatRepository from '@/lib/class/ChatRepository';
 import ChatSystem from '@/lib/class/chatSystem';
-import { AllChats, ChatAttributes, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { createAsyncThunk, createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
 
 const chatRepository = new ChatRepository();
@@ -16,6 +16,7 @@ export interface ConvoType {
   timestamp: string;
   unread: number;
   displayPicture: string;
+  description: string;
   favorite: boolean,
   pinned: boolean,
   deleted: boolean,
@@ -73,7 +74,7 @@ export const Time = (params: string | Date ) => {
   return formattedDateStr;
 }
 
-export function updateLiveTime(response: "countdown" | "getlivetime", Time: string): string {
+export function updateLiveTime(response: "countdown" | "getlivetime" | "chat-time", Time: string): string {
 
   const time = new Date(Time).getTime();
   const now = new Date().getTime();
@@ -85,8 +86,13 @@ export function updateLiveTime(response: "countdown" | "getlivetime", Time: stri
   } else if(response === "getlivetime"){
     // Find the distance between now an the count up date
     distance = now - time;
+  } else if(response === "chat-time"){
+    // Add hh:mm am/pm
+    const timeObj = new Date(Time);
+    const formattedTime = timeObj.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return formattedTime;
   } else {
-    throw new Error("Invalid response type. Expected 'countdown' or 'getlivetime'.");
+    throw new Error("Invalid response type. Expected 'countdown' or 'getlivetime' or 'chat-time'.");
   }
   
   const days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -97,7 +103,7 @@ export function updateLiveTime(response: "countdown" | "getlivetime", Time: stri
   let liveTime: string;
   
   if (days > 0) {
-  const [date/*,time*/] = Time.split(',');
+    const [date/*,time*/] = Time.split(',');
     liveTime = date;
   } else if (hours > 0) {
     liveTime = hours + (hours === 1 ? " hr" : " hrs");
@@ -106,6 +112,8 @@ export function updateLiveTime(response: "countdown" | "getlivetime", Time: stri
   } else {
     liveTime = seconds + (seconds === 1 ? " sec" : " secs");
   }
+
+  
   return liveTime;
 }
 
@@ -114,7 +122,7 @@ const chatSlice = createSlice({
   name: 'chat',
   initialState: {
     conversations: [] as unknown as ConvoType[],
-    messages: [] as unknown as MessageAttributes[],
+    messages: [] as unknown as (MessageAttributes | GroupMessageAttributes)[],
     settings: stt as unknown as ChatSetting,
     loading: true,
     error: '',
@@ -186,7 +194,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
 
     function filter(param: string) {
       if (!chats.messages) return;
-      const filteredResults = chats.messages.filter((msg: MessageAttributes) => msg._id === param);
+      const filteredResults = chats.messages.filter((msg: MessageAttributes | GroupMessageAttributes) => msg._id === param);
       return filteredResults.length > 0 ? filteredResults[0].content : 'Start chatting now';
     }
 
@@ -207,7 +215,8 @@ export const fetchChats = async (dispatch: Dispatch) => {
         lastMessage: filter(participant?.lastMessageId || '') || 'Start chatting now',
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,
-        displayPicture: displayPicture || '',
+        displayPicture: convo.chatType === 'DMs' ? displayPicture as string : convo.groupDisplayPicture,
+        description: convo.chatType === 'DMs' ? '' : convo.groupDescription,
         favorite: participant?.favorite || false,
         pinned: participant?.pinned || false,
         deleted: participant?.deleted || false,

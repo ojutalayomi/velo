@@ -16,7 +16,6 @@ import 'swiper/css/navigation';
 import { Pagination, Navigation } from 'swiper/modules';
 import { MessageSquare, Pin, PinOff, Users, Hash, Search, Archive, Phone, LockKeyholeOpen, LockKeyhole, MessageCirclePlus } from 'lucide-react';
 import ChatListPage from './ChatListPage';
-import NewChatMenu from './NewChatMenu';
 import { useSocket } from '@/hooks/useSocket';
 import { MessageAttributes } from '@/lib/types/type';
 
@@ -92,7 +91,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             <div>{userdata ? userdata.username : 'Username'}</div>}
             <Phone size={21} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           </div>
-          <MessageCirclePlus size={21} onClick={() => create('chat')} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
+          <MessageCirclePlus size={21} onClick={() => router.push('/chats/compose')} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"/>
           <button onClick={() => setAyo(!ayo)} className={`text-gray-600 ${userdata.username !== 'Ojutalayo' && 'hidden'} hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}>
             {ayo ? <LockKeyholeOpen size={21} /> : <LockKeyhole size={21} />}
           </button>
@@ -157,7 +156,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                   <button
                     type="button"
                     className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                    onClick={() => create('chat')}
+                    onClick={() => router.push('/chats/compose')}
                   >
                     Start Chat
                   </button>
@@ -195,7 +194,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                   <button
                     type="button"
                     className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                    onClick={() => create('Groups')}
+                    onClick={() => router.push('/chats/compose/group')}
                   >
                     New Group
                   </button>
@@ -211,15 +210,6 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                 <Archive className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No archive available</h3>
                 <p className="mt-1 text-sm text-gray-500">Get started by adding chats to your archive.</p>
-                <div className="mt-6">
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                    onClick={() => create('Archived')}
-                  >
-                    Add to archive
-                  </button>
-                </div>
               </div>
               : <ChatListPage filteredChats={() => filterConversations('Archived')}/>
             }
@@ -227,7 +217,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
         </Swiper>
         {/*  */}
         <div className={`${createPage ? 'absolute z-[1]' : 'hidden z-[1]'} bg-gray-100 dark:bg-zinc-900 overflow-auto h-full w-full top-0`}>
-          <NewChatMenu openCreatePage={openCreatePage}/>
+          {/* add a new page here if needed */}
         </div>
       </div>
       {children}

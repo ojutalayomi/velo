@@ -55,6 +55,7 @@ const NewChatMenu = () => {
     const [selectedUsers, setSelectedUsers] = useState<UserDataPartial[]>([]);
     const [selectedUsersIds, setSelectedUsersIds] = useState<string[]>([]);
     const [groupName, setGroupName] = useState('');
+    const [groupDescription, setGroupDescription] = useState('');
     const url = 'https://s3.amazonaws.com/profile-display-images/';
 
     const setSearch = async (arg: string) => {
@@ -92,13 +93,13 @@ const NewChatMenu = () => {
   
       const newChatAttributes = {
         name: groupName, // Use the provided group name
-        chatType: 'Group' as ChatType,
+        chatType: 'Groups' as ChatType,
+        groupDescription: groupDescription,
+        groupDisplayPicture: '',
         participants: [
-          userdata._id as string,
           ...selectedUsersIds,
         ],
         participantsImg: {
-          [userdata._id]: userdata.dp,
           ...selectedUsers.reduce((acc, user) => ({
             ...acc,
             [`${user._id}`]: user.dp || user.displayPicture
@@ -106,7 +107,6 @@ const NewChatMenu = () => {
         },
         lastMessageId: '',
         unreadCounts: {
-          [userdata._id]: 0,
           ...selectedUsersIds.reduce((acc, id) => ({
             ...acc,
             [id]: 1
@@ -207,6 +207,14 @@ const NewChatMenu = () => {
               placeholder='Enter group name...'
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
+            />
+          </div>
+          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar mt-2'>
+            <textarea 
+              className='bg-transparent border-0 dark:text-slate-200 outline-0 w-full' 
+              placeholder='Enter group description...'
+              value={groupDescription}
+              onChange={(e) => setGroupDescription(e.target.value)}
             />
           </div>
           <div className='text-sm text-center dark:text-slate-200'>Add people to your group</div>

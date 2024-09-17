@@ -68,6 +68,8 @@ export interface NewChat {
     id?: string;
     name: string;
     chatType: 'DMs' | 'Groups' | 'Channels';
+    groupDescription: string;
+    groupDisplayPicture: string;
     participants: string[]; // Assuming participants are represented by their IDs
     participantsImg?: { [participantId: string]: string };
     lastMessageId: string; // Assuming ObjectId is converted to string
@@ -94,10 +96,7 @@ export interface NewChatSettings {
     theme: 'light' | 'dark';
   
     // Specific to group chats
-    isPrivate: boolean;
-    inviteLink: string;
     members: string[]; // List of user IDs
-    adminIds: string[]; // List of admin user IDs
   
     // Specific to direct messages
     isBlocked: boolean;
@@ -108,6 +107,25 @@ export interface MessageAttributes {
     _id?: ObjectId | string;
     chatId: ObjectId | string; // Reference to the chat in Chats collection
     senderId: string;
+    receiverId: string;
+    content: string;
+    timestamp: string;
+    messageType: string;
+    isRead: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
+    reactions: string[];
+    attachments: string[];
+    quotedMessage: string;
+}
+
+export interface GroupMessageAttributes {
+    _id?: ObjectId | string;
+    chatId: ObjectId | string; // Reference to the chat in Chats collection
+    sender: {
+        id: string;
+        name: string;
+        displayPicture: string;
+        username: string;
+    };
     receiverId: string;
     content: string;
     timestamp: string;
@@ -163,7 +181,7 @@ export type AllChats = {
     chatSettings: {
     [key: string]: NewChatSettings;
     };
-    messages?: MessageAttributes[],
+    messages?: (MessageAttributes | GroupMessageAttributes)[],
     requestId: string
 }
 
@@ -189,6 +207,11 @@ export interface ChatData {
     name: string;
     chatType: 'DMs' | 'Groups' | 'Channels';
     participants: Participant[];
+    groupDescription: string;
+    groupDisplayPicture: string;
+    adminIds: string[];
+    inviteLink: string;
+    isPrivate: boolean;
     timestamp: string;
     lastUpdated: string;
 }
@@ -201,6 +224,7 @@ export interface ConvoType {
     timestamp: string;
     unread: number;
     displayPicture: string;
+    description: string;
     favorite: boolean,
     pinned: boolean,
     deleted: boolean,
@@ -209,8 +233,8 @@ export interface ConvoType {
     participants: string[],
     online: boolean,
     isTyping: {
-      [key: string]: boolean;
-    };
+      [x: string]: boolean
+    }
 }
 export type hook<P = any, Q = boolean, R = boolean> = {
     payload: P,

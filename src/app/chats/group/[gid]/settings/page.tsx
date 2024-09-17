@@ -16,7 +16,7 @@ interface ChatSettingsPageProps {
   chatSystem: ChatSystem;
 }
 interface Params {
-    id?: string;
+    gid?: string;
 }
 
 interface ChatSetting {
@@ -37,23 +37,23 @@ const chatSystem = new ChatSystem(chatRepository);
 const ChatSettingsPage: React.FC = ({ }) => {
   const router = useRouter();
   const params = useParams() as Params;
-  const { id } = params;
+  const { gid } = params;
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
   const [chat, setChat] = useState<ChatData | 'i'>('i');
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
 
   useEffect(() => {
       const fetchChat = async () => {
-        if (id) {
-          const fetchedChat = await chatSystem.getChatById(id);
+        if (gid) {
+          const fetchedChat = await chatSystem.getChatById(gid);
           setChat(fetchedChat as ChatData);
-          const chatSettings = fetchedChat?.participants.find((participant) => participant.id === id)?.chatSettings;
+          const chatSettings = fetchedChat?.participants.find((participant) => participant.id === gid)?.chatSettings;
           setChatSettings(chatSettings);
         }
       };
   
       if(!convoLoading) {
-        const chatSettings = settings[id as string];
+        const chatSettings = settings[gid as string];
         if(chatSettings) {
           setChatSettings(chatSettings);
           setChat('i');
@@ -61,7 +61,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
           fetchChat();
         }
       }
-    }, [id, convoLoading, settings]);
+    }, [gid, convoLoading, settings]);
 
   const handleSettingsChange = async (
     field: keyof ChatSettings,
@@ -69,7 +69,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
   ) => {
     if (chatSettings) {
       setChatSettings({ ...chatSettings, [field]: value });
-      const result = await chatSystem.updateChatSettings(id || '', { ['chatSettings.'+field]: value });
+      const result = await chatSystem.updateChatSettings(gid || '', { ['chatSettings.'+field]: value });
       setChatSettings(result);
     }
   };
@@ -84,7 +84,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
           </div>
           <Trash2 
           className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-          onClick={() => router.push(`/chats/${params?.id}/settings`)}
+          onClick={() => router.push(`/chats/group/${params?.gid}/settings`)}
           />
         </div>
         <Loader2 className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px] animate-spin' size={21} />
@@ -101,7 +101,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
         </div>
         <Trash2 
         className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-        onClick={() => router.push(`/chats/${params?.id}/settings`)}
+        onClick={() => router.push(`/chats/group/${params?.gid}/settings`)}
         />
       </div>
       <div className="space-y-4 m-2">

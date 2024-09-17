@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Copy, Ellipsis, Reply, Send, Settings, TextQuote, Trash2, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
-import MessageTab from '../MessageTab';
+import MessageTab from '../../MessageTab';
 import { useDispatch, useSelector } from 'react-redux';
 import { ConvoType, setConversations, updateConversation, setMessages, addMessages, deleteMessage } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
@@ -59,7 +59,7 @@ const generateObjectId = () => {
 
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const router = useRouter();
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ gid: string }>();
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
@@ -69,11 +69,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [load,setLoading] = useState<boolean>();
   const [err,setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState('');
-  const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
-  const pid = params?.id as string;
-  const socket = useSocket(userdata._id,pid);
-  const convo = conversations?.find(c => c.id === pid);
-  const chat = settings[pid];
+  const [group,setGroup] = useState<{[x: string]: any}>([]);
+  const gid = params?.gid as string;
+  const socket = useSocket(userdata._id,gid);
+  const convo = conversations?.find(c => c.id === gid) as ConvoType;
+  const chat = settings[gid];
   const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
@@ -90,74 +90,29 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   }, [convo, convoLoading, dispatch, convo?.unread])
   
-  const Messages = messages.filter( msg => msg.chatId === pid ) as MessageAttributes[];
+  const Messages = messages.filter( msg => msg.chatId === gid ) as GroupMessageAttributes[];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(false);
 
-    const getCachedData = (id: string) => {
-      const cachedData = localStorage.getItem(id);
-      if (cachedData) {
-        const parsedData = JSON.parse(cachedData);
-        if (Date.now() - parsedData.timestamp < (60000 * 5)) { // Cache for 5 minutes
-          return parsedData.data;
-        } else {
-          localStorage.removeItem(id);
-        }
-      }
-      return null;
-    };
-
-    const fetchFromAPI = async (id: string) => {
-      const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch');
-      }
-      const data = await response.json();
-      localStorage.setItem(data[0]._id, JSON.stringify({
-        data: data[0],
-        timestamp: Date.now()
-      }));
-      return data[0];
-    };
-
     try {
-      if (friendId) {
-        const cachedData = getCachedData(friendId);
-        if (cachedData) {
-          setNewPerson(cachedData);
-        } else {
-          const apiData = await fetchFromAPI(friendId);
-          setNewPerson(apiData);
-        }
-      } else if (pid && pid !== userdata._id) {
-        // If friendId is not available, try to fetch using pid
-        const cachedData = getCachedData(pid);
-        if (cachedData) {
-          setNewPerson(cachedData);
-        } else {
-          const apiData = await fetchFromAPI(pid);
-          setNewPerson(apiData);
-        }
-      } else {
-        setNewPerson(userdata);
-      }
+        setGroup(convo);
     } catch (error) {
       setError(true);
-      console.error('Error fetching data:', error);
+      console.error('Error setting data:', error);
     } finally {
       setLoading(false);
     }
-  }, [friendId, userdata, pid]);
+  }, [convo]);
 
-  useEffect(() => {
-    console.log('friendId:', friendId);
-  }, [friendId]);
+  // useEffect(() => {
+  //   console.log('friendId:', friendId);
+  // }, [friendId]);
 
   useEffect(() => {
     fetchData()
-  }, [fetchData, friendId, pid])
+  }, [fetchData, gid])
 
   useEffect(() => {
       const handleInput = () => {
@@ -178,14 +133,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, []);
 
   useEffect(() => {
-    if (socket && pid && userdata._id) {
-      socket.emit('joinChat', { chatId: pid, userId: userdata._id, friendId: friendId })
+    if (socket && gid && userdata._id) {
+      socket.emit('joinChat', { chatId: gid, userId: userdata._id, friendId: friendId })
 
       socket.on('userJoined', (data: { chatId: string, userId: string }) => {
         // console.log('userJoined', data);
       })
     }
-  }, [friendId, pid, socket, userdata._id]);
+  }, [friendId, gid, socket, userdata._id]);
 
   const handleSendMessage = (id: string) => {
     if (newMessage.trim() !== '') {
@@ -197,7 +152,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
       const msg = { 
         _id: generateObjectId(),
-        chatId: pid, 
+        chatId: gid, 
         senderId: userdata._id,
         receiverId: friendId,
         content: newMessage, 
@@ -229,16 +184,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }
 
   const handleTyping = () => {
-    if (!socket || !pid) return;
-    const details = { userId: userdata._id, to: friendId, chatId: pid };
-    socket.emit('typing', { userId: userdata._id, to: friendId, chatId: pid });
+    if (!socket || !gid) return;
+    const details = { userId: userdata._id, to: friendId, chatId: gid };
+    socket.emit('typing', { userId: userdata._id, to: friendId, chatId: gid });
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', { userId: userdata._id, to: friendId, chatId: pid });
+      socket.emit('stopTyping', { userId: userdata._id, to: friendId, chatId: gid });
     }, 3000);
   };
 
@@ -251,17 +206,21 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             :
             <div>
-              <h2 className="text-sm font-semibold text-center">{newPerson?.name}</h2>
+              <h2 className="text-sm font-semibold text-center">{group?.name}</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {convo?.online ? 'Online' : 'Offline'}
-                {convo?.isTyping[friendId] && ' • Typing...'}
+                {Object.entries(convo?.isTyping || {}).some(([id, isTyping]) => isTyping) && 
+                  ` • ${Object.entries(convo?.isTyping || {})
+                    .filter(([id, isTyping]) => isTyping)
+                    .map(([id, _]) => group?.participants.find((p: { id: string }) => p.id === id)?.name || 'Someone')
+                    .join(', ')} is typing...`}
               </p>
             </div>
           }
         </div>
         <Settings 
         className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-        onClick={() => router.push(`/chats/${params?.id}/settings`)}
+        onClick={() => router.push(`/chats/group/${params?.gid}/settings`)}
         />
       </div>
       <div className="h-96 overflow-y-auto p-4 flex flex-col flex-1"> 
@@ -273,14 +232,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
               <div className="relative">
                 <Image 
                   src={
-                    newPerson?.dp || newPerson?.displayPicture  
-                      ? (newPerson?.dp 
-                          ? url + newPerson.dp 
-                          : (newPerson.displayPicture.includes('ila-') 
-                              ? '/default.jpeg'
-                              : url + newPerson.displayPicture
-                            )
-                        ) 
+                    group?.groupDisplayPicture
+                      ? url + group.groupDisplayPicture
                       : '/default.jpeg'
                   } 
                   className='displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover' 
@@ -288,9 +241,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   height={80} 
                   alt='Display Picture'
                 />
-                {convo?.online && (
+                {/* {convo?.online && (
                   <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-zinc-900"></div>
-                )}
+                )} */}
               </div>
             </>
           )}
@@ -301,29 +254,29 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             : (
                 <>
-                  {newPerson?.name ? newPerson.name : <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />}
-                  {newPerson?.verified && 
+                  {group?.name ? group.name : <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />}
+                  {/* {group?.verified && 
                     <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
-                  }
+                  } */}
                 </>
               )
             }
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{load || !newPerson?.username ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" /> : '@'+newPerson.username }</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{load || !newPerson?.bio ? <span className="w-36 h-4 bg-gray-200 rounded animate-pulse mb-1" /> :  newPerson.bio}</p>
+            {/* <p className="text-xs text-gray-500 dark:text-gray-400">{load || !group?.username ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" /> : '@'+group.username }</p> */}
+            <p className="text-xs text-gray-500 dark:text-gray-400">{load || !group?.description ? <span className="w-36 h-4 bg-gray-200 rounded animate-pulse mb-1" /> :  group.description}</p>
           </div>
         </div>
         <div className="mb-4 mt-4 flex-1">
           {Messages.map((message) => (
             <Fragment key={`${generateObjectId()}`}>
-            {message.quotedMessage !== '' && (
-              <div className={`flex m-1 ${message.senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
-                <div className={`${message.senderId === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>
-                  {Messages?.find(m => m._id as string === message.quotedMessage)?.content.substring(0, 40) || ''}
+              {message.quotedMessage !== '' && (
+                <div className={`flex m-1 ${message.sender.id === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
+                  <div className={`${message.sender.id === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>
+                    {Messages?.find(m => m._id as string === message.quotedMessage)?.content.substring(0, 40) || ''}
+                  </div>
                 </div>
-              </div>
-            )}
-            <MessageTab key={message._id as string} message={message} setQuote={setQuote}/>
+              )}
+              <MessageTab key={message._id as string} message={message} setQuote={setQuote}/>
             </Fragment>
           ))}
         </div>

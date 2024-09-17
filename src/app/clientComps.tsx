@@ -67,6 +67,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             type: data.chat.chatType,
             name: data.chat.name,
             displayPicture: otherParticipant?.displayPicture || '',
+            description: data.chat.groupDescription || '',
             lastMessage: '',
             unread: participant?.unreadCount || 0,
             favorite: participant?.favorite || false,

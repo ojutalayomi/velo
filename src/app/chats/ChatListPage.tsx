@@ -59,7 +59,8 @@ const Card: React.FC<Props> = ({chat}) => {
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   
   const openChat = (id: string) => {
-    router.push(`/chats/${chat.id}`);
+    const path = chat.type === 'group' ? `/chats/group/${id}` : `/chats/${id}`;
+    router.push(path);
     dispatch(showChat(''));
   }
   // console.log(onlineUsers)
@@ -98,7 +99,7 @@ const Card: React.FC<Props> = ({chat}) => {
   return(
 
     <div key={chat.id} 
-      className="bg-white dark:bg-zinc-900 hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative" 
+      className="bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative" 
       onClick={() => openChat(chat.id)} 
       onContextMenu={(event) => {
         event.preventDefault();

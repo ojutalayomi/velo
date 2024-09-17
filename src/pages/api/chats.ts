@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
 import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings, Participant } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
+import { GroupMessageAttributes } from '../../lib/types/type';
 
 const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
 let client: MongoClient;
@@ -31,7 +32,7 @@ export const chatRepository = {
   getAllChats: async (req: NextApiRequest, res: NextApiResponse<AllChats | { error: string }>, payload: Payload) => {
     try {
       const chats = await client.db(MONGODB_DB).collection('chats').find({ 'participants.id': payload._id }).toArray();
-      const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as MessageAttributes[];
+      const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as (MessageAttributes | GroupMessageAttributes)[];
       
       const newChatsPromises = chats
       .filter(chat => chat.participants.some((p: Participant) => p.id === payload._id))
@@ -124,6 +125,11 @@ export const chatRepository = {
           name: chat.name || '',
           chatType: chat.chatType as 'DMs' | 'Groups' | 'Channels',
           participants: chat.participants || [],
+          groupDescription: chat.groupDescription || '',
+          groupDisplayPicture: chat.groupDisplayPicture || '',  
+          adminIds: chat.adminIds || [],
+          inviteLink: chat.inviteLink || '',
+          isPrivate: chat.isPrivate || false,
           timestamp: chat.timestamp ? new Date(chat.timestamp).toISOString() : new Date().toISOString(),
           lastUpdated: chat.lastUpdated ? new Date(chat.lastUpdated).toISOString() : new Date().toISOString(),
         };
@@ -156,10 +162,7 @@ export const chatRepository = {
         theme: 'light' as 'light' | 'dark',
       
         // Specific to group chats
-        isPrivate: false,
-        inviteLink: '',
         members: chatData.participants, // List of user IDs
-        adminIds: [], // List of admin user IDs
       
         // Specific to direct messages
         isBlocked: false,
@@ -167,6 +170,7 @@ export const chatRepository = {
       };
      
       // Chats Collection
+      // type is ChatData
       const chat = {
         _id: newID,
         name: chatData.name || '',
@@ -182,6 +186,11 @@ export const chatRepository = {
           chatSettings: chatSettings,
           displayPicture: chatData.participantsImg?.[participantId] || '',
         })),
+        groupDescription: chatData.groupDescription || '',
+        groupDisplayPicture: chatData.groupDisplayPicture || '',
+        adminIds: [chatData.participants[0]], // List of admin user IDs
+        isPrivate: false,
+        inviteLink: chatData.chatType === 'Groups' ? `/invite/${newID.toString()}` : '',
         timestamp: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
       };
@@ -191,8 +200,8 @@ export const chatRepository = {
 
       const newObj = {
         chat: await (async () => {
-          const chatCopy = { ...chat, _id: chat._id.toString()};
-          delete (chatCopy as any)._id;
+          const chatCopy: ChatData = { ...chat, _id: chat._id.toString()};
+          // delete (chatCopy as any)._id;
 
           
           await Promise.all(chatCopy.participants.map(async (participant, index) => {

@@ -1,8 +1,12 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
+import Image from 'next/image';
 import { useUser } from '@/hooks/useUser';
 import { SidebarItem, UserSection, sidebarItems } from './SidebarComps';
 import { UserData } from '@/redux/userSlice';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/app/providers';
+import { handleThemeChange1 } from './ThemeToggle';
 
 interface SidebarProps {
   activeRoute: string;
@@ -18,6 +22,9 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
   const [isPopUp, setPopUp] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme()
+  const [isOpen,setOpen] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const routes = ['accounts/login', 'accounts/signup', 'accounts/signup/1', 'accounts/signup/2', 'accounts/forgot-password', 'accounts/reset-password', 'accounts/logout'];
   const ref = useRef<HTMLDivElement>(null);
 
@@ -61,11 +68,47 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
   
   const userSectionRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    setIsDarkMode(theme === 'dark');
+  }, [theme]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    handleThemeChange1(newTheme, isOpen, setTheme, setOpen);
+  };
+
+  const darkMode = (isDark: boolean) => {
+    setIsDarkMode(isDark);
+    const newTheme = isDark ? 'dark' : 'light';
+    handleThemeChange1(newTheme, isOpen, setTheme, setOpen);
+  };
+
   return (
     <div id='sidebar' className={`${routes.includes(activeRoute) && '!hidden'} hidden tablets:flex flex-col`}>
-      <h1 className="brandname dark:text-slate-200 dark:after:text-slate-200 text-lg after:content-['V']"></h1>
+      {/* <h1 className="brandname dark:text-slate-200 dark:after:text-slate-200 text-lg after:content-['V']"></h1> */}
+      <Image src='/velo11.png' className='displayPicture tablets1:m-1 mt-[5px] mb-[-10px] mx-auto' width={25} height={25} alt='logo'/>
       <div className='flex-1 overflow-auto'>
         {memoizedSidebarItems}
+      </div>
+      <div className="px-2">
+        <div className="tablets1:flex hidden justify-between items-center bg-gray-100 dark:bg-gray-700 dark:text-gray-200 p-1  rounded-md">
+          <button
+            onClick={() => darkMode(false)}
+            className={`flex items-center flex-1 py-2 px-4 rounded-l-md ${!isDarkMode ? 'bg-white dark:bg-gray-600' : ''}`}
+          >
+            <Sun size={20} className="inline" /> Light
+          </button>
+          <button
+            onClick={() => darkMode(true)}
+            className={`flex items-center flex-1 py-2 px-4 rounded-r-md ${isDarkMode ? 'bg-white dark:bg-gray-600' : ''}`}
+          >
+            <Moon size={20} className="inline" /> Dark
+          </button>
+        </div>
+        <button onClick={toggleDarkMode} className="tablets1:hidden w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+          {isDarkMode ? <Moon size={20} className="mx-auto" /> : <Sun size={20} className="mx-auto" />}
+        </button>
       </div>
       <UserSection
         ref={userSectionRef}

@@ -177,16 +177,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       }
   }, []);
 
-  useEffect(() => {
-    if (socket && pid && userdata._id) {
-      socket.emit('joinChat', { chatId: pid, userId: userdata._id, friendId: friendId })
-
-      socket.on('userJoined', (data: { chatId: string, userId: string }) => {
-        // console.log('userJoined', data);
-      })
-    }
-  }, [friendId, pid, socket, userdata._id]);
-
   const handleSendMessage = (id: string) => {
     if (newMessage.trim() !== '') {
 
@@ -244,14 +234,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   return (
     <div className={`bg-bgLight tablets1:flex ${chaT}  dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 sticky top-0 bottom-0">
+      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 bottom-0">
         <div className='flex gap-4 items-center justify-start'>
           <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           {load
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             :
             <div>
-              <h2 className="text-sm font-semibold text-center">{newPerson?.name}</h2>
+              <h2 className="text-sm font-semibold text-left">{newPerson?.name}</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {convo?.online ? 'Online' : 'Offline'}
                 {convo?.isTyping[friendId] && ' • Typing...'}

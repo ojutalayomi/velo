@@ -123,7 +123,7 @@ const NewChatMenu = () => {
       setIsModalOpen(false);
       if (socket) socket.emit('addChat', result)
       
-      router.push(`/chats/${result.chat._id}`);
+      router.push(`/chats/group/${result.chat._id}`);
       dispatch(showChat(''));
     }
 
@@ -209,7 +209,7 @@ const NewChatMenu = () => {
               onChange={(e) => setGroupName(e.target.value)}
             />
           </div>
-          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar mt-2'>
+          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-lg shadow-bar mt-2'>
             <textarea 
               className='bg-transparent border-0 dark:text-slate-200 outline-0 w-full' 
               placeholder='Enter group description...'
@@ -254,7 +254,7 @@ const NewChatMenu = () => {
           )}
           {loading 
           ? <UserProfileLazyLoader />
-          : <ImageContent userdata={userdata} onClick={toggleUserSelection}/>
+          : <ImageContent userdata={userdata} onClick={toggleUserSelection} selectedUsers={selectedUsersIds} />
           }
           {isLoading ? (
             <div className='flex flex-col gap-2'>
@@ -266,7 +266,7 @@ const NewChatMenu = () => {
             </div>
           ) : (
             results.map((person: any, index: any) => (
-              <ImageContent key={index} userdata={person} onClick={toggleUserSelection}/>
+              <ImageContent key={index} userdata={person} onClick={toggleUserSelection} selectedUsers={selectedUsersIds}/>
             ))
           )}
           </div>

@@ -68,6 +68,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             name: data.chat.name,
             displayPicture: otherParticipant?.displayPicture || '',
             description: data.chat.groupDescription || '',
+            verified: data.chat.verified || false,
             lastMessage: '',
             unread: participant?.unreadCount || 0,
             favorite: participant?.favorite || false,
@@ -88,6 +89,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             dispatch(addSetting({ [data.chat._id]: participant.chatSettings }));
         }
         console.log(data);
+        return data;
     }, [dispatch]);
   
     const handleChatMessage = useCallback((msg: MessageAttributes) => {
@@ -126,7 +128,10 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.on('newMessage', handleChatMessage);
         socket.on('userTyping', handleTyping);
         socket.on('userStopTyping', handleStopTyping);
-        socket.on('newChat', handleChat);
+        socket.on('newChat', (data: NewChat_) => {
+            handleChat(data);
+            socket?.emit('joinChat', { chatId: data.chat._id })
+        });
         socket.on('batchUserStatus', (updates: [string, string][]) => {
             updates.forEach(([userId, status]) => {
                 handleUserStatus({ userId, status });

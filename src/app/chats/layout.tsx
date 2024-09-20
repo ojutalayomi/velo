@@ -1,20 +1,11 @@
-import type { Metadata,Viewport } from "next";
-// import { Inter } from "next/font/google";
-import React, {useState} from "react";
-// import Image from 'next/image';
+import type { Metadata } from "next";
+import React from "react";
 import App from './clientComps';
-
-// const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Chats | Velo",
-  description: "Created by Ayomide",
+  description: "Chats",
 };
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1.0
-}
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode;}>) {
 

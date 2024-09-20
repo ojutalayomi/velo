@@ -9,6 +9,7 @@ import { RootState } from '@/redux/store';
 import { timeFormatter } from '@/templates/PostProps';
 import { updateLiveTime, updateConversation } from '@/redux/chatSlice';
 import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type';
+import { Pin } from 'lucide-react';
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
@@ -59,7 +60,7 @@ const Card: React.FC<Props> = ({chat}) => {
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   
   const openChat = (id: string) => {
-    const path = chat.type === 'group' ? `/chats/group/${id}` : `/chats/${id}`;
+    const path = chat.type === 'Groups' ? `/chats/group/${id}` : `/chats/${id}`;
     router.push(path);
     dispatch(showChat(''));
   }
@@ -159,16 +160,36 @@ const Card: React.FC<Props> = ({chat}) => {
       </div>
       <div className="flex-grow">
         <div className="flex justify-between items-baseline">
-          <h2 className="font-semibold">{chat.name}</h2>
+          <div className='flex items-center'>
+            <h2 className="font-semibold">{chat.name}</h2>
+            {chat.verified && 
+              <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+            }
+          </div>
           <span className="text-sm text-gray-500">{time}</span>
         </div>
-        <p className="text-sm text-wrap text-gray-600 truncate">{chat.lastMessage ? chat.lastMessage.substring(0, 40) + (chat.lastMessage.length > 40 ? '...' : '') : 'No message available'}</p>
+        <p className="text-sm text-wrap w-4/5 text-gray-600 truncate">
+          {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] 
+            ? 'Typing...' 
+            : (chat.lastMessage 
+                ? `${chat.lastMessage.slice(0, 40)}${chat.lastMessage.length > 40 ? '...' : ''}` 
+                : 'No message available')}
+        </p>
       </div>
-      {chat.unread > 0 && (
-        <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-          {chat.unread}
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        {chat.unread > 0 && (
+          <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            {chat.unread}
+          </div>
+        )}
+        <Pin size={21} 
+            className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out ${chat.pinned ? 'block' : 'hidden'}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
+            }}
+          />
+      </div>
     </div>
   )
 }

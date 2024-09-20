@@ -2,16 +2,18 @@
 import React from 'react';
 import Image from 'next/image';
 import ImageContent  from '@/components/imageContent';
+import { useUser } from '@/hooks/useUser';
 
 
 const ClientComponents = () => {
+  const { userdata, loading, error, refetchUser } = useUser();
 
   return (
     <>
     <div className={`min-h-screen dark:bg-black dark:text-white bg-white text-black`}>
       <div className="max-w-md mx-auto p-4">
         <div className="flex justify-between items-center mb-6">
-          <ImageContent />
+          <ImageContent userdata={userdata}/>
         </div>
 
         <div className="flex justify-between items-center mb-4">

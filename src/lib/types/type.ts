@@ -125,6 +125,7 @@ export interface GroupMessageAttributes {
         name: string;
         displayPicture: string;
         username: string;
+        verified: boolean;
     };
     receiverId: string;
     content: string;
@@ -209,6 +210,7 @@ export interface ChatData {
     participants: Participant[];
     groupDescription: string;
     groupDisplayPicture: string;
+    verified: boolean;
     adminIds: string[];
     inviteLink: string;
     isPrivate: boolean;
@@ -225,6 +227,7 @@ export interface ConvoType {
     unread: number;
     displayPicture: string;
     description: string;
+    verified: boolean;
     favorite: boolean,
     pinned: boolean,
     deleted: boolean,

@@ -40,7 +40,7 @@ export const chatRepository = {
         try {
           const a = { ...chat }; // Create a copy to avoid modifying the original
           
-          console.log('Processing chat:', a._id);
+          // console.log('Processing chat:', a._id);
 
           a.participants = await Promise.all(
             (a.participants || [])
@@ -49,7 +49,8 @@ export const chatRepository = {
                 try {
                   const user = await func(participant.id);
                   if (user) {
-                    console.log('User found for participant:', participant.id);
+                    // console.log('User found for participant:', participant.id);
+                    a.verified = user.verified;
                     // Set chat name to the other participant's name for DMs
                     if (a.chatType === 'DMs' && a.participants.length === 2) {
                       const otherParticipant = a.participants.find((p: Participant) => p.id !== payload._id);
@@ -69,7 +70,7 @@ export const chatRepository = {
                       chatSettings: participant.chatSettings
                     };
                   } else {
-                    console.log(`User with ID ${participant.id} not found.`);
+                    // console.log(`User with ID ${participant.id} not found.`);
                     return participant;
                   }
                 } catch (error) {
@@ -79,7 +80,7 @@ export const chatRepository = {
               })
           );
 
-          console.log('Processed chat:', a._id, 'Participants:', a.participants.length);
+          // console.log('Processed chat:', a._id, 'Participants:', a.participants.length);
           return a as unknown as ChatData;
         } catch (error) {
           console.error('Error processing chat:', chat._id, error);
@@ -88,7 +89,7 @@ export const chatRepository = {
       });
 
       const newChats = (await Promise.all(newChatsPromises)).filter(chat => chat !== null);
-      console.log('Total processed chats:', newChats.length);
+      // console.log('Total processed chats:', newChats.length);
 
       const chatSettings = newChats.reduce((acc, chat) => {
         if (chat && chat.participants && chat.participants.some((p: Participant) => p.id === payload._id)) {
@@ -126,7 +127,8 @@ export const chatRepository = {
           chatType: chat.chatType as 'DMs' | 'Groups' | 'Channels',
           participants: chat.participants || [],
           groupDescription: chat.groupDescription || '',
-          groupDisplayPicture: chat.groupDisplayPicture || '',  
+          groupDisplayPicture: chat.groupDisplayPicture || '',
+          verified: chat.verified || false,
           adminIds: chat.adminIds || [],
           inviteLink: chat.inviteLink || '',
           isPrivate: chat.isPrivate || false,
@@ -184,10 +186,11 @@ export const chatRepository = {
           deleted: Boolean(chatData.deleted),
           archived: Boolean(chatData.archived),
           chatSettings: chatSettings,
-          displayPicture: chatData.participantsImg?.[participantId] || '',
+          displayPicture: chatData.participantsImg?.[participantId] || ''
         })),
         groupDescription: chatData.groupDescription || '',
         groupDisplayPicture: chatData.groupDisplayPicture || '',
+        verified: false,
         adminIds: [chatData.participants[0]], // List of admin user IDs
         isPrivate: false,
         inviteLink: chatData.chatType === 'Groups' ? `/invite/${newID.toString()}` : '',
@@ -207,12 +210,12 @@ export const chatRepository = {
           await Promise.all(chatCopy.participants.map(async (participant, index) => {
             const user = await func(participant.id);
             if (user) {
-              if (participant.id !== payload._id) {
+              if (participant.id !== payload._id && chatCopy.chatType !== 'Groups') {
                 chatCopy.name = user.name;
               }
               chatCopy.participants[index].displayPicture = user.displayPicture;
             } else {
-              console.log(`User with ID ${participant.id} not found.`);
+              // console.log(`User with ID ${participant.id} not found.`);
             }
           }));
           
@@ -395,7 +398,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       maxPoolSize: 10
     });
     await client.connect();
-    console.log("Mongoconnection: You successfully connected to MongoDB!");
+    // console.log("Mongoconnection: You successfully connected to MongoDB!");
   }
   
   switch (method) {

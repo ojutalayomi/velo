@@ -155,7 +155,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
             </div>
           </div>
 
-          <div id='content' className='!shadow-none py-[5px]'>
+          <div id='content' className='!shadow-none py-[10px]'>
             <div className={`bottombar ft dark:text-slate-200 rout ${activeRoute === 'home' ? 'active' : ''}`} data-route='home'>
               <div className='bottombar-icon'  onClick={() => handleClick('home')}>
                 <svg width='22px' height='22px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>

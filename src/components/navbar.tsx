@@ -15,7 +15,7 @@ const NavBar: React.FC<{route: string}> = ({route}) => {
                     <div className='nav px-2.5 py-1.5'>
                         {route !== 'home' ? 
                             <FontAwesomeIcon onClick={() => router.back()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="1x" /> :
-                            <div className='img' style={{padding: '0px !important'}}>
+                            <div className='img' style={{padding: '0px !important', visibility: 'hidden'}}>
                                 <Image src='/velo11.png' className='displayPicture' width={25} height={25} alt='logo'/>
                             </div>}
                         
@@ -33,7 +33,7 @@ const NavBar: React.FC<{route: string}> = ({route}) => {
                             : null}
                         {route === 'post' ? <span className='head dark:text-slate-200'>Post</span> : route === 'home' ?  <h1 className='head dark:text-slate-200'>Velo</h1> : null}
                     </div>  
-                    <div className='notification flex gap-2 items-center relative' style={{ visibility: route === 'post' ? 'hidden' : 'visible' }}>
+                    <div className='notification flex gap-2 items-center relative' style={{ visibility: 'hidden' }}>
                         <ThemeToggle/>
                         <Bell size={24} className="text-gray-600 cursor-pointer dark:text-slate-200" onClick={() => router.push('/notifications')}/>
                         {/* {route !== 'explore' && 

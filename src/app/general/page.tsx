@@ -2,14 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
-import {usePathname} from 'next/navigation';
+import {usePathname, useRouter} from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { useTheme } from '@/app/providers';
 import { handleThemeChange1 } from '@/components/ThemeToggle';
 import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const SettingsPage = () => {
     const pathname = usePathname();
+    const router = useRouter();
     const { userdata, loading, error, refetchUser } = useUser();
     const { theme, setTheme } = useTheme()
     const [isOpen,setOpen] = useState<boolean>(false);
@@ -50,7 +52,8 @@ const SettingsPage = () => {
   return (
     <div className="bg-gray-100 dark:bg-neutral-950 dark:text-slate-200 min-h-screen">
       {/* Header */}
-      <header className="bg-white dark:bg-neutral-900 dark:border-black-200 px-2 py-2 border-b border-gray-200">
+      <header className="bg-white dark:bg-neutral-900 dark:border-black-200 px-2 py-2 border-b border-gray-200 dark:border-gray-400">
+        <FontAwesomeIcon onClick={() => router.push('/home')} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
         <h1 className="text-xl font-semibold">Settings</h1>
       </header>
 
@@ -64,7 +67,7 @@ const SettingsPage = () => {
                 <div 
                   key={itemIndex}
                   className={`flex items-center justify-between p-4 ${
-                    itemIndex !== category.items.length - 1 ? 'border-b border-gray-200' : ''
+                    itemIndex !== category.items.length - 1 ? 'border-b border-gray-200 dark:border-gray-400' : ''
                   }`}
                 >
                   <div className="flex items-center">

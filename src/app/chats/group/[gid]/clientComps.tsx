@@ -74,7 +74,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const socket = useSocket(userdata._id,gid);
   const convo = conversations?.find(c => c.id === gid) as ConvoType;
   const chat = settings[gid];
-  const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
+  const otherIds = convo?.participants?.filter(id => id !== userdata._id);
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -107,8 +107,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [convo]);
 
   // useEffect(() => {
-  //   console.log('friendId:', friendId);
-  // }, [friendId]);
+  //   console.log('otherIds:', otherIds);
+  // }, [otherIds]);
 
   useEffect(() => {
     fetchData()
@@ -134,13 +134,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   useEffect(() => {
     if (socket && gid && userdata._id) {
-      socket.emit('joinChat', { chatId: gid, userId: userdata._id, friendId: friendId })
 
-      socket.on('userJoined', (data: { chatId: string, userId: string }) => {
-        // console.log('userJoined', data);
+      socket.on('groupAnnouncement', (data: string) => {
+        console.log('You have joined a group chat');
+        alert('You have joined a group chat');
       })
     }
-  }, [friendId, gid, socket, userdata._id]);
+  }, [otherIds, gid, socket, userdata._id]);
 
   const handleSendMessage = (id: string) => {
     if (newMessage.trim() !== '') {
@@ -148,16 +148,26 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       const textArea = textAreaRef.current;
       if (textArea) textArea.style.height = '40px';
 
-      const isRead = friendId ? { [userdata._id]: false, [friendId]: true } : { [userdata._id]: true };
+      const isRead = otherIds
+        ? Object.fromEntries([
+            [userdata._id, false],
+            ...otherIds.map((id: string) => [id, true])
+          ])
+        : { [userdata._id]: true };
 
       const msg = { 
         _id: generateObjectId(),
         chatId: gid, 
-        senderId: userdata._id,
-        receiverId: friendId,
+        sender: {
+          id: userdata._id,
+          name: userdata.name,
+          displayPicture: userdata.dp,
+          verified: userdata.verified,
+        },
+        receiverId: gid,
         content: newMessage, 
         timestamp: new Date().toISOString(),
-        messageType: 'DMs',
+        messageType: 'Groups',
         isRead: isRead, // Object with participant IDs as keys and their read status as values
         reactions: [],
         attachments: [],
@@ -185,28 +195,28 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   const handleTyping = () => {
     if (!socket || !gid) return;
-    const details = { userId: userdata._id, to: friendId, chatId: gid };
-    socket.emit('typing', { userId: userdata._id, to: friendId, chatId: gid });
+    const details = { userId: userdata._id, to: otherIds, chatId: gid };
+    socket.emit('typing', { userId: userdata._id, to: otherIds, chatId: gid });
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', { userId: userdata._id, to: friendId, chatId: gid });
+      socket.emit('stopTyping', { userId: userdata._id, to: otherIds, chatId: gid });
     }, 3000);
   };
 
   return (
     <div className={`bg-bgLight tablets1:flex ${chaT}  dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 sticky top-0 bottom-0">
+      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 bottom-0">
         <div className='flex gap-4 items-center justify-start'>
           <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           {load
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             :
             <div>
-              <h2 className="text-sm font-semibold text-center">{group?.name}</h2>
+              <h2 className="text-sm font-semibold text-left">{group?.name}</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {convo?.online ? 'Online' : 'Offline'}
                 {Object.entries(convo?.isTyping || {}).some(([id, isTyping]) => isTyping) && 
@@ -276,7 +286,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   </div>
                 </div>
               )}
-              <MessageTab key={message._id as string} message={message} setQuote={setQuote}/>
+              <MessageTab key={message._id as string} chat='Groups' message={message} setQuote={setQuote}/>
             </Fragment>
           ))}
         </div>

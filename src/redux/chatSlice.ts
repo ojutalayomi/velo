@@ -17,6 +17,7 @@ export interface ConvoType {
   unread: number;
   displayPicture: string;
   description: string;
+  verified: boolean;
   favorite: boolean,
   pinned: boolean,
   deleted: boolean,
@@ -217,6 +218,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
         unread: participant?.unreadCount || 0,
         displayPicture: convo.chatType === 'DMs' ? displayPicture as string : convo.groupDisplayPicture,
         description: convo.chatType === 'DMs' ? '' : convo.groupDescription,
+        verified: convo.verified || false,
         favorite: participant?.favorite || false,
         pinned: participant?.pinned || false,
         deleted: participant?.deleted || false,

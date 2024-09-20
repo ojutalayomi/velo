@@ -56,10 +56,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       );
       const updatedChat = await client.db(MONGODB_DB).collection('chats').findOne(
-        { _id: new ObjectId(id as string) },
-        { projection: { "participants.$[elem].chatSettings": 1 } }
+        { _id: new ObjectId(id as string), "participants.id": payload._id },
+        { projection: { "participants.chatSettings": 1 } }
       ) as unknown as ChatData;
-      const updatedChatSettings = updatedChat?.participants.find(p => p.id === payload._id)?.chatSettings;
+      const updatedChatSettings = updatedChat?.participants[0]?.chatSettings;
       return res.status(200).json(updatedChatSettings);
     } catch (error) {
       console.error(error);

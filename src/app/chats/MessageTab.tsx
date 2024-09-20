@@ -1,10 +1,11 @@
 'use client'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { Copy, Ellipsis, Reply, Send, TextQuote, Trash2, X } from 'lucide-react';
 import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { useDispatch } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ConvoType, setConversations, setMessages, addMessages, deleteMessage, updateLiveTime } from '@/redux/chatSlice'; 
+import { ConvoType, setConversations, setMessages, addMessages, deleteMessage, updateLiveTime, updateConversation } from '@/redux/chatSlice'; 
 
 type Message = {
   _id: string,
@@ -29,30 +30,33 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const { userdata, loading, error, refetchUser } = useUser();
   const [isCopied, setIsCopied] = useState(false);
   const [options,openOptions] = useState<boolean>(false);
-  const [time, setTime] = useState<string>(updateLiveTime('getlivetime', message.timestamp));
+  const [time, setTime] = useState<string>(updateLiveTime('chat-time', message.timestamp));
   const svgRef = useRef<SVGSVGElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
 
   const senderId = 'sender' in message ? message.sender.id : message.senderId;
   const sender = 'sender' in message ? message.sender.name : '';
+  const verified = 'sender' in message ? message.sender.verified : false;
+  const displayPicture = 'sender' in message ? message.sender.displayPicture : '';
+  const url = 'https://s3.amazonaws.com/profile-display-images/';
+
+  // useEffect(() => {
+  //   setTime(updateLiveTime('chat-time', message.timestamp));
+  // }, [message.timestamp]);
+
 
   useEffect(() => {
-    setTime(updateLiveTime('chat-time', message.timestamp));
-  }, [message.timestamp]);
-
-
-  useEffect(() => {
-    const handleClickOutside = (event: any) => {
-      if (optionsRef.current && !optionsRef.current.contains(event.target as Node) && options) {
-        openOptions(false);
-      } else if (svgRef.current && !svgRef.current.contains(event.target as Node) && options) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (options && !(event.target as Element).closest('.edit-list')) {
+        // console.log('Clicked outside options');
         openOptions(false);
       }
     };
-    document.addEventListener('click', handleClickOutside);
+
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [options]);
 
@@ -67,9 +71,34 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
     }
   };
 
+  const optionss = [
+    {
+      icon: TextQuote,
+      text: 'Quote',
+      onClick: () => setQuote({
+        message: { content: message.content, _id: message._id as string, senderId },
+        state: true
+      })
+    },
+    {
+      icon: Copy,
+      text: isCopied ? 'Copied!' : 'Copy message',
+      onClick: copyToClipboard
+    },
+    ...(senderId === userdata._id ? [{
+      icon: Trash2,
+      text: 'Delete',
+      onClick: () => {
+        dispatch(updateConversation({ id: message.chatId as string, updates: { lastMessage: message.content } }));
+        dispatch(deleteMessage(message._id as string));
+        openOptions(false);
+      }
+    }] : [])
+  ];
+
   if (chat === "Groups") {
     return (
-      <div className={`dark:text-gray-400 flex flex-col mb-1`}>
+      <div className={`dark:text-gray-400 flex flex-col mb-2`}>
         <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
           <div
             className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
@@ -77,41 +106,41 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             } text-left`}
           >
             {senderId !== userdata._id && (
-              <p className="dark:text-gray-100 font-semibold text-xs mb-1">{sender}</p>
+              <div className='flex items-center'>
+                <Image src={
+                  displayPicture  
+                  ?  (
+                    displayPicture.includes('ila-') 
+                    ? '/default.jpeg'
+                    : url +  displayPicture
+                  )
+                  : '/default.jpeg'} 
+                  height={10} width={10} alt={sender} className="w-4 h-4 rounded-full mr-1" 
+                />
+                <p className="dark:text-gray-100 font-semibold text-xs mb-1">{sender}</p>
+                {verified && 
+                  <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                }
+              </div>
             )}
-            <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`}>{message.content}</pre>
+            <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{message.content}</pre>
           </div>
           <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
           {options && (
-            <div ref={optionsRef} className={`absolute backdrop-blur-sm flex ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}>
-              <div className='flex gap-1 items-center cursor-pointer' 
-              onClick={() => {
-                setQuote({
-                  message: {
-                    content: message.content,
-                    _id: message._id as string,
-                    senderId: senderId
-                  }, 
-                  state: true
-                });
-                openOptions(false);
-              }}>
-                <TextQuote size={20} className='dark:text-gray-400'/>
-                <span className='text-xs dark:text-white'>Quote</span>
-              </div>
-              <div className='flex gap-1 items-center cursor-pointer' onClick={copyToClipboard}>
-                <Copy size={20} className='dark:text-gray-400'/>
-                <span className='text-xs dark:text-white'>{isCopied ? 'Copied!' : 'Copy message'}</span>
-              </div>
-              {senderId === userdata._id && (
-                <div className='flex gap-1 items-center cursor-pointer' onClick={() => {
-                  dispatch(deleteMessage(message._id as string));
-                  openOptions(false);
-                }}>
-                  <Trash2 size={20} className='dark:text-gray-400'/>
-                  <span className='text-xs dark:text-white'>Delete</span>
+            <div className={`edit-list absolute backdrop-blur-sm flex ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`} 
+            onClick={(e) => e.stopPropagation()}
+            >
+              {optionss.map(({ icon: Icon, text, onClick }, index) => (
+                <div key={index} className='flex gap-1 items-center cursor-pointer' 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick()
+                  }}
+                >
+                  <Icon size={20} className='dark:text-gray-400'/>
+                  <span className='text-xs dark:text-white'>{text}</span>
                 </div>
-              )}
+              ))}
             </div>
           )}
         </div>
@@ -121,7 +150,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   }
 
   return(
-    <div className={`dark:text-gray-400 flex flex-col mb-1`}>
+    <div className={`dark:text-gray-400 flex flex-col mb-2`}>
 
       <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
         <div
@@ -134,27 +163,15 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
           <div className={`dark:text-white mobile:text-sm`}>{message.content}</div>
         </div>
         <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
-        <div ref={optionsRef} className={`absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}>
-          <div className='flex gap-1 items-center cursor-pointer' 
-          onClick={() => setQuote({
-            message: {
-              content: message.content,
-              _id: message._id as string,
-              senderId: senderId
-            }, 
-            state: true
-          })}>
-            <TextQuote size={20} className='dark:text-gray-400'/>
-            <span className='text-xs dark:text-white'>Quote</span>
-          </div>
-          <div className='flex gap-1 items-center cursor-pointer' onClick={copyToClipboard}>
-            <Copy size={20} className='dark:text-gray-400'/>
-            <span className='text-xs dark:text-white'>{isCopied ? 'Copied!' : 'Copy message'}</span>
-          </div>
-          <div className='flex gap-1 items-center cursor-pointer' onClick={() => dispatch(deleteMessage(message._id as string))}>
-            <Trash2 size={20} className='dark:text-gray-400'/>
-            <span className='text-xs dark:text-white'>Delete</span>
-          </div>
+        <div ref={optionsRef} className={`edit-list absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}
+        onClick={(e) => e.stopPropagation()}
+        >
+          {optionss.map(({ icon: Icon, text, onClick }, index) => (
+            <div key={index} className='flex gap-1 items-center cursor-pointer' onClick={onClick}>
+              <Icon size={20} className='dark:text-gray-400'/>
+              <span className='text-xs dark:text-white'>{text}</span>
+            </div>
+          ))}
         </div>
       </div>
 

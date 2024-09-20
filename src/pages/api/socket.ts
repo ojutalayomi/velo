@@ -2,10 +2,9 @@ import { Server as NetServer } from 'http'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Server as ServerIO, Socket } from 'socket.io'
 import { Socket as NetSocket } from 'net';
-import { MessageAttributes, NewChat_ } from '@/lib/types/type';
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { GroupMessageAttributes, MessageAttributes, NewChat_ } from '@/lib/types/type';
+import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
 import Redis from 'ioredis';
-import { FireExtinguisher } from 'lucide-react';
 
 export const config = {
   api: {
@@ -16,7 +15,7 @@ export const config = {
 const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
 let client: MongoClient;
 const MONGODB_DB = 'mydb';
-const ONLINE_USERS_COLLECTION = 'OnlineUsers';
+const ONLINE_USERS_KEY = 'online_users';
 const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 const USER_TIMEOUT = 60; // 60 seconds
 let io: ServerIO;
@@ -35,12 +34,20 @@ type NextApiResponseWithSocket = NextApiResponse & {
   };
 };
 
+const func = async (_id: string): Promise<any> => {
+  const chats = await client.db(MONGODB_DB).collection('chats').find({ 
+    'participants.id': _id,
+    'chatType': 'Groups'
+  }).toArray()
+  return chats;
+}
+
 const redis = new Redis(process.env.REDIS_URL || '');
 
 const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
   if (!res.socket.server.io) {
     const id = req.query.id as string;
-    console.log('Socket is initializing');
+    // console.log('Socket is initializing');
     
     try {
       io = new ServerIO(res.socket.server, {
@@ -48,6 +55,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         transports: ['websocket', 'polling'],
         pingTimeout: 60000, // Increase ping timeout to 60 seconds
       });
+      io.sockets.setMaxListeners(0);
       res.socket.server.io = io;
 
       const BATCH_INTERVAL = 5000; // 5 seconds
@@ -61,10 +69,10 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
       }, BATCH_INTERVAL);
 
       io.on('connection', async (socket: UserSocket) => {
-        console.log('New client connected');
+        // console.log('New client connected');
 
         // Initialize MongoDB connection
-        /*if (!client) {
+        if (!client) {
           client = new MongoClient(uri, {
             serverApi: {
               version: ServerApiVersion.v1,
@@ -75,62 +83,84 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
             maxPoolSize: 10
           });
           await client.connect();
-          console.log("Mongoconnection: You successfully connected to MongoDB!");
-        }*/
+          // console.log("Mongoconnection: You successfully connected to MongoDB!");
+        }
 
         socket.on('register', async (userId: string) => {
           if (userId) {
-            console.log(`Received register event for user: ${userId}`);
-            socket.join(`user:${userId}`);
-            console.log(`User ${userId} registered and joined room user:${userId}`);
-            socket.emit('registerAck', `Registration successful for user ${userId}`);
+            const isAlreadyConnected = await redis.sismember(ONLINE_USERS_KEY, userId);
+            if (!isAlreadyConnected) {
+              // console.log(`Registering user: ${userId}`);
+              await redis.sadd(ONLINE_USERS_KEY, userId);
+              socket.userId = userId;
+              socket.join(`user:${userId}`);
+              const groups = await func(userId);
+              groups.forEach((group: any) => {
+                socket.join(`group:${group._id.toString()}`);
+                // console.log(`User ${userId} joined group:${group._id.toString()}`);
+              });
+              // console.log(`User ${userId} registered and joined room user:${userId}`);
 
-            // Update user's online status
-            await updateUserOnlineStatus(userId, true);
+              // Update user's online status
+              await updateUserOnlineStatus(userId, true);
+            } else {
+              // console.log(`User ${userId} already registered`);
+              // Even if already registered, make sure they're in all their group rooms
+              const groups = await func(userId);
+              groups.forEach((group: any) => {
+                socket.join(`group:${group._id.toString()}`);
+                // console.log(`User ${userId} joined group:${group._id.toString()}`);
+              });
+            }
           }
         });
 
         // Implement heartbeat mechanism
         const heartbeat = setInterval(async () => {
-          if (socket.rooms.has(`user:${socket.id}`)) {
-            await updateUserOnlineStatus(socket.id, true);
+          if (socket.userId) {
+            await updateUserOnlineStatus(socket.userId, true);
           }
         }, HEARTBEAT_INTERVAL);
 
-        socket.on('disconnect', async (reason) => {
+        socket.on('disconnect', async () => {
           clearInterval(heartbeat);
-          if (socket.rooms.has(`user:${socket.id}`)) {
-            await updateUserOnlineStatus(socket.id, false);
-            console.log('Client disconnected:', reason);
+          if (socket.userId) {
+            await redis.srem(ONLINE_USERS_KEY, socket.userId);
+            await updateUserOnlineStatus(socket.userId, false);
+            // console.log(`User ${socket.userId} disconnected`);
           }
         });
 
         socket.on('leaveChat', (chatId: string) => {
           socket.leave(chatId)
-          console.log(`Client ${socket.id} left chat: ${chatId}`)
+          // console.log(`Client ${socket.id} left chat: ${chatId}`)
         })
 
         socket.on('addChat', async (data: NewChat_) => {
-          console.log('Data received:', data)
-
-          // Emit to sender's room
-          io.to(`user:${data.chat.participants[0]}`).emit('newChat', data)
-    
-          // Emit to receiver's room
-          if(data.chat.participants[1]) io.to(`user:${data.chat.participants[1]}`).emit('newChat', data)
+          // console.log('Data received:', data)
+          data.chat.participants.forEach(participant => {
+            io.to(`user:${participant.id}`).emit('newChat', data)
+          })
         })
 
-        socket.on('chatMessage', async (data: MessageAttributes) => {
+        socket.on('chatMessage', async (data: MessageAttributes | GroupMessageAttributes) => {
           // console.log('Message received:', data)
           
           // Save message to database (pseudo-code)
           // await saveMessageToDatabase(data)
-    
-          // Emit to sender's room
-          io.to(`user:${data.senderId}`).emit('newMessage', data)
-    
-          // Emit to receiver's room
-          if (data.receiverId) io.to(`user:${data.receiverId}`).emit('newMessage', data)
+
+          if ('messageType' in data && data.messageType === 'Groups') {
+            // For group messages, emit to the group room
+            io.to(`group:${data.receiverId}`).emit('newMessage', data);
+          } else {
+            // For individual messages, emit to sender and receiver
+            if ('senderId' in data) {
+              io.to(`user:${data.senderId}`).emit('newMessage', data);
+            }
+            if ('receiverId' in data && data.receiverId) {
+              io.to(`user:${data.receiverId}`).emit('newMessage', data);
+            }
+          }
         })
 
         socket.on('typing', (data: { userId: string, to: string, chatId: string }) => {
@@ -157,39 +187,27 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           const room = io.sockets.adapter.rooms.get(chatId);
           if (room) {
             const members = Array.from(room);
-            console.log(`Members in chat ${chatId}:`, members);
+            // console.log(`Members in chat ${chatId}:`, members);
             socket.emit('roomMembers', { chatId, members });
           } else {
-            console.log(`Chat ${chatId} not found`);
+            // console.log(`Chat ${chatId} not found`);
             socket.emit('roomMembers', { chatId, members: [] });
           }
         });
-        socket.on('joinChat', (data: { chatId: string, userId: string, friendId: string }) => {
-          const { chatId, userId, friendId } = data;
-          socket.join(chatId);
-          // console.log(`User ${userId} joined chat: ${chatId}`);
-          // console.log(`User ${friendId} was added to the chat: ${chatId}`);
-
-          const room = io.sockets.adapter.rooms.get(chatId);
-          if (room) {
-            const members = Array.from(room);
-            console.log(`Members in chat ${chatId}:`, members);
-          } else {
-            console.log(`Chat ${chatId} not found`);
-          }
-          // Notify other users in the chat room
-          socket.to(chatId).emit('userJoined', { chatId, userId, friendId });
-          
-          // Optionally, you can emit a confirmation to the user who joined
-          socket.emit('joinedChat', { chatId, userId, friendId });
+        
+        socket.on('joinChat', (data: { chatId: string }) => {
+          const { chatId } = data;
+          socket.join(`group:${chatId}`);
+          // console.log(`User ${socket.id} joined group:${chatId}`);
+          io.to(`group:${chatId}`).emit('groupAnnouncement', { chatId, userId: socket.userId });
         });
       })
 
       io.engine.on("connection_error", (err) => {
-        console.log(err.req);      // the request object
-        console.log(err.code);     // the error code, for example 1
-        console.log(err.message);  // the error message, for example "Session ID unknown"
-        console.log(err.context);  // some additional error context
+        // console.log(err.req);      // the request object
+        // console.log(err.code);     // the error code, for example 1
+        // console.log(err.message);  // the error message, for example "Session ID unknown"
+        // console.log(err.context);  // some additional error context
       });
 
     } catch (error) {

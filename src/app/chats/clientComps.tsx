@@ -120,25 +120,8 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           ))}
         </div>
         {/* Pinned */}
-        <div className="dark:text-slate-200 flex items-center justify-between w-full px-3 py-2">
-          <h2 className="text-lg font-semibold">Pinned</h2>
-          <Pin size={21} 
-          className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out {filterConversations('Pinned').length > 0 ? 'block' : 'hidden'}`}
-          onClick={() => {
-            const selectedChats = filterConversations('Pinned');
-            if (selectedChats.length > 0) {
-              // If there are pinned chats, slide to the Pinned tab
-              swiper && swiper.slideTo(tabs.indexOf('Pinned'));
-            } else {
-              // If no chats are pinned, show a modal or alert to select chats to pin
-              alert('No pinned chats. Please select chats to pin first.');
-              // Here you could also open a modal to select chats to pin
-            }
-          }}
-          />
-        </div>
-        <div className="px-3">
-          {Array.isArray(filterConversations('Pinned')) && filterConversations('Pinned').length > 0 ? (
+        <div className="pt-1 px-3">
+          {Array.isArray(filterConversations('Pinned')) && filterConversations('Pinned')?.length > 0 ? (
             <ChatListPage className='overflow-visible' filteredChats={() => filterConversations('Pinned')}/>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400">No pinned chats</p>
@@ -147,7 +130,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
         {/* Slider */}
         <Swiper onSwiper={updateSwiper} onSlideChange={onSlideChange} slidesPerView={1} spaceBetween={10} modules={[Pagination, Navigation]} className="dark:text-slate-200 !flex flex-col flex-grow w-full" id='vufqnuju'>
           <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
-            {!ayo || filterConversations('all').length === 0 ?
+            {!ayo || filterConversations('all')?.length === undefined || filterConversations('all')?.length === 0 ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No chats or groups available</h3>
@@ -166,7 +149,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             }
           </SwiperSlide>
           <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
-              {!ayo || filterConversations('DMs').length === 0 ?
+              {!ayo || filterConversations('DMs')?.length === undefined || filterConversations('DMs')?.length === 0 ?
                 <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No chats available</h3>
@@ -185,7 +168,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
               }
           </SwiperSlide>
           <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
-            {!ayo || filterConversations('Groups').length === 0 ?
+            {!ayo || filterConversations('Groups')?.length === undefined || filterConversations('Groups')?.length === 0 ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <Users className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No groups available</h3>
@@ -205,7 +188,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           </SwiperSlide>
           <SwiperSlide className='flex flex-col flex-grow
            self-stretch justify-center' style={{ height: 'auto' }}>
-            {!ayo || filterConversations('Archived').length === 0 ?
+            {!ayo || filterConversations('Archived')?.length === undefined || filterConversations('Archived')?.length === 0 ?
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <Archive className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No archive available</h3>

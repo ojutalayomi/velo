@@ -65,8 +65,7 @@ const NewChatMenu = () => {
           const existingParticipantIds = conversations.flatMap(convo => convo.participants);
 
           const newData = data.filter((user: UserData) => 
-            user.username !== userdata.username &&
-            !existingParticipantIds.includes(user._id)
+            user.username !== userdata.username
           );
           setResults(newData);
           

@@ -55,8 +55,10 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         transports: ['websocket', 'polling'],
         pingTimeout: 60000, // Increase ping timeout to 60 seconds
       });
-      io.sockets.setMaxListeners(0);
+      io.setMaxListeners(20); // Adjust the number as needed
       res.socket.server.io = io;
+
+      // Set max listeners to avoid memory leak warnings
 
       const BATCH_INTERVAL = 5000; // 5 seconds
       const statusUpdates = new Map();
@@ -104,8 +106,16 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
               // Update user's online status
               await updateUserOnlineStatus(userId, true);
             } else {
+              // Leave every room the user is present in
+              const rooms = Array.from(socket.rooms);
+              rooms.forEach(room => {
+                socket.leave(room);
+              });
+              // console.log(`User ${userId} left all rooms`);
+
+              await redis.del(`user:${userId}:online`);
               // console.log(`User ${userId} already registered`);
-              // Even if already registered, make sure they're in all their group rooms
+              socket.join(`user:${userId}`);
               const groups = await func(userId);
               groups.forEach((group: any) => {
                 socket.join(`group:${group._id.toString()}`);
@@ -129,6 +139,8 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
             await updateUserOnlineStatus(socket.userId, false);
             // console.log(`User ${socket.userId} disconnected`);
           }
+          // Remove all listeners for this socket
+          socket.removeAllListeners();
         });
 
         socket.on('leaveChat', (chatId: string) => {
@@ -137,10 +149,11 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         })
 
         socket.on('addChat', async (data: NewChat_) => {
-          // console.log('Data received:', data)
-          data.chat.participants.forEach(participant => {
-            io.to(`user:${participant.id}`).emit('newChat', data)
-          })
+          // Ensure participants are unique to avoid multiple emissions
+          const uniqueParticipants = new Set(data.chat.participants.map(participant => participant.id));
+          uniqueParticipants.forEach(participantId => {
+            io.to(`user:${participantId}`).emit('newChat', data);
+          });
         })
 
         socket.on('chatMessage', async (data: MessageAttributes | GroupMessageAttributes) => {
@@ -204,10 +217,10 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
       })
 
       io.engine.on("connection_error", (err) => {
-        // console.log(err.req);      // the request object
-        // console.log(err.code);     // the error code, for example 1
-        // console.log(err.message);  // the error message, for example "Session ID unknown"
-        // console.log(err.context);  // some additional error context
+        console.log(err.req);      // the request object
+        console.log(err.code);     // the error code, for example 1
+        console.log(err.message);  // the error message, for example "Session ID unknown"
+        console.log(err.context);  // some additional error context
       });
 
     } catch (error) {
@@ -220,10 +233,12 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
 }
 
 async function updateUserOnlineStatus(userId: string, isOnline: boolean) {
-  if (isOnline) {
+  const currentStatus = await redis.get(`user:${userId}:online`);
+  
+  if (isOnline && currentStatus !== 'true') {
     await redis.set(`user:${userId}:online`, 'true', 'EX', USER_TIMEOUT);
     io.to(`user:${userId}`).emit('userStatus', { userId, status: 'online' });
-  } else {
+  } else if (!isOnline && currentStatus !== null) {
     await redis.del(`user:${userId}:online`);
     io.to(`user:${userId}`).emit('userStatus', { userId, status: 'offline' });
   }

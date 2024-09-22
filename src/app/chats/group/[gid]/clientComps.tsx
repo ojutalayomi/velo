@@ -277,18 +277,34 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           </div>
         </div>
         <div className="mb-4 mt-4 flex-1">
-          {Messages.map((message) => (
-            <Fragment key={`${generateObjectId()}`}>
-              {message.quotedMessage !== '' && (
-                <div className={`flex m-1 ${message.sender.id === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
-                  <div className={`${message.sender.id === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>
-                    {Messages?.find(m => m._id as string === message.quotedMessage)?.content.substring(0, 40) || ''}
-                  </div>
+        {Messages.reduce((acc: JSX.Element[], message, index) => {
+            const messageDate = new Date(message.timestamp).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+            const lastDate = acc.length > 0 ? acc[acc.length - 1].props['data-date'] : null;
+
+            // Check if the current message date is different from the last displayed date
+            if (messageDate !== lastDate) {
+              acc.push(
+                <div key={`date-${messageDate+message._id}`} data-date={messageDate} className="text-center text-gray-500 my-2">
+                  {messageDate}
                 </div>
-              )}
-              <MessageTab key={message._id as string} chat='Groups' message={message} setQuote={setQuote}/>
-            </Fragment>
-          ))}
+              );
+            }
+
+            acc.push(
+              <Fragment key={message._id as string}>
+                {message.quotedMessage !== '' && (
+                  <div className={`flex m-1 ${message.sender.id === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
+                    <div className={`${message.sender.id === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>
+                      {Messages?.find(m => m._id as string === message.quotedMessage)?.content.substring(0, 40) || ''}
+                    </div>
+                  </div>
+                )}
+                <MessageTab key={message._id as string} chat='Groups' message={message} setQuote={setQuote}/>
+              </Fragment>
+            );
+
+            return acc;
+          }, [])}
         </div>
       </div>
       <div className="flex flex-col gap-[5px] p-2 sticky top-0 bottom-0">

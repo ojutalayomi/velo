@@ -154,13 +154,13 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
       <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
         <div
-          className={`mb-1 p-2 rounded-lg overflow-auto w-full flex  shadow-md ${
+          className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
             senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
           } text-left`}
         >
           {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
           {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-          <div className={`dark:text-white mobile:text-sm`}>{message.content}</div>
+          <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{message.content}</pre>
         </div>
         <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
         <div ref={optionsRef} className={`edit-list absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}

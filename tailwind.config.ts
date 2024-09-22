@@ -57,6 +57,7 @@ const config: Config = {
       'tablets': '500px',
       'tablets1': '769px',
       'mobile': {'max': '768px'},
+      'large': '1265px',
     }
   },
   plugins: [],

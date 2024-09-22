@@ -52,13 +52,13 @@ const SettingsPage = () => {
   return (
     <div className="bg-gray-100 dark:bg-neutral-950 dark:text-slate-200 min-h-screen">
       {/* Header */}
-      <header className="bg-white dark:bg-neutral-900 dark:border-black-200 px-2 py-2 border-b border-gray-200 dark:border-gray-400">
+      <header className="bg-white dark:bg-neutral-900 flex items-center gap-1 dark:border-black-200 px-2 py-2 border-b border-gray-200 dark:border-gray-400">
         <FontAwesomeIcon onClick={() => router.push('/home')} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-        <h1 className="text-xl font-semibold">Settings</h1>
+        <h1 className="font-semibold">Settings</h1>
       </header>
 
       {/* Settings List */}
-      <main className="p-4">
+      <main className="p-4 h-[80dvh]">
         {settingsCategories.map((category, categoryIndex) => (
           <div key={categoryIndex} className="mb-6">
             <h2 className="text-lg font-medium mb-2 px-2">{category.title}</h2>

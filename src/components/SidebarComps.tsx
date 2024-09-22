@@ -120,8 +120,8 @@ export const UserSection = forwardRef<HTMLDivElement, {
   handlePopUp: () => void;
   refetchUser: () => void;
 }>(({ error, loading, userdata, pathname, isPopUp, handlePopUp, refetchUser }, ref) => (
-  <div ref={ref} className={`user gap-3 ${!error ? 'hover:bg-slate-200 dark:hover:bg-neutral-900' : ''} tablets1:items-center !justify-center tablets1:!justify-between !m-0 w-full`} onClick={handlePopUp}>
-    {!loading && !userdata.username ? (
+  <div ref={ref} className={`user gap-3 ${!error ? 'hover:bg-slate-200 dark:hover:bg-neutral-900' : ''} tablets1:items-center !justify-center tablets1:!justify-between !my-[.5em] !mx-0 !p-1 rounded-full shadow-bar w-full`} onClick={handlePopUp}>
+    {!loading && error ? (
       <div className='dark:text-slate-200 flex flex-col gap-2'>
         <p className='flex items-center hover:text-brand'>
           <LogIn size={25} className="mr-2" />
@@ -143,7 +143,7 @@ export const UserSection = forwardRef<HTMLDivElement, {
           )}
         </div>
         
-        <div className='names flex-col hidden tablets1:!flex'>
+        <div className='flex-1 items-center names flex-col hidden tablets1:!flex'>
           <div className='flex dark:text-slate-200'>
             {loading || error ? (
               <div className='animate-pulse w-14 h-4 bg-[#9E9E9E] rounded mb-1'></div>

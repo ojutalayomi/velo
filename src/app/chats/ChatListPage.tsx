@@ -14,6 +14,7 @@ import { Pin } from 'lucide-react';
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
     className?: string;
+    className1?: string;
 };
 
 interface Props {
@@ -194,16 +195,16 @@ const Card: React.FC<Props> = ({chat}) => {
   )
 }
 
-const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats,className = 'overflow-auto p-4'}) => {
-    return (
-      <div className={`flex-grow h-full ${className}`}>
-        <div className="flex flex-col gap-1 mb-10 tablets1:mb-0">
-          {filteredChats().map((chat,key) => (
-            <Card key={key} chat={chat} />
-          ))}
-        </div>
+const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats,className = 'overflow-auto p-4',className1 = 'mb-10'}) => {
+  return (
+    <div className={`flex-grow h-full ${className}`}>
+      <div className={`flex flex-col gap-1 ${className1} tablets1:mb-0`}>
+        {filteredChats().map((chat,key) => (
+          <Card key={key} chat={chat} />
+        ))}
       </div>
-    );
+    </div>
+  );
 };
 
 export default ChatListPage;

@@ -78,7 +78,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastDate = useRef<string>();
+  const [lastDate,setLastDate] = useState<string>();
 
   useEffect(() => {
     dispatch(showChat(''));
@@ -315,14 +315,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             const messageDate = new Date(message.timestamp).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 
             // Check if the current message date is different from the last displayed date
-            if (messageDate !== lastDate.current) {
+            if (messageDate !== lastDate) {
               acc.push(
                 <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 my-2">
                   {messageDate}
                 </div>
               );
             }
-            lastDate.current = messageDate;
+            setLastDate(messageDate);
 
             acc.push(
               <Fragment key={message._id as string}>

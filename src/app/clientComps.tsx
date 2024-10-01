@@ -66,7 +66,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             id: data.chat._id,
             type: data.chat.chatType,
             name: data.chat.chatType === 'DMs' ? data.chat.name[Object.keys(data.chat.name).find(e => !e.includes(uid)) || ''] : data.chat.name.group,
-            displayPicture: otherParticipant?.displayPicture || '',
+            displayPicture: otherParticipant?.displayPicture || 'Be the first to text',
             description: data.chat.groupDescription || '',
             verified: data.chat.verified || false,
             lastMessage: '',

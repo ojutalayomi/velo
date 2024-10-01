@@ -48,13 +48,13 @@ export const chatRepository = {
               .map(async (participant: Participant) => {
                 try {
                   const user = await func(participant.id);
-                  if (user) {
+                  if (user && a.chatType === 'DMs') {
                     // console.log('User found for participant:', participant.id);
                     a.verified = user.verified;
                     // Set chat name to the other participant's name for DMs
-                    if (a.chatType === 'DMs' && a.participants.length === 2) {
+                    if (a.participants.length === 2) {
                       const otherParticipant = a.participants.find((p: Participant) => p.id !== payload._id);
-                      if (otherParticipant.id !== payload._id) {
+                      if (otherParticipant && otherParticipant.id !== payload._id) {
                         a.name[otherParticipant.id] = user.name; // Assuming user object has a 'name' property
                       }
                     }
@@ -209,8 +209,8 @@ export const chatRepository = {
           
           await Promise.all(chatCopy.participants.map(async (participant, index) => {
             const user = await func(participant.id);
-            if (user) {
-              if (participant.id !== payload._id && chatCopy.chatType !== 'Groups') {
+            if (user && chatCopy.chatType === 'DMs') {
+              if (participant.id !== payload._id) {
                 chatCopy.name[participant.id] = user.name;
               }
               chatCopy.participants[index].displayPicture = user.displayPicture;

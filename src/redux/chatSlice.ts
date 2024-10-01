@@ -176,7 +176,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
     function filter(param: string) {
       if (!chats.messages) return;
       const filteredResults = chats.messages.filter((msg: MessageAttributes | GroupMessageAttributes) => msg._id === param);
-      return filteredResults.length > 0 ? filteredResults[0].content : 'Start chatting now';
+      return filteredResults.length > 0 ? filteredResults[0].content : 'Be the first to text';
     }
 
     const uid = chats.requestId;
@@ -193,7 +193,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
         id: convo._id,
         type: convo.chatType,
         name: convo.chatType === 'DMs' ? convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || ''] : convo.name.group,
-        lastMessage: filter(participant?.lastMessageId || '') || 'Start chatting now',
+        lastMessage: filter(participant?.lastMessageId || '') || 'Be the first to text',
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,
         displayPicture: convo.chatType === 'DMs' ? displayPicture as string : convo.groupDisplayPicture,

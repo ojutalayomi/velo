@@ -1,3 +1,5 @@
+import { UserData } from "@/redux/userSlice";
+
 // 'use client'
 interface FormData{
   UsernameOrEmail: string,
@@ -8,7 +10,7 @@ interface SignInComponentProps {
   formData: FormData;
 }
 
-export default async function SignInComponent({formData}: SignInComponentProps) {
+export default async function SignInComponent({formData}: SignInComponentProps): Promise<UserData> {
   const response = await fetch('/api/user', {
       method: 'POST',
       headers: {

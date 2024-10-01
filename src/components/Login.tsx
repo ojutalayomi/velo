@@ -8,7 +8,8 @@ import SignInComponent from './SignInController';
 import { setUserData } from '@/redux/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchChats } from '@/redux/chatSlice';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket } from '@/app/providers';import { RootState } from '@/redux/store';
+;
 
 interface FormData{
     UsernameOrEmail: string,
@@ -25,28 +26,29 @@ const Login: React.FC = () => {
     const pathname = usePathname();
     const router = useRouter()
     const searchParams = useSearchParams();
-    const backTo = searchParams?.get('backTo');
-    const userData = useSelector((state: any) => state.user.userdata);
+    const backTo = searchParams?.get('backto');
+    const userData = useSelector((state: RootState) => state.user.userdata);
     const [formData, setFormData] = useState<FormData>(initialFormData);
     const [isEye, setIsEye] = useState(true);
     const [loading, setLoading] = useState<boolean>(false);
     const [errors, setErrors] = useState<FormData>(initialFormData);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<boolean>(false);
-    const socket = useSocket(userData?._id);
+    const socket = useSocket();
 
     useEffect(() => {
-        if(success && !error) router.push(backTo || '/home');
-        async function fetchData() {
+        if(success) router.push(backTo || '/home');
+        const fetchData = async () => {
             await fetchChats(dispatch);
-        }
+        };
         fetchData();
-        if (!socket?.connected) {
-            socket?.on('connect', () => {
-                console.log('Connected to server')
-            })
+        if(socket) {
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                socket.emit('register', userData._id);
+            });
         }
-    }, [success, error, router, backTo, dispatch, socket]);
+    }, [success, router, backTo, dispatch, socket, userData]);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
@@ -94,10 +96,8 @@ const Login: React.FC = () => {
         setError(null);
         try {
             const msg = await SignInComponent({formData});
-            // console.log(msg);
-            setSuccess(true);
-      
             dispatch(setUserData(msg));
+            setSuccess(true);
         } catch (error: any) {
             setError(error.message);
         } finally {
@@ -108,7 +108,7 @@ const Login: React.FC = () => {
     return (
         <div className='child'>
             <div className='item'>
-                <h1>{success ? 'Welcome, ' + userData.firstname : 'Sign in to your account today.'}</h1>
+                <h1>{success ? 'Welcome, ' + userData.name : 'Sign in to your account today.'}</h1>
                 <h2>Don&apos;t have an account? 
                     <Link className='link tom' href='/accounts/signup'> Sign Up</Link>
                 </h2>

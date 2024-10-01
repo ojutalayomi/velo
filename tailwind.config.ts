@@ -22,6 +22,7 @@ const config: Config = {
       },
       boxShadow: {
         'bar': '0 0 0.1em hsla(234, 29%, 20%, 0.993)',
+        'bar-dark': '0 0 0.1em hsl(0deg 0% 100%)',
       },
       colors: {
         'brand': '#ff6257',
@@ -29,6 +30,7 @@ const config: Config = {
       },
       dropShadow: {
         'bar': '0 0 0.1em hsl(3.93deg 100% 67.06% / 78%)',
+        'bar-dark': '0 0 0.1em hsl(0deg 0% 100%)',
       },
       fill: {
         'tom': '#e2e8f0',

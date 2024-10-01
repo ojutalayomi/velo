@@ -15,7 +15,7 @@ import UserPhoto from "@/components/UserPhoto";
 import VideoPlayer from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
 import { MessageAttributes, NewChat_ } from '@/lib/types/type';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket } from '@/app/providers';
 
 interface ClientComponentsProps {
     children: React.ReactNode;
@@ -38,7 +38,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const [isMoreShown, setMoreStatus] = useState(false);
     const [error, setError] = useState(null);
     const [load,setLoad] = useState<boolean>(false);
-    const socket = useSocket(userdata._id);
+    const socket = useSocket();
 
     useEffect(() => {
         setLoad(false)
@@ -61,11 +61,11 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         const uid = data.requestId;
         const participant = data.chat.participants.find(p => p.id === uid);
         const otherParticipant = data.chat.participants.find(p => p.id !== uid);
-
+        // name: convo.chatType === 'DMs' ? convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || ''] : convo.name.group,
         const obj = {
             id: data.chat._id,
             type: data.chat.chatType,
-            name: data.chat.name,
+            name: data.chat.chatType === 'DMs' ? data.chat.name[Object.keys(data.chat.name).find(e => !e.includes(uid)) || ''] : data.chat.name.group,
             displayPicture: otherParticipant?.displayPicture || '',
             description: data.chat.groupDescription || '',
             verified: data.chat.verified || false,

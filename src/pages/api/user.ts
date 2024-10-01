@@ -11,6 +11,7 @@ import crypto from 'crypto'
 import handlebars from 'handlebars'
 import nodemailer from 'nodemailer'
 import { timeFormatter } from '@/templates/PostProps'
+import { UserData } from '@/redux/userSlice'
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -84,7 +85,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    const { firstname, lastname, email, username, displayPicture, verified, userId } = user;
+    const { name, firstname, lastname, email, username, displayPicture, verified, userId } = user;
 
     const randomToken = generateRandomToken(10);
     const time = new Date().toLocaleString();
@@ -97,7 +98,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       { $set: { lastLogin: formattedDate } }
     );
 
-    const newUserdata = { firstname, lastname, email, username, dp: displayPicture, verified, userId };
+    const newUserdata = { name, firstname, lastname, email, username, dp: displayPicture, verified, userId } as unknown as UserData;
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const token = await new SignJWT({ _id: user._id })
@@ -119,9 +120,10 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     res.setHeader('Set-Cookie', cookie.serialize('velo_12', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV !== 'development' ? 'strict': 'none',
       maxAge: 3600 * 24 * 15,
       path: '/',
+      // domain: process.env.NODE_ENV !== 'development' ? 'example.com' : undefined,
     }));
 
     res.status(200).json(newUserdata);

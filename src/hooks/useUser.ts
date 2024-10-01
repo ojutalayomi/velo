@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { setUserData, UserData } from '@/redux/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { debounce } from 'lodash';
-import { fetchChats } from '@/redux/chatSlice';
+import { RootState } from '@/redux/store';
+// import { fetchChats } from '@/redux/chatSlice';
 
 interface UseUserReturn {
     userdata: UserData;
@@ -15,9 +16,11 @@ const debouncedFetchUser = debounce((callback) => {
     callback();
 }, 300);
 
+let fetchedSuccessfully: boolean;
+
 export const useUser = (): UseUserReturn => {
     const dispatch = useDispatch();
-    const userdata = useSelector((state: any) => state.user.userdata );
+    const userdata = useSelector((state: RootState) => state.user.userdata );
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +43,8 @@ export const useUser = (): UseUserReturn => {
             if (Date.now() - parsedData.timestamp < 60000) { // Cache for 1 minute
                 dispatch(setUserData(parsedData.data));
                 setLoading(false);
-                setError(null)
+                setError(null);
+                fetchedSuccessfully = true;
                 return;
             }
         }
@@ -58,6 +62,7 @@ export const useUser = (): UseUserReturn => {
                 timestamp: Date.now()
             }));
             setError(null)
+            fetchedSuccessfully = true;
             console.log('User data fetched successfully');
         } catch (err) {
           if (retries > 0) {
@@ -65,17 +70,18 @@ export const useUser = (): UseUserReturn => {
             return fetchUser(retries - 1);
           }
           setError(err instanceof Error ? err.message : 'An error occurred');
+        //   fetchedSuccessfully = false;
         } finally {
           setLoading(false);
+          fetchedSuccessfully = true;
         }
     }, [dispatch]);
 
     const handleFetchUser = useCallback(() => {
         debouncedFetchUser(fetchUser);
     }, [fetchUser]);
-
     useEffect(() => {
-        if (!checkValuesNotEmpty(userdata)) {
+        if (!checkValuesNotEmpty(userdata as unknown as { [key: string]: string; }) && !fetchedSuccessfully) {
             handleFetchUser();
         } else {
             setLoading(false);

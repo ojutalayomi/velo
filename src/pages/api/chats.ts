@@ -55,7 +55,7 @@ export const chatRepository = {
                     if (a.chatType === 'DMs' && a.participants.length === 2) {
                       const otherParticipant = a.participants.find((p: Participant) => p.id !== payload._id);
                       if (otherParticipant.id !== payload._id) {
-                        a.name = user.name; // Assuming user object has a 'name' property
+                        a.name[otherParticipant.id] = user.name; // Assuming user object has a 'name' property
                       }
                     }
                     return {
@@ -175,7 +175,7 @@ export const chatRepository = {
       // type is ChatData
       const chat = {
         _id: newID,
-        name: chatData.name || '',
+        name: chatData.name || {},
         chatType: chatData.chatType as 'DMs' | 'Groups' | 'Channels',
         participants: chatData.participants.map(participantId => ({
           id: participantId,
@@ -211,7 +211,7 @@ export const chatRepository = {
             const user = await func(participant.id);
             if (user) {
               if (participant.id !== payload._id && chatCopy.chatType !== 'Groups') {
-                chatCopy.name = user.name;
+                chatCopy.name[participant.id] = user.name;
               }
               chatCopy.participants[index].displayPicture = user.displayPicture;
             } else {

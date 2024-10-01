@@ -11,7 +11,7 @@ import { ConvoType, setConversations, updateConversation, setMessages, addMessag
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket } from '@/app/providers';;
 
 interface NavigationState {
   chaT: string;
@@ -71,13 +71,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [newMessage, setNewMessage] = useState('');
   const [group,setGroup] = useState<{[x: string]: any}>([]);
   const gid = params?.gid as string;
-  const socket = useSocket(userdata._id,gid);
+  const socket = useSocket();
   const convo = conversations?.find(c => c.id === gid) as ConvoType;
-  const chat = settings[gid];
+  const chat = settings?.[gid];
   const otherIds = convo?.participants?.filter(id => id !== userdata._id);
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastDate = useRef<string>();
 
   useEffect(() => {
     dispatch(showChat(''));
@@ -90,7 +91,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   }, [convo, convoLoading, dispatch, convo?.unread])
   
-  const Messages = messages.filter( msg => msg.chatId === gid ) as GroupMessageAttributes[];
+  const Messages = messages?.filter( msg => msg.chatId === gid ) as GroupMessageAttributes[];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -106,9 +107,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   }, [convo]);
 
-  // useEffect(() => {
-  //   console.log('otherIds:', otherIds);
-  // }, [otherIds]);
+  useEffect(() => {
+    if (!otherIds && !convo && !convoLoading) {
+      console.log('Redirecting to /chats due to missing otherIds and convo');
+      router.push('/chats');
+    }
+  }, [convo, convoLoading, otherIds, router]);
 
   useEffect(() => {
     fetchData()
@@ -136,8 +140,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     if (socket && gid && userdata._id) {
 
       socket.on('groupAnnouncement', (data: string) => {
-        console.log('You have joined a group chat');
-        alert('You have joined a group chat');
+        // console.log('You have joined a group chat');
+        // alert('You have joined a group chat');
       })
     }
   }, [otherIds, gid, socket, userdata._id]);
@@ -216,12 +220,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             :
             <div>
-              <h2 className="text-sm font-semibold text-left">{group?.name}</h2>
+              <div className="flex items-center text-sm font-semibold text-left">
+                <div className='truncate'>{group?.name}</div>
+                {group?.verified && 
+                  <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                }
+              </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {convo?.online ? 'Online' : 'Offline'}
                 {Object.entries(convo?.isTyping || {}).some(([id, isTyping]) => isTyping) && 
                   ` • ${Object.entries(convo?.isTyping || {})
-                    .filter(([id, isTyping]) => isTyping)
+                    ?.filter(([id, isTyping]) => isTyping)
                     .map(([id, _]) => group?.participants.find((p: { id: string }) => p.id === id)?.name || 'Someone')
                     .join(', ')} is typing...`}
               </p>
@@ -277,18 +286,18 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           </div>
         </div>
         <div className="mb-4 mt-4 flex-1">
-        {Messages.reduce((acc: JSX.Element[], message, index) => {
+        {Messages?.reduce((acc: JSX.Element[], message, index) => {
             const messageDate = new Date(message.timestamp).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-            const lastDate = acc.length > 0 ? acc[acc.length - 1].props['data-date'] : null;
 
             // Check if the current message date is different from the last displayed date
-            if (messageDate !== lastDate) {
+            if (messageDate !== lastDate.current) {
               acc.push(
-                <div key={`date-${messageDate+message._id}`} data-date={messageDate} className="text-center text-gray-500 my-2">
+                <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 my-2">
                   {messageDate}
                 </div>
               );
             }
+            lastDate.current = messageDate;
 
             acc.push(
               <Fragment key={message._id as string}>
@@ -331,12 +340,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 handleSendMessage(quote.message?._id);
               }
             }}
-            className="dark:bg-zinc-900 dark:text-slate-200 flex-grow h-10 max-h-40 mr-2 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
+            className="dark:bg-zinc-900 dark:text-slate-200 flex-grow h-10 max-h-40 mr-2 p-2 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand focus:rounded-lg"
           ></textarea>
           <button
             // disabled={!socket?.connected}
             onClick={() => handleSendMessage(quote.message?._id)}
-            className="bg-brand text-white p-2 rounded-lg max-h-40 hover:bg-tomato focus:outline-none focus:ring-2 focus:ring-brand"
+            className="bg-brand text-white p-2 rounded-full max-h-40 hover:bg-tomato focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <Send size={20} />
           </button>

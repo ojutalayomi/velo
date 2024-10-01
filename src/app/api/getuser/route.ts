@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb'
+import { UserData } from '@/redux/userSlice';
 
 const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
 let client: MongoClient;
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
     
     const newUserdata = {
-        _id: user?._id,
+        _id: user?._id.toString(),
         firstname: user?.firstname,
         lastname: user?.lastname,
         name: user?.name,
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
         dp: user?.displayPicture,
         verified: user?.verified,
         chatid: user?.userId
-    };
+    } as unknown as UserData;
 
     return NextResponse.json(newUserdata);
   } catch (error) {

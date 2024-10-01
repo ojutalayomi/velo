@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Copy, Ellipsis, Loader2, Reply, Send, Settings, TextQuote, Trash2, X } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
-import { ConvoType } from '@/redux/chatSlice';
+import { ConvoType, defaultSettings } from '@/redux/chatSlice';
 
 interface ChatSettingsPageProps {
   chatSystem: ChatSystem;
@@ -53,7 +53,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
       };
   
       if(!convoLoading) {
-        const chatSettings = settings[id as string];
+        const chatSettings = settings?.[id as string];
         if(chatSettings) {
           setChatSettings(chatSettings);
           setChat('i');

@@ -1,40 +1,18 @@
 // redux/chatSlice.ts
 import ChatRepository from '@/lib/class/ChatRepository';
 import ChatSystem from '@/lib/class/chatSystem';
-import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { AllChats, ChatAttributes, ChatSettings, ConvoType, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { createAsyncThunk, createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
-
+export { ConvoType };
 const chatRepository = new ChatRepository();
 
 const chatSystem = new ChatSystem(chatRepository);
-
-export interface ConvoType {
-  id: string;
-  type: string;
-  name: string;
-  lastMessage: string;
-  timestamp: string;
-  unread: number;
-  displayPicture: string;
-  description: string;
-  verified: boolean;
-  favorite: boolean,
-  pinned: boolean,
-  deleted: boolean,
-  archived: boolean,
-  lastUpdated: string,
-  participants: string[],
-  online: boolean,
-  isTyping: {
-    [x: string]: boolean
-  }
-}
 
 interface ChatSetting {
   [x: string]: NewChatSettings 
 }
 
-const settings = {
+const defaultSettings = {
   _id: "",
   chatId: "",
   isMuted: false,
@@ -51,8 +29,10 @@ const settings = {
   isBlocked: false,
   lastSeen: ""
 }
+export { defaultSettings };
+
 const stt = {
-  '': settings
+  '': defaultSettings
 }
 export const Time = (params: string | Date ) => {
   const dateObj = new Date(params);
@@ -212,7 +192,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
       return {
         id: convo._id,
         type: convo.chatType,
-        name: convo.name,
+        name: convo.chatType === 'DMs' ? convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || ''] : convo.name.group,
         lastMessage: filter(participant?.lastMessageId || '') || 'Start chatting now',
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,

@@ -16,7 +16,7 @@ import 'swiper/css/navigation';
 import { Pagination, Navigation } from 'swiper/modules';
 import { MessageSquare, Pin, PinOff, Users, Hash, Search, Archive, Phone, LockKeyholeOpen, LockKeyhole, MessageCirclePlus } from 'lucide-react';
 import ChatListPage from './ChatListPage';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket } from '@/app/providers';;
 import { MessageAttributes } from '@/lib/types/type';
 
 interface NavigationState {
@@ -30,7 +30,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
   const { userdata, loading, error, refetchUser } = useUser();
   const router = useRouter();
   const dispatch = useDispatch();
-  const socket = useSocket(userdata._id);
+  const socket = useSocket();
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
   const [ayo, setAyo] = useState<boolean>(true);
@@ -42,31 +42,28 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
 
   // console.log(conversations);
   const filterConversations = (type: string) => {
-    if(type !== 'all' && type !== 'Archived' && type !== 'Pinned'){
-      return conversations?.filter(conv => 
-        conv.type === type && !conv.archived && !conv.deleted && !conv.pinned &&
-        (conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    } else if (type === 'Archived') {
-      return conversations?.filter(conv =>
-        conv.archived && 
-        (conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    } else if (type === 'Pinned') {
-      return conversations?.filter(conv =>
-        conv.pinned && !conv.archived && !conv.deleted &&
-        (conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    } else {
-      return conversations?.filter(conv => 
-        !conv.archived && !conv.deleted && !conv.pinned &&
-        (conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
+    if (!conversations) return [];
+    const filteredConversations = conversations.filter(conv => {
+      if(type !== 'all' && type !== 'Archived' && type !== 'Pinned'){
+        return conv.type === type && !conv.archived && !conv.deleted && !conv.pinned &&
+        (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
+      } else if (type === 'Archived') {
+        return conv.archived && 
+        (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
+      } else if (type === 'Pinned') {
+        return conv.pinned && !conv.archived && !conv.deleted &&
+        (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
+      } else {
+        return !conv.archived && !conv.deleted && !conv.pinned &&
+        (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
+      }
+    });
+
+    return filteredConversations.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   };
 
   const create = (arg: string) => {
@@ -99,7 +96,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
         </div>
         {/* Search */}
         <div className='dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3'>
-          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar'>
+          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark'>
             <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18' fill='none'>
                 <path className='dark:fill-slate-200' fillRule='evenodd' clipRule='evenodd' d='M8.68945 1C12.9293 1 16.3781 4.3727 16.3781 8.51907C16.3781 10.4753 15.6104 12.2595 14.3542 13.5986L16.8261 16.0109C17.0574 16.2371 17.0582 16.6031 16.8269 16.8294C16.7116 16.9436 16.5592 17 16.4076 17C16.2568 17 16.1052 16.9436 15.9892 16.8309L13.4874 14.3912C12.1714 15.4219 10.5028 16.0389 8.68945 16.0389C4.44955 16.0389 1 12.6655 1 8.51907C1 4.3727 4.44955 1 8.68945 1ZM8.68945 2.15821C5.10251 2.15821 2.18433 5.01125 2.18433 8.51907C2.18433 12.0269 5.10251 14.8807 8.68945 14.8807C12.2756 14.8807 15.1938 12.0269 15.1938 8.51907C15.1938 5.01125 12.2756 2.15821 8.68945 2.15821Z' fill='#78828A'></path>
             </svg>
@@ -113,7 +110,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             <div 
               key={tab}
               onClick={() => swiper && swiper.slideTo(tabs.indexOf(tab))}
-              className={` cursor-pointer dark:shadow-slate-200 flex items-center justify-center w-1/4 px-1 py-1 rounded-full shadow-bar ${activeTab === tab ? 'bg-brand text-white' : ''}`}
+              className={` cursor-pointer dark:shadow-slate-200 flex items-center justify-center w-1/4 px-1 py-1 rounded-full shadow-bar dark:shadow-bar-dark ${activeTab === tab ? 'bg-brand text-white' : ''}`}
             >
               {tab}
             </div>
@@ -158,7 +155,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                       <button
                         type="button"
                         className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                        onClick={() => create('DMs')}
+                        onClick={() => router.push('/chats/compose')}
                       >
                         New Chat
                       </button>

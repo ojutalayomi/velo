@@ -1,34 +1,38 @@
 import { useEffect, useState, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
+import { useUser } from './useUser';
 
 type ID = {
   id: string;
 };
 
-export const useSocket = (id: string,chatid = '') => {
+export const useSocket = () => {
+  const { userdata, loading, error, refetchUser } = useUser();
   const [socket, setSocket] = useState<typeof Socket | null>(null);
-  const retries = useRef(3);
 
   useEffect(() => {
     const socketInitializer = async () => {
-      await fetch('/api/socket')
-      const socketIo = io({
-        path: '/api/socket',
-        transports: ['websocket', 'polling'],
+      // await fetch('/api/socket')
+      const socketIo = io('http://localhost:8080',{
+        path: '/wxyrt',
+        // transports: ['websocket', 'polling'],
       })
 
       const handleConnect = (text: string) => {
+        // This event listener is triggered when the socket connection is established.
+        // It logs the connection status message to the console and emits a 'register' event to the server,
+        // passing the user's ID to register them on the server-side.
         socketIo.on('connect', () => {
-          console.log(text)
-          socketIo.emit('register', id);
+          console.log(text) // Log the connection status message
+          socketIo.emit('register', userdata._id); // Emit 'register' event with user's ID
         })
       }
 
       handleConnect('Connected to server');
       
       if (socketIo.connected) {
-        console.log('Attempting to register with ID:', id)
-        socketIo.emit('register', id);
+        console.log('Attempting to register with ID:', userdata._id)
+        socketIo.emit('register', userdata._id);
       } else {
         handleConnect('Socket not connected, waiting...')
       }
@@ -46,11 +50,10 @@ export const useSocket = (id: string,chatid = '') => {
 
     return () => {
       if (socket) {
-        socket?.emit('leaveChat', id)
         socket.disconnect()
       }
     }
-  }, [id])
+  }, [userdata._id])
 
   return socket;
 };

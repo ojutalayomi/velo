@@ -5,7 +5,7 @@ import Image from 'next/image';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Users, Hash, Plus, X } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket } from '@/app/providers';;
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
 import { ConvoType, setConversations, addConversation } from '@/redux/chatSlice';
@@ -43,7 +43,7 @@ const NewChatMenu = () => {
     const router = useRouter();
     const dispatch = useDispatch();
     const {userdata, loading, error, refetchUser} = useUser();
-    const socket = useSocket(userdata?._id);
+    const socket = useSocket();
     const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
     const [searchQuery, setSearchQuery] = useState('');
     const [noUser, setNoUser] = useState(false);
@@ -92,7 +92,9 @@ const NewChatMenu = () => {
     const createNewChat = async (arg: string) => {
   
       const newChatAttributes = {
-        name: groupName, // Use the provided group name
+        name: {
+          group: groupName,
+        }, // Use the provided group name
         chatType: 'Groups' as ChatType,
         groupDescription: groupDescription,
         groupDisplayPicture: '',
@@ -193,13 +195,13 @@ const NewChatMenu = () => {
             </button>
           </div>
           <div className='flex flex-col gap-2 my-3 px-3'>
-          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar'>
+          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark'>
             <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18' fill='none'>
                 <path className='dark:fill-slate-200' fillRule='evenodd' clipRule='evenodd' d='M8.68945 1C12.9293 1 16.3781 4.3727 16.3781 8.51907C16.3781 10.4753 15.6104 12.2595 14.3542 13.5986L16.8261 16.0109C17.0574 16.2371 17.0582 16.6031 16.8269 16.8294C16.7116 16.9436 16.5592 17 16.4076 17C16.2568 17 16.1052 16.9436 15.9892 16.8309L13.4874 14.3912C12.1714 15.4219 10.5028 16.0389 8.68945 16.0389C4.44955 16.0389 1 12.6655 1 8.51907C1 4.3727 4.44955 1 8.68945 1ZM8.68945 2.15821C5.10251 2.15821 2.18433 5.01125 2.18433 8.51907C2.18433 12.0269 5.10251 14.8807 8.68945 14.8807C12.2756 14.8807 15.1938 12.0269 15.1938 8.51907C15.1938 5.01125 12.2756 2.15821 8.68945 2.15821Z' fill='#78828A'></path>
             </svg>
             <input className='bg-transparent border-0 dark:text-slate-200 outline-0 w-full' value={searchQuery} onChange={(e) => setSearch(e.target.value)} type='text' placeholder='Search for people...'/>
           </div>
-          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar mt-2'>
+          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark mt-2'>
             <Users size={18} className="text-gray-500 dark:text-gray-400" />
             <input 
               className='bg-transparent border-0 dark:text-slate-200 outline-0 w-full' 
@@ -209,7 +211,7 @@ const NewChatMenu = () => {
               onChange={(e) => setGroupName(e.target.value)}
             />
           </div>
-          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-lg shadow-bar mt-2'>
+          <div className='dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-lg shadow-bar dark:shadow-bar-dark mt-2'>
             <textarea 
               className='bg-transparent border-0 dark:text-slate-200 outline-0 w-full' 
               placeholder='Enter group description...'

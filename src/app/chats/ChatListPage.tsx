@@ -67,10 +67,24 @@ const Card: React.FC<Props> = ({chat}) => {
   }
   // console.log(onlineUsers)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(updateLiveTime('getlivetime', chat.lastUpdated));
-    }, 10000);
+    const updateTimer = () => {
+      const timeDifference = Date.now() - Date.parse(chat.lastUpdated);
+      if (timeDifference > (86400 * 1000)) {
+        if (timeDifference < (86400 * 2 * 1000)) {
+          setTime('Yesterday.')
+        } else {
+          const date = new Date(chat.lastUpdated).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+          setTime(date)
+        }
+      } else {
+        setTime(updateLiveTime('chat-time', chat.lastUpdated));
+      }
+    };
 
+    updateTimer();
+  }, [chat.lastUpdated]);
+  
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showDropdown && !(event.target as Element).closest('.dropdown-menu')) {
         setShowDropdown(null);
@@ -80,10 +94,9 @@ const Card: React.FC<Props> = ({chat}) => {
     document.addEventListener('click', handleClickOutside);
 
     return () => {
-      clearInterval(interval);
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [chat.lastUpdated, showDropdown]);
+  }, [showDropdown]);
 
   const options = [
     { id: 1, name: isPinned ? 'Unpin' : 'Pin', action: () => dispatch(updateConversation({ id: chat.id, updates: { pinned: !isPinned } })) },
@@ -101,7 +114,7 @@ const Card: React.FC<Props> = ({chat}) => {
   return(
 
     <div key={chat.id} 
-      className="bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-sm flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative" 
+      className="bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-bar dark:shadow-bar-dark flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative" 
       onClick={() => openChat(chat.id)} 
       onContextMenu={(event) => {
         event.preventDefault();
@@ -154,54 +167,59 @@ const Card: React.FC<Props> = ({chat}) => {
               : url +  chat.displayPicture
             )
             : '/default.jpeg'} 
-            height={40} width={40} alt={chat.name} className="w-12 h-12 rounded-full" />
+            height={40} width={40} alt={chat.name} className="w-12 h-12 min-w-11 rounded-full" />
         {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] && (
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
         )}
       </div>
-      <div className="flex-grow">
+      <div className="flex-grow w-1/4">
         <div className="flex justify-between items-baseline">
           <div className='flex items-center'>
-            <h2 className="font-semibold">{chat.name}</h2>
+            <h2 className="font-semibold truncate">{chat.name}</h2>
             {chat.verified && 
               <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
             }
           </div>
-          <span className="text-sm text-gray-500">{time}</span>
         </div>
-        <p className="text-sm text-wrap w-4/5 text-gray-600 truncate">
+        <p className="text-sm text-gray-600 truncate">
           {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] 
             ? 'Typing...' 
             : (chat.lastMessage 
-                ? `${chat.lastMessage.slice(0, 40)}${chat.lastMessage.length > 40 ? '...' : ''}` 
+                ? chat.lastMessage
                 : 'No message available')}
         </p>
       </div>
-      <div className="flex items-center gap-2">
-        {chat.unread > 0 && (
-          <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            {chat.unread}
-          </div>
-        )}
-        <Pin size={21} 
-            className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out ${chat.pinned ? 'block' : 'hidden'}`}
+      <div className='flex flex-col items-end gap-1'>
+        <span className="text-sm text-gray-500 text-nowrap">{time}</span>
+        <div className="flex items-center gap-2">
+          {chat.unread > 0 && (
+            <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {chat.unread}
+            </div>
+          )}
+          {chat.pinned && (
+            <Pin size={21} 
+            className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
             onClick={(event) => {
               event.stopPropagation();
               dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
             }}
-          />
+            />
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats,className = 'overflow-auto p-4',className1 = 'mb-10'}) => {
+const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats,className = 'overflow-auto p-4 pt-2',className1 = 'mb-10'}) => {
   return (
     <div className={`flex-grow h-full ${className}`}>
-      <div className={`flex flex-col gap-1 ${className1} tablets1:mb-0`}>
-        {filteredChats().map((chat,key) => (
-          <Card key={key} chat={chat} />
-        ))}
+      <div className={`flex flex-col gap-2 ${className1} tablets1:mb-0`}>
+        {filteredChats().sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()) // Sort by lastUpdated
+          .map((chat, index) => (
+            <Card key={index} chat={chat} />
+          ))}
       </div>
     </div>
   );

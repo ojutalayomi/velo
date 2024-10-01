@@ -66,7 +66,7 @@ export interface NewChatResponse {
 export interface NewChat {
     _id?: string | ObjectId | undefined; // Assuming ObjectId is converted to string
     id?: string;
-    name: string;
+    name: { [id: string]: string };
     chatType: 'DMs' | 'Groups' | 'Channels';
     groupDescription: string;
     groupDisplayPicture: string;
@@ -205,7 +205,9 @@ export interface NewChat_ {
 
 export interface ChatData {
     _id: string;
-    name: string;
+    name: {
+        [id: string]: string
+    };
     chatType: 'DMs' | 'Groups' | 'Channels';
     participants: Participant[];
     groupDescription: string;

@@ -57,6 +57,8 @@ const generateObjectId = () => {
   return timestamp + machineId + processId + counter;
 }
 
+let lastDate: string = '';
+
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -78,7 +80,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [lastDate,setLastDate] = useState<string>();
 
   useEffect(() => {
     dispatch(showChat(''));
@@ -322,7 +323,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 </div>
               );
             }
-            setLastDate(messageDate);
+            lastDate = messageDate;
 
             acc.push(
               <Fragment key={message._id as string}>

@@ -57,8 +57,6 @@ const generateObjectId = () => {
   return timestamp + machineId + processId + counter;
 }
 
-let lastDate: string = '';
-
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const router = useRouter();
   const params = useParams<{ gid: string }>();
@@ -80,6 +78,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  let lastDateRef = useRef<string>('');
 
   useEffect(() => {
     dispatch(showChat(''));
@@ -290,18 +289,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         {Messages?.reduce((acc: JSX.Element[], message, index) => {
             const messageDate = new Date(message.timestamp).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 
-            // Check if the current message date is different from the last displayed date
-            if (messageDate !== lastDate) {
-              acc.push(
-                <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 my-2">
-                  {messageDate}
-                </div>
-              );
-            }
-            lastDate = messageDate;
-
             acc.push(
               <Fragment key={message._id as string}>
+              {messageDate !== lastDateRef.current && (
+                <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 my-2 sticky top-0">
+                  {messageDate}
+                </div>
+              )}
                 {message.quotedMessage !== '' && (
                   <div className={`flex m-1 ${message.sender.id === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
                     <div className={`${message.sender.id === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>
@@ -312,6 +306,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 <MessageTab key={message._id as string} chat='Groups' message={message} setQuote={setQuote}/>
               </Fragment>
             );
+            lastDateRef.current = messageDate;
 
             return acc;
           }, [])}

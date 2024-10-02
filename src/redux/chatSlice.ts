@@ -113,7 +113,9 @@ const chatSlice = createSlice({
       state.conversations = action.payload;
     },
     addConversation: (state, action: PayloadAction<ConvoType>) => {
-      state.conversations.push(action.payload);
+      if (!state.conversations.some(convo => convo.id === action.payload.id)) {
+        state.conversations.push(action.payload);
+      }
     },
     updateConversation: (state, action: PayloadAction<{id: string, updates: Partial<ConvoType>}>) => {
       const { id, updates } = action.payload;

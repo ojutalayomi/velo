@@ -70,7 +70,7 @@ const Card: React.FC<Props> = ({chat}) => {
     const updateTimer = () => {
       const timeDifference = Date.now() - Date.parse(chat.lastUpdated);
       if (timeDifference > (86400 * 1000)) {
-        if (timeDifference < (86400 * 2 * 1000)) {
+        if (!chat.lastUpdated.includes(new Date().toISOString().split('T')[0])) {
           setTime('Yesterday.')
         } else {
           const date = new Date(chat.lastUpdated).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });

@@ -32,7 +32,17 @@ export const chatRepository = {
   getAllChats: async (req: NextApiRequest, res: NextApiResponse<AllChats | { error: string }>, payload: Payload) => {
     try {
       const chats = await client.db(MONGODB_DB).collection('chats').find({ 'participants.id': payload._id }).toArray();
-      const messages = await client.db(MONGODB_DB).collection('chatMessages').find({ $or: [{ senderId: payload._id }, { receiverId: payload._id }] }).toArray() as unknown as (MessageAttributes | GroupMessageAttributes)[];
+
+      // Extract chatIds from the fetched chats
+      const chatIds = chats.filter(chat => chat.chatType === "Groups").map(chat => chat._id);
+
+      const messages = await client.db(MONGODB_DB).collection('chatMessages').find({
+        $or: [
+          ...(chatIds.length > 0 ? [{ chatId: { $in: chatIds } }] : []), // Use $in to get messages for all chatIds if the array isn't empty
+          { senderId: payload._id }, // Direct sender ID match
+          { receiverId: payload._id } // Match receiver ID
+        ]
+      }).toArray() as (MessageAttributes | GroupMessageAttributes)[];
       
       const newChatsPromises = chats
       .filter(chat => chat.participants.some((p: Participant) => p.id === payload._id))

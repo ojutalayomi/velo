@@ -88,7 +88,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         if (participant?.chatSettings) {
             dispatch(addSetting({ [data.chat._id]: participant.chatSettings }));
         }
-        console.log(data);
+        // console.log(data);
         return data;
     }, [dispatch]);
   
@@ -130,7 +130,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.on('userStopTyping', handleStopTyping);
         socket.on('newChat', (data: NewChat_) => {
             handleChat(data);
-            socket?.emit('joinChat', { chatId: data.chat._id })
+            socket.emit('joinChat', { chatId: data.chat._id });
         });
         socket.on('batchUserStatus', (updates: [string, string][]) => {
             updates.forEach(([userId, status]) => {
@@ -145,7 +145,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.off('newChat', handleChat);
         socket.off('batchUserStatus');
       };
-    }, [socket, handleChatMessage, handleChat, handleUserStatus, handleTyping, handleStopTyping]);
+    }, [socket, handleChatMessage, handleChat, handleUserStatus, handleTyping, handleStopTyping, conversations]);
 
     const setActiveRoute = useCallback((route: string) => {
         setActiveRouteState(route);

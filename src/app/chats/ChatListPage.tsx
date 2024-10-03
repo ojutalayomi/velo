@@ -157,19 +157,31 @@ const Card: React.FC<Props> = ({chat}) => {
                   e.stopPropagation();
                   if(socket){
                     option.action();
-                    switch (option.name.toLowerCase()) {
-                      case "pin":
-                        socket.emit('updateConversation',{ id: chat.id, updates: { pinned: !isPinned, userId: userdata._id } })
+                    switch (true) {
+                      case option.name.toLowerCase().includes("pin"):
+                        socket.emit('updateConversation', { 
+                          id: chat.id, 
+                          updates: { pinned: !isPinned, userId: userdata._id } 
+                        });
                         break;
-                      case "archive":
-                        socket.emit('updateConversation',{ id: chat.id, updates: { archived: !isArchived, userId: userdata._id } })
+                      case option.name.toLowerCase().includes("archive"):
+                        socket.emit('updateConversation', { 
+                          id: chat.id, 
+                          updates: { archived: !isArchived, userId: userdata._id } 
+                        });
                         break;
-                      case "delete":
-                        socket.emit('updateConversation',{ id: chat.id, updates: { deleted: !isDeleted, convo: true } })
+                      case option.name.toLowerCase().includes("delete"):
+                        socket.emit('updateConversation', { 
+                          id: chat.id, 
+                          updates: { deleted: !isDeleted, convo: true } 
+                        });
                         break;
-                      case "read":
+                      case option.name.toLowerCase().includes("read"):
                         const unread = isUnread ? 1 : 0;
-                        socket.emit('updateConversation',{ id: chat.id, updates: { unreadCount: unread, userId: userdata._id } })
+                        socket.emit('updateConversation', { 
+                          id: chat.id, 
+                          updates: { unreadCount: unread, userId: userdata._id } 
+                        });
                         break;
                       default:
                         break;
@@ -227,7 +239,10 @@ const Card: React.FC<Props> = ({chat}) => {
             className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
             onClick={(event) => {
               event.stopPropagation();
-              dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
+              if (socket) {
+                socket.emit('updateConversation',{ id: chat.id, updates: { pinned: !isPinned, userId: userdata._id } });
+                dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
+              }
             }}
             />
           )}

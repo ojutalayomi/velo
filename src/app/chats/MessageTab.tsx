@@ -187,12 +187,32 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
           className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
             senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
           } text-left`}
+          onTouchStart={(event) => {
+            if (event.touches.length === 1) {
+              const touch = event.touches[0];
+              const longPressTimer = setTimeout(() => {
+                openOptions(true);
+              }, 500); // 500ms long press
+              
+              const cancelLongPress = () => {
+                clearTimeout(longPressTimer);
+              };
+    
+              document.addEventListener('touchend', cancelLongPress);
+              document.addEventListener('touchmove', cancelLongPress);
+    
+              return () => {
+                document.removeEventListener('touchend', cancelLongPress);
+                document.removeEventListener('touchmove', cancelLongPress);
+              };
+            }
+          }}
         >
           {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
           {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
           <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</pre>
         </div>
-        <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
+        <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => openOptions(true)}/>
         <div ref={optionsRef} className={`edit-list absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}
         onClick={(e) => e.stopPropagation()}
         >

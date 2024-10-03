@@ -110,7 +110,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             <div 
               key={tab}
               onClick={() => swiper && swiper.slideTo(tabs.indexOf(tab))}
-              className={` cursor-pointer dark:shadow-slate-200 flex items-center justify-center w-1/4 px-1 py-1 rounded-full shadow-bar dark:shadow-bar-dark ${activeTab === tab ? 'bg-brand text-white' : ''}`}
+              className={`cursor-pointer dark:shadow-slate-200 flex items-center justify-center w-1/4 px-1 py-1 rounded-full shadow-bar dark:shadow-bar-dark ${activeTab === tab ? 'bg-brand text-white' : ''}`}
             >
               {tab}
             </div>
@@ -119,7 +119,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
         {/* Pinned */}
         <div className="pt-1 px-3">
           {Array.isArray(filterConversations('Pinned')) && filterConversations('Pinned')?.length > 0 ? (
-            <ChatListPage className='overflow-visible' className1=' ' filteredChats={() => filterConversations('Pinned')}/>
+            <ChatListPage className={`${activeTab !== 'All' && 'hidden'} overflow-visible`} className1=' ' filteredChats={() => filterConversations('Pinned')}/>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400 hidden">No pinned chats</p>
           )}

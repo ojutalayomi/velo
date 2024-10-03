@@ -70,10 +70,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [err,setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState('');
   const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const pid = params?.id as string;
   const socket = useSocket();
-  const convo = conversations?.find(c => c.id === pid);
+  const convo = conversations?.find(c => c.id === pid) as ConvoType;
   const chat = settings?.[pid];
+  const [isPinned, setIsPinned] = useState(convo?.pinned);
+  const [isDeleted, setIsDeleted] = useState(convo?.deleted);
+  const [isArchived, setIsArchived] = useState(convo?.archived);
+  const [searchBarOpen, openSearchBar] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
   const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
@@ -92,7 +98,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   }, [convo, convoLoading, dispatch, convo?.unread, socket])
   
-  const Messages = messages?.filter( msg => msg.chatId === pid ) as MessageAttributes[];
+  const Messages = messages?.filter( msg => {
+    // const sender = 'sender' in msg ? msg.sender.name : '';
+    return msg.chatId === pid && (msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
+  }) as MessageAttributes[];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -235,42 +244,117 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }, 3000);
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showDropdown && !(event.target as Element).closest('.dropdown-menu')) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showDropdown]);
+
+  const options = [
+    { id: 1, name: 'View contact', action: () => console.log('View contact') },
+    { id: 2, name: 'Search', action: () => openSearchBar(true) },
+    { id: 3, name: 'Mute notifications', action: () => console.log('Mute notifications') },
+    { id: 4, name: 'Wallpaper', action: () => console.log('Wallpaper') },
+    { id: 5, name: 'Delete', action: () => console.log('Unread') },
+    { id: 6, name: 'Report', action: () => console.log('Blocked') },
+    { id: 7, name: convo?.pinned ? 'Unpin' : 'Pin', action: () => {
+      dispatch(updateConversation({ id: pid, updates: { pinned: !convo?.pinned } }));
+    } },
+    { id: 9, name: convo?.archived ?'Unarchive' : 'Archive', action: () => {
+      dispatch(updateConversation({ id: pid, updates: { archived: !convo?.archived } })) 
+    } }
+  ];
+
   return (
-    <div className={`bg-bgLight tablets1:flex ${chaT}  dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 bottom-0">
-        <div className='flex gap-4 items-center justify-start'>
-          <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-          {load
-            ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
-            :
-            <div>
-              <div className="flex items-center text-sm font-semibold text-left">
-                <div className='truncate'>{newPerson?.name}</div>
-                {newPerson?.verified && 
-                  <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
-                }
+    <div className={`bg-bgLight tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
+      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 bottom-0 z-10">
+      {!searchBarOpen ?
+        <>
+          <div className='flex gap-4 items-center justify-start'>
+            <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
+            {load
+              ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
+              :
+              <div>
+                <div className="flex items-center text-sm font-semibold text-left">
+                  <div className='truncate'>{newPerson?.name}</div>
+                  {newPerson?.verified && 
+                    <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                  }
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {convo?.online ? 'Online' : 'Offline'}
+                  {convo?.isTyping[friendId] && ' • Typing...'}
+                </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {convo?.online ? 'Online' : 'Offline'}
-                {convo?.isTyping[friendId] && ' • Typing...'}
-              </p>
-            </div>
-          }
+            }
+          </div>
+          <div className='flex items-center gap-2'>
+            <Phone
+            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+            onClick={() => console.log(`audio call`)}
+            />
+            <Video 
+            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+            onClick={() => console.log(`video call`)}
+            />
+            <EllipsisVertical 
+            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+            onClick={() => setShowDropdown(true)}
+            />
+            {showDropdown && (
+              <div className="dropdown-menu absolute top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
+                <ul className="py-1">
+                  {options.map((option) => (
+                    <li key={option.id} 
+                      className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if(socket){
+                          option.action();
+                          switch (true) {
+                            case option.name.toLowerCase().includes("pin"):
+                              socket.emit('updateConversation', { 
+                                id: pid, 
+                                updates: { pinned: !isPinned, userId: userdata._id } 
+                              });
+                              break;
+                            case option.name.toLowerCase().includes("archive"):
+                              socket.emit('updateConversation', { 
+                                id: pid, 
+                                updates: { archived: !isArchived, userId: userdata._id } 
+                              });
+                              break;
+                            default:
+                              break;
+                          }
+                        }
+                      }}
+                    >
+                      {option.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </> :
+        <div className="flex items-center gap-2">
+          <FontAwesomeIcon onClick={() => openSearchBar(false)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-full text-sm focus:outline-none w-full" />
+          <button onClick={() => setSearchQuery('')} className={`${searchQuery === '' && 'hidden '} bg-brand hover:bg-brand/70 text-white font-bold py-2 px-4 rounded`}>
+            Clear
+          </button>
         </div>
-        <div className='flex items-center gap-2'>
-          <Phone
-          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-          onClick={() => console.log(`audio call`)}
-          />
-          <Video 
-          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-          onClick={() => console.log(`video call`)}
-          />
-          <EllipsisVertical 
-          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-          onClick={() => router.push(`/chats/${params?.id}/settings`)}
-          />
-        </div>
+      }
       </div>
       <div className="h-96 overflow-y-auto p-4 flex flex-col flex-1"> 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">

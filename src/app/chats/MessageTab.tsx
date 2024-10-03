@@ -5,7 +5,8 @@ import { Copy, Ellipsis, Reply, Send, TextQuote, Trash2, X } from 'lucide-react'
 import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { useDispatch } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ConvoType, setConversations, setMessages, addMessages, deleteMessage, updateLiveTime, updateConversation } from '@/redux/chatSlice'; 
+import { ConvoType, setConversations, setMessages, addMessages, deleteMessage, updateLiveTime, updateConversation, editMessage } from '@/redux/chatSlice'; 
+import { useSocket } from '../providers';
 
 type Message = {
   _id: string,
@@ -30,7 +31,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const { userdata, loading, error, refetchUser } = useUser();
   const [isCopied, setIsCopied] = useState(false);
   const [options,openOptions] = useState<boolean>(false);
+  const [messageContent,setMessageContent] = useState<string>(message.content.replace('≤≤≤',''));
   const [time, setTime] = useState<string>(updateLiveTime('chat-time', message.timestamp));
+  const socket = useSocket();
   const svgRef = useRef<SVGSVGElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
 
@@ -40,9 +43,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const displayPicture = 'sender' in message ? message.sender.displayPicture : '';
   const url = 'https://s3.amazonaws.com/profile-display-images/';
 
-  // useEffect(() => {
-  //   setTime(updateLiveTime('chat-time', message.timestamp));
-  // }, [message.timestamp]);
+  useEffect(() => {
+    setMessageContent(message.content.replace('≤≤≤',''));
+  }, [message.content]);
 
 
   useEffect(() => {
@@ -62,7 +65,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(message.content);
+      await navigator.clipboard.writeText(messageContent);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false),3000);
       openOptions(false);
@@ -76,7 +79,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
       icon: TextQuote,
       text: 'Quote',
       onClick: () => setQuote({
-        message: { content: message.content, _id: message._id as string, senderId },
+        message: { content: messageContent, _id: message._id as string, senderId },
         state: true
       })
     },
@@ -89,9 +92,16 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
       icon: Trash2,
       text: 'Delete',
       onClick: () => {
-        dispatch(updateConversation({ id: message.chatId as string, updates: { lastMessage: message.content } }));
-        dispatch(deleteMessage(message._id as string));
-        openOptions(false);
+        if(!message.content.endsWith('≤≤≤')){
+          if(socket){
+            dispatch(updateConversation({ id: message.chatId as string, updates: { lastMessage: 'This message was deleted' } }));
+            dispatch(editMessage({id: message._id as string, content: 'You deleted this message.≤≤≤'}))
+            openOptions(false);
+            socket.emit('updateConversation',{ id: message._id, updates: { deleted: true } })
+          }
+        } else {
+          dispatch(deleteMessage(message._id as string));
+        }
       }
     }] : [])
   ];
@@ -104,6 +114,26 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
               senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
             } text-left`}
+            onTouchStart={(event) => {
+              if (event.touches.length === 1) {
+                const touch = event.touches[0];
+                const longPressTimer = setTimeout(() => {
+                  openOptions(true);
+                }, 500); // 500ms long press
+                
+                const cancelLongPress = () => {
+                  clearTimeout(longPressTimer);
+                };
+      
+                document.addEventListener('touchend', cancelLongPress);
+                document.addEventListener('touchmove', cancelLongPress);
+      
+                return () => {
+                  document.removeEventListener('touchend', cancelLongPress);
+                  document.removeEventListener('touchmove', cancelLongPress);
+                };
+              }
+            }}
           >
             {senderId !== userdata._id && (
               <div className='flex items-center'>
@@ -123,9 +153,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 }
               </div>
             )}
-            <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{message.content}</pre>
+            <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</pre>
           </div>
-          <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
+          <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => openOptions(true)}/>
           {options && (
             <div className={`edit-list absolute backdrop-blur-sm flex ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`} 
             onClick={(e) => e.stopPropagation()}
@@ -160,7 +190,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
         >
           {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
           {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-          <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{message.content}</pre>
+          <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</pre>
         </div>
         <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400' onClick={() => openOptions(true)}/>
         <div ref={optionsRef} className={`edit-list absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}

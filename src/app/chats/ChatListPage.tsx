@@ -10,6 +10,7 @@ import { timeFormatter } from '@/templates/PostProps';
 import { updateLiveTime, updateConversation } from '@/redux/chatSlice';
 import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type';
 import { Pin } from 'lucide-react';
+import { useSocket } from '../providers';
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
@@ -47,6 +48,7 @@ const Card: React.FC<Props> = ({chat}) => {
   const [time, setTime] = useState<string>();
   // const { messages , settings, conversations, loading: convoLoading, isOnline } = useSelector<RootState, CHT>((state) => state.chat);
   // const convo = conversations?.find(c => c.id === chat.id);
+  const socket = useSocket();
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(chat?.pinned);
   const [isDeleted, setIsDeleted] = useState(chat?.deleted);
@@ -70,11 +72,15 @@ const Card: React.FC<Props> = ({chat}) => {
     const updateTimer = () => {
       const timeDifference = Date.now() - Date.parse(chat.lastUpdated);
       if (timeDifference > (86400 * 1000)) {
-        if (!chat.lastUpdated.includes(new Date().toISOString().split('T')[0])) {
-          setTime('Yesterday.')
-        } else {
-          const date = new Date(chat.lastUpdated).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-          setTime(date)
+        const today = new Date();
+        const lastUpdatedDate = new Date(chat.lastUpdated);
+        if (today.toISOString().split('T')[0] !== lastUpdatedDate.toISOString().split('T')[0]) {
+          if (today.getDate() - lastUpdatedDate.getDate() === 1) {
+            setTime('Yesterday.');
+          } else {
+            const date = lastUpdatedDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+            setTime(date);
+          }
         }
       } else {
         setTime(updateLiveTime('chat-time', chat.lastUpdated));
@@ -100,7 +106,7 @@ const Card: React.FC<Props> = ({chat}) => {
 
   const options = [
     { id: 1, name: isPinned ? 'Unpin' : 'Pin', action: () => dispatch(updateConversation({ id: chat.id, updates: { pinned: !isPinned } })) },
-    { id: 2, name: isDeleted ? 'Undeleted' : 'Delete', action: () => dispatch(updateConversation({ id: chat.id, updates: { deleted: !isDeleted } })) },
+    { id: 2, name: isDeleted ? 'Undelete' : 'Delete', action: () => dispatch(updateConversation({ id: chat.id, updates: { deleted: !isDeleted } })) },
     { id: 3, name: isArchived ? 'Unarchive' : 'Archive', action: () => dispatch(updateConversation({ id: chat.id, updates: { archived: !isArchived } })) },
     { id: 4, name: isHidden ? 'Unhide' : 'Hide', action: () => setIsHidden(!isHidden) },
     { id: 5, name: isUnread ? 'Mark as read' : 'Mark as unread', action: () => setIsUnread(!isUnread) },
@@ -149,7 +155,26 @@ const Card: React.FC<Props> = ({chat}) => {
                 className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  option.action();
+                  if(socket){
+                    option.action();
+                    switch (option.name.toLowerCase()) {
+                      case "pin":
+                        socket.emit('updateConversation',{ id: chat.id, updates: { pinned: !isPinned, userId: userdata._id } })
+                        break;
+                      case "archive":
+                        socket.emit('updateConversation',{ id: chat.id, updates: { archived: !isArchived, userId: userdata._id } })
+                        break;
+                      case "delete":
+                        socket.emit('updateConversation',{ id: chat.id, updates: { deleted: !isDeleted, convo: true } })
+                        break;
+                      case "read":
+                        const unread = isUnread ? 1 : 0;
+                        socket.emit('updateConversation',{ id: chat.id, updates: { unreadCount: unread, userId: userdata._id } })
+                        break;
+                      default:
+                        break;
+                    }
+                  }
                 }}
               >
                 {option.name}

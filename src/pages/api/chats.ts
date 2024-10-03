@@ -311,7 +311,7 @@ export const chatRepository = {
       const newID = new ObjectId(generateRandom16DigitNumber());
       // Messages Collection
       const message = {
-        _id: chatData._id as ObjectId,
+        _id: new ObjectId(chatData._id as string),
         chatId: new ObjectId(chatId as string), // Reference to the chat in DMs collection
         senderId: chatData.senderId,
         receiverId: chatData.receiverId,

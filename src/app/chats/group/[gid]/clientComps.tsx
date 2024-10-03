@@ -2,7 +2,7 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import Image from 'next/image';
-import { Copy, Ellipsis, Reply, Send, Settings, TextQuote, Trash2, X } from 'lucide-react';
+import { Copy, Ellipsis, EllipsisVertical, Phone, Reply, Send, Settings, TextQuote, Trash2, Video, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from '../../MessageTab';
@@ -85,11 +85,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (convo && convo.unread !== 0 && convoLoading === false) {
+    if (convo && convo.unread !== 0 && !convoLoading && socket) {
       // setUnreads(0);
+      socket.emit('updateConversation',{ id: convo.id, updates: { unreadCount: 0 } })
       dispatch(updateConversation({ id: convo.id, updates: { unread: 0 } }));
     }
-  }, [convo, convoLoading, dispatch, convo?.unread])
+  }, [convo, convoLoading, dispatch, convo?.unread, socket])
   
   const Messages = messages?.filter( msg => msg.chatId === gid ) as GroupMessageAttributes[];
 
@@ -237,10 +238,20 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             </div>
           }
         </div>
-        <Settings 
-        className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-        onClick={() => router.push(`/chats/group/${params?.gid}/settings`)}
-        />
+        <div className='flex items-center gap-2'>
+          <Phone
+          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+          onClick={() => console.log(`audio call`)}
+          />
+          <Video 
+          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+          onClick={() => console.log(`video call`)}
+          />
+          <EllipsisVertical 
+          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+          onClick={() => router.push(`/chats/${params?.gid}/settings`)}
+          />
+        </div>
       </div>
       <div className="h-96 overflow-y-auto p-4 flex flex-col flex-1"> 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">
@@ -291,11 +302,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
             acc.push(
               <Fragment key={message._id as string}>
-              {messageDate !== lastDateRef.current && (
-                <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 my-2 sticky top-0">
-                  {messageDate}
-                </div>
-              )}
+                {index === 0 || messageDate !== lastDateRef.current ? (
+                  <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 my-2 sticky top-0 z-[1]">
+                    {messageDate}
+                  </div>
+                ) : null}
                 {message.quotedMessage !== '' && (
                   <div className={`flex m-1 ${message.sender.id === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
                     <div className={`${message.sender.id === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>

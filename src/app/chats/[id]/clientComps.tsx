@@ -1,13 +1,13 @@
 'use client'
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, msgStatus, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import Image from 'next/image';
 import { Copy, Ellipsis, EllipsisVertical, Phone, Reply, Send, Settings, TextQuote, Trash2, Video, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from '../MessageTab';
 import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, setConversations, updateConversation, setMessages, addMessages, deleteMessage } from '@/redux/chatSlice';
+import { ConvoType, setConversations, updateConversation, setMessages, addMessage, deleteMessage, updateMessage } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
@@ -93,10 +93,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   useEffect(() => {
     if (convo && convo.unread !== 0 && !convoLoading && socket) {
       // setUnreads(0);
-      socket.emit('updateConversation',{ id: convo.id, updates: { unreadCount: 0 } })
+      socket.emit('updateConversation',{ id: convo.id, updates: { unreadCount: 0, userId: userdata._id } })
       dispatch(updateConversation({ id: convo.id, updates: { unread: 0 } }));
+      dispatch(updateMessage({
+        updates: {
+          status: 'delivered' as msgStatus,
+        }
+      }));
     }
-  }, [convo, convoLoading, dispatch, convo?.unread, socket])
+  }, [convo, convoLoading, dispatch, convo.unread, socket, userdata._id])
   
   const Messages = messages?.filter( msg => {
     // const sender = 'sender' in msg ? msg.sender.name : '';
@@ -209,12 +214,19 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         reactions: [],
         attachments: [],
         quotedMessage: id,
+        status: 'sending' as msgStatus,
       }
-      // dispatch(addMessages(msg));
+      dispatch(addMessage(msg));
+      dispatch(updateConversation({
+        id: msg._id,
+        updates: {
+          unread: msg.isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
+          lastMessage: msg.content,
+          lastUpdated: msg.timestamp
+        }
+      }));
       if (msg && socket) {
         socket.emit('chatMessage', msg)
-        // dispatch(updateConversation({ id: convo.id, lastMessage: msg.content }));
-        setNewMessage('')
       }
       setNewMessage('');
       closeQuote();

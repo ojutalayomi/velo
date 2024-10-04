@@ -8,14 +8,15 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import Error from './error';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ConvoType, setConversations, updateConversation, setMessages, addMessages, deleteMessage, addSetting, fetchChats, addConversation, Time } from '@/redux/chatSlice';
+import { ConvoType, setConversations, updateConversation, setMessages, addMessage, deleteMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
 import { usePathname, useRouter } from 'next/navigation';
 import Loading from './loading'; 
 import UserPhoto from "@/components/UserPhoto";
 import VideoPlayer from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
-import { MessageAttributes, NewChat_ } from '@/lib/types/type';
+import { MessageAttributes, msgStatus, NewChat_ } from '@/lib/types/type';
 import { useSocket } from '@/app/providers';
+import VideoChat from './CallPage';
 
 interface ClientComponentsProps {
     children: React.ReactNode;
@@ -30,6 +31,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const pathname = usePathname();
     const isModalRoute  = pathname?.endsWith('/photo');
     const isModalRoute1  = pathname?.includes('/photo/');
+    const callRoute  = pathname?.startsWith('/call');
     const router = useRouter();
     const { userdata, loading, error: err, refetchUser } = useUser();
     const path = pathname?.replace('/','') || '';
@@ -93,7 +95,13 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     }, [dispatch]);
   
     const handleChatMessage = useCallback((msg: MessageAttributes) => {
-      dispatch(addMessages(msg));
+      dispatch(addMessage(msg));
+      dispatch(updateMessage({
+        id: String(msg._id),
+        updates: {
+          status: 'sent' as msgStatus,
+        }
+      }));
       const conversationId = msg.chatId as string;
       const conversation = gt(conversationId);
       if (conversation) {
@@ -177,6 +185,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                         {load ? <Loading /> : children}
                         {isModalRoute && <UserPhoto />}
                         {isModalRoute1 && <VideoPlayer />}
+                        {callRoute && <VideoChat />}
                     </ErrorBoundary>
                 </div>
             <Bottombar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />

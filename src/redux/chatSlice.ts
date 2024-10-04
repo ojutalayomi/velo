@@ -107,6 +107,7 @@ const chatSlice = createSlice({
     settings: stt as unknown as ChatSetting,
     loading: true,
     error: '',
+    userId: '',
   },
   reducers: {
     setConversations: (state, action: PayloadAction<ConvoType[]>) => {
@@ -138,8 +139,10 @@ const chatSlice = createSlice({
     setMessages: (state, action: PayloadAction<MessageAttributes[]>) => {
       state.messages = action.payload;
     },
-    addMessages: (state, action: PayloadAction<MessageAttributes>) => {
-      state.messages.push(action.payload);
+    addMessage: (state, action: PayloadAction<MessageAttributes>) => {
+      if (!state.messages.some(msg => msg._id === action.payload._id)) {
+        state.messages.push(action.payload);
+      }
     },
     editMessage: (state, action: PayloadAction<{ id: string, content: string }>) => {
       state.messages = state.messages?.map(msg => 
@@ -148,6 +151,43 @@ const chatSlice = createSlice({
           : msg
       );
     },
+    updateMessage: (state, action: PayloadAction<{id?: string, updates: Partial<MessageAttributes>}>) => {
+      const { id, updates } = action.payload;
+      
+      let targetId = id;
+      
+      // If id is undefined, find the last message with matching senderId
+      if (targetId === undefined) {
+        const lastMatchingMessage = state.messages
+          .slice()
+          .reverse()
+          .find(msg => {
+            const senderId = 'sender' in msg ? msg.sender.id : msg.senderId;
+            senderId === state.userId
+          });
+        
+        if (lastMatchingMessage) {
+          targetId = lastMatchingMessage._id as string;
+        } else {
+          // If no matching message is found, return the state unchanged
+          return;
+        }
+      }
+
+      state.messages = state.messages.map(msg => 
+        msg._id === targetId
+          ? { 
+              ...msg, 
+              ...Object.fromEntries(
+                Object.entries(updates).map(([key, value]) => 
+                  [key, value]
+                )
+              )
+            }
+          : msg
+      );
+    },
+
     deleteMessage: (state, action: PayloadAction<string>) => {
       state.messages = state.messages?.filter(msg => msg._id !== action.payload);
     },
@@ -162,11 +202,14 @@ const chatSlice = createSlice({
     },
     setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload;
+    },
+    setUserId: (state, action: PayloadAction<string>) => {
+      state.userId = action.payload;
     }
   },
 });
 
-export const { setConversations, addConversation, updateConversation, deleteConversation, setMessages, addMessages, editMessage, deleteMessage, setSettings, addSetting, setLoading, setError } = chatSlice.actions;
+export const { setConversations, addConversation, updateConversation, deleteConversation, setMessages, addMessage, editMessage, updateMessage, deleteMessage, setSettings, addSetting, setLoading, setError, setUserId } = chatSlice.actions;
 export default chatSlice.reducer;
 
 // Fetch chats on app load
@@ -182,6 +225,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
     }
 
     const uid = chats.requestId;
+    dispatch(setUserId(uid));
     const conversations = chats.chats?.map(convo => {
       const participant = convo.participants.find(p => p.id === uid);
       // const otherParticipant = convo.participants.find(p => p.id !== uid);

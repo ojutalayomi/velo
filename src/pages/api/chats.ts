@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { randomBytes } from 'crypto';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings, Participant } from '@/lib/types/type';
+import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, msgStatus, NewChat, NewChat_, NewChatResponse, NewChatSettings, Participant } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
 import { GroupMessageAttributes } from '../../lib/types/type';
 
@@ -325,6 +325,7 @@ export const chatRepository = {
         reactions: chatData.reactions || [],
         attachments: chatData.attachments || [],
         quotedMessage: '0',
+        status: 'sent' as msgStatus,
       };
       await client.db(MONGODB_DB).collection('chats').updateOne(
         { _id: message.chatId },

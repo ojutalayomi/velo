@@ -1,11 +1,11 @@
 'use client'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Copy, Ellipsis, Reply, Send, TextQuote, Trash2, X } from 'lucide-react';
+import { Check, CheckCheck, Copy, Ellipsis, Loader, Reply, Send, TextQuote, Trash2, X } from 'lucide-react';
 import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { useDispatch } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ConvoType, setConversations, setMessages, addMessages, deleteMessage, updateLiveTime, updateConversation, editMessage } from '@/redux/chatSlice'; 
+import { ConvoType, setConversations, setMessages, addMessage, deleteMessage, updateLiveTime, updateConversation, editMessage } from '@/redux/chatSlice'; 
 import { useSocket } from '../providers';
 
 type Message = {
@@ -47,6 +47,20 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
     setMessageContent(message.content.replace('≤≤≤',''));
   }, [message.content]);
 
+  const renderStatusIcon = (status: string) => {
+    switch (status) {
+      case 'sending':
+        return <Loader size={10} className='dark:text-gray-400'/>;
+      case 'sent':
+        return <Check size={10} className='dark:text-gray-400'/>;
+      case 'delivered':
+        return <CheckCheck size={10} className='dark:text-gray-400'/>;
+      case 'failed':
+        return <b className='text-red-800'>Not sent!</b>;
+      default:
+        return <Check size={10} className='dark:text-gray-400'/>;
+    }
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -174,7 +188,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             </div>
           )}
         </div>
-        <div className={`${senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>{time}</div>
+        <div className={`${senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
+        {renderStatusIcon(message.status)} • {time}
+        </div>
       </div>
     )
   }
@@ -225,7 +241,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
         </div>
       </div>
 
-      <div className={`${senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>{time}</div>
+      <div className={`${senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
+      {renderStatusIcon(message.status)} • {time}
+      </div>
 
     </div>
   )

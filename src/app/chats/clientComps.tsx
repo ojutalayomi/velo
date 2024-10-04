@@ -8,7 +8,7 @@ import '@/app/fontAwesomeLibrary';
 import { useRouter, useParams } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { useDispatch, useSelector } from 'react-redux';
-import { addConversation, addMessages, ConvoType, updateConversation, setConversations } from '@/redux/chatSlice';
+import { addConversation, addMessage, ConvoType, updateConversation, setConversations } from '@/redux/chatSlice';
 import { RootState } from '@/redux/store'; 
 import 'swiper/css';
 import 'swiper/css/pagination';

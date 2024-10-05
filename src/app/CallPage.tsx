@@ -58,13 +58,16 @@ export default function VideoChat() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
+  const func = () => {
     loadDevices();
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
+  }
+  useEffect(() => {
+    func();
   }, []);
 
   const loadDevices = async () => {
@@ -177,6 +180,7 @@ export default function VideoChat() {
     setTimeout(() => {
       setIsLoading(false);
       setConfirmed(false);
+      func();
       }, 1000);
   };
 

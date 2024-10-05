@@ -38,7 +38,7 @@ export interface SelectedDevices {
 }
 
 export default function VideoChat() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isConfirmed, setConfirmed] = useState(true);
   const [name, setName] = useState('');
   const [isMicOn, setIsMicOn] = useState(true);

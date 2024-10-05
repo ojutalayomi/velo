@@ -7,7 +7,7 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/templates/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  darkMode: ['selector', "class"],
+  darkMode: 'selector',
   theme: {
   	extend: {
   		backgroundColor: {

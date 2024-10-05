@@ -41,6 +41,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const [error, setError] = useState(null);
     const [load,setLoad] = useState<boolean>(false);
     const socket = useSocket();
+    const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
 
     useEffect(() => {
         setLoad(false)
@@ -177,7 +178,9 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
 
     return(
         <>
+            {!callRoute ?
             <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
+            : null}
                 <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
                 <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets1:block`}>
@@ -188,7 +191,20 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                         {callRoute && <VideoChat />}
                     </ErrorBoundary>
                 </div>
-            <Bottombar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
+            {(!pathname?.includes('posts') && 
+            !pathname?.includes('chats') && 
+            routes.includes(activeRoute) &&
+            !callRoute) ? 
+                <Bottombar 
+                setLoad={setLoad} 
+                isMoreShown={isMoreShown} 
+                activeRoute={activeRoute} 
+                setActiveRoute={setActiveRoute} 
+                setMoreStatus={setMoreStatus} 
+                />
+            : null
+            }
+            
         </>
     )
 }

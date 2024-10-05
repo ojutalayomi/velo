@@ -25,6 +25,13 @@ body {
     )
     rgb(var(--background-start-rgb));
 } */
+.dark\:bg-bgDark:where(.dark,.dark *) {
+  background-image: url(/greybg-dark.png) !important;
+}
+.dark\:bg-black:where(.dark,.dark *) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity)) !important;
+}
 .cls-1{fill:none;stroke:#020202;stroke-miterlimit:10;stroke-width:1.91px;}
 .cls-2{fill:#020202;}
 .dark.pathEllip{fill:#e2e8f0}

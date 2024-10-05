@@ -101,7 +101,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         }
       }));
     }
-  }, [convo, convoLoading, dispatch, convo.unread, socket, userdata._id])
+  }, [convo, convoLoading, dispatch, convo?.unread, socket, userdata._id])
   
   const Messages = messages?.filter( msg => {
     // const sender = 'sender' in msg ? msg.sender.name : '';
@@ -316,7 +316,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             />
             <Video 
             className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => console.log(`video call`)}
+            onClick={() => router.push(`/call`)}
             />
             <EllipsisVertical 
             className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'

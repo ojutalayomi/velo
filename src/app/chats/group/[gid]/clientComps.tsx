@@ -299,7 +299,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             />
             <Video 
             className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => router.push(`/call`)}
+            onClick={() => router.push(`/call/?id=${gid}`)}
             />
             <EllipsisVertical 
             className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'

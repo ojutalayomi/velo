@@ -50,7 +50,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const renderStatusIcon = (status: string) => {
     switch (status) {
       case 'sending':
-        return <Loader size={10} className='dark:text-gray-400'/>;
+        return <Loader size={10} className='dark:text-gray-400 animate-spin'/>;
       case 'sent':
         return <Check size={10} className='dark:text-gray-400'/>;
       case 'delivered':
@@ -188,7 +188,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             </div>
           )}
         </div>
-        <div className={`${senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
+        <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
         {renderStatusIcon(message.status)} • {time}
         </div>
       </div>
@@ -241,8 +241,8 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
         </div>
       </div>
 
-      <div className={`${senderId === userdata._id ? "text-right" : "text-left"} text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
-      {renderStatusIcon(message.status)} • {time}
+      <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
+        {renderStatusIcon(message.status)} • {time}
       </div>
 
     </div>

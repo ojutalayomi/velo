@@ -22,6 +22,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
   const pathname = usePathname();
   const ref = useRef<HTMLDivElement>(null);
   const ref1 = useRef<HTMLDivElement>(null);
+  const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password'];
 
 
   
@@ -64,7 +65,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
 
     return (
       <>
-        <div id='bottombar' className={`bg-slate-200 dark:bg-zinc-900`}>
+        <div id='bottombar' className={`bg-slate-200 dark:bg-zinc-900 ${routes.includes(activeRoute) && 'hidden'}`}>
 
           <div className={`bg-black/50 h-[100dvh] ${!isMoreShown && 'hidden'} top-0 fixed z-[1] w-[100dvw]`}>
             <div ref={ref1} onClick={(event) => event.stopPropagation()} id='more' className={`left-0 bg-white dark:bg-black/70 ${isMoreShown ? 'show' : 'hide'} font-light leading-normal`}>

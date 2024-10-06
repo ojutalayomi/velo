@@ -16,7 +16,7 @@ import VideoPlayer from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
 import { MessageAttributes, msgStatus, NewChat_ } from '@/lib/types/type';
 import { useSocket } from '@/app/providers';
-import VideoChat from './CallPage';
+import VideoChat from '../components/CallPage';
 
 interface ClientComponentsProps {
     children: React.ReactNode;
@@ -191,19 +191,20 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                         {callRoute && <VideoChat />}
                     </ErrorBoundary>
                 </div>
-            {(!pathname?.includes('posts') && 
-            !pathname?.includes('chats') && 
-            routes.includes(activeRoute) &&
-            !callRoute) ? 
-                <Bottombar 
-                setLoad={setLoad} 
-                isMoreShown={isMoreShown} 
-                activeRoute={activeRoute} 
-                setActiveRoute={setActiveRoute} 
-                setMoreStatus={setMoreStatus} 
-                />
-            : null
-            }
+                {(!pathname?.includes('posts') && 
+                !pathname?.includes('chats') && 
+                !routes.includes(activeRoute) && 
+                !callRoute) ? 
+                    <Bottombar 
+                    setLoad={setLoad} 
+                    isMoreShown={isMoreShown} 
+                    activeRoute={activeRoute} 
+                    setActiveRoute={setActiveRoute} 
+                    setMoreStatus={setMoreStatus} 
+                    /> 
+                : null
+                }
+
             
         </>
     )

@@ -1,12 +1,15 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, Suspense, useCallback } from 'react';
 import { Camera, Mic, MicOff, Video, VideoOff, Phone, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -19,6 +22,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CallConfirmation from './CallPage2';
+import { useSocket } from '../app/providers';
+import { CopyIcon } from '@radix-ui/react-icons';
+import { Label } from '@radix-ui/react-select';
+import { useSearchParams } from 'next/navigation';
 
 interface DeviceInfo {
   deviceId: string;
@@ -37,13 +44,19 @@ export interface SelectedDevices {
   audioOutputDeviceId: string;
 }
 
-export default function VideoChat() {
+const PreVideoChat: React.FC = () => {
+  const searchParams = useSearchParams();
+  const id = searchParams?.get('id');
+  const socket = useSocket();
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmed, setConfirmed] = useState(true);
   const [name, setName] = useState('');
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isVideoOn1, setIsVideoOn1] = useState(true);
   const [error, setError] = useState('');
+  const [room, setRoom] = useState('');
+  const [isJoined, setIsJoined] = useState(false);
   const [devices, setDevices] = useState<Devices>({
     videoDevices: [],
     audioInputDevices: [],
@@ -54,23 +67,178 @@ export default function VideoChat() {
     audioInputDeviceId: '',
     audioOutputDeviceId: '',
   });
+  const iceCandidates: RTCIceCandidateInit[] = [];
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  const func = () => {
-    loadDevices();
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    const touch = e.touches[0];
+    setDragStart({ x: touch.clientX, y: touch.clientY });
+  };
+
+
+  const handleMove = (clientX: number, clientY: number): void => {
+  if (isDragging && cardRef.current) {
+    const cardRect = cardRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Calculate new position
+    let newX = position.x + (clientX - dragStart.x);
+    let newY = position.y + (clientY - dragStart.y);
+
+    // Apply boundaries
+    newX = Math.max(0, Math.min(viewportWidth - cardRect.width, newX));
+    newY = Math.max(0, Math.min(viewportHeight - cardRect.height, newY));
+
+    setPosition({ x: newX, y: newY });
+    setDragStart({ x: clientX, y: clientY });
   }
+};
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
+    handleMove(e.clientX, e.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
+    // e.preventDefault();
+    const touch = e.touches[0];
+    handleMove(touch.clientX, touch.clientY);
+  };
+
+  const handleEnd = (): void => {
+    setIsDragging(false);
+  };
+
+  const joinRoom = () => {
+    if (room.trim()) {
+      if (socket) {
+        setRoom(id as string);
+        socket.emit('join-room', `call:${id}`); // Emit a join-room event to the server
+        setIsJoined(true);
+      } else {
+        setError('Connection problem. Please try again.');
+      }
+    }
+  };
+
+  const setRemoteDescription = async (description: RTCSessionDescriptionInit) => {
+    try {
+      await peerConnection?.setRemoteDescription(new RTCSessionDescription(description));
+      
+      // Add any queued ICE candidates
+      for (const candidate of iceCandidates) {
+        await peerConnection?.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+      iceCandidates.length = 0; // Clear the queue
+    } catch (e) {
+      console.error('Error setting remote description or adding ICE candidates', e);
+    }
+  };
+
+
+
   useEffect(() => {
-    func();
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+    });
+
+    if(socket){
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('candidate', event.candidate);
+        }
+      };
+
+      peerConnection.ontrack = (event) => {
+        if (remoteVideoRef.current){
+          remoteVideoRef.current.srcObject = event.streams[0];
+        }
+      };
+
+      peerConnection.oniceconnectionstatechange = () => {
+        console.log("ICE connection state:", peerConnection.iceConnectionState);
+      };
+
+  
+      setPeerConnection(peerConnection);
+  
+      socket.on('offer', async (offer: RTCSessionDescriptionInit) => {
+        try {
+          if(peerConnection){
+            await setRemoteDescription(offer);
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { room, answer });
+          }
+        } catch (err) {
+          console.error('Error handling offer:', err);
+          setError('Error establishing connection');
+        }
+      });
+
+
+      socket.on('user-joined', async () => {
+        try {
+          if (peerConnection) {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { room, offer });
+          }
+        } catch (err) {
+          console.error('Error creating offer:', err);
+          setError('Error establishing connection');
+        }
+      });
+  
+      socket.on('answer', async (answer: RTCSessionDescriptionInit) => {
+        try {
+          await setRemoteDescription(answer);
+        } catch (err) {
+          console.error('Error handling answer:', err);
+          setError('Error establishing connection');
+        }
+      });
+  
+      socket.on('candidate', async (candidate: RTCIceCandidateInit) => {
+        try {
+          if (peerConnection && peerConnection.remoteDescription) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            // If the remote description isn't set yet, queue the candidate
+            iceCandidates.push(candidate);
+          }
+        } catch (err) {
+          console.error('Error adding ICE candidate:', err);
+          setError('Error establishing connection');
+        }
+      });
+
+    }
+
+    return () => {
+      peerConnection.close();
+      socket?.off('offer');
+      socket?.off('answer');
+      socket?.off('candidate');
+      socket?.off('user-joined');
+    };
   }, []);
 
-  const loadDevices = async () => {
+  const loadDevices = useCallback(async () => {
     try {
       // Request permissions first to get labeled device information
       await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -101,7 +269,20 @@ export default function VideoChat() {
       console.error('Error loading devices:', err);
       setError('Unable to access media devices. Please check permissions.');
     }
-  };
+  }, []);
+
+  const func = useCallback(() => {
+    loadDevices();
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [loadDevices])
+
+  useEffect(() => {
+    func();
+  }, [func]);
 
   const startCamera = async (videoDeviceId: string, audioDeviceId: string) => {
     try {
@@ -170,6 +351,14 @@ export default function VideoChat() {
     }
   };
 
+  const hangUp = () => {
+    if(peerConnection && videoRef.current && remoteVideoRef.current){
+      peerConnection.close();
+      videoRef.current.srcObject = null;
+      remoteVideoRef.current.srcObject = null;
+    }
+  };
+
   const handleJoinCall = () => {
     if (!name.trim()) {
       setError('Please enter your name');
@@ -177,11 +366,28 @@ export default function VideoChat() {
     }
     setIsLoading(true);
     // Implement call joining logic here
-    setTimeout(() => {
-      setIsLoading(false);
-      setConfirmed(false);
-      func();
-      }, 1000);
+    setTimeout(async () => {
+      try{
+        if(socket && streamRef.current && peerConnection){
+          setIsLoading(false);
+          setConfirmed(false);
+          func();
+          joinRoom();
+          streamRef.current.getTracks().forEach((track) => peerConnection.addTrack(track, streamRef.current as MediaStream));
+          // const offer = await peerConnection.createOffer();
+          // await peerConnection.setLocalDescription(offer);
+          // socket.emit('offer', { room, offer });
+        } else {
+          throw new Error('Connection problem. Please try again.');
+          // setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Error joining call:', err);
+        setError((err as Error).message);
+        setIsLoading(false);
+      }
+
+    }, 1000);
   };
 
   if(isConfirmed){
@@ -205,7 +411,7 @@ export default function VideoChat() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-200">
+    <div className="fixed inset-0 z-10 flex flex-col h-screen bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-200">
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>
@@ -216,7 +422,19 @@ export default function VideoChat() {
       <div className="flex-1 grid tablets1:grid-cols-2 gap-4 mb-4">
         {/* Local video */}
         <Card 
-        className="mobile:absolute tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0 mobile:bottom-0 mobile:right-0 mobile:m-3 mobile:z-[1] mobile:h-[30dvh] mobile:aspect-[9/16]"
+        ref={cardRef} 
+        className="mobile:absolute tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0 mobile:bottom-0 mobile:right-0 mobile:m-3 mobile:z-10 mobile:h-[30dvh] mobile:aspect-[9/16]"
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          touchAction: 'none'
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleEnd}
         >
           <video
             ref={videoRef}
@@ -236,18 +454,33 @@ export default function VideoChat() {
         </Card>
         
         {/* Remote video placeholder */}
-        <Card className="relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0">
+        <Card className="mobile:absolute mobile:inset-0 relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0">
+          {remoteVideoRef ?
+          <>
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover ${!isVideoOn1 ? 'hidden' : ''}`}
+          />
+          {!isVideoOn1 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white">
+              <VideoOff size={48} />
+            </div>
+          )}
+          </>:
           <div className="absolute inset-0 flex items-center justify-center text-white">
             Waiting for remote user...
-          </div>
+          </div>}
           <div className="absolute bottom-2 left-2 text-white text-sm bg-black/50 dark:bg-black/70 px-2 py-1 rounded">
-            Remote User
+            {remoteVideoRef ? '' : 'Remote User'}
           </div>
         </Card>
       </div>
 
       {/* Controls */}
-      <div className="flex justify-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/30 transition-colors duration-200">
+      <div className="mobile:!bg-transparent mobile:shadow-none flex justify-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/30 transition-colors duration-200 z-[1]">
         <Button
           variant={isMicOn ? "default" : "destructive"}
           size="lg"
@@ -350,14 +583,47 @@ export default function VideoChat() {
           </DialogContent>
         </Dialog>
 
-        <Button
-          variant="destructive"
-          size="lg"
-          className="rounded-full w-12 h-12 flex items-center justify-center dark:hover:bg-red-600 transition-colors duration-200"
-        >
-          <Phone size={24} />
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+          <Button
+            variant="destructive"
+            size="lg"
+            className="rounded-full w-12 h-12 flex items-center justify-center dark:hover:bg-red-600 transition-colors duration-200"
+          >
+            <Phone size={24} />
+          </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you absolutely sure?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone. Are you sure you want to end this call?
+                Click outside the modal to close it.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+              onClick={hangUp}
+              className="rounded-lg h-12 flex items-center justify-center dark:hover:bg-red-600 transition-colors duration-200"
+              >
+                Confirm
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );
 }
+
+function VideoChat() {
+ 
+  return (
+    <Suspense>
+      <PreVideoChat />
+    </Suspense>
+    );
+}
+
+export default VideoChat;

@@ -74,7 +74,7 @@ const PreVideoChat: React.FC = () => {
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 290, y: 283 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
@@ -423,7 +423,7 @@ const PreVideoChat: React.FC = () => {
         {/* Local video */}
         <Card 
         ref={cardRef} 
-        className="mobile:absolute tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0 mobile:bottom-0 mobile:right-0 mobile:m-3 mobile:z-10 mobile:h-[30dvh] mobile:aspect-[9/16]"
+        className="tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0 mobile:z-10 mobile:h-[30dvh] mobile:aspect-[9/16]"
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           touchAction: 'none'

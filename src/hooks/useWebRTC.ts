@@ -14,6 +14,7 @@ import { useSocket } from '@/app/providers';
 
 interface WebRTCConfig {
   iceServers?: RTCIceServer[];
+  room: string;
 }
 
 export class WebRTCError extends Error {
@@ -68,7 +69,9 @@ export const useWebRTC = (config?: WebRTCConfig) => {
 
       newPeerConnection.onicecandidate = (event) => {
         if (event.candidate && socket) {
-          socket.emit('candidate', event.candidate);
+          const room = config?.room;
+          const candidate = event.candidate;
+          socket.emit('candidate', { room, candidate } );
         }
       };
 
@@ -82,7 +85,7 @@ export const useWebRTC = (config?: WebRTCConfig) => {
     } catch (error) {
       throw new WebRTCError('Failed to initialize peer connection', error as Error);
     }
-  }, [dispatch, peerConnection, config?.iceServers]);
+  }, [peerConnection, config?.iceServers, config?.room, dispatch, socket]);
 
   const handleRemoteDescription = useCallback(async (description: RTCSessionDescription) => {
     if (!peerConnection) {

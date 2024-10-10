@@ -65,6 +65,7 @@ const PreVideoChat: React.FC = () => {
     createOffer, 
     createAnswer 
   } = useWebRTC({
+    room: id as string,
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
   });
   useSignaling({
@@ -117,7 +118,7 @@ const PreVideoChat: React.FC = () => {
         }
 
         // Add media tracks to the peer connection
-        if (streamRef.current && mediaConfirmedRef.current) {
+        if (streamRef.current) {
           console.log('Adding tracks:', streamRef.current.getTracks());
           streamRef.current.getTracks().forEach((track: MediaStreamTrack) =>
             addTrack(track, streamRef.current as MediaStream)
@@ -130,6 +131,8 @@ const PreVideoChat: React.FC = () => {
         if (acceptCall === "false") {
           const offer = await createOffer();
           socket.emit('offer', offer);  // Send the offer via socket
+        } else {
+          socket.emit('user-joined', 'offer');
         }
   
         // Handle receiving remote tracks
@@ -146,7 +149,10 @@ const PreVideoChat: React.FC = () => {
       }
     };
   
-    startCall();  // Start the call asynchronously
+    // Start the call asynchronously
+    if (mediaConfirmedRef.current) {
+      startCall();
+    }
   
     return () => {
       // Cleanup when component is unmounted or dependencies change
@@ -155,7 +161,7 @@ const PreVideoChat: React.FC = () => {
         pc.close();
       }
     };
-  }, [acceptCall, addTrack, createOffer, initializePeerConnection, peerConnection]);
+  }, [acceptCall, addTrack, createOffer, initializePeerConnection, peerConnection, mediaConfirmedRef, socket]);
   
 
   const handleMove = (clientX: number, clientY: number): void => {

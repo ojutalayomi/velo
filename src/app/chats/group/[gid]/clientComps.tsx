@@ -306,7 +306,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             onClick={() => setShowDropdown(true)}
             />
             {showDropdown && (
-              <div className="dropdown-menu absolute top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
+              <div className="dropdown-menu absolute top-[80%] right-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
                 <ul className="py-1">
                   {options.map((option) => (
                     <li key={option.id} 
@@ -351,7 +351,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         </div>
         }
       </div>
-      <div className="h-96 overflow-y-auto p-4 flex flex-col flex-1"> 
+      <div className="pb-12 overflow-y-auto p-4 flex flex-col flex-1"> 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">
           {load ? (
             <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
@@ -401,8 +401,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             acc.push(
               <Fragment key={message._id as string}>
                 {index === 0 || messageDate !== lastDateRef.current ? (
-                  <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 my-2 sticky top-0 z-[1]">
-                    {messageDate}
+                  <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 dark:text-white my-2 sticky top-0 z-[1]">
+                    <span className='dark:shadow-bar-dark bg-brand p-1 rounded-lg text-xs'>{messageDate}</span>
                   </div>
                 ) : null}
                 {message.quotedMessage !== '' && (
@@ -421,7 +421,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           }, [])}
         </div>
       </div>
-      <div className="flex flex-col gap-[5px] p-2 sticky top-0 bottom-0">
+      <div className="flex flex-col gap-[5px] fixed w-[-webkit-fill-available] bottom-0">
           {quote.state &&
             <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 mb-1 p-2 w-full rounded-lg flex items-center justify-between px-2">
 
@@ -450,7 +450,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           <button
             // disabled={!socket?.connected}
             onClick={() => handleSendMessage(quote.message?._id)}
-            className="bg-brand text-white p-2 rounded-full max-h-40 hover:bg-tomato focus:outline-none focus:ring-2 focus:ring-brand"
+            className="bg-brand text-white p-2 rounded-full max-h-40 hover:bg-tomato focus:outline-none focus:ring-2 focus:ring-brand shadow-bar"
           >
             <Send size={20} />
           </button>

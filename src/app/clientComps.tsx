@@ -1,6 +1,6 @@
 'use client'
 // import { useUser } from '@auth0/nextjs-auth0/client';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Bottombar from '@/components/Bottombar';
 import Root from '@/components/Root';
@@ -17,6 +17,8 @@ import { RootState } from '@/redux/store';
 import { MessageAttributes, msgStatus, NewChat_ } from '@/lib/types/type';
 import { useSocket } from '@/app/providers';
 import VideoChat from '../components/CallPage';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ConfirmCall } from '@/components/callConfirmation';
 
 interface ClientComponentsProps {
     children: React.ReactNode;
@@ -40,6 +42,8 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const [isMoreShown, setMoreStatus] = useState(false);
     const [error, setError] = useState(null);
     const [load,setLoad] = useState<boolean>(false);
+    const callIdRef = useRef<string>();
+    const callNoticeRef = useRef<boolean>(false);
     const socket = useSocket();
     const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
 
@@ -146,6 +150,12 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 handleUserStatus({ userId, status });
             });
         });
+        socket.on('offer', async ( data: { offer: RTCSessionDescription, room: string } ) => {
+            const { room } = data;
+            callIdRef.current = room;
+            callNoticeRef.current = true;            
+            alert('Incoming call from:');
+        });
   
       return () => {
         socket.off('newMessage', handleChatMessage);
@@ -153,6 +163,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.off('userStopTyping', handleStopTyping);
         socket.off('newChat', handleChat);
         socket.off('batchUserStatus');
+        socket.off('offer');
       };
     }, [socket, handleChatMessage, handleChat, handleUserStatus, handleTyping, handleStopTyping, conversations]);
 
@@ -178,6 +189,14 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
 
     return(
         <>
+            {error && (
+                <Alert variant="destructive" className="mb-4">
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+            {callIdRef.current && callNoticeRef.current && (
+                <ConfirmCall id={String(callIdRef.current)} show={Boolean(callNoticeRef)} conversations={conversations}/>
+            )}
             {!callRoute ?
             <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
             : null}

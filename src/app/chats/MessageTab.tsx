@@ -58,7 +58,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
       case 'failed':
         return <b className='text-red-800'>Not sent!</b>;
       default:
-        return <Check size={10} className='dark:text-gray-400'/>;
+        return <CheckCheck size={10} className='text-brand'/>;
     }
   }
 

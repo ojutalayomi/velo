@@ -103,6 +103,9 @@ export interface NewChatSettings {
     lastSeen: string; // ISO timestamp of the last time the user was online
 }
 
+type Globals = "-moz-initial" | "inherit" | "initial" | "revert" | "revert-layer" | "unset";
+export type UserSelect = "text" | "none" | Globals | "auto" | "-moz-none" | "all" | "contain" | "element"
+
 export type msgStatus = 'sending' | 'sent' | 'delivered' | 'failed';
 export interface MessageAttributes {
     _id?: ObjectId | string;

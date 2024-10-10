@@ -1,6 +1,8 @@
 'use client'
 import React, { useEffect, useRef, useState, Suspense, useCallback } from 'react';
-import { Camera, Mic, MicOff, Video, VideoOff, Phone, Settings } from 'lucide-react';
+import { useWebRTC, WebRTCError } from '@/hooks/useWebRTC';
+import { selectPeerConnection } from '@/redux/rtcSlice';
+import { Camera, Mic, MicOff, Video, VideoOff, Phone, Settings, PieChartIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -21,11 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import CallConfirmation from './CallPage2';
 import { useSocket } from '../app/providers';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { Label } from '@radix-ui/react-select';
 import { useSearchParams } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { useSignaling } from '@/hooks/useSignaling';
+import { useHangup } from '@/hooks/useHangup';
 
 interface DeviceInfo {
   deviceId: string;
@@ -47,9 +51,38 @@ export interface SelectedDevices {
 const PreVideoChat: React.FC = () => {
   const searchParams = useSearchParams();
   const id = searchParams?.get('id');
+  const acceptCall = searchParams?.get('accept');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const socket = useSocket();
+  const peerConnection = useSelector(selectPeerConnection);
+  const { 
+    initializePeerConnection,
+    handleRemoteDescription, 
+    addTrack, 
+    createOffer, 
+    createAnswer 
+  } = useWebRTC({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  });
+  useSignaling({
+    peerConnection,
+    room: id as string,
+    handleRemoteDescription,
+  });
+  const { hangUp } = useHangup({
+    peerConnection,
+    socket,
+    room: id as string,
+    videoRefs: {
+      localVideo: videoRef,
+      remoteVideo: remoteVideoRef,
+    },
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [isConfirmed, setConfirmed] = useState(true);
+  const mediaConfirmedRef = useRef(false);
   const [name, setName] = useState('');
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -67,53 +100,102 @@ const PreVideoChat: React.FC = () => {
     audioInputDeviceId: '',
     audioOutputDeviceId: '',
   });
-  const iceCandidates: RTCIceCandidateInit[] = [];
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
-  const [position, setPosition] = useState({ x: 290, y: 283 });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  // const [isDraggableLocal, setIsDraggableLocal] = useState<boolean>(true);
+
+  useEffect(() => {
+    const startCall = async () => {
+      try {
+        if (!socket) throw new Error('Connection problem. Please try again.');
+  
+        const pc = initializePeerConnection();  // Initialize peer connection
+        if (!pc) {
+          throw new WebRTCError('No peer connection available to add tracks');
+        }
+
+        // Add media tracks to the peer connection
+        if (streamRef.current && mediaConfirmedRef.current) {
+          console.log('Adding tracks:', streamRef.current.getTracks());
+          streamRef.current.getTracks().forEach((track: MediaStreamTrack) =>
+            addTrack(track, streamRef.current as MediaStream)
+          );
+        } else {
+          console.error('No local stream available');
+        }
+  
+        // If not accepting a call, create and send an offer
+        if (acceptCall === "false") {
+          const offer = await createOffer();
+          socket.emit('offer', offer);  // Send the offer via socket
+        }
+  
+        // Handle receiving remote tracks
+        pc.ontrack = (event) => {
+          if (remoteVideoRef.current) {
+            console.log('Received remote track:', event.track);
+            remoteVideoRef.current.srcObject = event.streams[0];
+          }
+        };
+      } catch (err) {
+        console.error('Error joining call:', err);
+        setError((err as Error).message);  // Set error state
+        setIsLoading(false);  // Stop the loading state if there was an error
+      }
+    };
+  
+    startCall();  // Start the call asynchronously
+  
+    return () => {
+      // Cleanup when component is unmounted or dependencies change
+      const pc = peerConnection;  // Ensure we close the right connection
+      if (pc) {
+        pc.close();
+      }
+    };
+  }, [acceptCall, addTrack, createOffer, initializePeerConnection, peerConnection]);
+  
+
+  const handleMove = (clientX: number, clientY: number): void => {
+    if (isDragging && cardRef.current) {
+      const cardRect = cardRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Calculate new position
+      let newX = position.x + (clientX - dragStart.x);
+      let newY = position.y + (clientY - dragStart.y);
+
+      // Apply boundaries
+      newX = Math.max(0, Math.min(viewportWidth - cardRect.width, newX));
+      newY = Math.max(0, Math.min(viewportHeight - cardRect.height, newY));
+
+      setPosition({ x: newX, y: newY });
+      setDragStart({ x: clientX, y: clientY });
+    }
+  };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // e.preventDefault();
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    // e.preventDefault();
+    handleMove(e.clientX, e.clientY);
+  };
+
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    // e.preventDefault();
     setIsDragging(true);
     const touch = e.touches[0];
     setDragStart({ x: touch.clientX, y: touch.clientY });
   };
 
-
-  const handleMove = (clientX: number, clientY: number): void => {
-  if (isDragging && cardRef.current) {
-    const cardRect = cardRef.current.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    // Calculate new position
-    let newX = position.x + (clientX - dragStart.x);
-    let newY = position.y + (clientY - dragStart.y);
-
-    // Apply boundaries
-    newX = Math.max(0, Math.min(viewportWidth - cardRect.width, newX));
-    newY = Math.max(0, Math.min(viewportHeight - cardRect.height, newY));
-
-    setPosition({ x: newX, y: newY });
-    setDragStart({ x: clientX, y: clientY });
-  }
-};
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
-    handleMove(e.clientX, e.clientY);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     // e.preventDefault();
     const touch = e.touches[0];
     handleMove(touch.clientX, touch.clientY);
@@ -134,109 +216,6 @@ const PreVideoChat: React.FC = () => {
       }
     }
   };
-
-  const setRemoteDescription = async (description: RTCSessionDescriptionInit) => {
-    try {
-      await peerConnection?.setRemoteDescription(new RTCSessionDescription(description));
-      
-      // Add any queued ICE candidates
-      for (const candidate of iceCandidates) {
-        await peerConnection?.addIceCandidate(new RTCIceCandidate(candidate));
-      }
-      iceCandidates.length = 0; // Clear the queue
-    } catch (e) {
-      console.error('Error setting remote description or adding ICE candidates', e);
-    }
-  };
-
-
-
-  useEffect(() => {
-    const peerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-    });
-
-    if(socket){
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit('candidate', event.candidate);
-        }
-      };
-
-      peerConnection.ontrack = (event) => {
-        if (remoteVideoRef.current){
-          remoteVideoRef.current.srcObject = event.streams[0];
-        }
-      };
-
-      peerConnection.oniceconnectionstatechange = () => {
-        console.log("ICE connection state:", peerConnection.iceConnectionState);
-      };
-
-  
-      setPeerConnection(peerConnection);
-  
-      socket.on('offer', async (offer: RTCSessionDescriptionInit) => {
-        try {
-          if(peerConnection){
-            await setRemoteDescription(offer);
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            socket.emit('answer', { room, answer });
-          }
-        } catch (err) {
-          console.error('Error handling offer:', err);
-          setError('Error establishing connection');
-        }
-      });
-
-
-      socket.on('user-joined', async () => {
-        try {
-          if (peerConnection) {
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            socket.emit('offer', { room, offer });
-          }
-        } catch (err) {
-          console.error('Error creating offer:', err);
-          setError('Error establishing connection');
-        }
-      });
-  
-      socket.on('answer', async (answer: RTCSessionDescriptionInit) => {
-        try {
-          await setRemoteDescription(answer);
-        } catch (err) {
-          console.error('Error handling answer:', err);
-          setError('Error establishing connection');
-        }
-      });
-  
-      socket.on('candidate', async (candidate: RTCIceCandidateInit) => {
-        try {
-          if (peerConnection && peerConnection.remoteDescription) {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-          } else {
-            // If the remote description isn't set yet, queue the candidate
-            iceCandidates.push(candidate);
-          }
-        } catch (err) {
-          console.error('Error adding ICE candidate:', err);
-          setError('Error establishing connection');
-        }
-      });
-
-    }
-
-    return () => {
-      peerConnection.close();
-      socket?.off('offer');
-      socket?.off('answer');
-      socket?.off('candidate');
-      socket?.off('user-joined');
-    };
-  }, []);
 
   const loadDevices = useCallback(async () => {
     try {
@@ -271,8 +250,9 @@ const PreVideoChat: React.FC = () => {
     }
   }, []);
 
-  const func = useCallback(() => {
-    loadDevices();
+  const func = useCallback(async () => {
+    await loadDevices();
+    mediaConfirmedRef.current = true;
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -351,64 +331,9 @@ const PreVideoChat: React.FC = () => {
     }
   };
 
-  const hangUp = () => {
-    if(peerConnection && videoRef.current && remoteVideoRef.current){
-      peerConnection.close();
-      videoRef.current.srcObject = null;
-      remoteVideoRef.current.srcObject = null;
-    }
-  };
+  const movable = "tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden border-0 mobile:z-10 mobile:h-[30dvh] mobile:aspect-[9/16]";
+  const notMovable = "mobile:absolute mobile:inset-0 mobile:rounded-none relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0";
 
-  const handleJoinCall = () => {
-    if (!name.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-    setIsLoading(true);
-    // Implement call joining logic here
-    setTimeout(async () => {
-      try{
-        if(socket && streamRef.current && peerConnection){
-          setIsLoading(false);
-          setConfirmed(false);
-          func();
-          joinRoom();
-          streamRef.current.getTracks().forEach((track) => peerConnection.addTrack(track, streamRef.current as MediaStream));
-          // const offer = await peerConnection.createOffer();
-          // await peerConnection.setLocalDescription(offer);
-          // socket.emit('offer', { room, offer });
-        } else {
-          throw new Error('Connection problem. Please try again.');
-          // setIsLoading(false);
-        }
-      } catch (err) {
-        console.error('Error joining call:', err);
-        setError((err as Error).message);
-        setIsLoading(false);
-      }
-
-    }, 1000);
-  };
-
-  if(isConfirmed){
-    return <CallConfirmation
-    name={name}
-    error={error}
-    isLoading={isLoading}
-    isVideoOn={isVideoOn}
-    isMicOn={isMicOn}
-    devices={devices}
-    selectedDevices={selectedDevices}
-    streamRef={streamRef}
-    videoRef={videoRef}
-    setSelectedDevices={setSelectedDevices}
-    setName={setName} 
-    loadDevices={loadDevices}
-    startCamera={startCamera}
-    toggleVideo={toggleVideo}
-    toggleMic={toggleMic}
-    handleJoinCall={handleJoinCall}/>
-  }
 
   return (
     <div className="fixed inset-0 z-10 flex flex-col h-screen bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-200">
@@ -423,7 +348,7 @@ const PreVideoChat: React.FC = () => {
         {/* Local video */}
         <Card 
         ref={cardRef} 
-        className="tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0 mobile:z-10 mobile:h-[30dvh] mobile:aspect-[9/16]"
+        className={movable}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           touchAction: 'none'
@@ -454,8 +379,8 @@ const PreVideoChat: React.FC = () => {
         </Card>
         
         {/* Remote video placeholder */}
-        <Card className="mobile:absolute mobile:inset-0 relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0">
-          {remoteVideoRef ?
+        <Card className={notMovable}>
+          {remoteVideoRef.current ?
           <>
           <video
             ref={remoteVideoRef}
@@ -474,7 +399,7 @@ const PreVideoChat: React.FC = () => {
             Waiting for remote user...
           </div>}
           <div className="absolute bottom-2 left-2 text-white text-sm bg-black/50 dark:bg-black/70 px-2 py-1 rounded">
-            {remoteVideoRef ? '' : 'Remote User'}
+            {remoteVideoRef.current ? 'handleEnd' : 'Remote User'}
           </div>
         </Card>
       </div>
@@ -597,7 +522,7 @@ const PreVideoChat: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Are you absolutely sure?</DialogTitle>
               <DialogDescription>
-                This action cannot be undone. Are you sure you want to end this call?
+                Are you sure you want to end this call?
                 Click outside the modal to close it.
               </DialogDescription>
             </DialogHeader>

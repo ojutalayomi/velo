@@ -189,7 +189,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
           )}
         </div>
         <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
-        {senderId === userdata._id && renderStatusIcon(message.status)} • {time}
+        {senderId === userdata._id && renderStatusIcon(message.status) + ' • '}{time}
         </div>
       </div>
     )
@@ -242,7 +242,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
       </div>
 
       <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
-        {renderStatusIcon(message.status)} • {time}
+        {senderId === userdata._id && renderStatusIcon(message.status) + ' • '}{time}
       </div>
 
     </div>

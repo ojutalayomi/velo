@@ -170,7 +170,15 @@ const Posts: React.FC<PostComponentProps> = (props) => {
           </div>
         </div>
         <div className='blog-contents' onClick={() => handleActivePost(`/${postData.Username}/posts/${postData.PostID}`)}>
-          {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? <><abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption.substring(0, 250)}... <span className='showMore'>show more</span></pre></abbr></> : <abbr title={postData.Caption}><pre className='text-xs'>{postData.Caption}</pre></abbr>}
+          {postData.Caption && postData.Caption.length > 250 && !window.location.pathname.includes('posts') ? 
+            <>
+              <abbr title={postData.Caption}>
+                <p className='text-sm text-muted-foreground whitespace-pre-wrap'>{postData.Caption.substring(0, 250)}... <span className='showMore'>show more</span></p>
+              </abbr>
+            </> : 
+            <abbr title={postData.Caption}>
+              <p className='text-sm text-muted-foreground whitespace-pre-wrap'>{postData.Caption}</p>
+            </abbr>}
         </div>
         {/* {showMore} */}
         {postData?.Image.length > 0 &&

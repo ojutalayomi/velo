@@ -56,25 +56,27 @@ const PreVideoChat: React.FC = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef2 = useRef<HTMLDivElement>(null);
   const socket = useSocket();
-  const peerConnection = useSelector(selectPeerConnection);
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
   const { 
     initializePeerConnection,
     handleRemoteDescription, 
     addTrack, 
     createOffer, 
-    createAnswer 
+    createAnswer,
+    pc, 
   } = useWebRTC({
     room: id as string,
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
   });
   useSignaling({
-    peerConnection,
+    peerConnection: pc,
     room: id as string,
     handleRemoteDescription,
   });
   const { hangUp } = useHangup({
-    peerConnection,
+    peerConnection: pc,
     socket,
     room: id as string,
     videoRefs: {
@@ -105,34 +107,33 @@ const PreVideoChat: React.FC = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  // const [isDraggableLocal, setIsDraggableLocal] = useState<boolean>(true);
+  const [isDraggableLocal, setIsDraggableLocal] = useState<boolean>(true);
 
   useEffect(() => {
     const startCall = async () => {
       try {
-        if (!socket) throw new Error('Connection problem. Please try again.');
-  
         const pc = initializePeerConnection();  // Initialize peer connection
+        
         if (!pc) {
           throw new WebRTCError('No peer connection available to add tracks');
         }
 
         // Add media tracks to the peer connection
-        if (streamRef.current) {
-          console.log('Adding tracks:', streamRef.current.getTracks());
-          streamRef.current.getTracks().forEach((track: MediaStreamTrack) =>
-            addTrack(track, streamRef.current as MediaStream)
-          );
-        } else {
-          console.error('No local stream available');
+        if (!streamRef.current) {
+          throw new Error('No local stream available');
         }
   
+        console.log('Adding tracks:', streamRef.current.getTracks());
+        streamRef.current.getTracks().forEach((track: MediaStreamTrack) =>
+          addTrack(track, streamRef.current as MediaStream)
+        );
         // If not accepting a call, create and send an offer
         if (acceptCall === "false") {
           const offer = await createOffer();
-          socket.emit('offer', offer);  // Send the offer via socket
+          socket?.emit('offer', offer);  // Send the offer via socket
+          socket?.emit('callOffer', offer);
         } else {
-          socket.emit('user-joined', 'offer');
+          socket?.emit('user-joined', 'offer');
         }
   
         // Handle receiving remote tracks
@@ -151,18 +152,17 @@ const PreVideoChat: React.FC = () => {
   
     // Start the call asynchronously
     console.log('Media confirmed ref:', mediaConfirmedRef.current);
-    if (mediaConfirmedRef.current) {
+    if (mediaConfirmedRef.current && socket) {
       startCall();
     }
   
     return () => {
       // Cleanup when component is unmounted or dependencies change
-      const pc = peerConnection;  // Ensure we close the right connection
       if (pc) {
         pc.close();
       }
     };
-  }, [acceptCall, addTrack, createOffer, initializePeerConnection, peerConnection, mediaConfirmedRef, socket]);
+  }, [acceptCall, addTrack, createOffer, initializePeerConnection, mediaConfirmedRef, pc, socket]);
   
 
   const handleMove = (clientX: number, clientY: number): void => {
@@ -259,7 +259,6 @@ const PreVideoChat: React.FC = () => {
 
   const func = useCallback(async () => {
     await loadDevices();
-    mediaConfirmedRef.current = true;
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -270,6 +269,12 @@ const PreVideoChat: React.FC = () => {
   useEffect(() => {
     func();
   }, [func]);
+
+  useEffect(() => {
+    if(streamRef.current) {
+      mediaConfirmedRef.current = true;
+    }
+  }, [streamRef])
 
   const startCamera = async (videoDeviceId: string, audioDeviceId: string) => {
     try {
@@ -283,6 +288,7 @@ const PreVideoChat: React.FC = () => {
       });
       
       streamRef.current = stream;
+      mediaConfirmedRef.current = true;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -341,6 +347,43 @@ const PreVideoChat: React.FC = () => {
   const movable = "tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden border-0 mobile:z-10 mobile:h-[30dvh] mobile:aspect-[9/16]";
   const notMovable = "mobile:absolute mobile:inset-0 mobile:rounded-none relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0";
 
+  const classChange = () => {
+    if(cardRef.current && cardRef2.current){
+      setIsDraggableLocal(!isDraggableLocal);
+      if(cardRef.current?.className === movable){
+        cardRef.current.className = notMovable;
+        cardRef2.current.className = movable;
+      } else {
+        cardRef.current.className = movable;
+        cardRef2.current.className = notMovable;
+      }
+    }
+  }
+
+  const Card_ = React.forwardRef<HTMLDivElement, 
+    {children: React.ReactNode, type?: "user" | "remote"}
+  >(({children, type}, ref) => (
+      <Card 
+      ref={ref} 
+      className={isDraggableLocal ? movable : notMovable}
+      style={{
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        touchAction: 'none'
+      }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleEnd}
+      onMouseLeave={handleEnd}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleEnd}
+      onDoubleClick={classChange}
+      >
+        {children}
+      </Card>
+  ))
+  Card_.displayName = ''
+
 
   return (
     <div className="fixed inset-0 z-10 flex flex-col h-screen bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-200">
@@ -353,20 +396,8 @@ const PreVideoChat: React.FC = () => {
       {/* Main video grid */}
       <div className="flex-1 grid tablets1:grid-cols-2 gap-4 mb-4">
         {/* Local video */}
-        <Card 
-        ref={cardRef} 
-        className={movable}
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
-          touchAction: 'none'
-        }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleEnd}
-        onMouseLeave={handleEnd}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleEnd}
+        <Card_
+        ref={cardRef}
         >
           <video
             ref={videoRef}
@@ -383,10 +414,10 @@ const PreVideoChat: React.FC = () => {
           <div className="absolute bottom-2 left-2 text-white text-sm bg-black/50 dark:bg-black/70 px-2 py-1 rounded">
             You
           </div>
-        </Card>
+        </Card_>
         
         {/* Remote video placeholder */}
-        <Card className={notMovable}>
+        <Card className={notMovable} ref={cardRef2}>
           {remoteVideoRef.current ?
           <>
           <video
@@ -441,7 +472,7 @@ const PreVideoChat: React.FC = () => {
               <Settings size={24} />
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="round-lg sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Device Settings</DialogTitle>
             </DialogHeader>
@@ -525,7 +556,7 @@ const PreVideoChat: React.FC = () => {
             <Phone size={24} />
           </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="round-lg sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Are you absolutely sure?</DialogTitle>
               <DialogDescription>

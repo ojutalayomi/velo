@@ -148,6 +148,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 };
               }
             }}
+            onContextMenu={() => openOptions(true)}
           >
             {senderId !== userdata._id && (
               <div className='flex items-center'>
@@ -167,7 +168,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 }
               </div>
             )}
-            <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</pre>
+            <p className={`dark:text-white mobile:text-sm text-muted-foreground whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
           </div>
           <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => openOptions(true)}/>
           {options && (
@@ -223,10 +224,11 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               };
             }
           }}
+          onContextMenu={() => openOptions(true)}
         >
           {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
           {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-          <pre className={`dark:text-white mobile:text-sm break-words whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</pre>
+          <p className={`dark:text-white mobile:text-sm text-muted-foreground whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
         </div>
         <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => openOptions(true)}/>
         <div ref={optionsRef} className={`edit-list absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}

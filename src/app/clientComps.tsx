@@ -150,7 +150,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 handleUserStatus({ userId, status });
             });
         });
-        socket.on('offer', async ( data: { offer: RTCSessionDescription, room: string } ) => {
+        socket.on('callOffer', async ( data: { offer: RTCSessionDescription, room: string } ) => {
             const { room } = data;
             callIdRef.current = room;
             callNoticeRef.current = true;            

@@ -27,14 +27,14 @@ export class WebRTCError extends Error {
 export const useWebRTC = (config?: WebRTCConfig) => {
   const dispatch = useDispatch();
   const socket = useSocket();
-  const peerConnection = useSelector(selectPeerConnection);
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
   const iceCandidates = useSelector(selectIceCandidates);
   const connectionTimeoutRef = useRef<NodeJS.Timeout>();
 
   const initializePeerConnection = useCallback(() => {
     try {
-      if (peerConnection) {
-        peerConnection.close();
+      if (peerConnection.current) {
+        peerConnection.current.close();
       }
 
       const newPeerConnection = new RTCPeerConnection({
@@ -80,7 +80,7 @@ export const useWebRTC = (config?: WebRTCConfig) => {
         console.error('ICE candidate error:', event);
       };
 
-      dispatch(setPeerConnection(newPeerConnection));
+      peerConnection.current = newPeerConnection;
       return newPeerConnection;
     } catch (error) {
       throw new WebRTCError('Failed to initialize peer connection', error as Error);
@@ -88,18 +88,18 @@ export const useWebRTC = (config?: WebRTCConfig) => {
   }, [peerConnection, config?.iceServers, config?.room, dispatch, socket]);
 
   const handleRemoteDescription = useCallback(async (description: RTCSessionDescription) => {
-    if (!peerConnection) {
+    if (!peerConnection.current) {
       throw new WebRTCError('No peer connection available');
     }
 
     try {
-      await peerConnection.setRemoteDescription(description);
+      await peerConnection.current.setRemoteDescription(description);
       dispatch(setRemoteDescription(description));
       
       // Add any queued ICE candidates
       for (const candidate of iceCandidates) {
         try {
-          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (error) {
           console.warn('Failed to add ICE candidate:', error);
           // Continue with remaining candidates even if one fails
@@ -112,25 +112,25 @@ export const useWebRTC = (config?: WebRTCConfig) => {
   }, [peerConnection, iceCandidates, dispatch]);
 
   const addTrack = useCallback((track: MediaStreamTrack, stream: MediaStream) => {
-    if (!peerConnection) {
+    if (!peerConnection.current) {
       throw new WebRTCError('No peer connection available');
     }
 
     try {
-      return peerConnection.addTrack(track, stream);
+      return peerConnection.current.addTrack(track, stream);
     } catch (error) {
       throw new WebRTCError('Failed to add media track', error as Error);
     }
   }, [peerConnection]);
 
   const createOffer = useCallback(async (options?: RTCOfferOptions) => {
-    if (!peerConnection) {
+    if (!peerConnection.current) {
       throw new WebRTCError('No peer connection available');
     }
 
     try {
-      const offer = await peerConnection.createOffer(options);
-      await peerConnection.setLocalDescription(offer);
+      const offer = await peerConnection.current.createOffer(options);
+      await peerConnection.current.setLocalDescription(offer);
       return offer;
     } catch (error) {
       throw new WebRTCError('Failed to create offer', error as Error);
@@ -138,13 +138,13 @@ export const useWebRTC = (config?: WebRTCConfig) => {
   }, [peerConnection]);
 
   const createAnswer = useCallback(async (options?: RTCAnswerOptions) => {
-    if (!peerConnection) {
+    if (!peerConnection.current) {
       throw new WebRTCError('No peer connection available');
     }
 
     try {
-      const answer = await peerConnection.createAnswer(options);
-      await peerConnection.setLocalDescription(answer);
+      const answer = await peerConnection.current.createAnswer(options);
+      await peerConnection.current.setLocalDescription(answer);
       return answer;
     } catch (error) {
       throw new WebRTCError('Failed to create answer', error as Error);
@@ -152,16 +152,17 @@ export const useWebRTC = (config?: WebRTCConfig) => {
   }, [peerConnection]);
 
   // Cleanup on unmount
+  const pc = peerConnection.current;
   useEffect(() => {
     return () => {
       if (connectionTimeoutRef.current) {
         clearTimeout(connectionTimeoutRef.current);
       }
-      if (peerConnection) {
-        peerConnection.close();
+      if (pc) {
+        pc.close();
       }
     };
-  }, [peerConnection]);
+  }, [pc]);
 
   return {
     initializePeerConnection,
@@ -169,6 +170,6 @@ export const useWebRTC = (config?: WebRTCConfig) => {
     addTrack,
     createOffer,
     createAnswer,
-    peerConnection,
+    pc,
   };
 };

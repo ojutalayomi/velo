@@ -152,7 +152,7 @@ const PreVideoChat: React.FC = () => {
   
     // Start the call asynchronously
     console.log('Media confirmed ref:', mediaConfirmedRef.current);
-    if (mediaConfirmedRef.current && socket) {
+    if (socket) {
       startCall();
     }
   

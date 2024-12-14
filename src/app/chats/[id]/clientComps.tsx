@@ -12,6 +12,12 @@ import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
 import { useSocket } from '@/app/providers';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Input } from '@/components/ui/input';
 
 interface NavigationState {
   chaT: string;
@@ -256,20 +262,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }, 3000);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showDropdown && !(event.target as Element).closest('.dropdown-menu')) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showDropdown]);
-
   const options = [
     { id: 1, name: 'View contact', action: () => console.log('View contact') },
     { id: 2, name: 'Search', action: () => openSearchBar(true) },
@@ -318,12 +310,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
             onClick={() => router.push(`/call/?id=${pid}`)}
             />
-            <EllipsisVertical 
-            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => setShowDropdown(true)}
-            />
-            {showDropdown && (
-              <div className="dropdown-menu absolute top-[80%] right-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
+            <Popover>
+              <PopoverTrigger>
+                <EllipsisVertical 
+                  className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+                  onClick={() => setShowDropdown(true)}
+                />
+              </PopoverTrigger>
+              <PopoverContent className='bg-white dark:bg-zinc-800 max-w-52 mt-2 mr-2 p-0 rounded-md shadow-lg z-10'>
                 <ul className="py-1">
                   {options.map((option) => (
                     <li key={option.id} 
@@ -355,14 +349,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                     </li>
                   ))}
                 </ul>
-              </div>
-            )}
+              </PopoverContent>
+            </Popover>
           </div>
         </> :
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full">
           <FontAwesomeIcon onClick={() => openSearchBar(false)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-full text-sm focus:outline-none w-full" />
-          <button onClick={() => setSearchQuery('')} className={`${searchQuery === '' && 'hidden '} bg-brand hover:bg-brand/70 text-white font-bold py-2 px-4 rounded`}>
+          <Input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="rounded-full" />
+          <button onClick={() => setSearchQuery('')} className={`${searchQuery === '' && 'hidden '} text-brand hover:text-brand/70 font-bold py-2`}>
             Clear
           </button>
         </div>
@@ -424,7 +418,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             acc.push(
               <Fragment key={message._id as string}>
                 {index === 0 || messageDate !== lastDateRef.current ? (
-                  <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 dark:text-white my-2 sticky top-0 z-[1]">
+                  <div key={`date-${messageDate}`} data-date={messageDate} className="text-center dark:text-white my-2 sticky top-0 z-[1]">
                     <span className='dark:shadow-bar-dark bg-brand p-1 rounded-lg text-xs'>{messageDate}</span>
                   </div>
                 ) : null}

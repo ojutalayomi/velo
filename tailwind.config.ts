@@ -15,7 +15,7 @@ const config: Config = {
   			tomatom: '#ff625794'
   		},
   		backgroundImage: {
-  			'bgLight': "url('/greybg.png')",
+  			'bgLight': "url('/greybg.jpg')",
   			'bgDark': "url('/greybg-dark.png')",
   			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
   			'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'

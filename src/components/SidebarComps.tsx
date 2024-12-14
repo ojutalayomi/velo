@@ -1,7 +1,12 @@
 import React, { forwardRef, useRef } from 'react';
 import Link from 'next/link';
 import Image from "next/image";
-import { ChevronRight, BadgePlus, RefreshCw, Bell, Mail, Lock, User, Moon, HelpCircle, LogIn, LogOut } from 'lucide-react';
+import { ChevronRight, BadgePlus, RefreshCw, Bell, Mail, Lock, User, Moon, HelpCircle, LogIn, LogOut, Ellipsis } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { UserData } from '@/redux/userSlice';
 
 export const sidebarItems = [
@@ -121,8 +126,8 @@ export const UserSection = forwardRef<HTMLDivElement, {
   refetchUser: () => void;
 }>(({ error, loading, userdata, pathname, isPopUp, handlePopUp, refetchUser }, ref) => (
   <div ref={ref} className={`user ${!error ? 'hover:bg-slate-200 dark:hover:bg-neutral-900' : ''} tablets1:items-center !justify-center tablets1:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 !rounded-full shadow-bar dark:shadow-bar-dark w-full`} onClick={handlePopUp}>
-    {!loading && !userdata.username ? (
-      <div className='dark:text-slate-200 flex flex-col gap-2'>
+    {!userdata._id ? (
+      <div className='dark:text-slate-200 flex flex-col gap-2 p-2'>
         <p className='flex items-center hover:text-brand'>
           <LogIn size={25} className="mr-2" />
           <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='hidden tablets1:!flex'>Log in</Link>
@@ -159,17 +164,21 @@ export const UserSection = forwardRef<HTMLDivElement, {
 
           {loading || error ? <div className='animate-pulse w-14 h-4 bg-[#9E9E9E] rounded'></div> : <p className='username text-sm'>@{userdata.username}</p>}
         </div>
-        <svg height='25px' width='25px' viewBox='0 0 24 24' aria-hidden='true' className='three-dots hidden tablets1:!block'>
-          <g><path className='pathEllip dark:fill-tom' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
-        </svg>
-        <span className={`ellipsis-popup ${isPopUp ? 'show' : ''} left-2.5 dark:!bg-neutral-950 dark:text-slate-200`}>
-          <p className='dark:hover:bg-slate-900 hover:bg-slate-200'>
-            <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</b></Link>
-          </p>
-          <p className='dark:hover:bg-slate-900 hover:bg-slate-200'>
-            <Link href='/accounts/login'>Add another account?</Link>
-          </p>
-        </span>
+        <Popover open={isPopUp} onOpenChange={handlePopUp}>
+          <PopoverTrigger asChild>
+            <Ellipsis size={25} className="cursor-pointer hidden tablets1:!block dark:text-gray-400" />
+          </PopoverTrigger>
+          <PopoverContent className="bg-white dark:bg-neutral-950 dark:text-slate-200 w-auto p-2 rounded-md shadow-lg">
+            <div className="flex flex-col">
+              <Link href="/accounts/logout" className="hover:bg-slate-200 dark:hover:bg-slate-900 p-2 rounded">
+                Log out <b className="username">@{userdata.username !== '' ? userdata.username : 'johndoe'}</b>
+              </Link>
+              <Link href="/accounts/login" className="hover:bg-slate-200 dark:hover:bg-slate-900 p-2 rounded">
+                Add another account?
+              </Link>
+            </div>
+          </PopoverContent>
+        </Popover>
       </>
     )}
   </div>

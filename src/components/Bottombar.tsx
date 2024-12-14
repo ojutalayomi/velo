@@ -102,7 +102,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
               <Mail size={22} className="dark:stroke-tom" />
               <div>Chats</div>
             </div>
-            {(!loading && !userdata._id) ? (
+            {(userdata._id) ? (
             <Drawer open={open} onOpenChange={setOpen}>
               <DrawerTrigger>
                 <Avatar>
@@ -110,7 +110,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                   <AvatarFallback>V</AvatarFallback>
                 </Avatar>
               </DrawerTrigger>
-              <DrawerContent>
+              <DrawerContent className='tablets1:hidden'>
                 <div id='more' className={`flex flex-col gap-2 left-0 px-4 font-light leading-normal`}>
                   <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'general' ? 'active' : ''}`} data-route='general' onClick={() => handleClick('general')}>
                     <Settings size={25}/>
@@ -134,7 +134,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                   </div>
                 </div>
                 <DrawerFooter>
-                  {!loading && !userdata.username ?
+                  {!userdata._id ?
                   <div className='dark:text-slate-200 flex items-center justify-between'>
                     <p className='flex items-center'>
                       <LogIn size={25} className="mr-2" />
@@ -171,7 +171,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                           <g><path className='pathEllip dark:fill-tom' d='M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'></path></g>
                         </svg>
                       </PopoverTrigger>
-                      <PopoverContent className='w-[100px]'>
+                      <PopoverContent className='m-2 w-auto'>
                         <p className='hover:bg-slate-200'>
                           <Link href='/accounts/logout'>Log out <b className='username'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</b></Link>
                         </p>

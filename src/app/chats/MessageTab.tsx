@@ -7,6 +7,23 @@ import { useDispatch } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 import { ConvoType, setConversations, setMessages, addMessage, deleteMessage, updateLiveTime, updateConversation, editMessage } from '@/redux/chatSlice'; 
 import { useSocket } from '../providers';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer" 
+
 
 type Message = {
   _id: string,
@@ -25,10 +42,17 @@ type Props = {
   chat?: string,
 }
 
+// Define the type for each option
+type Option = {
+  icon: React.ElementType; // Type for the icon component
+  text: string; // Text to display
+  onClick: () => void; // Click handler function
+};
 
 const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
+  const [open, setOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [options,openOptions] = useState<boolean>(false);
   const [messageContent,setMessageContent] = useState<string>(message.content.replace('≤≤≤',''));
@@ -88,7 +112,8 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
     }
   };
 
-  const optionss = [
+  // Update the optionss array to use the defined type
+  const optionss: Option[] = [
     {
       icon: TextQuote,
       text: 'Quote',
@@ -132,7 +157,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               if (event.touches.length === 1) {
                 const touch = event.touches[0];
                 const longPressTimer = setTimeout(() => {
-                  openOptions(true);
+                  setOpen(true);
                 }, 500); // 500ms long press
                 
                 const cancelLongPress = () => {
@@ -148,7 +173,10 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 };
               }
             }}
-            onContextMenu={() => openOptions(true)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setOpen(true);
+            }}
           >
             {senderId !== userdata._id && (
               <div className='flex items-center'>
@@ -168,26 +196,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 }
               </div>
             )}
-            <p className={`dark:text-white mobile:text-sm text-muted-foreground whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
+            <p className={`dark:text-white mobile:text-sm whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
           </div>
-          <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => openOptions(true)}/>
-          {options && (
-            <div className={`edit-list absolute backdrop-blur-sm flex ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`} 
-            onClick={(e) => e.stopPropagation()}
-            >
-              {optionss.map(({ icon: Icon, text, onClick }, index) => (
-                <div key={index} className='flex gap-1 items-center cursor-pointer' 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClick()
-                  }}
-                >
-                  <Icon size={20} className='dark:text-gray-400'/>
-                  <span className='text-xs dark:text-white'>{text}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <Options options={optionss} open={open} setOpen={setOpen}/>
         </div>
         <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
         {senderId === userdata._id && renderStatusIcon(message.status)}{time}
@@ -208,7 +219,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             if (event.touches.length === 1) {
               const touch = event.touches[0];
               const longPressTimer = setTimeout(() => {
-                openOptions(true);
+                setOpen(true);
               }, 500); // 500ms long press
               
               const cancelLongPress = () => {
@@ -224,23 +235,16 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               };
             }
           }}
-          onContextMenu={() => openOptions(true)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
         >
           {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
           {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-          <p className={`dark:text-white mobile:text-sm text-muted-foreground whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
+          <p className={`dark:text-white mobile:text-sm whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
         </div>
-        <Ellipsis ref={svgRef} size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => openOptions(true)}/>
-        <div ref={optionsRef} className={`edit-list absolute backdrop-blur-sm ${options ? 'flex' : 'hidden'} ${senderId === userdata._id ? 'right-1/2' : 'left-1/2'} bg-white dark:bg-black flex-col gap-2 items-start p-2 rounded-md shadow-md top-1/2 min-w-[120px] z-[3]`}
-        onClick={(e) => e.stopPropagation()}
-        >
-          {optionss.map(({ icon: Icon, text, onClick }, index) => (
-            <div key={index} className='flex gap-1 items-center cursor-pointer' onClick={onClick}>
-              <Icon size={20} className='dark:text-gray-400'/>
-              <span className='text-xs dark:text-white'>{text}</span>
-            </div>
-          ))}
-        </div>
+        <Options options={optionss} open={open} setOpen={setOpen}/>
       </div>
 
       <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
@@ -252,3 +256,48 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 }
 
 export default MessageTab;
+
+export function Options({options, open, setOpen}:{options: Option[], open: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+
+  return (
+    <>
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerTrigger asChild>
+      <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 hidden' onClick={() => setOpen(true)}/>
+      </DrawerTrigger>
+      <DrawerContent className='tablets:hidden'>
+        <DrawerHeader className="text-left">
+          <DrawerTitle className='hidden '>Options</DrawerTitle>
+          <DrawerDescription className='flex flex-col gap-2'>
+            {options.map(({ icon: Icon, text, onClick }, index) => (
+              <div key={index} className='flex gap-1 items-center cursor-pointer' onClick={onClick}>
+                <Icon size={25} className='dark:text-gray-400'/>
+                <span className='text-lg dark:text-white'>{text}</span>
+              </div>
+            ))}
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerFooter className="pt-2">
+          <DrawerClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => setOpen(true)}/>
+      </PopoverTrigger>
+      <PopoverContent className='bg-white mobile:hidden dark:bg-zinc-800 w-auto space-y-2 mt-2 mr-2 p-2 rounded-md shadow-lg z-10'>
+        {options.map(({ icon: Icon, text, onClick }, index) => (
+          <div key={index} className='flex gap-1 items-center cursor-pointer' onClick={onClick}>
+            <Icon size={20} className='dark:text-gray-400'/>
+            <span className='dark:text-white text-sm'>{text}</span>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+    </>
+  )
+}

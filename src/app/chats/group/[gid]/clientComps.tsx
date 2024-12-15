@@ -76,7 +76,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [err,setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState('');
   const [group,setGroup] = useState<{[x: string]: any}>([]);
-  const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const gid = params?.gid as string;
   const socket = useSocket();
   const convo = conversations?.find(c => c.id === gid) as ConvoType;
@@ -242,20 +241,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }, 3000);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showDropdown && !(event.target as Element).closest('.dropdown-menu')) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showDropdown]);
-
   const options = [
     { id: 1, name: 'View contact', action: () => console.log('Pinned') },
     { id: 2, name: 'Search', action: () => openSearchBar(true) },
@@ -307,53 +292,46 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
             onClick={() => router.push(`/call/?id=${gid}`)}
             />
-            <EllipsisVertical 
-            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => setShowDropdown(true)}
-            />
-            {showDropdown && (
-              <Popover>
-                <PopoverTrigger>
-                  <EllipsisVertical 
-                    className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-                    onClick={() => setShowDropdown(true)}
-                  />
-                </PopoverTrigger>
-                <PopoverContent className='bg-white dark:bg-zinc-800 max-w-52 mt-2 mr-2 p-0 rounded-md shadow-lg z-10'>
-                  <ul className="py-1">
-                    {options.map((option) => (
-                    <li key={option.id} 
-                      className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if(socket){
-                          option.action();
-                          switch (true) {
-                            case option.name.toLowerCase().includes("pin"):
-                              socket.emit('updateConversation', { 
-                                id: gid, 
-                                updates: { pinned: !isPinned, userId: userdata._id } 
-                              });
-                              break;
-                            case option.name.toLowerCase().includes("archive"):
-                              socket.emit('updateConversation', { 
-                                id: gid, 
-                                updates: { archived: !isArchived, userId: userdata._id } 
-                              });
-                              break;
-                            default:
-                              break;
-                          }
+            <Popover>
+              <PopoverTrigger>
+                <EllipsisVertical 
+                  className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
+                />
+              </PopoverTrigger>
+              <PopoverContent className='bg-white dark:bg-zinc-800 max-w-52 mt-2 mr-2 p-0 rounded-md shadow-lg z-10'>
+                <ul className="py-1">
+                  {options.map((option) => (
+                  <li key={option.id} 
+                    className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if(socket){
+                        option.action();
+                        switch (true) {
+                          case option.name.toLowerCase().includes("pin"):
+                            socket.emit('updateConversation', { 
+                              id: gid, 
+                              updates: { pinned: !isPinned, userId: userdata._id } 
+                            });
+                            break;
+                          case option.name.toLowerCase().includes("archive"):
+                            socket.emit('updateConversation', { 
+                              id: gid, 
+                              updates: { archived: !isArchived, userId: userdata._id } 
+                            });
+                            break;
+                          default:
+                            break;
                         }
-                      }}
-                    >
-                      {option.name}
-                    </li>
-                  ))}
-                  </ul>
-                </PopoverContent>
-              </Popover>
-            )}
+                      }
+                    }}
+                  >
+                    {option.name}
+                  </li>
+                ))}
+                </ul>
+              </PopoverContent>
+            </Popover>
           </div>
         </> :
         <div className="flex items-center gap-2 w-full">

@@ -85,22 +85,22 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
       <>
         <div className={`bg-slate-200 fixed bottom-0 left-0 right-0 tablets1:hidden z-50 shadow-md rounded-t-md dark:bg-zinc-900 ${routes.includes(activeRoute) && 'hidden'}`}>
 
-          <div className='!shadow-none py-[10px] flex justify-around w-full'>
-            <div onClick={() => handleClick('home')} className={`flex flex-col items-center dark:text-slate-200 ${activeRoute === 'home' ? 'active' : ''}`}>
+          <div className='!shadow-none py-[10px] flex justify-evenly w-full'>
+            <div onClick={() => handleClick('home')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'home' ? 'active' : ''}`}>
               <Home size={22} className="dark:stroke-tom" />
-              <div>Home</div>
+              {/* <div>Home</div> */}
             </div>
-            <div onClick={() => handleClick('explore')} className={`flex flex-col items-center dark:text-slate-200 ${activeRoute === 'explore' ? 'active' : ''}`}>
+            <div onClick={() => handleClick('explore')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'explore' ? 'active' : ''}`}>
               <Search size={22} className="dark:stroke-tom" />
-              <div>Explore</div>
+              {/* <div>Explore</div> */}
             </div>
-            <div onClick={() => handleClick('create-post')} className={`flex flex-col items-center dark:text-slate-200 ${activeRoute === 'create-post' ? 'active' : ''}`}>
+            <div onClick={() => handleClick('create-post')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'create-post' ? 'active' : ''}`}>
               <BadgePlus size={22} className="dark:stroke-tom" />
-              <div>Post</div>
+              {/* <div>Post</div> */}
             </div>
-            <div onClick={() => handleClick('chats')} className={`flex flex-col items-center dark:text-slate-200 ${activeRoute === 'chats' ? 'active' : ''}`}>
+            <div onClick={() => handleClick('chats')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'chats' ? 'active' : ''}`}>
               <Mail size={22} className="dark:stroke-tom" />
-              <div>Chats</div>
+              {/* <div>Chats</div> */}
             </div>
             {(userdata._id) ? (
             <Drawer open={open} onOpenChange={setOpen}>

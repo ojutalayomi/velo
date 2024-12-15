@@ -75,8 +75,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [load,setLoading] = useState<boolean>();
   const [err,setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState('');
-  const [newPerson,setNewPerson] = useState<{[x: string]: any}>([]);
-  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [newPerson,setNewPerson] = useState<{[x: string]: keyof ConvoType}>({});
   const pid = params?.id as string;
   const socket = useSocket();
   const convo = conversations?.find(c => c.id === pid) as ConvoType;
@@ -314,7 +313,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
               <PopoverTrigger>
                 <EllipsisVertical 
                   className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-                  onClick={() => setShowDropdown(true)}
                 />
               </PopoverTrigger>
               <PopoverContent className='bg-white dark:bg-zinc-800 max-w-52 mt-2 mr-2 p-0 rounded-md shadow-lg z-10'>

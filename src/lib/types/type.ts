@@ -186,7 +186,7 @@ export interface Schema {
 export type AllChats = {
     chats: ChatData[],
     chatSettings: {
-    [key: string]: NewChatSettings;
+        [key: string]: NewChatSettings;
     };
     messages?: (MessageAttributes | GroupMessageAttributes)[],
     requestId: string

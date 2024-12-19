@@ -60,7 +60,8 @@ const Card: React.FC<Props> = ({chat}) => {
   const router = useRouter();
   const dispatch = useDispatch();
   const url = 'https://s3.amazonaws.com/profile-display-images/';
-  const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
+  const chaT = useSelector<RootState>((state) => state.chat);
+  const [showFullscreen, setShowFullscreen] = useState(false);
   
   const openChat = (id: string) => {
     const path = chat.type === 'Groups' ? `/chats/group/${id}` : `/chats/${id}`;
@@ -113,9 +114,9 @@ const Card: React.FC<Props> = ({chat}) => {
     { id: 6, name: isBlocked ? 'Unblock' : 'Block', action: () => setIsBlocked(!isBlocked) },
   ];
 
-  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
+  const fullscreen = () => {
+    setShowFullscreen(true);
+  }
 
   return(
 
@@ -196,15 +197,23 @@ const Card: React.FC<Props> = ({chat}) => {
         </div>
       )}
       <div className="relative">
-        <Image src={
-            chat.displayPicture  
-            ?  (
-              chat.displayPicture.includes('ila-') 
-              ? '/default.jpeg'
-              : url +  chat.displayPicture
-            )
-            : '/default.jpeg'} 
-            height={40} width={40} alt={chat.name} className="w-12 h-12 min-w-11 rounded-full" />
+        <Image 
+        src={
+          chat.displayPicture  
+          ?  (
+            chat.displayPicture.includes('ila-') 
+            ? '/default.jpeg'
+            : url +  chat.displayPicture
+          )
+          : '/default.jpeg'
+        }
+        onClick={(e) => {
+          e.preventDefault();
+          fullscreen();
+        }}
+        height={40} width={40} alt={chat.name} 
+        className="w-12 h-12 min-w-11 rounded-full" 
+        />
         {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] && (
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
         )}
@@ -248,6 +257,26 @@ const Card: React.FC<Props> = ({chat}) => {
           )}
         </div>
       </div>
+      {showFullscreen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowFullscreen(false)}
+        >
+          <Image 
+            src={
+              chat.displayPicture  
+              ? (chat.displayPicture.includes('ila-') 
+                ? '/default.jpeg'
+                : url + chat.displayPicture)
+              : '/default.jpeg'
+            }
+            height={500} 
+            width={500} 
+            alt={chat.name}
+            className="max-h-[90vh] w-auto object-contain rounded-lg"
+          />
+        </div>
+      )}
     </div>
   )
 }

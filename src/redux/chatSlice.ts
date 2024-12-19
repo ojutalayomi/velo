@@ -133,6 +133,18 @@ const chatSlice = createSlice({
           : convo
       );
     },
+    updateMessageReactions: (state, action: PayloadAction<{id: string, updates: MessageAttributes['reactions']}>) => {
+      const { id, updates } = action.payload;
+      state.messages = state.messages.map(msg => {
+        if (msg._id === id) {
+          return {
+            ...msg,
+            reactions: updates
+          } as MessageAttributes | GroupMessageAttributes;
+        }
+        return msg;
+      });
+    },
     deleteConversation: (state, action: PayloadAction<string>) => {
       state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
     },
@@ -209,7 +221,7 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setConversations, addConversation, updateConversation, deleteConversation, setMessages, addMessage, editMessage, updateMessage, deleteMessage, setSettings, addSetting, setLoading, setError, setUserId } = chatSlice.actions;
+export const { setConversations, addConversation, updateConversation, updateMessageReactions, deleteConversation, setMessages, addMessage, editMessage, updateMessage, deleteMessage, setSettings, addSetting, setLoading, setError, setUserId } = chatSlice.actions;
 export default chatSlice.reducer;
 
 // Fetch chats on app load

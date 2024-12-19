@@ -106,6 +106,11 @@ export interface NewChatSettings {
 type Globals = "-moz-initial" | "inherit" | "initial" | "revert" | "revert-layer" | "unset";
 export type UserSelect = "text" | "none" | Globals | "auto" | "-moz-none" | "all" | "contain" | "element"
 
+interface Reaction {
+    emoji: string;
+    users: string[];
+  }
+
 export type msgStatus = 'sending' | 'sent' | 'delivered' | 'failed';
 export interface MessageAttributes {
     _id?: ObjectId | string;
@@ -116,7 +121,7 @@ export interface MessageAttributes {
     timestamp: string;
     messageType: string;
     isRead: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
-    reactions: string[];
+    reactions: Reaction[];
     attachments: string[];
     quotedMessage: string;
     status: msgStatus;
@@ -137,7 +142,7 @@ export interface GroupMessageAttributes {
     timestamp: string;
     messageType: string;
     isRead: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
-    reactions: string[];
+    reactions: Reaction[];
     attachments: string[];
     quotedMessage: string;
     status: msgStatus;

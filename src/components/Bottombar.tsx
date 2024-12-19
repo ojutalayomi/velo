@@ -83,7 +83,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
 
     return (
       <>
-        <div className={`bg-slate-200 fixed bottom-0 left-0 right-0 tablets1:hidden z-50 shadow-md rounded-t-md dark:bg-zinc-900 ${routes.includes(activeRoute) && 'hidden'}`}>
+        <div className={`bg-slate-200 fixed bottom-0 left-0 right-0 tablets:hidden z-50 shadow-md rounded-t-md dark:bg-zinc-900 ${routes.includes(activeRoute) && 'hidden'}`}>
 
           <div className='!shadow-none py-[10px] flex justify-evenly w-full'>
             <div onClick={() => handleClick('home')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'home' ? 'active' : ''}`}>

@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import ChatTextarea from '../../ChatTextarea';
 
 interface NavigationState {
   chaT: string;
@@ -69,7 +70,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
   const [load,setLoading] = useState<boolean>();
@@ -142,24 +142,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [fetchData, gid])
 
   useEffect(() => {
-      const handleInput = () => {
-          const textArea = textAreaRef.current;
-          if (textArea) {
-              textArea.style.height = '40px';
-              textArea.style.height = `${textArea.scrollHeight}px`;
-          }
-      };
-
-      const textArea = textAreaRef.current;
-      if (textArea) {
-          textArea.addEventListener('input', handleInput);
-          return () => {
-              textArea.removeEventListener('input', handleInput);
-          };
-      }
-  }, []);
-
-  useEffect(() => {
     if (socket && gid && userdata._id) {
 
       socket.on('groupAnnouncement', (data: string) => {
@@ -171,9 +153,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   const handleSendMessage = (id: string) => {
     if (newMessage.trim() !== '') {
-
-      const textArea = textAreaRef.current;
-      if (textArea) textArea.style.height = '40px';
 
       const isRead = otherIds
         ? Object.fromEntries([
@@ -343,7 +322,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         </div>
         }
       </div>
-      <div className="pb-12 overflow-y-auto p-4 flex flex-col flex-1"> 
+
+      <div className="pb-12 overflow-y-auto p-4 flex flex-col flex-1 scroll-pt-20"> 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">
           {load ? (
             <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
@@ -393,17 +373,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             acc.push(
               <Fragment key={message._id as string}>
                 {index === 0 || messageDate !== lastDateRef.current ? (
-                  <div key={`date-${messageDate}`} data-date={messageDate} className="text-center text-gray-500 dark:text-white my-2 sticky top-0 z-[1]">
-                    <span className='dark:shadow-bar-dark bg-brand p-1 rounded-lg text-xs'>{messageDate}</span>
+                  <div key={`date-${messageDate}`} data-date={messageDate} className="text-center my-2 sticky top-0 z-[1]">
+                    <span className='bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full text-xs shadow-sm'>{messageDate}</span>
                   </div>
                 ) : null}
-                {message.quotedMessage !== '' && (
-                  <div className={`flex m-1 ${message.sender.id === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}>
-                    <div className={`${message.sender.id === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2`}>
-                      {Messages?.find(m => m._id as string === message.quotedMessage)?.content.substring(0, 40) || ''}
-                    </div>
-                  </div>
-                )}
+                
                 <MessageTab key={message._id as string} chat='Groups' message={message} setQuote={setQuote}/>
               </Fragment>
             );
@@ -413,41 +387,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           }, [])}
         </div>
       </div>
-      <div className="flex flex-col gap-[5px] fixed w-[-webkit-fill-available] bottom-0">
-          {quote.state &&
-            <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 mb-1 p-2 w-full rounded-lg flex items-center justify-between px-2">
 
-            <div className='flex-1'>{quote.message?.content.substring(0, 50)}</div>
-              <X size={20} className='cursor-pointer' onClick={closeQuote}/>
-            </div>
-          }
-        <div className="flex items-end basis-[content] px-2">
-          <textarea
-            placeholder="Type a message..."
-            // disabled={!socket?.connected}
-            value={newMessage}
-            ref={textAreaRef}
-            onChange={(e) => {
-              setNewMessage(e.target.value);
-              handleTyping();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage(quote.message?._id);
-              }
-            }}
-            className="dark:bg-zinc-900 dark:text-slate-200 flex-grow h-10 max-h-40 mr-2 p-2 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand focus:rounded-lg"
-          ></textarea>
-          <button
-            // disabled={!socket?.connected}
-            onClick={() => handleSendMessage(quote.message?._id)}
-            className="bg-brand text-white p-2 rounded-full max-h-40 hover:bg-tomato focus:outline-none focus:ring-2 focus:ring-brand shadow-bar"
-          >
-            <Send size={20} />
-          </button>
-        </div>
-      </div>
+      <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote}/>
       {children}
     </div>
   );

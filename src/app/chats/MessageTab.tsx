@@ -3,7 +3,7 @@ import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Check, CheckCheck, Copy, Ellipsis, Loader, Reply, Send, TextQuote, Trash2, X } from 'lucide-react';
 import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 import { ConvoType, setConversations, setMessages, addMessage, deleteMessage, updateLiveTime, updateConversation, editMessage } from '@/redux/chatSlice'; 
 import { useSocket } from '../providers';
@@ -23,6 +23,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer" 
+import { UserData } from '@/redux/userSlice';
+import { RootState } from '@/redux/store';
 
 
 type Message = {
@@ -51,15 +53,13 @@ type Option = {
 
 const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const dispatch = useDispatch();
-  const { userdata, loading, error, refetchUser } = useUser();
+  const { userdata } = useUser();
   const [open, setOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [options,openOptions] = useState<boolean>(false);
   const [messageContent,setMessageContent] = useState<string>(message.content.replace('≤≤≤',''));
   const [time, setTime] = useState<string>(updateLiveTime('chat-time', message.timestamp));
   const socket = useSocket();
-  const svgRef = useRef<SVGSVGElement>(null);
-  const optionsRef = useRef<HTMLDivElement>(null);
 
   const senderId = 'sender' in message ? message.sender.id : message.senderId;
   const sender = 'sender' in message ? message.sender.name : '';
@@ -147,7 +147,73 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
   if (chat === "Groups") {
     return (
-      <div className={`dark:text-gray-400 flex flex-col mb-2`}>
+      <>
+        <div id={message._id as string} className={`dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
+          {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
+          <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
+            <div
+              className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
+                senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
+              } text-left`}
+              onTouchStart={(event) => {
+                if (event.touches.length === 1) {
+                  const touch = event.touches[0];
+                  const longPressTimer = setTimeout(() => {
+                    setOpen(true);
+                  }, 500); // 500ms long press
+                  
+                  const cancelLongPress = () => {
+                    clearTimeout(longPressTimer);
+                  };
+        
+                  document.addEventListener('touchend', cancelLongPress);
+                  document.addEventListener('touchmove', cancelLongPress);
+        
+                  return () => {
+                    document.removeEventListener('touchend', cancelLongPress);
+                    document.removeEventListener('touchmove', cancelLongPress);
+                  };
+                }
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setOpen(true);
+              }}
+            >
+              {senderId !== userdata._id && (
+                <div className='flex items-center'>
+                  <Image src={
+                    displayPicture  
+                    ?  (
+                      displayPicture.includes('ila-') 
+                      ? '/default.jpeg'
+                      : url +  displayPicture
+                    )
+                    : '/default.jpeg'} 
+                    height={10} width={10} alt={sender} className="w-4 h-4 rounded-full mr-1" 
+                  />
+                  <p className="dark:text-gray-100 font-semibold text-xs mb-1">{sender}</p>
+                  {verified && 
+                    <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                  }
+                </div>
+              )}
+              <p className={`${senderId === userdata._id ? 'text-white' : 'dark:text-white'} text-sm whitespace-pre-wrap break-words`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
+            </div>
+            <Options options={optionss} open={open} setOpen={setOpen}/>
+          </div>
+          <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
+          {senderId === userdata._id && renderStatusIcon(message.status)}{time}
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  return(
+    <>
+      <div id={message._id as string} className={`dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
+        {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
         <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
           <div
             className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
@@ -163,10 +229,10 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 const cancelLongPress = () => {
                   clearTimeout(longPressTimer);
                 };
-      
+
                 document.addEventListener('touchend', cancelLongPress);
                 document.addEventListener('touchmove', cancelLongPress);
-      
+
                 return () => {
                   document.removeEventListener('touchend', cancelLongPress);
                   document.removeEventListener('touchmove', cancelLongPress);
@@ -178,126 +244,152 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               setOpen(true);
             }}
           >
-            {senderId !== userdata._id && (
-              <div className='flex items-center'>
-                <Image src={
-                  displayPicture  
-                  ?  (
-                    displayPicture.includes('ila-') 
-                    ? '/default.jpeg'
-                    : url +  displayPicture
-                  )
-                  : '/default.jpeg'} 
-                  height={10} width={10} alt={sender} className="w-4 h-4 rounded-full mr-1" 
-                />
-                <p className="dark:text-gray-100 font-semibold text-xs mb-1">{sender}</p>
-                {verified && 
-                  <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
-                }
-              </div>
-            )}
-            <p className={`dark:text-white mobile:text-sm whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
+            {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
+            {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
+            <p className={`${senderId === userdata._id ? 'text-white' : 'dark:text-white'} dark:text-white mobile:text-sm whitespace-pre-wrap break-words`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
           </div>
           <Options options={optionss} open={open} setOpen={setOpen}/>
         </div>
+
         <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
-        {senderId === userdata._id && renderStatusIcon(message.status)}{time}
+          {senderId === userdata._id && renderStatusIcon(message.status)}{time}
         </div>
+
       </div>
-    )
-  }
-
-  return(
-    <div className={`dark:text-gray-400 flex flex-col mb-2`}>
-
-      <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
-        <div
-          className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
-            senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
-          } text-left`}
-          onTouchStart={(event) => {
-            if (event.touches.length === 1) {
-              const touch = event.touches[0];
-              const longPressTimer = setTimeout(() => {
-                setOpen(true);
-              }, 500); // 500ms long press
-              
-              const cancelLongPress = () => {
-                clearTimeout(longPressTimer);
-              };
-    
-              document.addEventListener('touchend', cancelLongPress);
-              document.addEventListener('touchmove', cancelLongPress);
-    
-              return () => {
-                document.removeEventListener('touchend', cancelLongPress);
-                document.removeEventListener('touchmove', cancelLongPress);
-              };
-            }
-          }}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setOpen(true);
-          }}
-        >
-          {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
-          {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-          <p className={`dark:text-white mobile:text-sm whitespace-pre-wrap`} style={{ fontFamily: 'inherit', }}>{messageContent}</p>
-        </div>
-        <Options options={optionss} open={open} setOpen={setOpen}/>
-      </div>
-
-      <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mt-[-5px] mobile:text-xs text-sm`}>
-        {senderId === userdata._id && renderStatusIcon(message.status)}{time}
-      </div>
-
-    </div>
+    </>
   )
 }
 
 export default MessageTab;
 
-export function Options({options, open, setOpen}:{options: Option[], open: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+const Quote = ({message, senderId}:{message: MessageAttributes | GroupMessageAttributes, senderId: string}) => {
+  const { userdata } = useUser();
+  const messages = useSelector((state: RootState) => state.chat.messages);
+  
+  const Messages = messages?.filter( msg => {
+    const sender = 'sender' in msg ? msg.sender.name : '';
+    return msg.chatId === message.chatId
+  })  as GroupMessageAttributes[];
+
+  const quotedMessage = Messages?.find(m => m._id as string === message.quotedMessage);
+
+  const handleQuoteClick = () => {
+    const messageElement = document.getElementById(message.quotedMessage as string);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth' });
+      // Add a brief highlight effect
+      messageElement.classList.add('bg-brand/20');
+      messageElement.classList.add('rounded-lg');
+      setTimeout(() => {
+        messageElement.classList.remove('bg-brand/20');
+        messageElement.classList.remove('rounded-lg');
+      }, 2000);
+    }
+  };
+
+  return (
+    <div 
+      className={`flex m-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}
+      onClick={handleQuoteClick}
+    >
+      <div className={`${senderId === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2 cursor-pointer hover:opacity-80 transition-opacity`}>
+        {quotedMessage?.content.substring(0, 40) || ''}
+      </div>
+    </div>
+  )
+}
+
+function Options({options, open, setOpen}:{options: Option[], open: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  // Handle mobile drawer
+  const handleDrawerChange = (open: boolean) => {
+    setIsDrawerOpen(open);
+    setOpen(open);
+  };
+
+  // Handle desktop popover
+  const handlePopoverChange = (open: boolean) => {
+    setIsPopoverOpen(open);
+    setOpen(open);
+  };
 
   return (
     <>
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-      <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 hidden' onClick={() => setOpen(true)}/>
-      </DrawerTrigger>
-      <DrawerContent className='tablets:hidden'>
-        <DrawerHeader className="text-left">
-          <DrawerTitle className='hidden '>Options</DrawerTitle>
-          <DrawerDescription className='flex flex-col gap-2'>
+      {/* Mobile Drawer */}
+      <Drawer open={isDrawerOpen} onOpenChange={handleDrawerChange}>
+        <DrawerTrigger asChild>
+          <button 
+            type="button"
+            className='tablets:hidden'
+            aria-label="Open message options"
+          >
+            <Ellipsis size={20} className='cursor-pointer dark:text-gray-400' />
+          </button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Message Options</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4">
             {options.map(({ icon: Icon, text, onClick }, index) => (
-              <div key={index} className='flex gap-1 items-center cursor-pointer' onClick={onClick}>
-                <Icon size={25} className='dark:text-gray-400'/>
-                <span className='text-lg dark:text-white'>{text}</span>
-              </div>
+              <button
+                key={index}
+                type="button"
+                className='flex w-full items-center gap-3 py-3 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded px-2'
+                onClick={() => {
+                  onClick();
+                  handleDrawerChange(false);
+                }}
+              >
+                <Icon size={20} className='dark:text-gray-400'/>
+                <span className='text-base dark:text-white'>{text}</span>
+              </button>
             ))}
-          </DrawerDescription>
-        </DrawerHeader>
-        <DrawerFooter className="pt-2">
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
-
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => setOpen(true)}/>
-      </PopoverTrigger>
-      <PopoverContent className='bg-white mobile:hidden dark:bg-zinc-800 w-auto space-y-2 mt-2 mr-2 p-2 rounded-md shadow-lg z-10'>
-        {options.map(({ icon: Icon, text, onClick }, index) => (
-          <div key={index} className='flex gap-1 items-center cursor-pointer' onClick={onClick}>
-            <Icon size={20} className='dark:text-gray-400'/>
-            <span className='dark:text-white text-sm'>{text}</span>
           </div>
-        ))}
-      </PopoverContent>
-    </Popover>
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Desktop Popover */}
+      <Popover open={isPopoverOpen} onOpenChange={handlePopoverChange}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className='hidden tablets:block'
+            aria-label="Open message options"
+          >
+            <Ellipsis size={20} className='cursor-pointer dark:text-gray-400' />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          className='bg-white dark:bg-zinc-800 min-w-[160px] p-1 rounded-md shadow-lg w-auto'
+          align="end"
+          sideOffset={5}
+        >
+          <div className="flex flex-col">
+            {options.map(({ icon: Icon, text, onClick }, index) => (
+              <button
+                key={index}
+                type="button"
+                className='flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded'
+                onClick={() => {
+                  onClick();
+                  handlePopoverChange(false);
+                }}
+              >
+                <Icon size={16} className='dark:text-gray-400'/>
+                <span className='text-sm dark:text-white'>{text}</span>
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </>
-  )
+  );
 }

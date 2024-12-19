@@ -214,10 +214,24 @@ const Posts: React.FC<PostComponentProps> = (props) => {
 export default Posts;
 
 function Options({options, open, setOpen}:{options: Option[], open: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  // Handle mobile drawer
+  const handleDrawerChange = (open: boolean) => {
+    setIsDrawerOpen(open);
+    setOpen(open);
+  };
+
+  // Handle desktop popover
+  const handlePopoverChange = (open: boolean) => {
+    setIsPopoverOpen(open);
+    setOpen(open);
+  };
 
   return (
     <>
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer open={isDrawerOpen} onOpenChange={handleDrawerChange}>
       <DrawerTrigger asChild>
       <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 tablets:hidden' onClick={() => setOpen(true)}/>
       </DrawerTrigger>
@@ -241,7 +255,7 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
       </DrawerContent>
     </Drawer>
 
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={isPopoverOpen} onOpenChange={handlePopoverChange}>
       <PopoverTrigger asChild>
         <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => setOpen(true)}/>
       </PopoverTrigger>

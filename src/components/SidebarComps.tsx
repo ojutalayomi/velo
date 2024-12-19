@@ -127,7 +127,7 @@ export const UserSection = forwardRef<HTMLDivElement, {
 }>(({ error, loading, userdata, pathname, isPopUp, handlePopUp, refetchUser }, ref) => (
   <div ref={ref} className={`user ${!error ? 'hover:bg-slate-200 dark:hover:bg-neutral-900' : ''} tablets1:items-center !justify-center tablets1:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 !rounded-full shadow-bar dark:shadow-bar-dark w-full`} onClick={handlePopUp}>
     {!userdata._id ? (
-      <div className='dark:text-slate-200 flex flex-col gap-2 p-2'>
+      <div className='dark:text-slate-200 flex flex-col gap-4 px-1 py-2'>
         <p className='flex items-center hover:text-brand'>
           <LogIn size={25} className="mr-2" />
           <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='hidden tablets1:!flex'>Log in</Link>

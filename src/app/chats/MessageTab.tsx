@@ -107,15 +107,15 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const renderStatusIcon = (status: string) => {
     switch (status) {
       case 'sending':
-        return <Loader size={10} className='dark:text-gray-400 animate-spin dark:after:text-slate-200 after:content-[ • ]'/>;
+        return <Loader size={15} className='animate-spin'/>;
       case 'sent':
-        return <Check size={10} className='dark:text-gray-400 dark:after:text-slate-200 after:content-[ • ]'/>;
+        return <Check size={15}/>;
       case 'delivered':
-        return <CheckCheck size={10} className='dark:text-gray-400 dark:after:text-slate-200 after:content-[ • ]'/>;
+        return <CheckCheck size={15} className='dark:text-gray-400'/>;
       case 'failed':
-        return <b className='text-red-800 dark:after:text-slate-200 after:content-[ • ]'>Not sent!</b>;
+        return <b className='text-red-800'>Not sent!</b>;
       default:
-        return <CheckCheck size={10} className='text-brand dark:after:text-slate-200 after:content-[ • ]'/>;
+        return <CheckCheck size={15} className='text-green-500'/>;
     }
   }
 
@@ -148,11 +148,6 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   // Update the optionss array to use the defined type
   const optionss: Option[] = [
     {
-      icon: SmilePlus,
-      text: 'React',
-      onClick: () => setShowEmojiPicker(true)
-    },
-    {
       icon: TextQuote,
       text: 'Quote',
       onClick: () => setQuote({
@@ -184,7 +179,6 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   ];
 
   const onEmojiClick = (emojiObject: any) => {
-    console.log(emojiObject);
     if (message._id) {
       dispatch(updateMessageReactions({id: message._id as string, updates: {...message.reactions, [emojiObject]: {emoji: emojiObject, users: [userdata._id]}}}));
       setShowEmojiPicker(false);
@@ -203,30 +197,164 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   if (chat === "Groups") {
     return (
       <>
-        <div id={message._id as string} className={`dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
-
+        <div id={message._id as string} className={`${senderId === userdata._id ? "items-end" : "items-start"} dark:text-gray-400 flex flex-col mb-4 transition-colors duration-300`}>
+          {/* Quote and Link Preview */}
           {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
-          {firstUrl && <LinkPreview url={firstUrl} />}
 
-          <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
+          <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-end relative max-w-full`}>
+            {/* Avatar for other users */}
+            {senderId !== userdata._id && (
+              <Image 
+                src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : url + displayPicture) : '/default.jpeg'}
+                height={32} 
+                width={32} 
+                alt={sender} 
+                className="rounded-full mt-1" 
+              />
+            )}
+
+            <div className="flex flex-col gap-1 max-w-[85%]">
+              {firstUrl && <LinkPreview url={firstUrl} />}
+
+              {/* Message bubble */}
+              <div
+                className={`relative p-3 rounded-lg ${
+                  senderId === userdata._id 
+                    ? "bg-brand text-white rounded-tr-none" 
+                    : "bg-gray-100 dark:bg-zinc-800 rounded-tl-none"
+                }`}
+                onTouchStart={(event) => {
+                  if (event.touches.length === 1) {
+                    const longPressTimer = setTimeout(() => setOpen(true), 500);
+                    const cancelLongPress = () => clearTimeout(longPressTimer);
+                    document.addEventListener('touchend', cancelLongPress);
+                    document.addEventListener('touchmove', cancelLongPress);
+                    return () => {
+                      document.removeEventListener('touchend', cancelLongPress);
+                      document.removeEventListener('touchmove', cancelLongPress);
+                    };
+                  }
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setOpen(true);
+                }}
+              >
+                {/* Sender name for other users */}
+                {senderId !== userdata._id && (
+                  <div className='flex items-center justify-between gap-1'>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{sender}</span>
+                      {verified && <Image src='/verified.svg' width={16} height={16} alt='Verified' className="verified"/>}
+                    </div>
+                    <Options options={optionss} open={open} setOpen={setOpen}/>
+                  </div>
+                )}
+                
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  {messageContent.length > MAX_LENGTH && !isExpanded
+                    ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
+                    : renderTextWithLinks(messageContent)}
+                </p>
+                
+                {messageContent.length > MAX_LENGTH && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={`text-sm mt-1 ${
+                      senderId === userdata._id ? 'text-gray-200' : 'text-gray-500'
+                    } hover:underline`}
+                  >
+                    {isExpanded ? 'Read less' : 'Read more'}
+                  </button>
+                )}
+
+                {/* Time and status */}
+                <div className={`flex items-center gap-2 text-xs text-nowrap ${
+                  senderId === userdata._id ? "justify-end" : "justify-start"
+                }`}>
+                  {time}
+                  {senderId === userdata._id && renderStatusIcon(message.status)}
+                </div>
+              </div>
+
+              {/* Reactions */}
+              <div className={`${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} mt-1 flex items-center gap-1`}>
+                <EmojiPicker onChange={onEmojiClick} />
+                {senderId === userdata._id && (<Options options={optionss} open={open} setOpen={setOpen}/>)}
+                {Object.keys(message.reactions).length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(message.reactions)
+                      .slice(0, 5)
+                      .map(([emoji, users], index) => {
+                        const userArray = users as unknown as string[];
+                        return (
+                          <span 
+                            key={index} 
+                            className={`px-2 py-0.5 rounded-full text-xs ${
+                              senderId === userdata._id 
+                                ? 'bg-white/10' 
+                                : 'bg-gray-200 dark:bg-zinc-700'
+                            }`}
+                            title={`${userArray.length} ${userArray.length === 1 ? 'reaction' : 'reactions'}`}
+                          >
+                            {emoji}{userArray.length > 1 && <span className="ml-1">{userArray.length}</span>}
+                          </span>
+                        );
+                      })}
+                    {Object.keys(message.reactions).length > 5 && (
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${
+                        senderId === userdata._id 
+                          ? 'bg-white/10' 
+                          : 'bg-gray-200 dark:bg-zinc-700'
+                      }`}>
+                        +{Object.keys(message.reactions).length - 5}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  return(
+    <>
+      <div id={message._id as string} className={`${senderId === userdata._id ? "items-end" : "items-start"} dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
+        {/* Quote and Link Preview */}
+        {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
+
+        {/* Main Message Container */}
+        <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
+
+          <div className="flex flex-col gap-1 max-w-[85%]">
+            {firstUrl && <LinkPreview url={firstUrl} />}
+
+            {/* Message Bubble */}
             <div
-              className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
-                senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
+              className={`relative mb-1 p-3 rounded-2xl overflow-auto w-full flex flex-col shadow-sm ${
+                senderId === userdata._id 
+                  ? "bg-brand rounded-br-none text-white" 
+                  : "bg-gray-50 rounded-bl-none dark:bg-zinc-800/80 dark:text-white"
               } text-left`}
               onTouchStart={(event) => {
                 if (event.touches.length === 1) {
                   const touch = event.touches[0];
                   const longPressTimer = setTimeout(() => {
                     setOpen(true);
-                  }, 500); // 500ms long press
+                  }, 500);
                   
                   const cancelLongPress = () => {
                     clearTimeout(longPressTimer);
                   };
-        
+
                   document.addEventListener('touchend', cancelLongPress);
                   document.addEventListener('touchmove', cancelLongPress);
-        
+
                   return () => {
                     document.removeEventListener('touchend', cancelLongPress);
                     document.removeEventListener('touchmove', cancelLongPress);
@@ -238,29 +366,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 setOpen(true);
               }}
             >
-              {senderId !== userdata._id && (
-                <div className='flex items-center'>
-                  <Image src={
-                    displayPicture  
-                    ?  (
-                      displayPicture.includes('ila-') 
-                      ? '/default.jpeg'
-                      : url +  displayPicture
-                    )
-                    : '/default.jpeg'} 
-                    height={10} width={10} alt={sender} className="w-4 h-4 rounded-full mr-1" 
-                  />
-                  <p className="dark:text-gray-100 font-semibold text-xs mb-1">{sender}</p>
-                  {verified && 
-                    <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
-                  }
-                </div>
-              )}
-              <div>
-                <p 
-                  className={`${senderId === userdata._id ? 'text-white' : 'dark:text-white'} dark:text-white text-sm whitespace-pre-wrap break-words`} 
-                  style={{ fontFamily: 'inherit' }}
-                >
+              {/* Message Content */}
+              <div className="">
+                <p className="text-sm whitespace-pre-wrap break-words" style={{ fontFamily: 'inherit' }}>
                   {messageContent.length > MAX_LENGTH && !isExpanded
                     ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
                     : renderTextWithLinks(messageContent)}
@@ -276,146 +384,51 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                   </button>
                 )}
               </div>
-              <div className='absolute bottom-[-5px] right-0 flex items-center gap-1 text-slate-600 mobile:text-xs text-sm'>
-                {Object.entries(message.reactions)
-                  .slice(0, 5) // Take only first 5 reactions
-                  .map(([emoji, users], index) => {
-                    const userArray = users as unknown as string[]; // Type assertion since we know it's string[]
-                    return (
-                      <span 
-                        key={index} 
-                        className={`px-1.5 py-0.5 rounded-full text-xs ${
-                          senderId === userdata._id 
-                            ? 'bg-white/10' 
-                            : 'bg-gray-200 dark:bg-zinc-800'
-                        }`}
-                        title={`${userArray.length} ${userArray.length === 1 ? 'reaction' : 'reactions'}`}
-                      >
-                        {emoji}{userArray.length > 1 && <span className="ml-1">{userArray.length}</span>}
-                      </span>
-                    );
-                  })}
-                {Object.keys(message.reactions).length > 5 && (
-                  <span 
-                    className={`px-1.5 py-0.5 rounded-full text-xs ${
-                      senderId === userdata._id 
-                        ? 'bg-white/10' 
-                        : 'bg-gray-200 dark:bg-zinc-800'
-                    }`}
-                  >
-                    +{Object.keys(message.reactions).length - 5}
-                  </span>
-                )}
+              <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} text-nowrap flex items-center gap-2 text-xs mt-1`}>
+                <div className='dark:after:text-slate-200 after:content-[ • ]'>{time}</div>
+                {senderId === userdata._id && renderStatusIcon(message.status)}
               </div>
-            </div>
-            <Options options={optionss} open={open} setOpen={setOpen}/>
-          </div>
 
-          <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mobile:text-xs text-sm`}>
-            <EmojiPicker onChange={onEmojiClick} />{senderId === userdata._id && renderStatusIcon(message.status)}{time}
-          </div>
-
-        </div>
-      </>
-    )
-  }
-
-  return(
-    <>
-      <div id={message._id as string} className={`dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
-
-        {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
-        {firstUrl && <LinkPreview url={firstUrl} />}
-
-        <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
-          <div
-            className={`mb-1 p-2 rounded-lg overflow-auto w-full flex flex-col shadow-md ${
-              senderId === userdata._id ? "bg-brand rounded-br-none" : "bg-gray-100 rounded-bl-none dark:bg-zinc-900"
-            } text-left`}
-            onTouchStart={(event) => {
-              if (event.touches.length === 1) {
-                const touch = event.touches[0];
-                const longPressTimer = setTimeout(() => {
-                  setOpen(true);
-                }, 500); // 500ms long press
-                
-                const cancelLongPress = () => {
-                  clearTimeout(longPressTimer);
-                };
-
-                document.addEventListener('touchend', cancelLongPress);
-                document.addEventListener('touchmove', cancelLongPress);
-
-                return () => {
-                  document.removeEventListener('touchend', cancelLongPress);
-                  document.removeEventListener('touchmove', cancelLongPress);
-                };
-              }
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setOpen(true);
-            }}
-          >
-            {/* <p className="dark:text-gray-100 font-semibold">{message.sender}</p> */}
-            {/* <pre className={'dark:text-white'}>{message.text}</pre> */}
-            <div>
-              <p 
-                className={`${senderId === userdata._id ? 'text-white' : 'dark:text-white'} dark:text-white text-sm whitespace-pre-wrap break-words`} 
-                style={{ fontFamily: 'inherit' }}
-              >
-                {messageContent.length > MAX_LENGTH && !isExpanded
-                  ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
-                  : renderTextWithLinks(messageContent)}
-              </p>
-              {messageContent.length > MAX_LENGTH && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className={`text-sm mt-1 ${
-                    senderId === userdata._id ? 'text-gray-200' : 'text-gray-500'
-                  } hover:underline`}
-                >
-                  {isExpanded ? 'Read less' : 'Read more'}
-                </button>
-              )}
-            </div>
-            <div className='absolute bottom-[-5px] right-0 flex items-center gap-1 text-slate-600 mobile:text-xs text-sm'>
-              {Object.entries(message.reactions)
-                .slice(0, 5) // Take only first 5 reactions
-                .map(([emoji, users], index) => {
-                  const userArray = users as unknown as string[]; // Type assertion since we know it's string[]
-                  return (
-                    <span 
-                      key={index} 
-                      className={`px-1.5 py-0.5 rounded-full text-xs ${
-                        senderId === userdata._id 
-                          ? 'bg-white/10' 
-                          : 'bg-gray-200 dark:bg-zinc-800'
-                      }`}
-                      title={`${userArray.length} ${userArray.length === 1 ? 'reaction' : 'reactions'}`}
-                    >
-                      {emoji}{userArray.length > 1 && <span className="ml-1">{userArray.length}</span>}
-                    </span>
-                  );
-                })}
-              {Object.keys(message.reactions).length > 5 && (
-                <span 
-                  className={`px-1.5 py-0.5 rounded-full text-xs ${
-                    senderId === userdata._id 
-                      ? 'bg-white/10' 
-                      : 'bg-gray-200 dark:bg-zinc-800'
-                  }`}
-                >
-                  +{Object.keys(message.reactions).length - 5}
-                </span>
-              )}
             </div>
           </div>
+
+          {/* Message Options */}
           <Options options={optionss} open={open} setOpen={setOpen}/>
         </div>
 
-        <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} flex items-center gap-1 text-slate-600 mobile:text-xs text-sm`}>
-          <EmojiPicker onChange={onEmojiClick} />{senderId === userdata._id && renderStatusIcon(message.status)}{time}
+        {/* Message Footer */}
+        {/* Reactions */}
+        <div className='mt-1 flex items-center gap-1'>
+          <EmojiPicker onChange={onEmojiClick} />
+          {Object.entries(message.reactions)
+            .slice(0, 5)
+            .map(([emoji, users], index) => {
+              const userArray = users as unknown as string[];
+              return (
+                <span 
+                  key={index} 
+                  className={`px-2 py-1 rounded-full text-xs shadow-sm ${
+                    senderId === userdata._id 
+                      ? 'bg-white/20 backdrop-blur-sm' 
+                      : 'bg-white dark:bg-zinc-700'
+                  }`}
+                  title={`${userArray.length} ${userArray.length === 1 ? 'reaction' : 'reactions'}`}
+                >
+                  {emoji}{userArray.length > 1 && <span className="ml-1 text-[10px]">{userArray.length}</span>}
+                </span>
+              );
+            })}
+          {Object.keys(message.reactions).length > 5 && (
+            <span 
+              className={`px-2 py-1 rounded-full text-xs shadow-sm ${
+                senderId === userdata._id 
+                  ? 'bg-white/20 backdrop-blur-sm' 
+                  : 'bg-white dark:bg-zinc-700'
+              }`}
+            >
+              +{Object.keys(message.reactions).length - 5}
+            </span>
+          )}
         </div>
 
       </div>

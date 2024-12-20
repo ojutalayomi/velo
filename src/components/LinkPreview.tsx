@@ -52,14 +52,14 @@ export function LinkPreview({ url }: LinkPreviewProps) {
       rel="noopener noreferrer" 
       className="block mt-2 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800"
     >
-      <div className="flex p-3 gap-3">
-        {metadata.image && (
+      <div className="flex items-center p-3 gap-3">
+        {(metadata.image || metadata.favicon) && (
           <div className="flex-shrink-0">
             <img
-              src={metadata.image}
+              src={metadata.image || metadata.favicon}
               alt={metadata.title || 'Link preview'}
-              width={50}
-              height={50}
+              width={40}
+              height={40}
               className="rounded object-cover"
             />
           </div>

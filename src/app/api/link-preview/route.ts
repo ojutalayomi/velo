@@ -1,6 +1,23 @@
 import { getLinkPreview } from 'link-preview-js';
 import { NextResponse } from 'next/server';
 
+interface LinkPreviewData {
+  url: string;
+  title?: string;
+  siteName?: string;
+  description?: string;
+  mediaType: string;
+  contentType?: string;
+  images: string[];
+  videos: {
+    url?: string;
+    secureUrl?: string;
+    type?: string;
+    width?: string;
+  }[];
+  favicons: string[];
+}
+
 export async function POST(req: Request) {
   try {
     const { url } = await req.json();
@@ -10,11 +27,11 @@ export async function POST(req: Request) {
       headers: {
         'user-agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)',
       },
-    });
+    }) as LinkPreviewData;
     return NextResponse.json({
-      title: data.url,
-      description: data.contentType,
-      image: data.favicons?.[0],
+      title: data.title,
+      description: data.description,
+      image: data.images?.[0],
       favicon: data.favicons?.[0],
     });
   } catch (error) {

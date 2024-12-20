@@ -121,12 +121,18 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                             handleTyping();
                         }}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage(quote.message?._id);
+                            if (e.key === 'Enter') {
+                                if (e.shiftKey) {
+                                    e.preventDefault();
+                                    return; // Allow new line when Shift+Enter
+                                }
+                                if (newMessage.trim().length > 0) {
+                                    e.preventDefault();
+                                    handleSendMessage(quote.message?._id);
+                                }
                             }
                         }}
-                        className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
+                        className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
                     />
                     <EmojiPicker onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
                         <button

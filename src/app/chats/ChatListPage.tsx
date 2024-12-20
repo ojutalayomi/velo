@@ -220,10 +220,10 @@ const Card: React.FC<Props> = ({chat}) => {
       </div>
       <div className="flex-grow w-1/4">
         <div className="flex justify-between items-baseline">
-          <div className='flex items-center'>
+          <div className='flex items-center gap-1'>
             <h2 className="font-semibold truncate">{chat.name}</h2>
             {chat.verified && 
-              <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+              <Image src='/verified.svg' width={16} height={16} alt='Verified tag' className='flex-shrink-0'/>
             }
           </div>
         </div>

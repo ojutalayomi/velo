@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import '@/styles/accounts.css';
 import React from "react";
 import Image from 'next/image';
-import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { WhatsApp, X } from "@/components/icons";
 
 const inter = Inter({ subsets: ["latin"] });

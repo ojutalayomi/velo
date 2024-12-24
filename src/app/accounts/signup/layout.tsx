@@ -2,7 +2,6 @@ import type { Metadata,Viewport } from "next";
 import React, {useState} from "react";
 import Comps from './clientComps'
 import Link from "next/link";
-// import { UserProvider } from '@auth0/nextjs-auth0/client';
 
 export const metadata: Metadata = {
   title: "Velo App",

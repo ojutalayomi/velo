@@ -13,9 +13,8 @@ const ratelimit = new Ratelimit({
 export const config = {
   matcher: '/api/getuser'
 }
-
 export default async function middleware(request: NextRequest) {
-  const ip = request.ip || '127.0.0.1';
+  const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
   const { success, pending, limit, reset, remaining } = await ratelimit.limit(
     ip
   );

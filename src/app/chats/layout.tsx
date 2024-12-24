@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Chats",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode;}>) {
+export default function Layout({ children }: Readonly<{ children: React.ReactNode;}>) {
 
     return (
       <App >

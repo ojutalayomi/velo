@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import express, { Request, Response } from 'express';
-import formidable from 'formidable'
 import { MongoClient, ServerApiVersion } from 'mongodb'
 import mongoose from 'mongoose'
 // import Post from '../../../../templates/mogooseTemp'

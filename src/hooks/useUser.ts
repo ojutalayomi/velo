@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { setUserData, UserData } from '@/redux/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { debounce } from 'lodash';
@@ -16,13 +16,12 @@ const debouncedFetchUser = debounce((callback) => {
     callback();
 }, 300);
 
-let fetchedSuccessfully: boolean;
-
 export const useUser = (): UseUserReturn => {
     const dispatch = useDispatch();
     const userdata = useSelector((state: RootState) => state.user.userdata );
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const fetchedSuccessfullyRef = useRef(false);
 
     // if (loading) console.log('loading...');
 
@@ -37,6 +36,11 @@ export const useUser = (): UseUserReturn => {
 
 
     const fetchUser = useCallback(async (retries = 3) => {
+        if (fetchedSuccessfullyRef.current) {
+            setLoading(false);
+            return;
+        }
+
         const cachedData = localStorage.getItem('userData');
         if (cachedData) {
             const parsedData = JSON.parse(cachedData);
@@ -44,7 +48,7 @@ export const useUser = (): UseUserReturn => {
                 dispatch(setUserData(parsedData.data));
                 setLoading(false);
                 setError(null);
-                fetchedSuccessfully = true;
+                fetchedSuccessfullyRef.current = true;
                 return;
             }
         }
@@ -61,19 +65,17 @@ export const useUser = (): UseUserReturn => {
                 data: fetchedUserData,
                 timestamp: Date.now()
             }));
-            setError(null)
-            fetchedSuccessfully = true;
+            setError(null);
+            fetchedSuccessfullyRef.current = true;
             console.log('User data fetched successfully');
         } catch (err) {
-          if (retries > 0) {
-            console.log(`Retrying... (${retries} attempts left)`);
-            return fetchUser(retries - 1);
-          }
-          setError(err instanceof Error ? err.message : 'An error occurred');
-        //   fetchedSuccessfully = false;
+            if (retries > 0) {
+                console.log(`Retrying... (${retries} attempts left)`);
+                return fetchUser(retries - 1);
+            }
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
-          setLoading(false);
-          fetchedSuccessfully = true;
+            setLoading(false);
         }
     }, [dispatch]);
 
@@ -81,7 +83,7 @@ export const useUser = (): UseUserReturn => {
         debouncedFetchUser(fetchUser);
     }, [fetchUser]);
     useEffect(() => {
-        if (!checkValuesNotEmpty(userdata as unknown as { [key: string]: string; }) && !fetchedSuccessfully) {
+        if (!checkValuesNotEmpty(userdata as unknown as { [key: string]: string; }) && !fetchedSuccessfullyRef.current) {
             handleFetchUser();
         } else {
             setLoading(false);

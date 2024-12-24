@@ -1,5 +1,4 @@
 'use client'
-// import { useUser } from '@auth0/nextjs-auth0/client';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Bottombar from '@/components/Bottombar';
@@ -42,7 +41,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const [isMoreShown, setMoreStatus] = useState(false);
     const [error, setError] = useState(null);
     const [load,setLoad] = useState<boolean>(false);
-    const callIdRef = useRef<string>();
+    const callIdRef = useRef<string>('');
     const callNoticeRef = useRef<boolean>(false);
     const socket = useSocket();
     const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
@@ -188,7 +187,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     }, []);
 
     return(
-        <>
+        <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
             {error && (
                 <Alert variant="destructive" className="mb-4">
                     <AlertDescription>{error}</AlertDescription>
@@ -200,15 +199,12 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             {!callRoute ?
             <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
             : null}
-                <Root activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-                <div id='detail' className={`${pathname === '/home' ? 'hidden' : ''} tablets1:block`}>
-                    <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
-                        {load ? <Loading /> : children}
-                        {isModalRoute && <UserPhoto />}
-                        {isModalRoute1 && <VideoPlayer />}
-                        {callRoute && <VideoChat />}
-                    </ErrorBoundary>
+                <div id='detail' className="">
+                    {load ? <Loading /> : children}
+                    {isModalRoute && <UserPhoto />}
+                    {isModalRoute1 && <VideoPlayer />}
+                    {callRoute && <VideoChat />}
                 </div>
                 {(!pathname?.includes('posts') && 
                 !pathname?.includes('chats') && 
@@ -222,10 +218,8 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                     setMoreStatus={setMoreStatus} 
                     /> 
                 : null
-                }
-
-            
-        </>
+            }    
+        </ErrorBoundary>
     )
 }
 export default ClientComponents;

@@ -3,16 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from './PostProps';
 import Image from "next/image";
 import { useUser } from '@/hooks/useUser';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/swiper-bundle.css';
-import { Navigation, Pagination } from 'swiper/modules';
-// import { v4 as uuidv4 } from 'uuid';
-import ImageDiv from '../components/imageDiv';
-import VideoDiv from './videoDiv';
 import { useRouter } from 'next/navigation';
-import { Location } from 'history';
 import { useSelector } from 'react-redux';
 import {
   Popover,
@@ -23,6 +14,11 @@ import Link from 'next/link';
 import { Copy, Delete, Ellipsis, Flag, MessageCircleX, Minus, Save, ShieldX, UserRoundPlus } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from '@/components/ui/button';
+import { useDispatch } from 'react-redux';
+import { setPosts, addPost, updatePost, deletePost, setLoading, setError } from '@/redux/postsSlice';
+import { RootState } from '@/redux/store';
+import MediaSlide from './mediaSlides';
+
 type PostComponentProps = Post | PostProps;
 
 interface Option {
@@ -33,7 +29,7 @@ interface Option {
 
 const Posts: React.FC<PostComponentProps> = (props) => {
   const postData = 'post' in props ? props.post : props.postData;
-  const { activeRoute, isMoreShown } = useSelector((state: any) => state.navigation);
+  const { activeRoute, isMoreShown } = useSelector((state: RootState) => state.navigation);
   const [activePost, setActivePost] = useState<string>('');
   const [open, setOpen] = useState(false);
   const [isliked, setLiked] = useState(false);
@@ -41,6 +37,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
   const [isBookmarked, setBookmarked] = useState(false);
   const [time, setTime] = useState<any>();
   const router = useRouter();
+  const dispatch = useDispatch();
 
   useEffect(() => {
       const interval = setInterval(() => {
@@ -159,24 +156,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
         </div>
         {/* {showMore} */}
         {postData?.Image.length > 0 &&
-          <Swiper 
-          pagination={{ clickable: checkLength(), dynamicBullets: checkLength(), }} 
-          navigation={checkLength()} 
-          modules={checkLength() ? [Navigation, Pagination] : []} 
-          slidesPerView={1} spaceBetween={5} 
-          className="!flex rounded-lg bg-neutral-600 dark:bg-neutral-950 flex-grow w-full">
-          {postData.Image 
-            ? postData.Image.map((media,index) => (
-                  media.includes('png') || media.includes('jpg') || media.includes('jpeg') ?
-                    ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
-                        <ImageDiv link={`/${postData.Username}/posts/${postData.PostID}/photo/${index}`} media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
-                      </SwiperSlide>)
-                  : ( <SwiperSlide className='flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
-                        <VideoDiv link={`/${postData.Username}/posts/${postData.PostID}/photo/${index}`} media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
-                      </SwiperSlide>)
-              )) 
-            : null}
-          </Swiper>
+          <MediaSlide postData={postData} isLink/>
         }
         {window.location.pathname.includes('posts') ? <div className='blog-time'>{timeFormatter(postData.TimeOfPost)}</div> : null}
         <div className='reaction-panel'>
@@ -261,7 +241,7 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
       </PopoverTrigger>
       <PopoverContent className='bg-white mobile:hidden dark:bg-zinc-800 w-auto space-y-2 mt-1 mr-2 p-2 rounded-md shadow-lg z-10'>
         {options.map(({ icon, text, onClick }, index) => (
-          <div key={index} className='flex gap-1 items-center cursor-pointer hover:bg-zinc-800 dark:hover:bg-zinc-900 p-1 rounded-md'>
+          <div key={index} className='flex gap-1 items-center cursor-pointer hover:bg-slate-200 hover:dark:bg-zinc-700 p-1 rounded-md'>
             {icon}
             <span className='text-base'>{text}</span>
           </div>

@@ -16,8 +16,8 @@ import { sql } from "@vercel/postgres";
 export default async function Cart({
   params
 }: {
-  params: { user: string }
-}): Promise<JSX.Element> {
+  params: Promise<{ user: string }>
+}) {
   try {
     // Create the table if it doesn't exist
     // await sql`

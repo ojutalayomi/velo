@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import ImageDiv from './imageDiv';
 import { useParams } from 'next/navigation';
 import { SwiperModule } from 'swiper/types';
+import MediaSlide from '@/templates/mediaSlides';
 
 interface Params {
   username?: string;
@@ -128,24 +129,7 @@ const PostPreview: React.FC = () => {
           {postLoading ?<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>
               :
               postSuccess ? (
-                <Swiper 
-                onSwiper={updateSwiper} onSlideChange={onSlideChange} 
-                pagination={{ clickable: checkLength(), dynamicBullets: checkLength(), }} navigation={checkLength()} 
-                modules={checkLength() ? [Navigation, Pagination] : []} 
-                slidesPerView={1} spaceBetween={5} 
-                className="!flex rounded-lg bg-neutral-950 border-2 border-black dark:bg-neutral-950 flex-grow w-full t29jez">
-                {postSuccess 
-                  ? postSuccess?.Image.map((media,index) => (
-                        media.includes('png') || media.includes('jpg') || media.includes('jpeg') ?
-                          ( <SwiperSlide className='!flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
-                              <ImageDiv media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
-                            </SwiperSlide>)
-                        : ( <SwiperSlide className='!flex flex-col items-center justify-center h-full m-auto' key={media+index} id={`${media.length}`}>
-                              <VideoDiv media={media} host={!media.includes('https') && !media.startsWith('/') ? true : false}/>
-                            </SwiperSlide>)
-                    )) 
-                  : null}
-                </Swiper>)
+                <MediaSlide postData={postSuccess} />)
               :
               postError && <div className='flex flex-col items-center justify-center w-full h-3/4'>
                   <RefreshCw className='cursor-pointer' size={30} onClick={() => setReload(true)}/><h1>Reload</h1></div>
@@ -160,7 +144,8 @@ const PostPreview: React.FC = () => {
             onClick={() => {
               console.log('Open comments')
               router.push(`/${postSuccess?.Username}/posts/${postSuccess?.PostID}`)
-              }}>
+            }}
+          >
             <MessageCircle size={24} />
             <span className="ml-1">{comments}</span>
           </button>

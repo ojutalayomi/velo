@@ -64,7 +64,7 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onCreateCh
               Select Participants
             </label>
             <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md">
-              {availableUsers.map((user: { id: React.Key | null | undefined; name: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; }) => (
+              {availableUsers.map(user => (
                 <div 
                   key={user.id} 
                   className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"

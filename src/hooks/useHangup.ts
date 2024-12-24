@@ -14,7 +14,7 @@ interface VideoRefs {
 
 interface UseHangupProps {
   peerConnection: RTCPeerConnection | null;
-  socket: typeof Socket | null;
+  socket: Socket | null;
   room: string;
   videoRefs: VideoRefs;
   onHangup?: () => void;

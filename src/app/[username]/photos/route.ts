@@ -5,11 +5,14 @@ import { cookies } from 'next/headers';
 let client: MongoClient;
 const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
 
-export async function GET(request: NextRequest, { params }: { params: { username: string } }) {
+export async function GET(
+  request: NextRequest, 
+  { params }: { params: Promise<{ username: string }> }
+) {
   try {
     // const username = request.nextUrl.searchParams.get('username');
     // console.log(request.nextUrl.searchParams);
-    const username = params.username;
+    const username = (await params).username;
 
     if (!username) {
         return NextResponse.json({ error: 'Username is required' }, { status: 400 });

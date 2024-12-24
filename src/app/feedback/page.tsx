@@ -29,12 +29,12 @@ const FeedbackPage = () => {
   };
 
   return (
-    <div className={`min-h-screen dark:bg-neutral-950 dark:text-white bg-white text-gray-900`}>
+    <div className={`min-h-screen dark:bg-zinc-900 bg-gray-50 dark:text-white text-gray-900`}>
+      <div className="dark:bg-zinc-900 bg-gray-50 flex justify-start gap-2.5 items-center mb-8 shadow-lg p-2">
+        <ArrowLeft className='cursor-pointer dark:text-slate-200' size={20} />
+        <h1 className="text-xl font-bold">Feedback</h1>
+      </div>
       <div className="p-4">
-        <div className="flex justify-start gap-2.5 items-center mb-8">
-          <ArrowLeft className='cursor-pointer dark:text-slate-200' size={20} />
-          <h1 className="text-xl font-bold">Feedback</h1>
-        </div>
         
         <div className="space-y-4">
           <button 

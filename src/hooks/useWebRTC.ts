@@ -29,7 +29,7 @@ export const useWebRTC = (config?: WebRTCConfig) => {
   const socket = useSocket();
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const iceCandidates = useSelector(selectIceCandidates);
-  const connectionTimeoutRef = useRef<NodeJS.Timeout>();
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const initializePeerConnection = useCallback(() => {
     try {

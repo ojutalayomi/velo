@@ -102,10 +102,13 @@ const config: Config = {
   	},
   	screens: {
   		tablets: '500px',
+		sm: '640px',
+		md: '768px',
   		tablets1: '769px',
   		mobile: {
   			max: '768px'
   		},
+  		lg: '1024px',
   		large: '1265px'
   	}
   },

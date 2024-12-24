@@ -13,8 +13,6 @@ import Home from './Home1';
 // }
 
 const Root: React.FC = () => {
-  const { userdata, loading, error, refetchUser } = useUser();
-  const { activeRoute, isMoreShown } = useSelector((state: any) => state.navigation);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -35,7 +33,7 @@ const Root: React.FC = () => {
 
     return (
       <>
-        <div id="pre-home" className={`tablets:w-3/5 ${activeRoute === 'home' || activeRoute === '' && 'h-hide'}`}  onClick={() => handleClickMore('close')}>
+        <div className="tablets:w-3/5 overflow-hidden w-full"  onClick={() => handleClickMore('close')}>
           <Home />
         </div>
       </>

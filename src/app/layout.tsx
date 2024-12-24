@@ -1,4 +1,4 @@
-import type { Metadata,Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { myCustomFont } from '../lib/fonts'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import '@/styles/style.css';
@@ -24,6 +24,8 @@ export default function RootLayout({ children, modal }: Readonly<{ children: Rea
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
         <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
           <Providers>

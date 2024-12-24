@@ -198,10 +198,8 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
     return (
       <>
         <div id={message._id as string} className={`${senderId === userdata._id ? "items-end" : "items-start"} dark:text-gray-400 flex flex-col mb-4 transition-colors duration-300`}>
-          {/* Quote and Link Preview */}
-          {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
 
-          <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-end relative max-w-full`}>
+          <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-start relative max-w-full`}>
             {/* Avatar for other users */}
             {senderId !== userdata._id && (
               <Image 
@@ -214,6 +212,8 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             )}
 
             <div className="flex flex-col gap-1 max-w-[85%]">
+              {/* Quote and Link Preview */}
+              {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
               {firstUrl && <LinkPreview url={firstUrl} />}
 
               {/* Message bubble */}
@@ -258,14 +258,15 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 </p>
                 
                 {messageContent.length > MAX_LENGTH && (
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={`text-sm mt-1 ${
                       senderId === userdata._id ? 'text-gray-200' : 'text-gray-500'
                     } hover:underline`}
                   >
                     {isExpanded ? 'Read less' : 'Read more'}
-                  </button>
+                  </Button>
                 )}
 
                 {/* Time and status */}
@@ -374,14 +375,15 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                     : renderTextWithLinks(messageContent)}
                 </p>
                 {messageContent.length > MAX_LENGTH && (
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={`text-sm mt-1 ${
                       senderId === userdata._id ? 'text-gray-200' : 'text-gray-500'
                     } hover:underline`}
                   >
                     {isExpanded ? 'Read less' : 'Read more'}
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} text-nowrap flex items-center gap-2 text-xs mt-1`}>
@@ -494,7 +496,7 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
   return (
     <>
       {/* Mobile Drawer */}
-      <Drawer open={isDrawerOpen} onOpenChange={handleDrawerChange}>
+      <Drawer open={open} onOpenChange={handleDrawerChange}>
         <DrawerTrigger asChild>
           <button 
             type="button"
@@ -504,7 +506,7 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
             <Ellipsis size={20} className='cursor-pointer dark:text-gray-400' />
           </button>
         </DrawerTrigger>
-        <DrawerContent>
+        <DrawerContent className='tablets:hidden'>
           <DrawerHeader>
             <DrawerTitle>Message Options</DrawerTitle>
           </DrawerHeader>
@@ -533,7 +535,7 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
       </Drawer>
 
       {/* Desktop Popover */}
-      <Popover open={isPopoverOpen} onOpenChange={handlePopoverChange}>
+      <Popover open={open} onOpenChange={handlePopoverChange}>
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -544,7 +546,7 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className='bg-white dark:bg-zinc-800 min-w-[160px] p-1 rounded-md shadow-lg w-auto'
+          className='bg-white dark:bg-zinc-800 hidden tablets:block min-w-[160px] p-1 rounded-md shadow-lg w-auto'
           align="end"
           sideOffset={5}
         >

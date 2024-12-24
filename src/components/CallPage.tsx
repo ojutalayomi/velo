@@ -80,8 +80,8 @@ const PreVideoChat: React.FC = () => {
     socket,
     room: id as string,
     videoRefs: {
-      localVideo: videoRef,
-      remoteVideo: remoteVideoRef,
+      localVideo: videoRef as React.RefObject<HTMLVideoElement>,
+      remoteVideo: remoteVideoRef as React.RefObject<HTMLVideoElement>,
     },
   });
   const [isLoading, setIsLoading] = useState(false);

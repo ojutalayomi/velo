@@ -1,73 +1,75 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { getStatus, getPosts } from './getStatus';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
 import Posts from '../templates/posts';
-import { PostData } from '../templates/PostProps';
-import NavBar from './navbar';
 import { RefreshCw } from 'lucide-react';
+import { RootState } from '@/redux/store';
+import { usePosts } from '@/app/providers';
 
 const Homepage: React.FC = () => {
-    const dispatch = useDispatch();
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string[] | null>(null);
-    const [reload,setReload] = useState<boolean>(false);
-
-    const [postsLoading, setpostsLoading] = useState<boolean>(true);
-    const [postsError, setpostsError] = useState<string | null>(null);
-    const [postsSuccess, setpostsSuccess] = useState<PostData[] | null>(null);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-
-            try {
-                const statusResponse = await getStatus();
-                setSuccess(statusResponse);
-            } catch (error) {
-                setError((error as Error).message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-        if (reload) fetchData();
-    }, [reload]);
-    useEffect(() => {
-        const fetchData = async () => {
-            setpostsLoading(true);
-
-            try {
-                const postsResponse = await getPosts();
-                setpostsSuccess(postsResponse);
-            } catch (error) {
-                setpostsError((error as Error).message);
-            } finally {
-                setpostsLoading(false);
-            }
-        };
-
-        fetchData();
-        if (reload) fetchData();
-    }, [reload]);
+    const { posts, loading, error } = useSelector((state: RootState) => state.posts);
+    const { success, setReload } = usePosts();
+    const homeRef = useRef<HTMLDivElement>(null);
+    const scrollPositionRef = useRef(0);
+    const [isClient, setIsClient] = useState(false);
     
-    return (
-      <>
-        <NavBar route='home'/>
-        <div id='home' className='dark:text-slate-200'>
+    // Handle scroll event
+    const handleScroll = () => {
+        if (homeRef.current) {
+            scrollPositionRef.current = homeRef.current.scrollTop;
+            localStorage.setItem('homeScrollPosition', scrollPositionRef.current.toString());
+        }
+    };
 
-            <div className='pre-status'>
+    // Set initial client state and restore scroll position
+    useEffect(() => {
+        setIsClient(true);
+        const savedPosition = localStorage.getItem('homeScrollPosition');
+        if (homeRef.current && savedPosition) {
+            const position = parseInt(savedPosition);
+            // Small delay to ensure content is rendered
+            setTimeout(() => {
+                homeRef.current?.scrollTo({
+                    top: position,
+                    behavior: 'instant' // Changed from 'smooth' for more reliable positioning
+                });
+            }, 100);
+        }
+    }, []);
+
+    return (
+        <div 
+            onScroll={handleScroll} 
+            ref={homeRef} 
+            id='home' 
+            className='dark:text-slate-200'
+        >
+            <header className='dark:bg-zinc-900 bg-gray-50 shadow-md sticky top-0 w-full z-[5]'>
+                <div className='flex justify-center py-3 w-full'>
+                    <h1>Velo</h1>
+                </div>
+            </header>
+
+            <div className='pre-status mt-2'>
                 <div className='status'>
-                {loading ? <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '10%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>
-                    : 
-                    success && success.length ? (
+                    {loading && (
+                        <div className="flex items-center w-full h-[10%]">
+                            <div className="loader show h-[30px] w-[30px]" />
+                        </div>
+                    )}
+                    {!loading && success && success.length > 0 && (
                         success.map((status: string, index: number) => (
-                            <div key={index} id={`status-${index}`} className='status-child' style={{ backgroundImage: `url(https://s3.amazonaws.com/profile-display-images/${status})`}} ></div>
-                        ))) 
-                    : 
-                    error && <RefreshCw size={30}/>}
+                            <div 
+                                key={index} 
+                                id={`status-${index}`} 
+                                className='status-child' 
+                                style={{ 
+                                    backgroundImage: `url(https://s3.amazonaws.com/profile-display-images/${status})`
+                                }} 
+                            />
+                        ))
+                    )}
+                    {!loading && error && <RefreshCw size={30}/>}
                 </div>
             </div>
 
@@ -76,19 +78,27 @@ const Homepage: React.FC = () => {
             </div>
 
             <>
-                {postsLoading ?<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>
-                    :
-                    postsSuccess && postsSuccess.length ? (
-                        postsSuccess.map((post) => (
-                            <Posts key={post._id} postData={post}/>
-                        )))
-                    :
-                    postsError && <div className='flex flex-col items-center justify-center w-full h-3/4'>
-                        <RefreshCw className='cursor-pointer' size={30} onClick={() => setReload(true)}/><h1>Reload</h1></div>
-                }
+                {loading ? (
+                    <div className="flex items-center justify-center w-full h-[90%]">
+                        <div className="loader show h-[30px] w-[30px]" />
+                    </div>
+                ) : posts && posts.length ? (
+                    posts.map(post => (
+                        <Posts key={post._id} postData={post}/>
+                    ))
+                ) : error && (
+                    <div className='flex flex-col items-center justify-center w-full h-3/4'>
+                        <RefreshCw 
+                            className='cursor-pointer' 
+                            size={30} 
+                            onClick={() => setReload(true)}
+                        />
+                        <h1>Reload</h1>
+                    </div>
+                )}
             </>
         </div>
-      </>
     );
-}
+};
+
 export default Homepage;

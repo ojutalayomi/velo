@@ -1,17 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from 'next/link';
 import { VideoProps } from "../components/ImgVidProps";
-import { VolumeX, Volume2 } from "lucide-react";
+import { VolumeX, Volume2, Play, Pause } from "lucide-react";
 
 const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);  
-  const [replyText, setReplyText] = useState('');
+  const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hostname: string = 'https://s3.amazonaws.com/post-s/';
+  const progressRef = useRef<HTMLDivElement>(null);
+  const hostname = 'https://s3.amazonaws.com/post-s/';
 
   useEffect(() => {
     const video = videoRef.current;
@@ -38,13 +39,13 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
     }
   };
 
-  useEffect (() => {
+  useEffect(() => {
     if (videoRef.current) {
       videoRef.current.volume = volume;
     }
   }, [volume]);
-  
-  useEffect (() => {
+
+  useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
     }
@@ -68,12 +69,13 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  useEffect(() => {
-    if(formatTime(currentTime) === formatTime(duration)){
-      setIsPlaying(false);
-      setCurrentTime(0);
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (progressRef.current && videoRef.current) {
+      const rect = progressRef.current.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      videoRef.current.currentTime = pos * duration;
     }
-  }, [currentTime, duration])
+  };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
@@ -89,52 +91,88 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
   };
 
   return (
-    <>
-    <div className="h-full relative">
-      <Link href={link} className={link !== '' ? '' : 'contents'} onClick={(e) => link === '' && e.preventDefault()}>
+    <div 
+      className="relative w-full h-full group flex items-center justify-center"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      {link ? (
+        <Link href={link} className="# z">
+          <video
+            ref={videoRef}
+            className="w-auto h-auto max-h-[calc(100vh-200px)] object-contain cursor-pointer"
+            style={{ maxWidth: '100%' }}
+            onClick={togglePlay}
+          >
+            <source src={host ? hostname + media : media} />
+          </video>
+        </Link>
+      ) : (
         <video
           ref={videoRef}
-          className="cursor-pointer h-full w-full"
+          className="w-auto h-auto max-h-[calc(100vh-200px)] object-contain cursor-pointer"
+          style={{ maxWidth: '100%' }}
           onClick={togglePlay}
         >
           <source src={host ? hostname + media : media} />
         </video>
-      </Link>
-    </div>
-    {/* Controls */}
-    <div className="absolute bottom-0 p-2 w-full" style={{ bottom: 0,}}>
-      <div className="flex items-center mb-2" style={{ gap: '10px',}}>
-        <button onClick={togglePlay} className="text-white">
-          {isPlaying ? '❚❚' : '▶'}
-        </button>
-        <div className="flex-grow bg-gray-700 h-[0.25rem] rounded-full" style={{ backgroundColor: '#374151',height: '0.25rem',}}>
-          <div
-            className="bg-white h-full rounded-full"
+      )}
+
+      {/* Centered play/pause button */}
+      <button 
+        onClick={togglePlay}
+        className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+          bg-black/50 p-4 rounded-full transition-opacity duration-200
+          ${isHovering || !isPlaying ? 'opacity-100' : 'opacity-0'}`}
+      >
+        {isPlaying ? <Pause size={24} className="text-white" /> : <Play size={24} className="text-white" />}
+      </button>
+
+      {/* Controls overlay */}
+      <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent 
+        p-4 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+        
+        {/* Progress bar */}
+        <div 
+          ref={progressRef}
+          onClick={handleProgressClick}
+          className="w-full h-1 bg-white/30 rounded-full mb-4 cursor-pointer"
+        >
+          <div 
+            className="h-full bg-white rounded-full relative"
             style={{ width: `${(currentTime / duration) * 100}%` }}
-          />
+          >
+            <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 
+              w-3 h-3 bg-white rounded-full shadow-lg" />
+          </div>
         </div>
-        {/* Volume control */}
-        <div className="flex items-center" style={{ gap: '10px',}}>
-          <button onClick={toggleMute} className="text-white">
-            {isMuted || volume === 0 ? <VolumeX size={24} /> : <Volume2 size={24} />}
-          </button>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.1"
-            value={isMuted ? 0 : volume}
-            onChange={handleVolumeChange}
-            style={{ backgroundColor: '#374151',height: '0.25rem',}}
-            className={`w-24 h-1 bg-gray-700 rounded-lg ${isMuted && '!hidden'} hidden tablets1:block appearance-none cursor-pointer`}
-          />
+
+        {/* Bottom controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-white text-sm">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button onClick={toggleMute} className="text-white hover:text-gray-300">
+              {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            </button>
+            
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              className="w-24 accent-white hidden lg:block"
+            />
+          </div>
         </div>
-        <span className="ml-2 text-xs tablets:text-sm text-white">
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </span>
       </div>
     </div>
-    </>
   );
 };
 

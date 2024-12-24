@@ -1,8 +1,8 @@
 'use client'
-import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from 'react';
 import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, msgStatus, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import Image from 'next/image';
-import { Copy, Ellipsis, EllipsisVertical, Phone, Reply, Send, Settings, TextQuote, Trash2, Video, X } from 'lucide-react';
+import { ChevronDown, Copy, Ellipsis, EllipsisVertical, Phone, Reply, Send, Settings, TextQuote, Trash2, Video, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from '../../MessageTab';
@@ -93,6 +93,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   let lastDateRef = useRef<string>('');
+  const messageBoxRef = useRef<HTMLDivElement>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   useEffect(() => {
     dispatch(showChat(''));
@@ -194,6 +197,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       }
       setNewMessage('');
       closeQuote();
+      setTimeout(() => {
+        scrollToBottom();
+      }, 1000)
     }
   };
 
@@ -234,9 +240,39 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     { id: 10, name: 'Leave group', action: () => console.log('left group') }
   ];
 
+  useEffect(() => {
+    if (messageBoxRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messageBoxRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      
+      // Only auto-scroll if user was already at the bottom
+      if (!isNearBottom && !isScrolled) {
+        scrollToBottom();
+        setIsScrolled(true);
+      }
+    }
+  }, [Messages, isScrolled]);
+
+  const handleScroll = () => {
+    if (messageBoxRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messageBoxRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px threshold
+      setShowScrollButton(isNearBottom);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (messageBoxRef.current) {
+      messageBoxRef.current.scrollTo({
+        top: messageBoxRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
-    <div className={`bg-bgLight tablets1:flex ${chaT}  dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 bottom-0 z-10">
+    <div className={`bg-bgLight tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
+      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 z-10">
         {!searchBarOpen ?
         <>
           <div className='flex gap-4 items-center justify-start'>
@@ -323,7 +359,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         }
       </div>
 
-      <div className="pb-12 overflow-y-auto p-4 flex flex-col flex-1 scroll-pt-20"> 
+      <div ref={messageBoxRef} onScroll={handleScroll} className="pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"> 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">
           {load ? (
             <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
@@ -366,7 +402,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             <p className="text-xs text-gray-500 dark:text-gray-400">{load || !group?.description ? <span className="w-36 h-4 bg-gray-200 rounded animate-pulse mb-1" /> :  group.description}</p>
           </div>
         </div>
-        <div className="mb-4 mt-4 flex-1">
+        <div className="mt-4 flex-1">
         {Messages?.reduce((acc: JSX.Element[], message, index) => {
             const messageDate = new Date(message.timestamp).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -386,6 +422,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             return acc;
           }, [])}
         </div>
+
+        <div className={`absolute rounded-full right-0 bottom-16 shadow-lg mr-4 p-2 bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex items-center gap-2 ${showScrollButton ? 'opacity-0' : 'opacity-100'}`}>
+          <ChevronDown
+          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out'
+          onClick={scrollToBottom}
+          />
+        </div> 
       </div>
 
       <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote}/>

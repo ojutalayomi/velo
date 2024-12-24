@@ -8,6 +8,7 @@ const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
 
 export async function POST(request: NextRequest) {
   try {
+    const cookieStore = await cookies()
     if (!client) {
       client = new MongoClient(uri, {
         serverApi: {
@@ -22,7 +23,6 @@ export async function POST(request: NextRequest) {
     }
 
     const tokenCollection = client.db('mydb').collection('Tokens');
-    const cookieStore = cookies();
     const token = cookieStore.get('velo_12')?.value;
 
     if (!token) {

@@ -2,11 +2,15 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import io, { Socket } from 'socket.io-client';
-import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { Provider } from "react-redux";
 import { store } from "@/redux/store";
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useUser } from '@/hooks/useUser';
+import { PostData } from '@/templates/PostProps';
+import { getStatus, getPosts } from '@/components/getStatus';
+import { useDispatch, useSelector } from 'react-redux';
+import { setPosts, setLoading, setError } from '@/redux/postsSlice';
+import { RootState } from '@/redux/store';
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -17,11 +21,13 @@ export interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-const SocketContext = createContext<typeof Socket | null>(null);
+const SocketContext = createContext<Socket | null>(null);
+
+const PostsContext = createContext<{ success: string[] | null, setReload: React.Dispatch<React.SetStateAction<boolean>> } | undefined>(undefined);
 
 const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { userdata, loading, error } = useUser();
-  const [socket, setSocket] = useState<typeof Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     // Only initialize the socket if userdata is loaded
@@ -69,6 +75,50 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
 };
 
+const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const dispatch = useDispatch();
+  const [success, setSuccess] = useState<string[] | null>(null);
+  const [reload, setReload] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchData1 = async () => {
+        dispatch(setLoading(true));
+
+        try {
+            const statusResponse = await getStatus();
+            setSuccess(statusResponse);
+        } catch (error) {
+            setError((error as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchData2 = async () => {
+        dispatch(setLoading(true));
+
+        try {
+            const postsResponse = await getPosts();
+            dispatch(setPosts(postsResponse));
+        } catch (error) {
+            dispatch(setError((error as Error).message));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
+    fetchData1();
+    fetchData2();
+    if (reload) {
+      fetchData1();
+      fetchData2();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reload]);
+
+  return <PostsContext.Provider value={{ success, setReload }}>{children}</PostsContext.Provider>;
+};
+
 const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>('light');
 
@@ -107,17 +157,25 @@ const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
 
     <Provider store={store}>
-      <UserProvider>
-        <SocketProvider>
+      <SocketProvider>
+        <PostsProvider>
           <ThemeContext.Provider value={{ theme, setTheme }}>
             {children}
           </ThemeContext.Provider>
-        </SocketProvider>
-      </UserProvider>
+        </PostsProvider>
+      </SocketProvider>
     </Provider>
   )
 }
 export default Providers;
+
+export const usePosts = () => {
+  const context = useContext(PostsContext);
+  if (context === undefined) {
+    throw new Error('usePosts must be used within a PostsProvider')
+  }
+  return context
+};
 
 export const useSocket = () => {
   const context = useContext(SocketContext);

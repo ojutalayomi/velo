@@ -25,9 +25,9 @@ const NotificationPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-100 dark:bg-neutral-950 min-h-screen">
+    <div className="dark:bg-zinc-900 bg-gray-50 min-h-screen">
       {/* Header */}
-      <header className="bg-white dark:bg-zinc-900 p-4 flex items-center border-b border-gray-200">
+      <header className="bg-white dark:bg-zinc-900 p-2 flex items-center shadow-lg">
         <ArrowLeft size={24} className="cursor-pointer dark:text-slate-200 text-gray-600" onClick={() => router.push('/home')}/>
         <h1 className="dark:text-slate-200 text-xl font-semibold ml-4">Notifications</h1>
       </header>
@@ -37,7 +37,7 @@ const NotificationPage: React.FC = () => {
         {notifications.map((notification, index) => (
           <div 
             key={index}
-            className={`bg-white dark:bg-zinc-900 hover:bg-slate-200 hover:dark:bg-zinc-700 rounded-lg p-4 mb-3 flex items-start ${notification.isNew ? 'border-l-4 border-blue-500' : ''}`}
+            className={`bg-white dark:bg-zinc-900 hover:bg-slate-200 hover:dark:bg-zinc-700 cursor-pointer rounded-lg p-4 mb-3 flex items-start shadow-md dark:shadow-2xl ${notification.isNew ? 'border-l-4 border-blue-500' : ''}`}
           >
             <div className="mr-3">
               {getIcon(notification.type)}

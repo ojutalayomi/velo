@@ -15,7 +15,7 @@ interface DraggableVideoCardProps {
 export default function DraggableVideoCard({ 
   isVideoOn = false, 
   className = '' 
-}: DraggableVideoCardProps): JSX.Element {
+}: DraggableVideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });

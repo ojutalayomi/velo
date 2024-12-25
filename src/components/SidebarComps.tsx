@@ -99,22 +99,29 @@ export const SidebarItem: React.FC<{
   activeRoute: string; 
   handleClick: (route: string) => void; 
   userdata: UserData 
-}> = ({ item, activeRoute, handleClick, userdata }) => (
-  <div 
-    className={`sidebar ft dark:text-slate-200 rout ${
-      (activeRoute === item.route || activeRoute === userdata.username) ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''
-    }`} 
-    data-route={item.route === 'profile' ? userdata.username : item.route}
-  >
+}> = ({ item, activeRoute, handleClick, userdata }) => {
+  const isProfile = item.route === 'profile';
+  const route = isProfile ? userdata.username : item.route;
+  const label = isProfile ? userdata.username : item.label;
+  const isActive = activeRoute === route;
+
+  return (
     <div 
-      className='sidebar-icon' 
-      onClick={() => handleClick(item.route === 'profile' ? userdata.username : item.route)}
+      className={`sidebar ft dark:text-slate-200 rout ${
+        isActive ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''
+      }`} 
+      data-route={route}
     >
-      {item.icon}
-      <div className='rt'>{item.route === 'profile' ? userdata.username : item.label}</div>
+      <div 
+        className='sidebar-icon' 
+        onClick={() => handleClick(route)}
+      >
+        {item.icon}
+        <div className='rt'>{label}</div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const UserSection = forwardRef<HTMLDivElement, {
   error: any;

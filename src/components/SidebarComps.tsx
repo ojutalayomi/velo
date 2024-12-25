@@ -102,16 +102,16 @@ export const SidebarItem: React.FC<{
 }> = ({ item, activeRoute, handleClick, userdata }) => (
   <div 
     className={`sidebar ft dark:text-slate-200 rout ${
-      activeRoute === item.route ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''
+      (activeRoute === item.route || activeRoute === userdata.username) ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''
     }`} 
-    data-route={item.route}
+    data-route={item.route === 'profile' ? userdata.username : item.route}
   >
     <div 
       className='sidebar-icon' 
       onClick={() => handleClick(item.route === 'profile' ? userdata.username : item.route)}
     >
       {item.icon}
-      <div className='rt'>{item.label}</div>
+      <div className='rt'>{item.route === 'profile' ? userdata.username : item.label}</div>
     </div>
   </div>
 );

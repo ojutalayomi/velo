@@ -116,13 +116,13 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                     <Settings size={25}/>
                     <div className='text-lg'>General</div>
                   </div>
-                  <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === ':username' ? 'active' : ''}`} data-route='<%= username %>' onClick={() => handleClick('notifications')}>
+                  <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'notifications' ? 'active' : ''}`} data-route='notifications' onClick={() => handleClick('notifications')}>
                     <Bell size={25}/>
                     <div className='notifications rt'>Notifications</div>
                   </div>
-                  <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === ':username' ? 'active' : ''}`} data-route='<%= username %>' onClick={() => handleClick('explore')}>
+                  <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === userdata.username ? 'active' : ''}`} data-route={userdata.username} onClick={() => handleClick(userdata.username)}>
                     <User size={25}/>
-                    <div className='myprofile rt'>My Profile</div>
+                    <div className='myprofile rt'>@{userdata.username + "'s"} Profile</div>
                   </div>
                   <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'user-interface' ? 'active' : ''}`} data-route='user-interface' onClick={() => handleClick('user-interface')}>
                     <Palette size={25}/>

@@ -2,9 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from './PostProps';
 import Image from "next/image";
-import { useUser } from '@/hooks/useUser';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
 import {
   Popover,
   PopoverContent,
@@ -16,7 +14,6 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 import { Button } from '@/components/ui/button';
 import { useDispatch } from 'react-redux';
 import { setPosts, addPost, updatePost, deletePost, setLoading, setError } from '@/redux/postsSlice';
-import { RootState } from '@/redux/store';
 import MediaSlide from './mediaSlides';
 
 type PostComponentProps = Post | PostProps;
@@ -29,7 +26,6 @@ interface Option {
 
 const Posts: React.FC<PostComponentProps> = (props) => {
   const postData = 'post' in props ? props.post : props.postData;
-  const { activeRoute, isMoreShown } = useSelector((state: RootState) => state.navigation);
   const [activePost, setActivePost] = useState<string>('');
   const [open, setOpen] = useState(false);
   const [isliked, setLiked] = useState(false);
@@ -237,9 +233,9 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
 
     <Popover open={isPopoverOpen} onOpenChange={handlePopoverChange}>
       <PopoverTrigger asChild>
-        <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 mobile:hidden' onClick={() => setOpen(true)}/>
+        <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 hidden tablets:block' onClick={() => setOpen(true)}/>
       </PopoverTrigger>
-      <PopoverContent className='bg-white mobile:hidden dark:bg-zinc-800 w-auto space-y-2 mt-1 mr-2 p-2 rounded-md shadow-lg z-10'>
+      <PopoverContent className='bg-white hidden tablets:block dark:bg-zinc-800 w-auto space-y-2 mt-1 mr-2 p-2 rounded-md shadow-lg z-10'>
         {options.map(({ icon, text, onClick }, index) => (
           <div key={index} className='flex gap-1 items-center cursor-pointer hover:bg-slate-200 hover:dark:bg-zinc-700 p-1 rounded-md'>
             {icon}

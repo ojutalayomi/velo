@@ -22,10 +22,12 @@ export default async function Profile({ params }: { params: Promise<{ username: 
             {/* Cover Photo */}
             <div className="h-48 w-full bg-gray-200 dark:bg-gray-800 relative">
                 {userData.coverPhoto && (
-                    <img
-                        src={hostname+userData.coverPhoto}
-                        className="w-full h-full object-cover"
-                    />
+                    <Avatar className="h-full w-full object-cover">
+                        <AvatarImage className="w-full h-full" src={hostname+userData.coverPhoto} />
+                        <AvatarFallback className="w-full h-full">
+                            {userData.firstname && userData.lastname ? userData.firstname[0] + userData.lastname[0] + ' • Velo' : 'Velo'}
+                        </AvatarFallback>
+                    </Avatar>
                 )}
             </div>
 
@@ -34,7 +36,7 @@ export default async function Profile({ params }: { params: Promise<{ username: 
                 <div className="absolute -top-16 left-4 w-32 h-32">
                     <div className="w-full h-full rounded-full border-4 border-white dark:border-black overflow-hidden">
                         <Avatar className="h-full w-full">
-                            <AvatarImage src={hostname+userData.displayPicture} />
+                            <AvatarImage className="w-full h-full" src={hostname+userData.displayPicture} />
                             <AvatarFallback className="w-full h-full">
                                 {userData.firstname && userData.lastname ? userData.firstname[0] + userData.lastname[0] : ''}
                             </AvatarFallback>

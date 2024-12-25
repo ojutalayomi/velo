@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 export default async function Profile({ params }: { params: Promise<{ username: string }> }) {
     const userData: UserSchema = await getUser((await params).username);
     const userPosts: PostData[] = await getUserPosts((await params).username);
-    const hostname = 'https://s3.amazonaws.com/post-s/';
+    const hostname = 'https://s3.amazonaws.com/profile-display-images/';
 
     if (!userData) {
         notFound();

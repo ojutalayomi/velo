@@ -136,7 +136,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
         <div 
           ref={progressRef}
           onClick={handleProgressClick}
-          className="w-full h-1 bg-white/30 rounded-full mb-4 cursor-pointer"
+          className="w-full h-1 bg-white/30 rounded-full mb-2 cursor-pointer"
         >
           <div 
             className="h-full bg-white rounded-full relative"

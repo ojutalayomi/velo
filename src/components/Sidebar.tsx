@@ -48,9 +48,8 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
 
   const handleClick = useCallback((route: string) => {
     setLoad(true);
-    router.push(`/${route}`);
     setActiveRoute(route);
-  }, [setLoad, router, setActiveRoute]);
+  }, [setLoad, setActiveRoute]);
 
   const handlePopUp = useCallback(() => {
     setPopUp(!isPopUp);

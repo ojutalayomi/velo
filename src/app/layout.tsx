@@ -17,9 +17,7 @@ export const viewport: Viewport = {
   initialScale: 1.0
 }
 
-export default function RootLayout({ children, modal }: Readonly<{ children: React.ReactNode; modal: React.ReactNode;}>) {
-
-
+export default function RootLayout({ children, modal }: Readonly<{ children: React.ReactNode; modal: React.ReactNode; }>) {
   return (
     <html lang="en">
       <head>
@@ -27,15 +25,17 @@ export default function RootLayout({ children, modal }: Readonly<{ children: Rea
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-        <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
-          <Providers>
-              <SpeedInsights />
-              <div id='root' >
-              <ClientComponents>{children}</ClientComponents>
-              {modal}
-              </div>
-          </Providers>
-        </body>
+      <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
+        <Providers>
+          <SpeedInsights />
+          <div id='root'>
+            <ClientComponents>
+              {children}
+            </ClientComponents>
+            {modal}
+          </div>
+        </Providers>
+      </body>
     </html>
   );
 }

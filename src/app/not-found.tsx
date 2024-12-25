@@ -1,43 +1,36 @@
 'use client'
-import { useEffect } from 'react'
-import { Home, RefreshCw } from 'lucide-react';
-import {useRouter} from 'next/navigation';
- 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string } | null,
-  reset: () => void
-}) {
+import { useRouter } from 'next/navigation';
+import { Home } from 'lucide-react';
+import { useEffect } from 'react';
+
+export default function NotFound() {
   const router = useRouter();
+
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error)
-  }, [error])
- 
+    // Prevent the browser from recording this page in history
+    history.replaceState(null, '', '/');
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center text-gray-800">
-      <h1 className="text-6xl font-bold mb-4">404</h1>
-      <p className="text-2xl mb-8">Oops! Page not found</p>
-      <div className="max-w-md text-center mb-8">
-        <p>The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
-      </div>
-      <div className="flex space-x-4">
-        <button 
-          onClick={() => router.push('/')}
-          className="flex items-center bg-brand text-white px-4 py-2 rounded-md hover:bg-tomatom transition duration-300"
-        >
-          <Home size={18} className="mr-2" />
-          Go Home
-        </button>
-        <button 
-          onClick={() => reset()}
-          className="flex items-center bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-300"
-        >
-          <RefreshCw size={18} className="mr-2" />
-          Refresh Page
-        </button>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-lg text-center space-y-8">
+        <div className="space-y-4">
+          <h1 className="text-8xl font-extrabold text-brand dark:text-brand/90">404</h1>
+          <h2 className="text-3xl font-semibold text-gray-800 dark:text-gray-100">Page Not Found</h2>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">
+            We couldn&apos;t find the page you&apos;re looking for. It might have been moved or deleted.
+          </p>
+        </div>
+
+        <div className="flex justify-center">
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-brand text-white font-medium rounded-lg hover:bg-tomatom dark:bg-brand/90 dark:hover:bg-tomatom/90 transition-colors duration-300"
+          >
+            <Home size={20} />
+            Back to Home
+          </button>
+        </div>
       </div>
     </div>
   );

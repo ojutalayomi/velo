@@ -152,7 +152,7 @@ export interface Err {
     [x: string]: string
 }
 
-export interface Schema {
+export interface UserSchema {
     _id?: ObjectId,
     time?: string,
     userId?: string,
@@ -187,6 +187,40 @@ export interface Schema {
     resetTokenExpiry?: number,
     name?: string
 }
+
+export interface PostSchema {
+    _id: {
+        $oid: string
+    };
+    DisplayPicture: string;
+    NameOfPoster: string;
+    Verified: boolean;
+    TimeOfPost: string;
+    Caption: string;
+    Image: string[];
+    NoOfLikes: {
+        $numberInt: string
+    };
+    Liked: boolean;
+    NoOfComment: {
+        $numberInt: string
+    };
+    NoOfShares: {
+        $numberInt: string
+    };
+    NoOfBookmarks: {
+        $numberInt: string
+    };
+    Bookmarked: boolean;
+    Username: string;
+    PostID: string;
+    Code: string;
+    WhoCanComment: string;
+    Shared: boolean;
+    Type: string;
+    ParentId: string;
+}
+
 
 export type AllChats = {
     chats: ChatData[],

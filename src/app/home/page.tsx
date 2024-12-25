@@ -13,10 +13,10 @@ const Home = () => {
 
   return (
     <div className="h-screen flex">
-      <div className="tablets:w-3/5 overflow-hidden w-full">
+      <div className="md:w-3/5 overflow-hidden w-full">
         <Homepage />
       </div>
-      <div className="min-h-screen hidden tablets:block flex-1 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50">
+      <div className="min-h-screen hidden md:block flex-1 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50">
         <div className="max-w-md max-h-full mx-auto overflow-auto space-y-2">
           {/* Search Bar */}
           <div className="dark:bg-zinc-900 bg-gray-50 px-4 py-2 sticky top-0 w-full">

@@ -1,3 +1,4 @@
+'use client'
 import ImageDiv from "@/components/imageDiv"
 import {
     Carousel,

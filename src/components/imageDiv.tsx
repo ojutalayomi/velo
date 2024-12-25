@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from "next/image";
 
 const ImageDiv: React.FC<ImageProps> = ({ media, link = '', host }) => {
-    const hostname: string = 'https://s3.amazonaws.com/post-s/';
+    const hostname = 'https://s3.amazonaws.com/post-s/';
     return (
         <>
             {link ? (

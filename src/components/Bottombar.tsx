@@ -107,7 +107,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
               <DrawerTrigger>
                 <Avatar>
                   <AvatarImage src={'https://s3.amazonaws.com/profile-display-images/'+userdata.dp} />
-                  <AvatarFallback>{userdata.firstname.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{userdata.firstname.charAt(0).toUpperCase() || 'V'}</AvatarFallback>
                 </Avatar>
               </DrawerTrigger>
               <DrawerContent className='tablets1:hidden'>
@@ -120,10 +120,12 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                     <Bell size={25}/>
                     <div className='notifications rt'>Notifications</div>
                   </div>
-                  <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === userdata.username ? 'active' : ''}`} data-route={userdata.username} onClick={() => handleClick(userdata.username)}>
-                    <User size={25}/>
-                    <div className='myprofile rt'>@{userdata.username + "'s"} Profile</div>
-                  </div>
+                  {userdata.username && (
+                    <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === userdata.username ? 'active' : ''}`} data-route={userdata.username} onClick={() => handleClick(userdata.username)}>
+                      <User size={25}/>
+                      <div className='myprofile rt'>@{userdata.username + "'s"} Profile</div>
+                    </div>
+                  )}
                   <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'user-interface' ? 'active' : ''}`} data-route='user-interface' onClick={() => handleClick('user-interface')}>
                     <Palette size={25}/>
                     <div className='user-interface rt'>User Interface</div>

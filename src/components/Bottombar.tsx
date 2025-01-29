@@ -102,12 +102,12 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
               <Mail size={22} className="dark:stroke-tom" />
               {/* <div>Chats</div> */}
             </div>
-            {(userdata._id) ? (
+            {(!loading) ? (
             <Drawer open={open} onOpenChange={setOpen}>
               <DrawerTrigger>
                 <Avatar>
                   <AvatarImage src={'https://s3.amazonaws.com/profile-display-images/'+userdata.dp} />
-                  <AvatarFallback>V</AvatarFallback>
+                  <AvatarFallback>{userdata.firstname.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </DrawerTrigger>
               <DrawerContent className='tablets1:hidden'>

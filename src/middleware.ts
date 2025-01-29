@@ -5,7 +5,7 @@ import { kv } from '@vercel/kv';
 const ratelimit = new Ratelimit({
   redis: kv,
   // 1 requests from the same IP for every 30 seconds
-  limiter: Ratelimit.slidingWindow(1, '30 s'),
+  limiter: Ratelimit.slidingWindow(3, '30 s'),
 });
 
 export const config = {

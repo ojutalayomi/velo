@@ -396,7 +396,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
   // if (!cookies) return res.status(405).end(`Not Allowed`);
   const payload = await verifyToken(cookie as unknown as string) as unknown as Payload;
-  // console.log(payload)
+  console.log(payload)
   if (!payload) return res.status(401).json(`Not Allowed`);
   if (!client) {
     client = new MongoClient(uri, {

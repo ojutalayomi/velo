@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { MongoClient, ServerApiVersion } from 'mongodb'
 import { SignJWT } from 'jose'
-import cookie from 'cookie'
+import { serialize } from 'cookie'
 import { UAParser } from 'ua-parser-js'
 import { promises as fs } from 'fs'
 import { fileURLToPath } from 'url'
@@ -98,7 +98,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       { $set: { lastLogin: formattedDate } }
     );
 
-    const newUserdata = { name, firstname, lastname, email, username, dp: displayPicture, verified, userId } as unknown as UserData;
+    const newUserdata = { _id: user._id ,name, firstname, lastname, email, username, dp: displayPicture, verified, userId } as unknown as UserData;
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const token = await new SignJWT({ _id: user._id })
@@ -117,7 +117,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       createdAt: new Date().toISOString()
     });
 
-    res.setHeader('Set-Cookie', cookie.serialize('velo_12', token, {
+    res.setHeader('Set-Cookie', serialize('velo_12', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
       sameSite: process.env.NODE_ENV !== 'development' ? 'strict': 'none',

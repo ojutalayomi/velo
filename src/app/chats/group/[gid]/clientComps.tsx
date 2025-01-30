@@ -1,6 +1,6 @@
 'use client'
 import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from 'react';
-import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, msgStatus, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { AllChats, Attachment, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, msgStatus, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import Image from 'next/image';
 import { ChevronDown, Copy, Ellipsis, EllipsisVertical, Phone, Reply, Send, Settings, TextQuote, Trash2, Video, X } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -96,6 +96,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([])
 
   useEffect(() => {
     dispatch(showChat(''));
@@ -154,8 +155,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   }, [otherIds, gid, socket, userdata._id]);
 
-  const handleSendMessage = (id: string) => {
-    if (newMessage.trim() !== '') {
+  const handleSendMessage = async (id: string) => {
+    try {
+      if (newMessage.trim() === '') {
+        return; // Don't send empty messages or messages without attachments
+      }
 
       const isRead = otherIds
         ? Object.fromEntries([
@@ -179,10 +183,35 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         messageType: 'Groups',
         isRead: isRead, // Object with participant IDs as keys and their read status as values
         reactions: [],
-        attachments: [],
+        attachments: [] as Attachment[],
         quotedMessage: id,
         status: 'sending' as msgStatus,
       }
+
+        // Read and process all files
+        const fileReadPromises = attachments.map((file) => {
+        return new Promise<void>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const fileData = reader.result as ArrayBuffer;
+            msg.attachments.push({
+              name: file.name,
+              type: file.type,
+              data: Array.from(new Uint8Array(fileData)), // Convert ArrayBuffer to array
+            });
+            resolve();
+          };
+          reader.onerror = () => {
+            reject(new Error(`Failed to read file: ${file.name}`));
+          };
+          reader.readAsArrayBuffer(file);
+        });
+      });
+  
+      // Wait for all files to be read
+      await Promise.all(fileReadPromises);
+
+      
       dispatch(addMessage(msg as unknown as MessageAttributes));
       dispatch(updateConversation({
         id: msg._id,
@@ -192,14 +221,21 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           lastUpdated: msg.timestamp
         }
       }));
+
       if (msg && socket) {
         socket.emit('chatMessage', msg)
       }
       setNewMessage('');
+      setAttachments([]);
       closeQuote();
+      
       setTimeout(() => {
         scrollToBottom();
       }, 1000)
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
     }
   };
 
@@ -431,7 +467,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         </div> 
       </div>
 
-      <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote}/>
+      <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote} setAttachments={setAttachments}/>
       {children}
     </div>
   );

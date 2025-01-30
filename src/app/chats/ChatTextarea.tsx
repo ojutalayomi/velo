@@ -1,8 +1,12 @@
 import { Textarea } from "@/components/ui/textarea";
-import { X, Send, Smile } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { X, Send, Smile, Plus, TextQuote, Folder, Image } from "lucide-react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { LinkPreview } from '@/components/LinkPreview';
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+
 
 type Message = {
     _id: string,
@@ -22,10 +26,12 @@ interface ChatTextareaProps {
     handleSendMessage: (messageId: string) => void;
     handleTyping: () => void;
     closeQuote: () => void;
+    setAttachments: React.Dispatch<React.SetStateAction<File[]>>
 }
 
-const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, handleTyping, closeQuote}: ChatTextareaProps) => {
+const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, handleTyping, closeQuote, setAttachments}: ChatTextareaProps) => {
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         const handleInput = () => {
@@ -110,8 +116,23 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                         <LinkPreview url={firstUrl} />
                     </div>
                 )}
-                
+                <Input
+                    ref={inputRef} 
+                    type="file"
+                    multiple 
+                    onChange={(e) => {
+                        if (e.target.files) {
+                        setAttachments(Array.from(e.target.files)); // files is a FileList
+                        }
+                    }} 
+                    className="hidden"
+                />
                 <div className="flex items-end justify-between gap-2 mx-2">
+                    <Pop input={inputRef}>
+                        <Button className="py-2 px-1 mb-1 bg-transparent cursor-pointer text-white rounded-full transition-colors">
+                            <Plus size={20} className="text-brand"/>
+                        </Button>
+                    </Pop>
                     <div className="relative flex-1">
                         <Textarea
                             placeholder="Type a message..."
@@ -144,13 +165,13 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                             </button>
                         </EmojiPicker>
                     </div>
-                    <button
+                    <Button
                         disabled={newMessage.length === 0}
                         onClick={() => handleSendMessage(quote.message?._id)}
                         className="py-2 px-1 mb-1 bg-transparent cursor-pointer text-white rounded-full transition-colors"
                     >
                         <Send size={20} className="text-brand"/>
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>
@@ -158,3 +179,52 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
 }
 
 export default ChatTextarea;
+
+const Pop = ({children, input}: {children: React.ReactNode, input: RefObject<HTMLInputElement | null>}) => {
+    const [open, setOpen] = useState()
+
+    const options = [
+        {
+            icon: Folder,
+            text: 'File',
+            onClick: () => console.log(),
+        },
+        {
+            icon: Image,
+            text: 'Photos & Videos',
+            onClick: () => {
+                if(input.current){
+                    input.current.click()
+                }
+            },
+        }
+    ]
+    return (
+        <Popover open={open}>
+            <PopoverTrigger asChild>
+                {children}
+            </PopoverTrigger>
+            <PopoverContent
+            className='bg-white dark:bg-zinc-800 hidden tablets:block min-w-[160px] p-1 rounded-md shadow-lg w-auto'
+            align="end"
+            sideOffset={5}
+            >
+            <div className="flex flex-col">
+                {options.map(({ icon: Icon, text, onClick }, index) => (
+                <button
+                    key={index}
+                    type="button"
+                    className='flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded'
+                    onClick={() => {
+                        onClick();
+                    }}
+                >
+                    <Icon size={16} className='dark:text-gray-400'/>
+                    <span className='text-sm dark:text-white'>{text}</span>
+                </button>
+                ))}
+            </div>
+            </PopoverContent>
+        </Popover>
+    )
+}

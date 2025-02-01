@@ -1,13 +1,13 @@
 'use client'
 import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from 'react';
-import { AllChats, Attachment, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, msgStatus, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { Attachment, GroupMessageAttributes, MessageAttributes, msgStatus, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import Image from 'next/image';
-import { ChevronDown, Copy, Ellipsis, EllipsisVertical, Phone, Reply, Send, Settings, TextQuote, Trash2, Video, X } from 'lucide-react';
+import { ChevronDown, EllipsisVertical, Phone, Video } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from '../MessageTab';
 import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, setConversations, updateConversation, setMessages, addMessage, deleteMessage, updateMessage } from '@/redux/chatSlice';
+import { ConvoType, updateConversation, addMessage, updateMessage } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover"
 import { Input } from '@/components/ui/input';
 import ChatTextarea from '../ChatTextarea';
+import { setAttachments } from "@/redux/utilsSlice";
 
 interface NavigationState {
   chaT: string;
@@ -93,7 +94,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [attachments, setAttachments] = useState<File[]>([])
+  const { attachments } = useSelector((state: RootState) => state.utils);
 
   useEffect(() => {
     dispatch(showChat(''));
@@ -186,7 +187,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [fetchData, friendId, pid])
 
   const handleSendMessage = async (id: string) => {
-    if (newMessage.trim() === '') {
+    if (newMessage.trim() === '' && !attachments.length) {
       return; // Don't send empty messages or messages without attachments
     }
   
@@ -225,7 +226,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           reader.onerror = () => {
             reject(new Error(`Failed to read file: ${file.name}`));
           };
-          reader.readAsArrayBuffer(file);
+          reader.readAsArrayBuffer(file as unknown as Blob);
         });
       });
   
@@ -250,7 +251,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   
       // Reset the message input and attachments
       setNewMessage('');
-      setAttachments([]);
+      dispatch(setAttachments([]));
       closeQuote();
   
       // Scroll to the bottom of the chat
@@ -500,7 +501,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         )}
       </div>
 
-      <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote} setAttachments={setAttachments}/>
+      <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote}/>
       {children}
     </div>
   );

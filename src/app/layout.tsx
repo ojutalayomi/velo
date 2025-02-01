@@ -6,6 +6,7 @@ import './globals.css';
 import ClientComponents from "./clientComps";
 import React from "react";
 import Providers from "./providers";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "Velo App",
@@ -35,6 +36,7 @@ export default function RootLayout({ children, modal }: Readonly<{ children: Rea
             {modal}
           </div>
         </Providers>
+        <Toaster />
       </body>
     </html>
   );

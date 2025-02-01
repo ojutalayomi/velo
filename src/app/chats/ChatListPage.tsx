@@ -6,7 +6,6 @@ import { useUser } from '@/hooks/useUser';
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
-import { timeFormatter } from '@/templates/PostProps';
 import { updateLiveTime, updateConversation } from '@/redux/chatSlice';
 import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type';
 import { Pin } from 'lucide-react';

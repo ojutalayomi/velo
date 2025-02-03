@@ -12,10 +12,9 @@ import {
 } from "lucide-react";
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils"; // Assuming you're using shadcn/ui utils
-import { SerializableFile } from "@/redux/utilsSlice";
 
 interface DocCardProps {
-  file: SerializableFile;
+  file: File;
   className?: string;
 }
 
@@ -180,11 +179,11 @@ export const DocCard: React.FC<DocCardProps> = ({ file, className }) => {
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="w-full max-w-[70vw] bg-gradient-to-b from-white to-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <div className="w-full max-w-[70vw] bg-transparent p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
         <div className="flex flex-col items-center space-y-6">
           {/* Icon Container */}
           <div className="relative group">
-            <div className="w-24 h-24 backdrop-blur-lg rounded-2xl flex items-center justify-center shadow-xl 
+            <div className="w-24 h-24 backdrop-blur-lg bg-gradient-to-b from-white to-gray-50 rounded-2xl flex items-center justify-center shadow-xl 
                           group-hover:scale-110 transition-all duration-300 ease-in-out transform group-hover:rotate-3">
               <FileIcon className={cn("w-12 h-12", getIconColor)} />
             </div>
@@ -207,7 +206,7 @@ export const DocCard: React.FC<DocCardProps> = ({ file, className }) => {
             </h2>
             
             <div className="flex items-center justify-center gap-2">
-              <span className="min-w-28 text-sm text-gray-500 bg-gray-100 px-4 py-1 rounded-full">
+              <span className="min-w-28 text-sm text-gray-500 px-4 py-1 rounded-full">
                 {fileSize}
               </span>
               <span className="text-sm text-gray-400">

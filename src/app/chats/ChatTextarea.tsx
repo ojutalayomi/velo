@@ -11,10 +11,11 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import ImageDiv from "@/components/imageDiv";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { setToggleDialog, setAttachments, SerializableFile } from "@/redux/utilsSlice";
+import { setToggleDialog } from "@/redux/utilsSlice";
 import VideoDiv from "@/templates/videoDiv";
 import { DocCard } from "@/components/DocCard";
 import { toast } from "@/hooks/use-toast";
+import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 
 interface FileValidationConfig {
     maxFileSize: number; // in bytes
@@ -83,9 +84,11 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const inputRef = useRef<HTMLInputElement>(null)
     const dispatch = useDispatch();
-    const { toggleDialog, attachments } = useSelector((state: RootState) => state.utils);
+    const { toggleDialog } = useSelector((state: RootState) => state.utils);
     const [fileAccepts, setFileAccepts] = useState('')
     const [errors, setErrors] = useState<string[]>([]);
+    const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
+    const [txtButton, setTxtButton] = useState(false)
 
     useEffect(() => {
         const handleInput = () => {
@@ -106,14 +109,27 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
     }, []);
 
     useEffect(() => {
+        const handleInput = () => {
+            const textArea = textAreaRef.current;
+            if (textArea) {
+                textArea.style.height = '2.5rem';
+                textArea.style.height = `${textArea.scrollHeight}px`;
+                if(textArea.innerHTML !== '') setTxtButton(true)
+                else setTxtButton(false)
+            }
+        };
+  
         const textArea = textAreaRef.current;
-        if (textArea && !newMessage) {
-            textArea.style.height = '2.5rem';
+        if (textArea) {
+            textArea.addEventListener('input', handleInput);
+            return () => {
+                textArea.removeEventListener('input', handleInput);
+            };
         }
     }, [newMessage]);
 
     useEffect(() => {
-        if(attachments) {
+        if(attachments.length) {
             dispatch(setToggleDialog(true))
         }
     }, [attachments])
@@ -144,7 +160,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
     
         const newFiles = Array.from(files);
         const validationErrors: string[] = [];
-        const validFiles: SerializableFile[] = [];
+        const validFiles: File[] = [];
     
         // Check total number of files
         if (attachments.length + newFiles.length > FILE_VALIDATION_CONFIG.maxFiles) {
@@ -153,7 +169,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
               description: `Maximum ${FILE_VALIDATION_CONFIG.maxFiles} files allowed`,
               variant: 'destructive'
             });
-            dispatch(setAttachments([]));
+            clearFiles();
           return;
         }
     
@@ -174,14 +190,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
         newFiles.forEach(file => {
           try {
             validateFile(file, FILE_VALIDATION_CONFIG);
-            validFiles.push({
-                id: crypto.randomUUID(), // Generate unique ID
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                url: URL.createObjectURL(file), // Create URL for preview
-                lastModified: file.lastModified
-            });
+            validFiles.push(file);
           } catch (error) {
             if (error instanceof Error) {
               validationErrors.push(error.message);
@@ -199,11 +208,8 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
         }
     
         if (validFiles.length > 0) {
-          dispatch(setAttachments([...attachments, ...validFiles]));
-          toast({
-            title: '',
-            description: `Successfully added ${validFiles.length} files`
-          });
+            setFiles([...attachments, ...validFiles]);
+            
         }
     
         // Reset input
@@ -246,7 +252,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                 )}
                 {firstUrl && (
                     <div className="px-4 pb-2">
-                        <LinkPreview url={firstUrl} />
+                        <LinkPreview url={firstUrl} direction="row" />
                     </div>
                 )}
 
@@ -268,6 +274,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                     <Pop input={inputRef} setFileAccepts={setFileAccepts}/>
                     <div className="relative flex-1">
                         <Textarea
+                            id="txt"
                             placeholder="Type a message..."
                             value={newMessage}
                             ref={textAreaRef}
@@ -278,28 +285,30 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     if (e.shiftKey) {
-                                        e.preventDefault();
                                         return; // Allow new line when Shift+Enter
                                     }
+                                    
+                                    e.preventDefault(); // Prevent default for all Enter cases
+                                    
                                     if (newMessage.trim().length > 0) {
-                                        e.preventDefault();
                                         handleSendMessage(quote.message?._id);
+                                        dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
                                     }
                                 }
-                            }}
+                            }}                            
                             className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
                         />
                         <EmojiPicker onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
                             <button
                                 type="button"
-                                className="absolute inset-y-0 right-0 flex items-end p-3 hover:text-brand/80 rounded-full"
+                                className={`absolute inset-y-0 right-0 flex ${txtButton ? 'items-end' : 'items-center'} p-3 hover:text-brand/80 rounded-full`}
                             >
                                 <Smile size={20} className="flex-1 text-brand" />
                             </button>
                         </EmojiPicker>
                     </div>
                     <Button
-                        disabled={newMessage.length === 0}
+                        disabled={newMessage.length === 0 && attachments.length === 0}
                         onClick={() => handleSendMessage(quote.message?._id)}
                         className="!p-2 px-1 mb-1.5 h-auto dark:hover:bg-neutral-800 bg-transparent cursor-pointer text-white rounded-full transition-colors"
                     >
@@ -390,45 +399,54 @@ interface UploadDialogProps {
 
 const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, handleTyping, handleSendMessage}: UploadDialogProps) => {
     const dispatch = useDispatch();
-    const { toggleDialog, attachments } = useSelector((state: RootState) => state.utils);
+    const { toggleDialog } = useSelector((state: RootState) => state.utils);
+    const { files: attachments, setFiles, clearFiles } = useGlobalFileStorage();
 
     const removeFile = (index: number) => {
-        dispatch(setAttachments(attachments.filter((_, i) => i !== index)));
+        setFiles(attachments.filter((_, i) => i !== index));
         toast({
             title: 'File removed'
         });
     };
 
     return (
-        <Dialog open={toggleDialog} onOpenChange={() => dispatch(setToggleDialog(!toggleDialog))}>
+        <Dialog open={toggleDialog} 
+        onOpenChange={() => {
+            if (toggleDialog) {
+                dispatch(setToggleDialog(!toggleDialog))
+                clearFiles()
+            }
+        }}>
             <DialogTrigger className="hidden"></DialogTrigger>
-            <DialogContent className="flex flex-col w-screen h-screen sm:w-[90vw] max-w-none sm:h-[90vh]">
-                <DialogHeader className="">
-                    <DialogTitle>Preview</DialogTitle>
-                    <p className="text-xs text-gray-500 sm:hidden">
+            <DialogContent className="backdrop-blur-xl bg-transparent flex flex-col w-screen h-screen max-w-none">
+                <DialogHeader>
+                    <DialogTitle className="dark:text-white text-black">
+                        Preview
+                        <b className="block text-sm font-medium text-white dark:text-gray-700">
+                            Attach Files ({attachments.length}/{FILE_VALIDATION_CONFIG.maxFiles})
+                        </b>
+                    </DialogTitle>
+                    <p className="text-xs text-gray-500">
                         Max file size: {formatFileSize(FILE_VALIDATION_CONFIG.maxFileSize)}.
                         Total max size: {formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}.
                         Allowed types: {FILE_VALIDATION_CONFIG.allowedFileTypes.join(', ')}
                     </p>
                     <DialogDescription>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Attach Files ({attachments.length}/{FILE_VALIDATION_CONFIG.maxFiles})
-                        </label>
                     </DialogDescription>
                 </DialogHeader>
-                <div className="flex-1 flex rounded-md max-h-[80%] backdrop-blur-xl shadow-xl h-full">
+                <div className="flex-1 flex rounded-md max-h-[70%] backdrop-blur-xl shadow-xl h-full">
                     {inputRef.current?.files && (
                         <Carousel className="w-full flex flex-1 items-center max-h-full">
                             <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto p-6">
                             {attachments.map((File, key) => {
-                                const objectURL = File.url;
+                                const objectURL = URL.createObjectURL(File);
                                 const [_,fileType] = File.type.split('/')
-                                console.log(fileType)
+                                // console.log(fileType)
                                 const isImage = fileType === 'png' || fileType === 'jpeg' || fileType === 'jpeg'
                                 const isVideo = fileType === 'mp4' || fileType === 'mov' || fileType === 'mkv'
 
                                 return(
-                                    <CarouselItem key={key+objectURL} className="flex items-center justify-center w-full">
+                                    <CarouselItem key={key+objectURL} className="flex items-center justify-center h-full w-full">
                                         {
                                             isImage ?
                                                 <ImageDiv
@@ -459,10 +477,10 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                 </div>
                 <DialogFooter className="!flex-col items-center gap-2">
                     {/* Total Size Indicator */}
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-white dark:text-gray-600">
                         Total Size: {formatFileSize(attachments.reduce((acc, file) => acc + file.size, 0))}
                     </div>
-                    <div className="flex flex-1 items-end justify-between gap-2 w-full">
+                    <div className="flex flex-1 items-center justify-between gap-2 w-full sm:max-w-96">
                         <Pop input={inputRef} setFileAccepts={() => ".jpg, .jpeg, .png, .gif"}/>
                         <div className="relative flex-1">
                             <Textarea
@@ -476,12 +494,14 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         if (e.shiftKey) {
-                                            e.preventDefault();
                                             return; // Allow new line when Shift+Enter
                                         }
+                                        
+                                        e.preventDefault(); // Prevent default for all Enter cases
+                                        
                                         if (newMessage.trim().length > 0) {
-                                            e.preventDefault();
                                             handleSendMessage(quote.message?._id);
+                                            dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
                                         }
                                     }
                                 }}
@@ -490,15 +510,19 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                             <EmojiPicker onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
                                 <button
                                     type="button"
-                                    className="absolute inset-y-0 right-0 flex items-end p-3 hover:text-brand/80 rounded-full"
+                                    className="absolute inset-y-0 right-0 flex items-center p-3 hover:text-brand/80 rounded-full"
                                 >
                                     <Smile size={20} className="flex-1 text-brand" />
                                 </button>
                             </EmojiPicker>
                         </div>
                         <Button
-                            disabled={newMessage.length === 0}
-                            onClick={() => handleSendMessage(quote.message?._id)}
+                            disabled={newMessage.length === 0 && attachments.length === 0}
+                            onClick={() => {
+                                handleSendMessage(quote.message?._id)
+                                dispatch(setToggleDialog(!toggleDialog))
+                                console.log('send')
+                            }}
                             className="!p-2 px-1 mb-1.5 h-auto dark:hover:bg-neutral-800 bg-transparent cursor-pointer text-white rounded-full transition-colors"
                         >
                             <Send size={20} className="text-brand"/>

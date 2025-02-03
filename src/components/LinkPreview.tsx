@@ -4,6 +4,7 @@ import Image from 'next/image';
 
 interface LinkPreviewProps {
   url: string;
+  direction?: 'row' | 'col'
 }
 
 interface Metadata {
@@ -13,7 +14,7 @@ interface Metadata {
   favicon?: string;
 }
 
-export function LinkPreview({ url }: LinkPreviewProps) {
+export function LinkPreview({ url, direction }: LinkPreviewProps) {
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchPreviewRef = useRef(false);
@@ -45,7 +46,7 @@ export function LinkPreview({ url }: LinkPreviewProps) {
   if (loading) return null;
   if (!metadata) return null;
 
-  return (
+  if(direction) return (
     <a 
       href={url} 
       target="_blank" 
@@ -71,6 +72,42 @@ export function LinkPreview({ url }: LinkPreviewProps) {
           {metadata.description && (
             <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
               {metadata.description}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">
+            {url}
+          </p>
+        </div>
+      </div>
+    </a>
+  );
+
+  return (
+    <a 
+      href={url} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className="block -mb-1 max-w-min rounded-lg backdrop-blur-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800"
+    >
+      <div className="flex flex-col items-center p-3 gap-3 h-full">
+        {(metadata.image || metadata.favicon) && (
+          <div className="flex flex-1 w-full">
+            <img
+              src={metadata.image || metadata.favicon}
+              alt={metadata.title || 'Link preview'}
+              width={40}
+              height={40}
+              className="aspect-square flex-1 rounded object-cover"
+            />
+          </div>
+        )}
+        <div className="flex-1 max-w-full">
+          {metadata.title && (
+            <h3 className="text-sm font-medium truncate">{metadata.title.substring(0,35)}</h3>
+          )}
+          {metadata.description && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+              {metadata.description.substring(0,20)}
             </p>
           )}
           <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">

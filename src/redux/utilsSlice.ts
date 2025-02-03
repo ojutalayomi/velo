@@ -13,12 +13,14 @@ export interface SerializableFile extends Partial<Blob> {
 
 interface UtilsState {
   toggleDialog: boolean;
-  attachments: SerializableFile[];
+  toggleMediaDialog: boolean,
+  selectedMessages: string[];
 }
 
 const initialState: UtilsState = {
   toggleDialog: false,
-  attachments: [],
+  toggleMediaDialog: false,
+  selectedMessages: [],
 };
 
 const utilSlice = createSlice({
@@ -28,20 +30,23 @@ const utilSlice = createSlice({
     setToggleDialog: (state, action: PayloadAction<boolean>) => {
       state.toggleDialog = action.payload;
     },
-    setAttachments: (state, action: PayloadAction<SerializableFile[]>) => {
-      state.attachments = action.payload;
+    setToggleMediaDialog: (state, action: PayloadAction<boolean>) => {
+      state.toggleMediaDialog = action.payload;
     },
-    addAttachment: (state, action: PayloadAction<SerializableFile>) => {
-      state.attachments.push(action.payload);
+    setSelectedMessages: (state, action: PayloadAction<string[]>) => {
+      state.selectedMessages = action.payload;
     },
-    removeAttachment: (state, action: PayloadAction<string>) => {
-      state.attachments = state.attachments.filter(file => file.id !== action.payload);
+    addSelectedMessage: (state, action: PayloadAction<string>) => {
+      state.selectedMessages.push(action.payload);
     },
-    clearAttachments: (state) => {
-      state.attachments = [];
+    removeSelectedMessage: (state, action: PayloadAction<string>) => {
+      state.selectedMessages = state.selectedMessages.filter(msg => msg !== action.payload);
+    },
+    clearSelectedMessages: (state) => {
+      state.selectedMessages = [];
     },
   },
 });
 
-export const { setToggleDialog, setAttachments, addAttachment, removeAttachment, clearAttachments } = utilSlice.actions;
+export const { setToggleDialog, setToggleMediaDialog, setSelectedMessages, addSelectedMessage, removeSelectedMessage, clearSelectedMessages } = utilSlice.actions;
 export default utilSlice.reducer;

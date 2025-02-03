@@ -18,6 +18,7 @@ import { useSocket } from '@/app/providers';
 import VideoChat from '../components/CallPage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ConfirmCall } from '@/components/callConfirmation';
+import { FileStorageProvider } from '@/hooks/useFileStorage';
 
 interface ClientComponentsProps {
     children: React.ReactNode;
@@ -188,6 +189,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
 
     return(
         <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
+            <FileStorageProvider>
             {error && (
                 <Alert variant="destructive" className="mb-4">
                     <AlertDescription>{error}</AlertDescription>
@@ -218,7 +220,8 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                     setMoreStatus={setMoreStatus} 
                     /> 
                 : null
-            }    
+            } 
+            </FileStorageProvider>   
         </ErrorBoundary>
     )
 }

@@ -14,7 +14,7 @@ const ImageDiv: React.FC<ImageProps> = ({ media, link = '', host }) => {
                         width={1000} 
                         className="cursor-pointer object-contain max-h-[calc(100vh-200px)] w-auto h-auto" 
                         alt=""
-                        style={{ maxWidth: '100%' }}
+                        style={{ maxHeight: '100%' ,maxWidth: '100%' }}
                     />
                 </Link>
             ) : (
@@ -24,7 +24,7 @@ const ImageDiv: React.FC<ImageProps> = ({ media, link = '', host }) => {
                     width={1000} 
                     className="cursor-pointer object-contain max-h-[calc(100vh-200px)] w-auto h-auto" 
                     alt=""
-                    style={{ maxWidth: '100%' }}
+                    style={{ maxHeight: '100%' ,maxWidth: '100%' }}
                 />
             )}
         </>

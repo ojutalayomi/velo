@@ -1,8 +1,8 @@
 'use client'
-import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
+import React, { MouseEventHandler, TouchEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Check, CheckCheck, Copy, Ellipsis, Loader, Reply, Send, TextQuote, Trash2, X, SmilePlus } from 'lucide-react';
-import { AllChats, ChatAttributes, ChatSettings, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { Check, CheckCheck, Copy, Ellipsis, Loader, Reply, Send, TextQuote, Trash2, X, SmilePlus, CircleCheck, CircleX } from 'lucide-react';
+import { GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 import { updateMessageReactions, deleteMessage, updateLiveTime, updateConversation, editMessage } from '@/redux/chatSlice'; 
@@ -26,6 +26,8 @@ import {
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { RootState } from '@/redux/store';
 import { LinkPreview } from '@/components/LinkPreview';
+import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
+import { MediaCollage } from './FilesView';
 
 type Message = {
   _id: string,
@@ -90,6 +92,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const [messageContent,setMessageContent] = useState<string>(message.content.replace('≤≤≤',''));
   const [time, setTime] = useState<string>(updateLiveTime('chat-time', message.timestamp));
   const socket = useSocket();
+  const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const MAX_LENGTH = 300; // Adjust this number to change when the "Read more" appears
@@ -107,15 +110,15 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const renderStatusIcon = (status: string) => {
     switch (status) {
       case 'sending':
-        return <Loader size={15} className='animate-spin'/>;
+        return <Loader size={15} className='animate-spin  min-w-3'/>;
       case 'sent':
-        return <Check size={15}/>;
+        return <Check size={15} className=' min-w-3'/>;
       case 'delivered':
-        return <CheckCheck size={15} className='dark:text-gray-400'/>;
+        return <CheckCheck size={15} className='dark:text-gray-400  min-w-3'/>;
       case 'failed':
-        return <b className='text-red-800'>Not sent!</b>;
+        return <b className='text-red-800  min-w-3'>Not sent!</b>;
       default:
-        return <CheckCheck size={15} className='text-green-500'/>;
+        return <CheckCheck size={15} className='text-green-500  min-w-3'/>;
     }
   }
 
@@ -146,6 +149,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   };
 
   // Update the optionss array to use the defined type
+  const IsSelected = selectedMessages.includes(String(message._id))
   const optionss: Option[] = [
     {
       icon: TextQuote,
@@ -175,7 +179,12 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
           dispatch(deleteMessage(message._id as string));
         }
       }
-    }] : [])
+    }] : []),
+    {
+      icon: IsSelected ? CircleX : CircleCheck,
+      text: IsSelected ? 'Unselect message': 'Select message',
+      onClick: () => dispatch(IsSelected ? removeSelectedMessage(message._id as string) : addSelectedMessage(message._id as string))
+    }
   ];
 
   const onEmojiClick = (emojiObject: any) => {
@@ -193,13 +202,61 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const urls = extractUrls(messageContent);
   const firstUrl = urls[0]; // Only show preview for the first URL
 
+  const handleTouch = (e: TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      const longPressTimer = setTimeout(() => {
+        dispatch(IsSelected ? removeSelectedMessage(message._id as string) : addSelectedMessage(message._id as string));
+      }, 500);
+      
+      const cancelLongPress = () => {
+        clearTimeout(longPressTimer);
+      };
+
+      document.addEventListener('touchend', cancelLongPress);
+      document.addEventListener('touchmove', cancelLongPress);
+
+      return () => {
+        document.removeEventListener('touchend', cancelLongPress);
+        document.removeEventListener('touchmove', cancelLongPress);
+      };
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dispatch(IsSelected ? removeSelectedMessage(message._id as string) : addSelectedMessage(message._id as string))
+  }
+
+  const handleTouch1 = (e: TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      const longPressTimer = setTimeout(() => setOpen(true), 500);
+      const cancelLongPress = () => clearTimeout(longPressTimer);
+      document.addEventListener('touchend', cancelLongPress);
+      document.addEventListener('touchmove', cancelLongPress);
+      return () => {
+        document.removeEventListener('touchend', cancelLongPress);
+        document.removeEventListener('touchmove', cancelLongPress);
+      };
+    }
+  }
+
+  const handleContextMenu1 = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setOpen(true);
+  }
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (IsSelected) dispatch(removeSelectedMessage(message._id as string))
+    if(selectedMessages.length) dispatch(addSelectedMessage(message._id as string))
+  }
 
   if (chat === "Groups") {
     return (
       <>
-        <div id={message._id as string} className={`${senderId === userdata._id ? "items-end" : "items-start"} dark:text-gray-400 flex flex-col mb-4 transition-colors duration-300`}>
+        <div id={message._id as string} onClick={handleClick} onTouchStart={handleTouch} onContextMenu={handleContextMenu} className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && 'bg-brand/20 py-2'} dark:text-gray-400 flex flex-col mb-4 transition-colors duration-300`}>
 
-          <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-start relative max-w-full`}>
+          <div className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-start relative`}>
             {/* Avatar for other users */}
             {senderId !== userdata._id && (
               <Image 
@@ -211,10 +268,14 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               />
             )}
 
-            <div className="flex flex-col gap-1 max-w-[85%]">
+            <div className="flex flex-col gap-1 flex-1 max-w-[90%]">
               {/* Quote and Link Preview */}
               {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
               {firstUrl && <LinkPreview url={firstUrl} />}
+
+              {message.attachments.length && (
+                <MediaCollage media={message.attachments}/>
+              )}
 
               {/* Message bubble */}
               <div
@@ -223,22 +284,8 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                     ? "bg-brand text-white rounded-tr-none" 
                     : "bg-gray-100 dark:bg-zinc-800 rounded-tl-none"
                 }`}
-                onTouchStart={(event) => {
-                  if (event.touches.length === 1) {
-                    const longPressTimer = setTimeout(() => setOpen(true), 500);
-                    const cancelLongPress = () => clearTimeout(longPressTimer);
-                    document.addEventListener('touchend', cancelLongPress);
-                    document.addEventListener('touchmove', cancelLongPress);
-                    return () => {
-                      document.removeEventListener('touchend', cancelLongPress);
-                      document.removeEventListener('touchmove', cancelLongPress);
-                    };
-                  }
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setOpen(true);
-                }}
+                onTouchStart={handleTouch1}
+                onContextMenu={handleContextMenu1}
               >
                 {/* Sender name for other users */}
                 {senderId !== userdata._id && (
@@ -325,15 +372,19 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
   return(
     <>
-      <div id={message._id as string} className={`${senderId === userdata._id ? "items-end" : "items-start"} dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
+      <div id={message._id as string} onClick={handleClick} onTouchStart={handleTouch} onContextMenu={handleContextMenu} className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && 'bg-brand/20 py-2'} dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
         {/* Quote and Link Preview */}
         {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
 
         {/* Main Message Container */}
-        <div className={`flex flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative max-w-full`}>
+        <div className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative`}>
 
-          <div className="flex flex-col gap-1 max-w-[85%]">
+          <div className="flex flex-col gap-1 flex-1 max-w-[90%]">
             {firstUrl && <LinkPreview url={firstUrl} />}
+
+            {message.attachments.length && (
+              <MediaCollage media={message.attachments}/>
+            )}
 
             {/* Message Bubble */}
             <div
@@ -342,30 +393,8 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                   ? "bg-brand rounded-br-none text-white" 
                   : "bg-gray-50 rounded-bl-none dark:bg-zinc-800/80 dark:text-white"
               } text-left`}
-              onTouchStart={(event) => {
-                if (event.touches.length === 1) {
-                  const touch = event.touches[0];
-                  const longPressTimer = setTimeout(() => {
-                    setOpen(true);
-                  }, 500);
-                  
-                  const cancelLongPress = () => {
-                    clearTimeout(longPressTimer);
-                  };
-
-                  document.addEventListener('touchend', cancelLongPress);
-                  document.addEventListener('touchmove', cancelLongPress);
-
-                  return () => {
-                    document.removeEventListener('touchend', cancelLongPress);
-                    document.removeEventListener('touchmove', cancelLongPress);
-                  };
-                }
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setOpen(true);
-              }}
+              onTouchStart={handleTouch1}
+              onContextMenu={handleContextMenu1}
             >
               {/* Message Content */}
               <div className="">
@@ -516,7 +545,8 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
                 key={index}
                 type="button"
                 className='flex w-full items-center gap-3 py-3 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded px-2'
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault()
                   onClick();
                   handleDrawerChange(false);
                 }}
@@ -556,7 +586,8 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
                 key={index}
                 type="button"
                 className='flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded'
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault()
                   onClick();
                   handlePopoverChange(false);
                 }}

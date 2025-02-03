@@ -19,7 +19,12 @@ import {
 } from "@/components/ui/popover"
 import { Input } from '@/components/ui/input';
 import ChatTextarea from '../ChatTextarea';
-import { setAttachments } from "@/redux/utilsSlice";
+import { useGlobalFileStorage } from '@/hooks/useFileStorage';
+import { toast } from '@/hooks/use-toast';
+import path from 'path';
+import { timeFormatter } from '@/lib/utils';
+import { clearSelectedMessages } from '@/redux/utilsSlice';
+import { MultiSelect } from '../MultiSelect';
 
 interface NavigationState {
   chaT: string;
@@ -94,11 +99,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const { attachments } = useSelector((state: RootState) => state.utils);
+  const { files: attachments, clearFiles } = useGlobalFileStorage();
+  const { selectedMessages } = useSelector((state: RootState) => state.utils);
 
   useEffect(() => {
     dispatch(showChat(''));
   }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(clearSelectedMessages())
+  }, [router.push]);
 
   useEffect(() => {
     if (convo && convo.unread !== 0 && !convoLoading && socket) {
@@ -187,7 +197,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [fetchData, friendId, pid])
 
   const handleSendMessage = async (id: string) => {
-    if (newMessage.trim() === '' && !attachments.length) {
+    if (newMessage.trim() === '' && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
   
@@ -209,32 +219,44 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         quotedMessage: id,
         status: 'sending' as const,
       };
-  
-      // Read and process all files
-      const fileReadPromises = attachments.map((file) => {
-        return new Promise<void>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const fileData = reader.result as ArrayBuffer;
-            msg.attachments.push({
-              name: file.name,
-              type: file.type,
-              data: Array.from(new Uint8Array(fileData)), // Convert ArrayBuffer to array
-            });
-            resolve();
-          };
-          reader.onerror = () => {
-            reject(new Error(`Failed to read file: ${file.name}`));
-          };
-          reader.readAsArrayBuffer(file as unknown as Blob);
-        });
+      
+      if(attachments.length){
+        // Read and process all files
+        const fileReadPromises = attachments.map((file) => {
+          const objectURL = URL.createObjectURL(file);
+          return new Promise<void>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const fileData = reader.result as ArrayBuffer;
+              msg.attachments.push({
+                name: timeFormatter() + '/' + Math.round(Math.random() * 100000000000) + path.extname(file.name),
+                type: file.type,
+                data: Array.from(new Uint8Array(fileData)), // Convert ArrayBuffer to array
+              });
+              resolve();
+            };
+            reader.onerror = () => {
+              reject(new Error(`Failed to read file: ${file.name}`));
+            };
+            reader.readAsArrayBuffer(file as unknown as Blob);
+          });
       });
   
       // Wait for all files to be read
       await Promise.all(fileReadPromises);
+      }
   
       // Dispatch actions to update the state
-      dispatch(addMessage(msg));
+      const msgCopy = {...msg}
+      msgCopy.attachments = msgCopy.attachments.map((m, index) => {
+        const objectURL = URL.createObjectURL(attachments[index]);
+        return {
+          url: objectURL,
+          ...m
+        }
+      })
+      
+      dispatch(addMessage(msgCopy));
       dispatch(updateConversation({
         id: msg._id,
         updates: {
@@ -246,12 +268,18 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   
       // Emit the message via Socket.IO
       if (socket) {
-        socket.emit('chatMessage', msg);
+        try {
+          socket.emit('chatMessage', msg);
+          // console.log('Message emitted:', msg);
+        } catch (error) {
+          console.error('Socket emission error:', error);
+          throw new Error('Failed to emit message');
+        }
       }
   
       // Reset the message input and attachments
       setNewMessage('');
-      dispatch(setAttachments([]));
+      clearFiles();
       closeQuote();
   
       // Scroll to the bottom of the chat
@@ -260,7 +288,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       }, 1000);
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -269,6 +301,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }
 
   const handleClick = () => {
+    dispatch(clearSelectedMessages())
     dispatch(showChat('hidden'));
     router.push('/chats');
   }
@@ -501,7 +534,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         )}
       </div>
 
+      {
+      selectedMessages.length ?
+      <MultiSelect /> :
       <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote}/>
+      }
       {children}
     </div>
   );

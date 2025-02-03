@@ -382,9 +382,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
           <div className="flex flex-col gap-1 flex-1 max-w-[90%]">
             {firstUrl && <LinkPreview url={firstUrl} />}
 
-            {message.attachments.length && (
-              <MediaCollage media={message.attachments}/>
-            )}
+            {message.attachments.length && <MediaCollage media={message.attachments}/>}
 
             {/* Message Bubble */}
             <div

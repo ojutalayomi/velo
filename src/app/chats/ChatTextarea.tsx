@@ -437,7 +437,7 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                 <div className="flex-1 flex rounded-md max-h-[70%] backdrop-blur-xl shadow-xl h-full">
                     {inputRef.current?.files && (
                         <Carousel className="w-full flex flex-1 items-center max-h-full">
-                            <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto p-6">
+                            <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto">
                             {attachments.map((File, key) => {
                                 const objectURL = URL.createObjectURL(File);
                                 const [_,fileType] = File.type.split('/')

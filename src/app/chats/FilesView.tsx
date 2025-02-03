@@ -31,7 +31,7 @@ export const MediaCollage = ({media}:{media: Attachment[]}) => {
                         <div 
                         key={m.name}
                         onClick={() => toggleMediaDialog(true)} 
-                        className={`${(key === 2 && mediaLength === 3) ? 'col-span-2 row-span-1 aspect-video' : 'aspect-square'} relative cursor-pointer bg-white rounded-lg overflow-hidden group hover:ring-2 hover:ring-gray-300 transition`}>
+                        className={`${(key === 2 && mediaLength === 3) ? 'col-span-2 row-span-1 aspect-video' : 'aspect-square'} ${mediaLength === 1 && 'col-span-2'} relative cursor-pointer bg-white rounded-lg overflow-hidden group hover:ring-2 hover:ring-gray-300 transition`}>
                             <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
                             {/* <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white">8:21 PM</div> */}
                         </div>
@@ -102,7 +102,7 @@ const MediaDialog = ({files, mediaDialog, toggleMediaDialog}: {files: Attachment
                 <div className="flex-1 flex rounded-md max-h-[90%] backdrop-blur-xl shadow-xl h-full">
                     {files && (
                         <Carousel className="w-full flex flex-1 items-center max-h-full">
-                            <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto p-6">
+                            <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto">
                             {files.map((file, key) => {
                                 const objectURL = file.url as string;
                                 const [_,fileType] = file.type.split('/')

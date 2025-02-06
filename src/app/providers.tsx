@@ -58,9 +58,8 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     socketIo.on('userStatus', (data) => {
       // console.log('User status updated:', data);
       // Update UI with new status
-      if(!onlineUsers.includes(data.userId)){
-        dispatch(addOnlineUser(data.userId))
-      }
+      if(onlineUsers.includes(data.userId)) return
+      dispatch(addOnlineUser(data.userId))
     });
 
     socketIo.on('disconnect', (reason: any) => {

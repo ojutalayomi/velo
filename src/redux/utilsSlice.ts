@@ -45,6 +45,7 @@ const utilSlice = createSlice({
       state.selectedMessages.push(action.payload);
     },
     addOnlineUser: (state, action: PayloadAction<string>) => {
+      if (state.onlineUsers.includes(action.payload)) return
       state.onlineUsers.push(action.payload);
     },
     removeSelectedMessage: (state, action: PayloadAction<string>) => {

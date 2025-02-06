@@ -1,11 +1,11 @@
 'use client'
-import React, { MouseEventHandler, TouchEvent, useEffect, useState } from 'react';
+import React, { TouchEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Check, CheckCheck, Copy, Ellipsis, Loader, Reply, Send, TextQuote, Trash2, X, SmilePlus, CircleCheck, CircleX } from 'lucide-react';
-import { GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { Check, CheckCheck, Copy, Ellipsis, Loader, TextQuote, Trash2, CircleCheck, CircleX } from 'lucide-react';
+import { GroupMessageAttributes, MessageAttributes } from '@/lib/types/type';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { updateMessageReactions, deleteMessage, updateLiveTime, updateConversation, editMessage } from '@/redux/chatSlice'; 
+import { updateMessageReactions, deleteMessage, updateMessage, updateLiveTime, updateConversation } from '@/redux/chatSlice'; 
 import { useSocket } from '../providers';
 import {
   Popover,
@@ -17,7 +17,6 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -171,7 +170,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
         if(!message.content.endsWith('≤≤≤')){
           if(socket){
             dispatch(updateConversation({ id: message.chatId as string, updates: { lastMessage: 'This message was deleted' } }));
-            dispatch(editMessage({id: message._id as string, content: 'You deleted this message.≤≤≤'}))
+            dispatch(updateMessage({ id: message._id as string, updates: { attachments: [], content: 'You deleted this message.≤≤≤' } }));
             openOptions(false);
             socket.emit('updateConversation',{ id: message._id, updates: { deleted: true } })
           }

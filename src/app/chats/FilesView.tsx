@@ -201,7 +201,7 @@ const MediaDialog = ({files, mediaDialog, toggleMediaDialog}: {files: Attachment
             }
         }}>
             <DialogTrigger className="hidden"></DialogTrigger>
-            <DialogContent className="backdrop-blur-xl bg-transparent border-none flex flex-col w-screen h-screen max-w-none">
+            <DialogContent className="backdrop-blur-xl bg-transparent border-none flex flex-col gap-0 justify-evenly w-screen h-screen max-w-none">
                 <DialogHeader>
                     <DialogTitle className="text-white">
                         Preview
@@ -210,7 +210,7 @@ const MediaDialog = ({files, mediaDialog, toggleMediaDialog}: {files: Attachment
                         Files ({current}/{count})
                     </DialogDescription>
                 </DialogHeader>
-                <div className="flex-1 flex rounded-md max-h-[90%] backdrop-blur-xl shadow-xl h-full">
+                <div className="flex-1 flex rounded-md max-h-[85%] backdrop-blur-xl shadow-xl h-full">
                     {files && (
                         <Carousel setApi={setApi} className="w-full flex flex-1 items-center max-h-full">
                             <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto">

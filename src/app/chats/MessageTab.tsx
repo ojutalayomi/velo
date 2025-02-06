@@ -268,14 +268,15 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               />
             )}
 
-            <div className="flex flex-col gap-1 flex-1 max-w-[90%]">
+            <div className={`flex flex-col gap-1 flex-1 max-w-full`}>
               {/* Quote and Link Preview */}
               {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
               {firstUrl && <LinkPreview url={firstUrl} />}
 
-              {message.attachments.length && (
+              {message.attachments.length ? (
                 <MediaCollage media={message.attachments}/>
-              )}
+              )
+              : <></>}
 
               {/* Message bubble */}
               <div
@@ -379,10 +380,10 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
         {/* Main Message Container */}
         <div className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative`}>
 
-          <div className="flex flex-col gap-1 flex-1 max-w-[90%]">
+          <div className={`flex flex-col gap-1 flex-1 max-w-full`}>
             {firstUrl && <LinkPreview url={firstUrl} />}
 
-            {message.attachments.length && <MediaCollage media={message.attachments}/>}
+            {message.attachments.length ? <MediaCollage media={message.attachments}/> : <></>}
 
             {/* Message Bubble */}
             <div

@@ -10,6 +10,7 @@ import { updateLiveTime, updateConversation } from '@/redux/chatSlice';
 import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type';
 import { Pin } from 'lucide-react';
 import { useSocket } from '../providers';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
@@ -196,23 +197,26 @@ const Card: React.FC<Props> = ({chat}) => {
         </div>
       )}
       <div className="relative">
-        <Image 
-        src={
-          chat.displayPicture  
-          ?  (
-            chat.displayPicture.includes('ila-') 
-            ? '/default.jpeg'
-            : url +  chat.displayPicture
-          )
-          : '/default.jpeg'
-        }
-        onClick={(e) => {
-          e.preventDefault();
-          fullscreen();
-        }}
-        height={40} width={40} alt={chat.name} 
-        className="w-12 h-12 min-w-11 rounded-full" 
-        />
+        <Avatar>
+          <AvatarFallback>{chat.name.slice(0,2)}</AvatarFallback>
+          <AvatarImage
+          src={
+            chat.displayPicture  
+            ?  (
+              chat.displayPicture.includes('ila-') 
+              ? ''
+              : url +  chat.displayPicture
+            )
+            : ''
+          }
+          onClick={(e) => {
+            e.preventDefault();
+            fullscreen();
+          }}
+          height={40} width={40} alt={chat.name} 
+          className="w-10 h-10 min-w-10 rounded-full" 
+          />
+        </Avatar>
         {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] && (
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
         )}

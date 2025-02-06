@@ -118,6 +118,8 @@ export type Attachment = {
     type: string; // MIME type (e.g., "image/png")
     data: number[]; // File content as an array of bytes (Uint8Array converted to number[])
     url?: string;
+    size? : number;
+    lastModified?: number;
 }
 
 export interface MessageAttributes {

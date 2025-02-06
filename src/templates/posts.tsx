@@ -13,6 +13,7 @@ import { Copy, Delete, Ellipsis, Flag, MessageCircleX, Minus, Save, ShieldX, Use
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from '@/components/ui/button';
 import MediaSlide from './mediaSlides';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type PostComponentProps = Post | PostProps;
 
@@ -118,9 +119,12 @@ const Posts: React.FC<PostComponentProps> = (props) => {
           <div className='blog-top-left'>
             <div className={ postData.Verified ? 'blogger-img v' : 'blogger-img'}>
               <Link href={`/${postData.Username}/photo`} shallow>
-                <Image 
-                  src={postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture}
-                  className='pdp cursor-pointer' width={35} height={35} alt='blogger' />
+                <Avatar>
+                  <AvatarFallback>{postData.NameOfPoster.slice(0,2)}</AvatarFallback>
+                  <AvatarImage
+                  className='pdp cursor-pointer w-9 h-9' alt='blogger' 
+                  src={postData.DisplayPicture.includes('https') || postData.DisplayPicture.includes('http') ? postData.DisplayPicture : "https://s3.amazonaws.com/profile-display-images/" + postData.DisplayPicture}/>
+                </Avatar>
               </Link>
             </div>
             <div className='blog-maker'>

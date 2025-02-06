@@ -12,9 +12,10 @@ import {
 } from "lucide-react";
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils"; // Assuming you're using shadcn/ui utils
+import { Attachment } from "@/lib/types/type";
 
 interface DocCardProps {
-  file: File;
+  file: File | Attachment;
   className?: string;
 }
 
@@ -40,7 +41,7 @@ export const DocCard: React.FC<DocCardProps> = ({ file, className }) => {
     }, [file.type]);
 
     const fileSize = useMemo(() => {
-        return formatFileSize(file.size);
+        if (file.size) return formatFileSize(file.size);
     }, [file.size]);
 
     const FileIcon = useMemo(() => {
@@ -209,9 +210,11 @@ export const DocCard: React.FC<DocCardProps> = ({ file, className }) => {
               <span className="min-w-28 text-sm text-gray-500 px-4 py-1 rounded-full">
                 {fileSize}
               </span>
-              <span className="text-sm text-gray-400">
-                {new Date(file.lastModified).toLocaleDateString()}
-              </span>
+              {file.lastModified && (
+                <span className="text-sm text-gray-400">
+                  {new Date(file.lastModified).toLocaleDateString()}
+                </span>
+              )}
             </div>
           </div>
         </div>

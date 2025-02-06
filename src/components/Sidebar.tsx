@@ -92,8 +92,8 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
       <div className='flex-1 overflow-auto'>
         {memoizedSidebarItems}
       </div>
-      <div className="px-2 mobile:flex mobile:justify-center">
-        <div className="tablets1:flex hidden justify-between items-center bg-gray-100 dark:bg-zinc-900 dark:text-gray-200 p-1 rounded-full shadow-bar dark:shadow-bar-dark">
+      <div className="px-2 flex justify-center 900px:block">
+        <div className="900px:flex hidden justify-between items-center bg-gray-100 dark:bg-zinc-900 dark:text-gray-200 p-1 rounded-full shadow-bar dark:shadow-bar-dark">
           <button
             onClick={() => darkMode(false)}
             className={`flex gap-1 items-center flex-1 py-2 px-4 rounded-full ${!isDarkMode ? 'bg-white dark:bg-zinc-600 shadow-bar dark:shadow-bar-dark' : ''}`}
@@ -107,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
             <Moon size={20} className="inline" /> Dark
           </button>
         </div>
-        <button onClick={toggleDarkMode} className="tablets1:hidden p-2 bg-gray-100 dark:bg-gray-700 rounded-full shadow-bar dark:shadow-bar-dark">
+        <button onClick={toggleDarkMode} className="900px:hidden p-2 bg-gray-100 dark:bg-gray-700 rounded-full shadow-bar dark:shadow-bar-dark">
           {isDarkMode ? <Moon size={20} className="mx-auto" /> : <Sun size={20} className="mx-auto" />}
         </button>
       </div>

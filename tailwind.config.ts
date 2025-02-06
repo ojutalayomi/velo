@@ -101,6 +101,7 @@ const config: Config = {
   		}
   	},
   	screens: {
+		'900px': '900px',
   		tablets: '500px',
 		sm: '640px',
 		md: '768px',

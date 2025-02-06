@@ -94,25 +94,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
         const handleInput = () => {
             const textArea = textAreaRef.current;
             if (textArea) {
-                textArea.style.height = '40px';
-                textArea.style.height = `${textArea.scrollHeight === 41 ? 40 : textArea.scrollHeight}px`;
-            }
-        };
-  
-        const textArea = textAreaRef.current;
-        if (textArea) {
-            textArea.addEventListener('input', handleInput);
-            return () => {
-                textArea.removeEventListener('input', handleInput);
-            };
-        }
-    }, []);
-
-    useEffect(() => {
-        const handleInput = () => {
-            const textArea = textAreaRef.current;
-            if (textArea) {
-                textArea.style.height = '2.5rem';
+                textArea.style.height = '38px';
                 textArea.style.height = `${textArea.scrollHeight}px`;
                 if(textArea.innerHTML !== '') setTxtButton(true)
                 else setTxtButton(false)
@@ -126,7 +108,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                 textArea.removeEventListener('input', handleInput);
             };
         }
-    }, [newMessage]);
+    }, []);
 
     useEffect(() => {
         if(attachments.length) {

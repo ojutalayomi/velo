@@ -123,7 +123,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                   {userdata.username && (
                     <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === userdata.username ? 'active' : ''}`} data-route={userdata.username} onClick={() => handleClick(userdata.username)}>
                       <User size={25}/>
-                      <div className='myprofile rt'>@{userdata.username + "'s"} Profile</div>
+                      <div className='myprofile rt'>@{userdata.username}</div>
                     </div>
                   )}
                   <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'user-interface' ? 'active' : ''}`} data-route='user-interface' onClick={() => handleClick('user-interface')}>

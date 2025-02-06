@@ -658,7 +658,7 @@ body #root #sidebar .sidebar .sidebar-icon {
   gap: 10px;
   margin: 0.5em 0;
 }
-@media (min-width: 769px) {
+@media (min-width: 900px) {
   body #root #sidebar .sidebar .sidebar-icon {
     align-items: center;
     display: flex !important;
@@ -669,7 +669,7 @@ body #root #sidebar .sidebar .sidebar-icon {
 body #root #sidebar .sidebar .sidebar-icon .rt {
   display: none;
 }
-@media (min-width: 769px) {
+@media (min-width: 900px) {
   body #root #sidebar .sidebar .sidebar-icon .rt {
     display: block;
   }

@@ -23,9 +23,9 @@ import { useGlobalFileStorage } from '@/hooks/useFileStorage';
 import { toast } from '@/hooks/use-toast';
 import path from 'path';
 import { timeFormatter } from '@/lib/utils';
-import { clearSelectedMessages, setSelectedMessages } from "@/redux/utilsSlice";
-import { Button } from '@/components/ui/button';
+import { clearSelectedMessages } from "@/redux/utilsSlice";
 import { MultiSelect } from '../../MultiSelect';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface NavigationState {
   chaT: string;
@@ -200,7 +200,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       // Read and process all files
       if(attachments.length){
         const fileReadPromises = attachments.map((file) => {
-          const objectURL = URL.createObjectURL(file);
           return new Promise<void>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -435,17 +434,20 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           ) : (
             <>
               <div className="relative">
-                <Image 
+                <Avatar className='size-20'>
+                  <AvatarFallback className='capitalize'>{group?.name?.slice(0,2)}</AvatarFallback>
+                  <AvatarImage 
                   src={
                     group?.groupDisplayPicture
                       ? url + group.groupDisplayPicture
-                      : '/default.jpeg'
+                      : ''
                   } 
                   className='displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover' 
                   width={80} 
                   height={80} 
-                  alt='Display Picture'
-                />
+                  alt='Display Picture' 
+                  />
+                </Avatar>
                 {/* {convo?.online && (
                   <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-zinc-900"></div>
                 )} */}

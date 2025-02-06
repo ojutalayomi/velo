@@ -141,11 +141,11 @@ export const UserSection = forwardRef<HTMLDivElement, {
         <div className='dark:text-slate-200 flex flex-col gap-4 px-1 py-2'>
           <p className='flex items-center hover:text-brand'>
             <LogIn size={25} className="mr-2" />
-            <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='hidden tablets1:!flex'>Log in</Link>
+            <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='hidden 900px:!flex'>Log in</Link>
           </p>
           <p className='flex items-center hover:text-brand'>
             <User size={25} className="mr-2" />
-            <Link href='/accounts/signup' className='hidden tablets1:!flex'>Sign up</Link>
+            <Link href='/accounts/signup' className='hidden 900px:!flex'>Sign up</Link>
           </p>
         </div>
     ) : (
@@ -174,7 +174,7 @@ UserSection.displayName = 'UserSection';
 
 const UserComponentLoading = ({loading, error, refetchUser}: {loading: boolean, error: boolean, refetchUser: () => void}) => {
   return (
-    <div className='user tablets1:items-center hover:bg-slate-200 dark:hover:bg-neutral-900 !justify-center tablets1:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 shadow-bar dark:shadow-bar-dark w-full'>
+    <div className='user 900px:items-center hover:bg-slate-200 dark:hover:bg-neutral-900 !justify-center 900px:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 900px:shadow-bar 900px:dark:shadow-bar-dark w-full'>
         <div className='img'>
         {loading ? (
             <div className={`flex items-center justify-center w-full h-[90%]`}><div className='loader show h-6 w-6'/></div>
@@ -183,7 +183,7 @@ const UserComponentLoading = ({loading, error, refetchUser}: {loading: boolean, 
         )}
         </div>
         
-        <div className='flex-1 items-center max-w-[50%] names flex-col hidden tablets1:!flex'>
+        <div className='flex-1 items-center max-w-[50%] names flex-col hidden 900px:!flex'>
             <div className='flex max-w-full dark:text-slate-200'>
                 <div className='animate-pulse w-14 h-4 bg-[#9E9E9E] rounded mb-1'/>
             </div>
@@ -191,25 +191,25 @@ const UserComponentLoading = ({loading, error, refetchUser}: {loading: boolean, 
             <div className='animate-pulse w-14 h-4 bg-[#9E9E9E] rounded'/>
         </div>
 
-        <Ellipsis size={25} className="cursor-pointer hidden tablets1:!block dark:text-gray-400" />
+        <Ellipsis size={25} className="cursor-pointer hidden 900px:!block dark:text-gray-400" />
     </div>
   )
 }
 
 const UserComponent = ({userdata}: {userdata: UserData}) => {
   return (
-    <div className='user tablets1:items-center hover:bg-slate-200 dark:hover:bg-neutral-900 !justify-center tablets1:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 shadow-bar dark:shadow-bar-dark w-full'>
+    <div className='user 900px:items-center hover:bg-slate-200 dark:hover:bg-neutral-900 !justify-center 900px:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 900px:shadow-bar 900px:dark:shadow-bar-dark w-full'>
       <div className='img'>
         <Image 
           src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} 
-          className='displayPicture dark:border-slate-200' 
+          className='displayPicture dark:border-slate-200 size-10 900px:size-auto' 
           width={30} 
           height={30} 
           alt='Display Picture'
         />
       </div>
       
-      <div className='flex-1 items-center max-w-[50%] names flex-col hidden tablets1:!flex'>
+      <div className='flex-1 items-center max-w-[50%] names flex-col hidden 900px:!flex'>
         <div className='flex max-w-full dark:text-slate-200'>
           <p className='truncate'>{userdata.name}</p>
           {userdata.verified && 
@@ -225,7 +225,7 @@ const UserComponent = ({userdata}: {userdata: UserData}) => {
         <p className='username text-sm'>@{userdata.username}</p>
       </div>
 
-      <Ellipsis size={25} className="cursor-pointer hidden tablets1:!block dark:text-gray-400" />
+      <Ellipsis size={25} className="cursor-pointer hidden 900px:!block dark:text-gray-400" />
     </div>
   );
 };

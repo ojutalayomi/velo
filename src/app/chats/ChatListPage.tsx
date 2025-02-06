@@ -11,6 +11,7 @@ import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type'
 import { Pin } from 'lucide-react';
 import { useSocket } from '../providers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Statuser } from '@/components/VerifictionComponent';
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
@@ -226,7 +227,7 @@ const Card: React.FC<Props> = ({chat}) => {
           <div className='flex items-center gap-1'>
             <h2 className="font-semibold truncate">{chat.name}</h2>
             {chat.verified && 
-              <Image src='/verified.svg' width={16} height={16} alt='Verified tag' className='flex-shrink-0'/>
+              <Statuser className="size-4 flex-shrink-0"/>
             }
           </div>
         </div>

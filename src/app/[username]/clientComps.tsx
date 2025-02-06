@@ -1,6 +1,5 @@
 'use client'
 import { notFound, useRouter } from "next/navigation";
-import Image from "next/image";
 import MediaSlide from "@/templates/mediaSlides";
 import { UserSchema } from "@/lib/types/type";
 import Posts from "@/templates/posts";
@@ -9,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { Statuser } from "@/components/VerifictionComponent";
 
 export default function Profile({ userData, userPosts }: { userData: UserSchema, userPosts: PostData[] }) {
     const hostname = 'https://s3.amazonaws.com/profile-display-images/';
@@ -54,13 +54,7 @@ export default function Profile({ userData, userPosts }: { userData: UserSchema,
                             <div className="flex items-center gap-2 mb-1">
                                 <h1 className="text-2xl font-bold dark:text-white">{userData.name}</h1>
                                 {userData.verified && (
-                                    <Image 
-                                        src={"/verified.svg"}
-                                        height={24} 
-                                        width={24} 
-                                        alt="Verified"
-                                        className="w-6 h-6"
-                                    />
+                                    <Statuser className="size-4"/>
                                 )}
                             </div>
                             <p className="text-gray-600 dark:text-gray-400">@{userData.username}</p>

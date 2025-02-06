@@ -2,18 +2,12 @@
 import React, { useEffect, useRef,useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import Image from "next/image";
-import { useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut, BadgePlus, Mail, Settings, Palette, MessageSquarePlus, Home, Search } from 'lucide-react';
+import { Bell, User, LogIn, BadgePlus, Mail, Settings, Palette, MessageSquarePlus, Home, Search } from 'lucide-react';
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import {
@@ -21,8 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Statuser } from './VerifictionComponent';
 interface BottombarProps {
   activeRoute: string;
   isMoreShown: boolean;
@@ -163,7 +157,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                     <div className='names flex flex-col items-center'>
                       <div className='flex dark:text-slate-200'>
                         <p>{userdata.firstname !== '' ? userdata.firstname : 'John Doe'}</p>
-                        {userdata.verified ? <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/> : null}
+                        {userdata.verified ? <Statuser className='size-4' /> : null}
                       </div>
                       <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>
                     </div>

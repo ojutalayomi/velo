@@ -1,7 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useState } from 'react';
 import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from './PostProps';
-import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import {
   Popover,
@@ -14,6 +13,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 import { Button } from '@/components/ui/button';
 import MediaSlide from './mediaSlides';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Statuser } from '@/components/VerifictionComponent';
 
 type PostComponentProps = Post | PostProps;
 
@@ -130,7 +130,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
             <div className='blog-maker'>
               <div className='blog-maker-name'>
                 <div className='name'><span>{postData.NameOfPoster}</span></div>
-                {postData.Verified ? <Image src='/verified.svg' className='verified' width={20} height={20} alt='Verified tag'/> : null}
+                {postData.Verified ? <Statuser className='size-4' /> : null}
                 {window.location.pathname.includes('posts') ? null : <div className='blog-username text-brand text-xs'>@{postData.Username}</div>}
               </div>
               {window.location.pathname.includes('posts') ? <div className='blog-username text-brand'>@{postData.Username}</div> : <div className='blog-time'>{time}</div>}

@@ -1,13 +1,14 @@
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef } from 'react';
 import Link from 'next/link';
 import Image from "next/image";
-import { ChevronRight, BadgePlus, RefreshCw, Bell, Mail, Lock, User, Moon, HelpCircle, LogIn, LogOut, Ellipsis } from 'lucide-react';
+import { BadgePlus, RefreshCw, Bell, Mail, User, LogIn, Ellipsis } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { UserData } from '@/redux/userSlice';
+import { Statuser } from './VerifictionComponent';
 
 export const sidebarItems = [
   {
@@ -212,15 +213,7 @@ const UserComponent = ({userdata}: {userdata: UserData}) => {
       <div className='flex-1 items-center max-w-[50%] names flex-col hidden 900px:!flex'>
         <div className='flex max-w-full dark:text-slate-200'>
           <p className='truncate'>{userdata.name}</p>
-          {userdata.verified && 
-            <Image 
-              src='/verified.svg' 
-              className='verified border-0' 
-              width={20} 
-              height={20} 
-              alt='Verified tag'
-            />
-          }
+          {userdata.verified && <Statuser className='size-4' />}
         </div>
         <p className='username text-sm'>@{userdata.username}</p>
       </div>

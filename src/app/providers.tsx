@@ -6,17 +6,20 @@ import { Provider } from "react-redux";
 import { store } from "@/redux/store";
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useUser } from '@/hooks/useUser';
-import { PostData } from '@/templates/PostProps';
 import { getStatus, getPosts } from '@/components/getStatus';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPosts, setLoading, setError } from '@/redux/postsSlice';
-import { RootState } from '@/redux/store';
+import { updateConversation } from '@/redux/chatSlice';
 
 export type Theme = 'light' | 'dark' | 'system'
 
 export interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
+}
+
+interface ThrottleFunction {
+  (...args: any[]): void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -27,6 +30,7 @@ const PostsContext = createContext<{ success: string[] | null, setReload: React.
 
 const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { userdata, loading, error } = useUser();
+  const dispatch = useDispatch()
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
@@ -36,7 +40,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     fetch(process.env.NEXT_PUBLIC_SOCKET_URL || '')
     const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
       path: '/wxyrt',
-      transports: ['websocket', 'polling']
+      query: { userId: userdata._id }
     });
 
     socketIo.on('connect', () => {
@@ -47,6 +51,12 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       } else {
         console.log('User ID is not available for registration');
       }
+    });
+
+    socketIo.on('statusUpdate', (data) => {
+      console.log('User status updated:', data);
+      // Update UI with new status
+      dispatch(updateConversation({ id: data.userId, updates: { online: data.status === 'online' }}))
     });
 
     socketIo.on('disconnect', (reason: any) => {
@@ -65,9 +75,40 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       console.error('Socket Error:', err);
     });
 
+
+    function throttle(callback: ThrottleFunction, limit: number): ThrottleFunction {
+      let waiting = false;
+      return function (this: any, ...args: any[]): void {
+        if (!waiting) {
+          callback.apply(this, args);
+          waiting = true;
+          setTimeout(() => {
+            waiting = false;
+          }, limit);
+        }
+      };
+    }
+    
+    const emitActivity = throttle(() => {
+      socketIo.emit('activity');
+    }, 5000);
+
+    const emitActivity1 = () => {
+      if (document.visibilityState === 'visible') {
+        socketIo.emit('activity');
+      }
+    }
+
+    document.addEventListener('mousemove', emitActivity);
+    document.addEventListener('touchstart', emitActivity);
+    document.addEventListener('visibilitychange', emitActivity1);
+
     setSocket(socketIo);
 
     return () => {
+      document.removeEventListener('mousemove', emitActivity);
+      document.removeEventListener('touchstart', emitActivity);
+      document.removeEventListener('visibilitychange', emitActivity1);
       socketIo.disconnect(); // Ensure the socket is disconnected on cleanup
     };
   }, [loading, userdata]); // Add loading and userdata as dependencies

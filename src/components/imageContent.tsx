@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useUser } from '@/hooks/useUser';
 import { Check } from 'lucide-react';
+import { Statuser } from './VerifictionComponent';
 
 interface Props {
   userdata: any,
@@ -46,7 +47,7 @@ const ImageContent: React.FC<Props> = ({userdata,onClick,selectedUsers = []}) =>
             <p className="flex items-center font-bold dark:text-slate-200 text-sm">
               {userdata.name ? userdata.name : `${userdata.firstname} ${userdata.lastname}`}
               {userdata?.verified && 
-                <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                <Statuser className='size-4' />
               }
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">@{userdata.username ? userdata.username : 'useranme'}</p>

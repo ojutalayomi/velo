@@ -26,6 +26,7 @@ import { timeFormatter } from '@/lib/utils';
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 import { MultiSelect } from '../../MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Statuser } from '@/components/VerifictionComponent';
 
 interface NavigationState {
   chaT: string;
@@ -352,7 +353,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 <div className="flex items-center text-sm font-semibold text-left">
                   <div className='truncate'>{group?.name}</div>
                   {group?.verified && 
-                    <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                    <Statuser className='size-4' />
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -463,7 +464,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 <>
                   {group?.name ? group.name : <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />}
                   {/* {group?.verified && 
-                    <Image src='/verified.svg' className='verified border-0' width={20} height={20} alt='Verified tag'/>
+                    <Statuser className='size-4' />
                   } */}
                 </>
               )

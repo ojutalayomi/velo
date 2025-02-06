@@ -6,7 +6,6 @@ import Posts from '../../../../templates/posts';
 import { useEffect, useRef, useState } from 'react';
 import { getComments, getPost } from '../../../../components/getStatus';
 import NavBar from '../../../../components/navbar';
-import { useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 
 const PostContent: React.FC = () => {

@@ -27,6 +27,7 @@ import { RootState } from '@/redux/store';
 import { LinkPreview } from '@/components/LinkPreview';
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 import { MediaCollage } from './FilesView';
+import { Statuser } from '@/components/VerifictionComponent';
 
 type Message = {
   _id: string,
@@ -292,7 +293,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                   <div className='flex items-center justify-between gap-1'>
                     <div className="flex items-center gap-1">
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{sender}</span>
-                      {verified && <Image src='/verified.svg' width={16} height={16} alt='Verified' className="verified"/>}
+                      {verified && <Statuser className='size-4' />}
                     </div>
                     <Options options={optionss} open={open} setOpen={setOpen}/>
                   </div>

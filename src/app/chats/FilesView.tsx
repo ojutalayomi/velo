@@ -266,7 +266,8 @@ const MediaDialog = ({files, mediaDialog, toggleMediaDialog}: {files: Attachment
                         >
                             <Download size={16} className="text-gray-400 group-hover:text-green-500"/>
                             <span className="text-gray-400 group-hover:text-green-500">Download</span>
-                        </button><button
+                        </button>
+                        <button
                             type="button"
                             className='flex items-center gap-3 py-3 group rounded px-2'
                             onClick={(e) => {

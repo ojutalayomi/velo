@@ -53,7 +53,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       }
     });
 
-    socketIo.on('statusUpdate', (data) => {
+    socketIo.on('userStatus', (data) => {
       console.log('User status updated:', data);
       // Update UI with new status
       dispatch(updateConversation({ id: data.userId, updates: { online: data.status === 'online' }}))

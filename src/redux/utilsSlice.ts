@@ -15,12 +15,14 @@ interface UtilsState {
   toggleDialog: boolean;
   toggleMediaDialog: boolean,
   selectedMessages: string[];
+  onlineUsers: string[]
 }
 
 const initialState: UtilsState = {
   toggleDialog: false,
   toggleMediaDialog: false,
   selectedMessages: [],
+  onlineUsers: []
 };
 
 const utilSlice = createSlice({
@@ -29,6 +31,9 @@ const utilSlice = createSlice({
   reducers: {
     setToggleDialog: (state, action: PayloadAction<boolean>) => {
       state.toggleDialog = action.payload;
+    },
+    setOnlineUsers: (state, action: PayloadAction<string[]>) => {
+      state.onlineUsers = action.payload;
     },
     setToggleMediaDialog: (state, action: PayloadAction<boolean>) => {
       state.toggleMediaDialog = action.payload;
@@ -39,14 +44,23 @@ const utilSlice = createSlice({
     addSelectedMessage: (state, action: PayloadAction<string>) => {
       state.selectedMessages.push(action.payload);
     },
+    addOnlineUser: (state, action: PayloadAction<string>) => {
+      state.onlineUsers.push(action.payload);
+    },
     removeSelectedMessage: (state, action: PayloadAction<string>) => {
       state.selectedMessages = state.selectedMessages.filter(msg => msg !== action.payload);
+    },
+    removeOnlineUsers: (state, action: PayloadAction<string>) => {
+      state.onlineUsers = state.onlineUsers.filter(user => user !== action.payload);
     },
     clearSelectedMessages: (state) => {
       state.selectedMessages = [];
     },
+    clearOnlineUsers: (state) => {
+      state.onlineUsers = [];
+    }
   },
 });
 
-export const { setToggleDialog, setToggleMediaDialog, setSelectedMessages, addSelectedMessage, removeSelectedMessage, clearSelectedMessages } = utilSlice.actions;
+export const { setToggleDialog, setOnlineUsers, setToggleMediaDialog, setSelectedMessages, addSelectedMessage, addOnlineUser, removeSelectedMessage, removeOnlineUsers, clearSelectedMessages, clearOnlineUsers } = utilSlice.actions;
 export default utilSlice.reducer;

@@ -47,8 +47,7 @@ interface CHT {
 
 const Card: React.FC<Props> = ({chat}) => {
   const [time, setTime] = useState<string>();
-  // const { messages , settings, conversations, loading: convoLoading, isOnline } = useSelector<RootState, CHT>((state) => state.chat);
-  // const convo = conversations?.find(c => c.id === chat.id);
+  const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const socket = useSocket();
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(chat?.pinned);
@@ -57,7 +56,7 @@ const Card: React.FC<Props> = ({chat}) => {
   const [isHidden, setIsHidden] = useState(false);
   const [isUnread, setIsUnread] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
-  const { userdata, loading, error, refetchUser } = useUser();
+  const { userdata } = useUser();
   const router = useRouter();
   const dispatch = useDispatch();
   const url = 'https://s3.amazonaws.com/profile-display-images/';
@@ -218,9 +217,7 @@ const Card: React.FC<Props> = ({chat}) => {
           className="w-10 h-10 min-w-10 rounded-full" 
           />
         </Avatar>
-        {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] && (
-          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-        )}
+        {(chat.type === 'DMs' && onlineUsers.includes(chat.participants.find(id => id !== userdata._id) as string)) && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"/>}
       </div>
       <div className="flex-grow w-1/4">
         <div className="flex justify-between items-baseline">

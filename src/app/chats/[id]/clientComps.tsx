@@ -78,6 +78,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const dispatch = useDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
+  const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
   const [load,setLoading] = useState<boolean>();
@@ -384,7 +385,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {convo?.online ? 'Online' : 'Offline'}
+                  {onlineUsers.includes(newPerson._id) ? 'Online' : 'Offline'}
                   {convo?.isTyping[friendId] && ' • Typing...'}
                 </p>
               </div>

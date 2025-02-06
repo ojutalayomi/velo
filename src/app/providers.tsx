@@ -3,13 +3,13 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { Provider } from "react-redux";
-import { store } from "@/redux/store";
+import { RootState, store } from "@/redux/store";
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useUser } from '@/hooks/useUser';
 import { getStatus, getPosts } from '@/components/getStatus';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPosts, setLoading, setError } from '@/redux/postsSlice';
-import { updateConversation } from '@/redux/chatSlice';
+import { addOnlineUser } from '@/redux/utilsSlice';
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -30,6 +30,7 @@ const PostsContext = createContext<{ success: string[] | null, setReload: React.
 
 const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { userdata, loading, error } = useUser();
+    const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const dispatch = useDispatch()
   const [socket, setSocket] = useState<Socket | null>(null);
 
@@ -40,23 +41,26 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     fetch(process.env.NEXT_PUBLIC_SOCKET_URL || '')
     const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
       path: '/wxyrt',
-      query: { userId: userdata._id }
+      query: { userId: userdata._id },
+      transports: ['websocket', 'polling']
     });
 
     socketIo.on('connect', () => {
       console.log('Connected'); // Log the connection status message
       if (userdata?._id) {
         socketIo.emit('register', userdata._id); // Emit 'register' event with user's ID
-        console.log('Registered with ID:', userdata._id);
+        // console.log('Registered with ID:', userdata._id);
       } else {
         console.log('User ID is not available for registration');
       }
     });
 
     socketIo.on('userStatus', (data) => {
-      console.log('User status updated:', data);
+      // console.log('User status updated:', data);
       // Update UI with new status
-      dispatch(updateConversation({ id: data.userId, updates: { online: data.status === 'online' }}))
+      if(!onlineUsers.includes(data.userId)){
+        dispatch(addOnlineUser(data.userId))
+      }
     });
 
     socketIo.on('disconnect', (reason: any) => {
@@ -67,7 +71,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       console.error('Connection Error:', err);
       if(err.message.includes("P: websocket error at tt.onError") && userdata?._id){
         socketIo.emit('register', userdata._id); // Emit 'register' event with user's ID
-        console.log('Registered with ID:', userdata._id);
+        // console.log('Registered with ID:', userdata._id);
       }
     });
 

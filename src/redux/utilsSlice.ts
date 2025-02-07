@@ -51,7 +51,7 @@ const utilSlice = createSlice({
     removeSelectedMessage: (state, action: PayloadAction<string>) => {
       state.selectedMessages = state.selectedMessages.filter(msg => msg !== action.payload);
     },
-    removeOnlineUsers: (state, action: PayloadAction<string>) => {
+    removeOnlineUser: (state, action: PayloadAction<string>) => {
       state.onlineUsers = state.onlineUsers.filter(user => user !== action.payload);
     },
     clearSelectedMessages: (state) => {
@@ -63,5 +63,5 @@ const utilSlice = createSlice({
   },
 });
 
-export const { setToggleDialog, setOnlineUsers, setToggleMediaDialog, setSelectedMessages, addSelectedMessage, addOnlineUser, removeSelectedMessage, removeOnlineUsers, clearSelectedMessages, clearOnlineUsers } = utilSlice.actions;
+export const { setToggleDialog, setOnlineUsers, setToggleMediaDialog, setSelectedMessages, addSelectedMessage, addOnlineUser, removeSelectedMessage, removeOnlineUser, clearSelectedMessages, clearOnlineUsers } = utilSlice.actions;
 export default utilSlice.reducer;

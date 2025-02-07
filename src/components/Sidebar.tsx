@@ -86,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
   return (
     <div id='sidebar' className={`${routes.includes(activeRoute) && '!hidden'} hidden tablets:flex flex-col`}>
       {/* <h1 className="brandname dark:text-slate-200 dark:after:text-slate-200 text-lg after:content-['V']"></h1> */}
-      <div className='flex p-[.8em]'>
+      <div className='flex 900px:justify-start justify-center m-2'>
         <Image src='/velo11.png' className='displayPicture mt-[10px] mb-[-5px]' width={30} height={30} alt='logo'/>
       </div>
       <div className='flex-1 overflow-auto'>

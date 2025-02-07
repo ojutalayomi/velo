@@ -57,17 +57,17 @@ export const chatRepository = {
               .filter((participant: Participant) => participant !== undefined)
               .map(async (participant: Participant) => {
                 try {
-                  const user = await func(participant.id);
-                  if (user && a.chatType === 'DMs') {
-                    // console.log('User found for participant:', participant.id);
-                    a.verified = user.verified;
-                    // Set chat name to the other participant's name for DMs
+                  if (a.chatType === 'DMs') {
+                    let user;
                     if (a.participants.length === 2) {
+                      delete a.name[a.participants.find((p: Participant) => p.id === payload._id).id]
                       const otherParticipant = a.participants.find((p: Participant) => p.id !== payload._id);
-                      if (otherParticipant && otherParticipant.id !== payload._id) {
-                        a.name[otherParticipant.id] = user.name; // Assuming user object has a 'name' property
-                      }
+                      user = await func(otherParticipant.id);
+                      a.name[otherParticipant.id] = user.name;
+                    } else {
+                      user = await func(participant.id)
                     }
+                    a.verified = user.verified;
                     return {
                       id: participant.id,
                       displayPicture: user.displayPicture,
@@ -396,7 +396,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
   // if (!cookies) return res.status(405).end(`Not Allowed`);
   const payload = await verifyToken(cookie as unknown as string) as unknown as Payload;
-  console.log(payload)
+  // console.log(payload)
   if (!payload) return res.status(401).json(`Not Allowed`);
   if (!client) {
     client = new MongoClient(uri, {

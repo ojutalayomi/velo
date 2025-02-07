@@ -26,7 +26,8 @@ import { timeFormatter } from '@/lib/utils';
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 import { MultiSelect } from '../../MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Statuser } from '@/components/VerifictionComponent';
+import { Statuser } from '@/components/VerificationComponent';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface NavigationState {
   chaT: string;
@@ -256,6 +257,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       setNewMessage('');
       clearFiles();
       closeQuote();
+      const txt = document.getElementById('txt')
+      if (txt) txt.style.height = "38px";
       
       setTimeout(() => {
         scrollToBottom();
@@ -339,6 +342,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   };
 
+  const filteredKeys = Object.keys(convo?.isTyping).filter(i => i !== userdata._id).map(f => {
+    return convo?.isTyping[f]
+  })
+
   return (
     <div className={`bg-bgLight tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
       <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 z-10">
@@ -347,9 +354,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           <div className='flex gap-4 items-center justify-start'>
             <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
             {load
-              ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
+              ? <Skeleton className="w-24 h-4 bg-gray-200 rounded mb-1" />
               :
-              <div>
+              <>
                 <div className="flex items-center text-sm font-semibold text-left">
                   <div className='truncate'>{group?.name}</div>
                   {group?.verified && 
@@ -357,14 +364,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {convo?.online ? 'Online' : 'Offline'}
-                  {Object.entries(convo?.isTyping || {}).some(([id, isTyping]) => isTyping) && 
+                  {/* {Object.entries(convo?.isTyping || {}).some(([id, isTyping]) => isTyping) && 
                     ` • ${Object.entries(convo?.isTyping || {})
                       ?.filter(([id, isTyping]) => isTyping)
                       .map(([id, _]) => group?.participants.find((p: { id: string }) => p.id === id)?.name || 'Someone')
-                      .join(', ')} is typing...`}
+                      .join(', ')} is typing...`} */}
+                  {filteredKeys.includes(true) && 'Someone is typing...'}<b className='collapse'>Group</b>
                 </p>
-              </div>
+              </>
             }
           </div>
           <div className='flex items-center gap-2'>
@@ -420,7 +427,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         </> :
         <div className="flex items-center gap-2 w-full">
           <FontAwesomeIcon onClick={() => openSearchBar(false)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-          <Input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="rounded-full" />
+          <Input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="rounded-full bg-gray-100 dark:bg-zinc-800" />
           <button onClick={() => setSearchQuery('')} className={`${searchQuery === '' && 'hidden '} text-brand hover:text-brand/70 font-bold py-2`}>
             Clear
           </button>

@@ -6,7 +6,7 @@ import { useUser } from '@/hooks/useUser';
 
 
 const ClientComponents = () => {
-  const { userdata, loading, error, refetchUser } = useUser();
+  const { userdata } = useUser();
 
   return (
     <>

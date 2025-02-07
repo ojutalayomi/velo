@@ -38,7 +38,7 @@ interface ConvoTypeProp {
 const NewChatMenu = () => {
     const router = useRouter();
     const dispatch = useDispatch();
-    const {userdata, loading, error, refetchUser} = useUser();
+    const {userdata, loading } = useUser();
     const socket = useSocket();
     const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
     const [searchQuery, setSearchQuery] = useState('');
@@ -126,7 +126,7 @@ const NewChatMenu = () => {
         convo.participants.includes(_id) && convo.type === 'DMs'
       );
       if (existingConvo) {
-        router.push(`/chats/${existingConvo.id}`);
+        router.push(`/chats/${_id}`);
         dispatch(showChat(''));
         return;
       }
@@ -154,7 +154,7 @@ const NewChatMenu = () => {
     ]
     return (
         <div className={`mobile:bg-white mobile:dark:bg-zinc-900 tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10`}>
-          <div className={`flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full my-1 px-3 py-2`}>
+          <div className={`flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full px-3 py-2`}>
             <FontAwesomeIcon onClick={() => {
                 dispatch(showChat(''));
                 router.back()}
@@ -182,32 +182,32 @@ const NewChatMenu = () => {
               <button className="flex flex-col items-center text-brand font-semibold">{attr.icon2}</button>
             </div>
           ))}
-          <div className='flex flex-col gap-2 my-3 px-3'>
-          <div className='text-sm dark:text-slate-200'>You</div>
-          {loading 
-          ? <UserProfileLazyLoader />
-          : <ImageContent userdata={userdata} onClick={openChat}/>
-          }
-          {noUser ?
-            <div className='text-center text-sm dark:text-slate-200'>Oops! No user found<br/>Check for correct spelling.</div>
-            :
-            (results.length > 1 ? 
-              <div className='text-sm dark:text-slate-200'>Others</div>
-            : '')
-          }
-          {isLoading ? (
-            <div className='flex flex-col gap-2'>
-            <UserProfileLazyLoader />
-            <UserProfileLazyLoader />
-            <UserProfileLazyLoader />
-            <UserProfileLazyLoader />
-            <UserProfileLazyLoader />
-            </div>
-          ) : (
-            results.map((person: any, index: any) => (
-              <ImageContent key={index} userdata={person} onClick={openChat}/>
-            ))
-          )}
+          <div className='flex flex-col gap-2 items-start my-3 px-3'>
+            <div className='text-sm dark:text-slate-200'>You</div>
+            {loading 
+            ? <UserProfileLazyLoader />
+            : <ImageContent userdata={userdata} onClick={openChat}/>
+            }
+            {noUser ?
+              <div className='text-center text-sm dark:text-slate-200'>Oops! No user found<br/>Check for correct spelling.</div>
+              :
+              (results.length > 1 ? 
+                <div className='text-sm dark:text-slate-200'>Others</div>
+              : '')
+            }
+            {isLoading ? (
+              <div className='flex flex-col gap-2'>
+              <UserProfileLazyLoader />
+              <UserProfileLazyLoader />
+              <UserProfileLazyLoader />
+              <UserProfileLazyLoader />
+              <UserProfileLazyLoader />
+              </div>
+            ) : (
+              results.map((person: any, index: any) => (
+                <ImageContent key={index} userdata={person} onClick={openChat}/>
+              ))
+            )}
           </div>
           <NewChatModal
             isOpen={isModalOpen}

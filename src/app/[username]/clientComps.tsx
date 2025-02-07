@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { Statuser } from "@/components/VerifictionComponent";
+import { Statuser } from "@/components/VerificationComponent";
 
 export default function Profile({ userData, userPosts }: { userData: UserSchema, userPosts: PostData[] }) {
     const hostname = 'https://s3.amazonaws.com/profile-display-images/';

@@ -26,7 +26,8 @@ import { timeFormatter } from '@/lib/utils';
 import { clearSelectedMessages } from '@/redux/utilsSlice';
 import { MultiSelect } from '../MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Statuser } from '@/components/VerifictionComponent';
+import { Statuser } from '@/components/VerificationComponent';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface NavigationState {
   chaT: string;
@@ -283,6 +284,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       setNewMessage('');
       clearFiles();
       closeQuote();
+      const txt = document.getElementById('txt')
+      if (txt) txt.style.height = "38px";
   
       // Scroll to the bottom of the chat
       setTimeout(() => {
@@ -375,7 +378,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           <div className='flex gap-4 items-center justify-start'>
             <FontAwesomeIcon onClick={handleClick} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
             {load
-              ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
+              ? <Skeleton className="w-24 h-4 bg-gray-200 rounded mb-1" />
               :
               <div>
                 <div className="flex items-center text-sm font-semibold text-left">
@@ -444,7 +447,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         </> :
         <div className="flex items-center gap-2 w-full">
           <FontAwesomeIcon onClick={() => openSearchBar(false)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
-          <Input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="rounded-full" />
+          <Input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="rounded-full bg-gray-100 dark:bg-zinc-800" />
           <button onClick={() => setSearchQuery('')} className={`${searchQuery === '' && 'hidden '} text-brand hover:text-brand/70 font-bold py-2`}>
             Clear
           </button>

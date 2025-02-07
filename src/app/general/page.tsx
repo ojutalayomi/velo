@@ -94,7 +94,7 @@ const SettingsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
       <header className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b dark:border-neutral-800">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="px-4 py-2 flex items-center gap-4">
           <button 
             onClick={() => router.push('/home')}
             className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"

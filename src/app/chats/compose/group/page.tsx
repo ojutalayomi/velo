@@ -1,20 +1,20 @@
 'use client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { Users, Hash, Plus, X } from 'lucide-react';
+import { Users, Plus, X } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useSocket } from '@/app/providers';;
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
-import { ConvoType, setConversations, addConversation } from '@/redux/chatSlice';
+import { ConvoType } from '@/redux/chatSlice';
 import ImageContent, { UserProfileLazyLoader }  from '@/components/imageContent';
 import { UserData } from '@/redux/userSlice';
 import ChatSystem from '@/lib/class/chatSystem';
 import ChatRepository from '@/lib/class/ChatRepository'; 
 import NewChatModal from '../../NewChatModal';
 import { RootState } from '@/redux/store';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type ChatType = "DMs" | "Groups" | "Channels";
 type ChatSettingsTheme = "light" | "dark";
@@ -180,7 +180,7 @@ const NewChatMenu = () => {
     ]
     return (
         <div className={`mobile:bg-white mobile:dark:bg-zinc-900 tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10`}>
-          <div className={`flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full my-1 px-3 py-2`}>
+          <div className={`flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full px-3 py-2`}>
             <FontAwesomeIcon onClick={() => {
                 dispatch(showChat(''));
                 router.back()}
@@ -226,20 +226,23 @@ const NewChatMenu = () => {
               <div className="flex flex-wrap gap-2 pb-4 border-b dark:border-gray-700">
                 {selectedUsers.map((user) => (
                   <div key={user._id} className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1">
-                    <Image 
+                    <Avatar>
+                      <AvatarFallback>{user.name?.slice(0,2) || `${user.firstname?.[0] || ''} ${user.lastname?.[0] || ''}`}</AvatarFallback>
+                      <AvatarImage 
                       src={
                         user.dp || user.displayPicture  
                         ? (user.dp ? url+user.dp : (
                           user.displayPicture.includes('ila-') 
-                          ? '/default.jpeg'
+                          ? ''
                           : url +  user.displayPicture
                           )) 
-                        : '/default.jpeg'}
+                        : ''}
                       className='w-6 h-6 rounded-full mr-2'
                       width={24}
                       height={24}
                       alt={user.name || `${user.firstname} ${user.lastname}`}
                     />
+                    </Avatar>
                     <span className="text-sm dark:text-slate-200">
                       {user.name || `${user.firstname} ${user.lastname}`}
                     </span>

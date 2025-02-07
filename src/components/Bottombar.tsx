@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Statuser } from './VerifictionComponent';
+import { Statuser } from './VerificationComponent';
 interface BottombarProps {
   activeRoute: string;
   isMoreShown: boolean;

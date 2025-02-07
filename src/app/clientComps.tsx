@@ -121,10 +121,6 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
       }
     }, [dispatch, gt, userdata._id]);
 
-    const handleUserStatus = useCallback((data: { userId: string, status: string }) => {
-        dispatch(updateConversation({ id: data.userId, updates: { online: data.status === 'online' } }));
-    }, [dispatch]);
-
     const handleTyping = useCallback((data: { userId: string, to: string, chatId: string }) => {
         if (data.userId === userdata._id) return null;
         dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: true } } }));
@@ -145,11 +141,6 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             handleChat(data);
             socket.emit('joinChat', { chatId: data.chat._id });
         });
-        socket.on('batchUserStatus', (updates: [string, string][]) => {
-            updates.forEach(([userId, status]) => {
-                handleUserStatus({ userId, status });
-            });
-        });
         socket.on('callOffer', async ( data: { offer: RTCSessionDescription, room: string } ) => {
             const { room } = data;
             callIdRef.current = room;
@@ -162,10 +153,9 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.off('userTyping', handleTyping);
         socket.off('userStopTyping', handleStopTyping);
         socket.off('newChat', handleChat);
-        socket.off('batchUserStatus');
         socket.off('offer');
       };
-    }, [socket, handleChatMessage, handleChat, handleUserStatus, handleTyping, handleStopTyping, conversations]);
+    }, [socket, handleChatMessage, handleChat, handleTyping, handleStopTyping, conversations]);
 
     const setActiveRoute = useCallback((route: string) => {
         setActiveRouteState(route);

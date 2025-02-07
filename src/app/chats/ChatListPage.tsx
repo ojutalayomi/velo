@@ -11,7 +11,7 @@ import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type'
 import { Pin } from 'lucide-react';
 import { useSocket } from '../providers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Statuser } from '@/components/VerifictionComponent';
+import { Statuser } from '@/components/VerificationComponent';
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
@@ -117,6 +117,10 @@ const Card: React.FC<Props> = ({chat}) => {
   const fullscreen = () => {
     setShowFullscreen(true);
   }
+
+  const filteredKeys = Object.keys(chat?.isTyping).filter(i => i !== userdata._id).map(f => {
+    return chat?.isTyping[f]
+  })
 
   return(
 
@@ -229,7 +233,7 @@ const Card: React.FC<Props> = ({chat}) => {
           </div>
         </div>
         <p className="text-sm text-gray-600 truncate">
-          {chat.isTyping && chat.participants.find(id => id !== userdata._id) && chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] 
+          {(chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] || filteredKeys.includes(true)) 
             ? 'Typing...' 
             : (chat.lastMessage 
                 ? chat.lastMessage

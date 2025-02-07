@@ -1,10 +1,11 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import Posts from '../templates/posts';
+import Posts from '@/templates/posts';
 import { RefreshCw } from 'lucide-react';
 import { RootState } from '@/redux/store';
 import { usePosts } from '@/app/providers';
+import { Skeleton } from './ui/skeleton';
 
 const Homepage: React.FC = () => {
     const { posts, loading, error } = useSelector((state: RootState) => state.posts);
@@ -53,9 +54,11 @@ const Homepage: React.FC = () => {
             <div className='pre-status mt-2'>
                 <div className='status'>
                     {loading && (
-                        <div className="flex items-center w-full h-[10%]">
-                            <div className="loader show h-[30px] w-[30px]" />
-                        </div>
+                        [7].map(i => (
+                            <div key={"ui"+i} className="flex items-center w-full h-[10%]">
+                                <Skeleton className="size-8 rounded-full ring-2 ring-brand" />
+                            </div>
+                        ))
                     )}
                     {!loading && success && success.length > 0 && (
                         success.map((status: string, index: number) => (
@@ -79,9 +82,15 @@ const Homepage: React.FC = () => {
 
             <>
                 {loading ? (
-                    <div className="flex items-center justify-center w-full h-[90%]">
-                        <div className="loader show h-[30px] w-[30px]" />
-                    </div>
+                    [6].map(i => (
+                        <div key={"ux"+i} className="flex flex-col space-y-3">
+                            <Skeleton className="h-[125px] w-[250px] rounded-xl" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[250px]" />
+                                <Skeleton className="h-4 w-[200px]" />
+                            </div>
+                        </div>
+                    ))
                 ) : posts && posts.length ? (
                     posts.map(post => (
                         <Posts key={post._id} postData={post}/>

@@ -27,7 +27,7 @@ import { RootState } from '@/redux/store';
 import { LinkPreview } from '@/components/LinkPreview';
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 import { MediaCollage } from './FilesView';
-import { Statuser } from '@/components/VerifictionComponent';
+import { Statuser } from '@/components/VerificationComponent';
 
 type Message = {
   _id: string,

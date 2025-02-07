@@ -9,7 +9,7 @@ import { useUser } from '@/hooks/useUser';
 import { getStatus, getPosts } from '@/components/getStatus';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPosts, setLoading, setError } from '@/redux/postsSlice';
-import { addOnlineUser } from '@/redux/utilsSlice';
+import { addOnlineUser, removeOnlineUser } from '@/redux/utilsSlice';
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -59,7 +59,11 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       // console.log('User status updated:', data);
       // Update UI with new status
       if(onlineUsers.includes(data.userId)) return
-      dispatch(addOnlineUser(data.userId))
+      if(data.status === 'online'){
+        dispatch(addOnlineUser(data.userId))
+      } else {
+        dispatch(removeOnlineUser(data.userId))
+      }
     });
 
     socketIo.on('disconnect', (reason: any) => {

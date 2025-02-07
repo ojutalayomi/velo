@@ -13,7 +13,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 import { Button } from '@/components/ui/button';
 import MediaSlide from './mediaSlides';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Statuser } from '@/components/VerifictionComponent';
+import { Statuser } from '@/components/VerificationComponent';
 
 type PostComponentProps = Post | PostProps;
 
@@ -128,7 +128,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
               </Link>
             </div>
             <div className='blog-maker'>
-              <div className='blog-maker-name'>
+              <div className='blog-maker-name gap-0.5'>
                 <div className='name'><span>{postData.NameOfPoster}</span></div>
                 {postData.Verified ? <Statuser className='size-4' /> : null}
                 {window.location.pathname.includes('posts') ? null : <div className='blog-username text-brand text-xs'>@{postData.Username}</div>}

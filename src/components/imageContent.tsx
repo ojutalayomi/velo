@@ -1,9 +1,8 @@
 'use client'
-import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { useUser } from '@/hooks/useUser';
+import React from 'react';
 import { Check } from 'lucide-react';
-import { Statuser } from './VerifictionComponent';
+import { Statuser } from './VerificationComponent';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface Props {
   userdata: any,
@@ -30,21 +29,24 @@ const ImageContent: React.FC<Props> = ({userdata,onClick,selectedUsers = []}) =>
     const url = 'https://s3.amazonaws.com/profile-display-images/';
     return (
       <div className="cursor-pointer px-2 py-1 rounded-full hover:bg-slate-200 hover:dark:bg-zinc-700 transition-colors duration-150 tablets1:duration-300 flex items-center justify-between" onClick={() => onClick(userdata._id)}>
-        <div className="flex items-center">
-          <Image 
-            src={
-            userdata.dp || userdata.displayPicture  
-            ? (userdata.dp ? url+userdata.dp : (
-              userdata.displayPicture.includes('ila-') 
-              ? '/default.jpeg'
-              : url +  userdata.displayPicture
-              )) 
-            : '/default.jpeg'} 
-            className='displayPicture dark:border-slate-200 w-7 h-7 rounded-full mr-3' 
-            width={40} height={40} alt='Display Picture'
-          />
+        <div className="flex items-center gap-2">
+          <Avatar>
+            <AvatarFallback>{userdata.name?.slice(0,2) || `${userdata.firstname?.[0] || ''} ${userdata.lastname?.[0] || ''}`}</AvatarFallback>
+            <AvatarImage 
+              src={
+              userdata.dp || userdata.displayPicture  
+              ? (userdata.dp ? url+userdata.dp : (
+                userdata.displayPicture.includes('ila-') 
+                ? ''
+                : url +  userdata.displayPicture
+                )) 
+              : ''} 
+              className='displayPicture dark:border-slate-200 w-7 h-7 rounded-full mr-3' 
+              width={40} height={40} alt='Display Picture' 
+            />
+          </Avatar>
           <div>
-            <p className="flex items-center font-bold dark:text-slate-200 text-sm">
+            <p className="flex items-center font-bold dark:text-slate-200 gap-1 text-sm">
               {userdata.name ? userdata.name : `${userdata.firstname} ${userdata.lastname}`}
               {userdata?.verified && 
                 <Statuser className='size-4' />

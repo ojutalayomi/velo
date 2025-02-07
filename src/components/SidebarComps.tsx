@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { UserData } from '@/redux/userSlice';
-import { Statuser } from './VerifictionComponent';
+import { Statuser } from './VerificationComponent';
 
 export const sidebarItems = [
   {

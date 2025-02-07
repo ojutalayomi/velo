@@ -89,7 +89,7 @@ const Home = () => {
               <a href="#" className="hover:underline">Language</a>·
               <span>NIGERIA</span>
             </div>
-            <p>© 2024 VELO</p>
+            <p>© {new Date().getFullYear()} VELO</p>
           </div>
         </div>
       </div>

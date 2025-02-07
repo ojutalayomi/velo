@@ -16,10 +16,11 @@ export const useUser = (): UseUserReturn => {
     const userdata = useSelector((state: RootState) => state.user.userdata);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const retriesRef = useRef(3);
     const fetchedSuccessfullyRef = useRef(false);
     const fetchUserRef = useRef<() => Promise<void>>(null);
 
-    const fetchUser = useCallback(async (retries = 3) => {
+    const fetchUser = useCallback(async () => {
         if (fetchedSuccessfullyRef.current) {
             setLoading(false);
             return;
@@ -60,14 +61,15 @@ export const useUser = (): UseUserReturn => {
             setError(null);
             fetchedSuccessfullyRef.current = true;
         } catch (err) {
-            if (retries > 0) {
-                return fetchUser(retries - 1);
+            if (retriesRef.current > 0) {
+                retriesRef.current--
+                return fetchUser();
             }
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setLoading(false);
         }
-    }, [dispatch]);
+    }, []);
 
     fetchUserRef.current = fetchUser;
 

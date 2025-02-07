@@ -215,17 +215,16 @@ export const chatRepository = {
         chat: await (async () => {
           const chatCopy: ChatData = { ...chat, _id: chat._id.toString()};
           // delete (chatCopy as any)._id;
-
+          
+          if (chatCopy.chatType === 'DMs' && chatCopy.participants.length === 2) {
+            delete chatCopy.name[chatCopy.participants.find(p => p.id === payload._id)?.id ?? '']
+          }
           
           await Promise.all(chatCopy.participants.map(async (participant, index) => {
-            const user = await func(participant.id);
-            if (user && chatCopy.chatType === 'DMs') {
-              if (participant.id !== payload._id) {
-                chatCopy.name[participant.id] = user.name;
-              }
+            if (chatCopy.chatType === 'DMs' && participant.id !== payload._id) {
+              const user = await func(participant.id);
+              chatCopy.name[participant.id] = user.name;
               chatCopy.participants[index].displayPicture = user.displayPicture;
-            } else {
-              // console.log(`User with ID ${participant.id} not found.`);
             }
           }));
           

@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from '../MessageTab';
 import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, updateConversation, addMessage, updateMessage } from '@/redux/chatSlice';
+import { ConvoType, updateConversation, addMessage, updateMessage, updateLiveTime } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
@@ -82,6 +82,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
+  const [time ,setTime] = useState('');
   const [load,setLoading] = useState<boolean>();
   const [err,setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState('');
@@ -301,6 +302,28 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   };
 
+  useEffect(() => {
+    const updateTimer = () => {
+      const timeDifference = Date.now() - Date.parse(convo.timestamp);
+      if (timeDifference > (86400 * 1000)) {
+        const today = new Date();
+        const lastUpdatedDate = new Date(convo.timestamp);
+        if (today.toISOString().split('T')[0] !== lastUpdatedDate.toISOString().split('T')[0]) {
+          if (today.getDate() - lastUpdatedDate.getDate() === 1) {
+            setTime('Yesterday.');
+          } else {
+            const date = lastUpdatedDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+            setTime(date);
+          }
+        }
+      } else {
+        setTime(updateLiveTime('chat-time', convo.timestamp));
+      }
+    };
+
+    updateTimer();
+  }, [convo.timestamp]);
+
   const closeQuote = () => {
     setQuote(initialQuoteState)
   }
@@ -313,15 +336,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   const handleTyping = () => {
     if (!socket || !pid) return;
-    const details = { userId: userdata._id, to: friendId, chatId: pid };
-    socket.emit('typing', { userId: userdata._id, to: friendId, chatId: pid });
+    socket.emit('typing', { userId: userdata._id, to: `user:${friendId}`, chatId: pid });
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', { userId: userdata._id, to: friendId, chatId: pid });
+      socket.emit('stopTyping', { userId: userdata._id, to: `user:${friendId}`, chatId: pid });
     }, 3000);
   };
 
@@ -389,7 +411,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {onlineUsers.includes(newPerson._id) ? 'Online' : 'Offline'}
-                  {convo?.isTyping[friendId] && ' • Typing...'}
+                  {convo?.isTyping[friendId] ? ' • Typing...' : `Last seen: ${time}`}
                 </p>
               </div>
             }

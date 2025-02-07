@@ -286,15 +286,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   const handleTyping = () => {
     if (!socket || !gid) return;
-    const details = { userId: userdata._id, to: otherIds, chatId: gid };
-    socket.emit('typing', { userId: userdata._id, to: otherIds, chatId: gid });
+    socket.emit('typing', { userId: userdata._id, to: `group:${gid}`, chatId: gid });
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', { userId: userdata._id, to: otherIds, chatId: gid });
+      socket.emit('stopTyping', { userId: userdata._id, to: `group:${gid}`, chatId: gid });
     }, 3000);
   };
 

@@ -126,7 +126,7 @@ const NewChatMenu = () => {
         convo.participants.includes(_id) && convo.type === 'DMs'
       );
       if (existingConvo) {
-        router.push(`/chats/${_id}`);
+        router.push(`/chats/${existingConvo.id}`);
         dispatch(showChat(''));
         return;
       }

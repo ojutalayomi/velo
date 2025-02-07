@@ -41,8 +41,8 @@ const ImageContent: React.FC<Props> = ({userdata,onClick,selectedUsers = []}) =>
                 : url +  userdata.displayPicture
                 )) 
               : ''} 
-              className='displayPicture dark:border-slate-200 w-7 h-7 rounded-full mr-3' 
-              width={40} height={40} alt='Display Picture' 
+              className='displayPicture dark:border-slate-200 size-10 rounded-full mr-3' 
+              alt='Display Picture' 
             />
           </Avatar>
           <div>

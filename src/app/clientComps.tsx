@@ -137,6 +137,10 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.on('newMessage', handleChatMessage);
         socket.on('userTyping', handleTyping);
         socket.on('userStopTyping', handleStopTyping);
+        socket.on("lastActive", ({ userId, lastActive }) => {
+            const convo = conversations.find(c =>  c.participants.includes(userId) && c.type === 'DMs')
+            dispatch(updateConversation({ id: convo?.id ?? '', updates: { timestamp: lastActive }}))
+        })
         socket.on('newChat', (data: NewChat_) => {
             handleChat(data);
             socket.emit('joinChat', { chatId: data.chat._id });
@@ -152,6 +156,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.off('newMessage', handleChatMessage);
         socket.off('userTyping', handleTyping);
         socket.off('userStopTyping', handleStopTyping);
+        socket.off("lastActive")
         socket.off('newChat', handleChat);
         socket.off('offer');
       };

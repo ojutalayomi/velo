@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/popover"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Statuser } from './VerificationComponent';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 interface BottombarProps {
   activeRoute: string;
   isMoreShown: boolean;
@@ -26,7 +28,12 @@ interface BottombarProps {
 }
 
 const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, setActiveRoute, setMoreStatus }) => {
-  const { userdata, loading, error, refetchUser } = useUser();
+  const { userdata, loading } = useUser();
+  const { conversations } = useSelector((state: RootState) => state.chat)
+  let i = 0;
+  conversations.map(convo => {
+    i = i + convo.unread
+  })
   const [isPopUp,setPopUp] = useState<boolean>(false);
   const [open,setOpen] = useState<boolean>(false);
   const router = useRouter();
@@ -92,8 +99,9 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
               <BadgePlus size={22} className="dark:stroke-tom" />
               {/* <div>Post</div> */}
             </div>
-            <div onClick={() => handleClick('chats')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'chats' ? 'active' : ''}`}>
+            <div onClick={() => handleClick('chats')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'chats' ? 'active' : ''} relative`}>
               <Mail size={22} className="dark:stroke-tom" />
+              {i > 0 && <div className='bg-brand text-white text-xs absolute right-0 transform translate-y-[-50%] translate-x-1/2 font-bold rounded-full w-5 h-5 flex items-center justify-center'>{i}</div>}
               {/* <div>Chats</div> */}
             </div>
             {(!loading) ? (

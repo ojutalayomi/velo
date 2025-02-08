@@ -25,6 +25,58 @@ body {
     )
     rgb(var(--background-start-rgb));
 } */
+@media (min-height: 585px) {
+  div#more, div[aria-label='morePopOver'] {
+    display: none;
+  }
+}
+
+@media (max-height: 425px) {
+  div div[aria-label="chats"] {
+    display: none;
+  }
+  div[aria-label='morePopOver'] a[aria-label="chats"] {
+    display: flex;
+  }
+}
+
+@media (max-height: 468px) {
+  div div[aria-label="profile"] {
+    display: none;
+  }
+  div[aria-label='morePopOver'] a[aria-label="profile"] {
+    display: flex;
+  }
+}
+
+@media (max-height: 524px) {
+  div div[aria-label="general"] {
+    display: none;
+  }
+  div[aria-label='morePopOver'] a[aria-label="general"] {
+    display: flex;
+  }
+}
+
+@media (max-height: 582px) {
+  div div[aria-label="notifications"] {
+    display: none;
+  }
+  div[aria-label='morePopOver'] a[aria-label="notifications"] {
+    display: flex;
+  }
+}
+
+@media (max-height: 585px) {
+  div div[aria-label="feedback"] {
+    display: none;
+  }
+  div[aria-label='morePopOver'] a[aria-label="feedback"] {
+    display: flex;
+  }
+}
+
+
 div#home {
   scrollbar-width: none; /* Hide scrollbar in Firefox */
   .pre-status{

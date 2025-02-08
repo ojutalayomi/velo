@@ -56,14 +56,22 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
     setPopUp(!isPopUp);
   }, [isPopUp]);
 
-  const memoizedSidebarItems = useMemo(() => sidebarItems.map((item) => (
-    <SidebarItem
-      key={item.route}
-      item={item}
-      activeRoute={activeRoute}
-      handleClick={handleClick}
-      userdata={userdata}
-    />
+  const memoizedSidebarItems = useMemo(() => sidebarItems.map((item, key) => (
+    <TooltipProvider key={item.route+key}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <SidebarItem
+            item={item}
+            activeRoute={activeRoute}
+            handleClick={handleClick}
+            userdata={userdata}
+          />
+        </TooltipTrigger>
+        <TooltipContent side='right' align='center' className='900px:hidden' sideOffset={5} alignOffset={5}>
+          {item.label}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )), [activeRoute, handleClick, userdata]);
   
   const userSectionRef = useRef<HTMLDivElement>(null)
@@ -90,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
       <div className='flex 900px:justify-start justify-center m-2'>
         <Image src='/velo11.png' className='displayPicture mt-[10px] mb-[-5px]' width={30} height={30} alt='logo'/>
       </div>
-      <div className='flex-1 overflow-auto'>
+      <div className='flex-1'>
         {memoizedSidebarItems}
       </div>
       <div className="px-2 flex justify-center 900px:block">

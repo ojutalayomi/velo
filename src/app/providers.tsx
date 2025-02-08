@@ -106,6 +106,10 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       }
     }
 
+    window.onbeforeunload = ()=> {
+      socketIo.emit('activity');
+    }
+    
     document.addEventListener('mousemove', emitActivity);
     document.addEventListener('touchstart', emitActivity);
     document.addEventListener('visibilitychange', emitActivity1);

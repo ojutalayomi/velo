@@ -1,6 +1,5 @@
 'use client'
 import { notFound, useRouter } from "next/navigation";
-import MediaSlide from "@/templates/mediaSlides";
 import { UserSchema } from "@/lib/types/type";
 import Posts from "@/templates/posts";
 import { PostData } from "@/templates/PostProps";
@@ -9,9 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Statuser } from "@/components/VerificationComponent";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Image from "next/image";
-import { Ellipsis, Search } from "lucide-react";
+import { ArrowLeft, Ellipsis, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function Profile({ userData, userPosts }: { userData: UserSchema, userPosts: PostData[] }) {
@@ -25,12 +23,12 @@ export default function Profile({ userData, userPosts }: { userData: UserSchema,
     }
 
     return (
-        <div className="w-full h-screen max-h-screen dark:bg-black overflow-auto">
-            <div className="w-3/5 h-screen max-h-screen dark:bg-black overflow-auto">
+        <div className="w-full flex h-screen max-h-screen dark:bg-black overflow-auto">
+            <div className="md:w-3/5 h-screen max-h-screen dark:bg-black overflow-auto">
                 <div className={`flex backdrop-blur-lg top-0 sticky gap-4 items-center z-10 w-full px-3 py-2`}>
-                    <FontAwesomeIcon 
+                    <ArrowLeft 
                     onClick={() => router.back()}
-                    icon={'arrow-left'} className='p-1 icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg"
+                    className='p-1 icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out size-8'
                     />
                     <div>
                         <p className="flex items-center gap-1">{userData.firstname && userData.lastname ? userData.firstname + ' ' + userData.lastname : 'Velo'} {userData.verified && (<Statuser className="size-4"/>)}</p>
@@ -99,7 +97,7 @@ export default function Profile({ userData, userPosts }: { userData: UserSchema,
                     <div className="grid grid-cols-1 gap-4">
                         {userPosts.map((post, index) => (
                             <div key={post.PostID + index} className={`w-full h-fit rounded-xl bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md transition-shadow`}>
-                                {post.Image.length ? <MediaSlide postData={post} isLink={true} /> : <Posts postData={post} />}    
+                               <Posts postData={post} />
                             </div>
                         ))}
                     </div>

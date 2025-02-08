@@ -25,6 +25,16 @@ body {
     )
     rgb(var(--background-start-rgb));
 } */
+div#home {
+  scrollbar-width: none; /* Hide scrollbar in Firefox */
+  .pre-status{
+    scrollbar-width: none;
+  }
+}
+
+div#home::-webkit-scrollbar {
+  display: none; /* Hide scrollbar in Chrome, Safari, and Edge */
+}
 .dark\:bg-bgDark:where(.dark,.dark *) {
   background-image: url(/greybg-dark.png) !important;
 }

@@ -7,6 +7,7 @@ import { UserData } from '@/redux/userSlice';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/app/providers';
 import { handleThemeChange1 } from './ThemeToggle';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface SidebarProps {
   activeRoute: string;
@@ -107,9 +108,16 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
             <Moon size={20} className="inline" /> Dark
           </button>
         </div>
-        <button onClick={toggleDarkMode} className="900px:hidden p-2 bg-gray-100 dark:bg-gray-700 rounded-full shadow-bar dark:shadow-bar-dark">
-          {isDarkMode ? <Moon size={20} className="mx-auto" /> : <Sun size={20} className="mx-auto" />}
-        </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={toggleDarkMode} className="900px:hidden p-2 bg-gray-100 dark:bg-gray-700 rounded-full shadow-bar dark:shadow-bar-dark">
+                {isDarkMode ? <Moon size={20} className="mx-auto" /> : <Sun size={20} className="mx-auto" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side='right' align='center' className='900px:hidden' sideOffset={5} alignOffset={5}>Toggle {!isDarkMode ? 'Dark' : 'Light'} Mode</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <div className='px-2'>
         <UserSection

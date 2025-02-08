@@ -6,24 +6,9 @@
   overflow: auto;
   width: 100%;
 }
-#home .pre-status .status {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  height: auto;
-  justify-content: space-evenly;
-  width: -moz-fit-content;
-  width: fit-content;
-}
 #home .pre-status .status .status-child {
   background: url(https://noow-app-wbp9.onrender.com/images/img_avatar.png) no-repeat;
   background-repeat: round;
-  border-radius: 50%;
-  height: 34px;
-  margin: 10px;
-  outline: 5px solid #ff6257;
-  width: 34px;
 }
 #home .h3 {
   border-top: 1px solid hsl(235, 18%, 26%);

@@ -50,7 +50,7 @@ export const Statuser = forwardRef<SVGSVGElement, StatuserProps>(
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger aria-label={`Verification status: ${variant}`}>
+          <TooltipTrigger aria-label={`Verification status: ${variant}`} asChild>
             <Icon
               size={16}
               ref={ref}

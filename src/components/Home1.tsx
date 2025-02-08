@@ -6,13 +6,16 @@ import { RefreshCw } from 'lucide-react';
 import { RootState } from '@/redux/store';
 import { usePosts } from '@/app/providers';
 import { Skeleton } from './ui/skeleton';
+import { useUser } from '@/hooks/useUser';
 
 const Homepage: React.FC = () => {
+    const { userdata } = useUser();
     const { posts, loading, error } = useSelector((state: RootState) => state.posts);
     const { success, setReload } = usePosts();
     const homeRef = useRef<HTMLDivElement>(null);
     const scrollPositionRef = useRef(0);
     const [isClient, setIsClient] = useState(false);
+    const [load, setLoad] = useState(false);
     
     // Handle scroll event
     const handleScroll = () => {
@@ -46,26 +49,24 @@ const Homepage: React.FC = () => {
             className='dark:text-slate-200'
         >
             <header className='dark:bg-zinc-900 bg-gray-50 shadow-md sticky top-0 w-full z-[5]'>
-                <div className='flex justify-center py-3 w-full'>
+                <div onClick={() => userdata.name.includes('Ayomide') && setLoad(!load)} className='flex justify-center py-3 w-full'>
                     <h1>Velo</h1>
                 </div>
             </header>
 
-            <div className='pre-status mt-2'>
-                <div className='status'>
-                    {loading && (
-                        [7].map(i => (
-                            <div key={"ui"+i} className="flex items-center w-full h-[10%]">
-                                <Skeleton className="size-8 rounded-full ring-2 ring-brand" />
-                            </div>
+            <div className='pre-status ml-2 mt-2'>
+                <div className='status p-2 flex items-center justify-center gap-4 w-fit'>
+                    {(loading || load) && (
+                        [...Array(15)].map((_,i) => (
+                            <Skeleton key={"uidg"+i} className="size-10 rounded-full ring-4 ring-brand" />
                         ))
                     )}
-                    {!loading && success && success.length > 0 && (
-                        success.map((status: string, index: number) => (
+                    {(!loading && !load) && (
+                        (success && success.length > 0) && success.map((status: string, index: number) => (
                             <div 
                                 key={index} 
                                 id={`status-${index}`} 
-                                className='status-child' 
+                                className='status-child rounded-full size-10 ring-4 ring-brand' 
                                 style={{ 
                                     backgroundImage: `url(https://s3.amazonaws.com/profile-display-images/${status})`
                                 }} 
@@ -81,13 +82,23 @@ const Homepage: React.FC = () => {
             </div>
 
             <>
-                {loading ? (
-                    [6].map(i => (
-                        <div key={"ux"+i} className="flex flex-col space-y-3">
-                            <Skeleton className="h-[125px] w-[250px] rounded-xl" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[250px]" />
-                                <Skeleton className="h-4 w-[200px]" />
+                {(loading || load)? (
+                    [...Array(6)].map((_,i) => (
+                        <div key={"uxdf"+i} className="flex flex-col space-y-3 cursor-progress m-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
+                            <div className='flex items-center justify-start gap-2'>
+                                <Skeleton className="size-10 rounded-full" />
+                                <div className='flex flex-col space-y-2'>
+                                    <Skeleton className="h-4 w-16 rounded-xl" />
+                                    <Skeleton className="h-4 w-12 rounded-xl" />
+                                </div>
+                            </div>
+                            <Skeleton className="h-8 rounded-xl" />
+                            <Skeleton className="h-40 rounded-xl" />
+                            <Skeleton className="h-4 w-24 rounded-xl" />
+                            <div className="flex items-center justify-around gap-2">
+                                {[...Array(4)].map((_,i) => (
+                                    <Skeleton key={i++} className="size-8" />
+                                ))}
                             </div>
                         </div>
                     ))
@@ -106,6 +117,7 @@ const Homepage: React.FC = () => {
                     </div>
                 )}
             </>
+            <div className='tablets:hidden h-20 w-full bg-transparent'/>
         </div>
     );
 };

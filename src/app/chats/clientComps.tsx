@@ -102,7 +102,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             </svg>
             <input className='bg-transparent border-0 dark:text-slate-200 outline-0 w-full' value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} type='text' placeholder='Search...'/>
           </div>
-          <div>Filter</div>
+          {searchQuery && <div onClick={() => setSearchQuery('')} className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out'>Clear</div>}
         </div>
         {/* Tabs */}
         <div className='dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3'>

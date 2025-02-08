@@ -123,7 +123,7 @@ const NewChatMenu = () => {
 
     const openChat = (_id: string) => {
       const existingConvo = conversations.find(convo => 
-        convo.participants.includes(_id) && convo.type === 'DMs'
+        _id === userdata._id ? convo.participants.length === 1 && convo.participants.includes(_id) : convo.participants.length === 2 && convo.participants.includes(_id)
       );
       if (existingConvo) {
         router.push(`/chats/${existingConvo.id}`);

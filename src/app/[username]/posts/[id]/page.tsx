@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getComments, getPost } from '../../../../components/getStatus';
 import NavBar from '../../../../components/navbar';
 import { useUser } from '@/hooks/useUser';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const PostContent: React.FC = () => {
     const params = useParams();
@@ -78,7 +79,23 @@ const PostContent: React.FC = () => {
             <NavBar route='post'/>
             <div id='postpage' className='dark:text-slate-200'>
                 {loading0 ? 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>
+                    <div className="flex flex-col w-full space-y-3 cursor-progress mt-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
+                        <div className='flex items-center justify-start gap-2'>
+                            <Skeleton className="size-10 rounded-full" />
+                            <div className='flex flex-col space-y-2'>
+                                <Skeleton className="h-4 w-16 rounded-xl" />
+                                <Skeleton className="h-4 w-12 rounded-xl" />
+                            </div>
+                        </div>
+                        <Skeleton className="h-8 rounded-xl" />
+                        <Skeleton className="h-40 rounded-xl" />
+                        <Skeleton className="h-4 w-16 rounded-xl" />
+                        <div className="flex items-center justify-around gap-2">
+                            {[...Array(4)].map((_,i) => (
+                                <Skeleton key={i++} className="size-8" />
+                            ))}
+                        </div>
+                    </div>
                 :
                 success?
                         <><Posts key={success.post._id} postData={success.post} /></>

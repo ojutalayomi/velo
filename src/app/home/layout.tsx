@@ -1,6 +1,5 @@
 import React from 'react';
-import ClientComponents from './clientComps';
-import type { Metadata,Viewport } from "next";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Home | Velo",

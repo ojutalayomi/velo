@@ -11,12 +11,19 @@ import {
 import VideoDiv from "./videoDiv"
 import { PostData } from "./PostProps"
 import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 
 const MediaSlide = ({postData, isLink = false}:{postData: PostData, isLink?: boolean}) => {
     const [api, setApi] = useState<CarouselApi>()
+    const { index } = useParams() as { index: string }
     const [current, setCurrent] = useState(0)
     const [count, setCount] = useState(0)
     const [showControls, setShowControls] = useState(false)
+
+    useEffect(() => {
+        if (!api || !index) return
+        api.scrollTo(parseInt(index), true)
+    }, [api])
 
     useEffect(() => {
         if (!api) {
@@ -41,9 +48,9 @@ const MediaSlide = ({postData, isLink = false}:{postData: PostData, isLink?: boo
     }, [postData.Image])
 
     return (
-        <div className="relative w-full flex items-center justify-center">
+        <div className={`relative w-full flex items-center justify-center flex-1`}>
             <Carousel setApi={setApi} className="w-full h-full">
-                <CarouselContent className="h-full">
+                <CarouselContent className="h-full items-center">
                     {postData.Image?.map((media, index) => {
                         const isImage = media.includes('png') || media.includes('jpg') || media.includes('jpeg')
                         const isHosted = !media.includes('https') && !media.startsWith('/')
@@ -52,23 +59,21 @@ const MediaSlide = ({postData, isLink = false}:{postData: PostData, isLink?: boo
                         return (
                             <CarouselItem 
                                 key={`${media}-${index}`}
-                                className="flex items-center justify-center"
+                                className="flex items-center justify-center bg-primary/10 h-full w-full"
                             >
-                                <div className="max-h-full w-full flex items-center justify-center">
-                                    {isImage ? (
-                                        <ImageDiv 
-                                            {...(isLink ? {link} : {})}
-                                            media={media} 
-                                            host={isHosted}
-                                        />
-                                    ) : (
-                                        <VideoDiv
-                                            {...(isLink ? {link} : {})}
-                                            media={media}
-                                            host={isHosted} 
-                                        />
-                                    )}
-                                </div>
+                                {isImage ? (
+                                    <ImageDiv 
+                                        {...(isLink ? {link} : {})}
+                                        media={media} 
+                                        host={isHosted}
+                                    />
+                                ) : (
+                                    <VideoDiv
+                                        {...(isLink ? {link} : {})}
+                                        media={media}
+                                        host={isHosted} 
+                                    />
+                                )}
                             </CarouselItem>
                         )
                     })}

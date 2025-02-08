@@ -101,7 +101,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
           <video
             ref={videoRef}
             className="w-auto h-auto max-h-[calc(100vh-200px)] object-contain cursor-pointer"
-            style={{ maxWidth: '100%' }}
+            style={{ minWidth: '100%' }}
             onClick={togglePlay}
           >
             <source src={host ? hostname + media : media} />
@@ -111,7 +111,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
         <video
           ref={videoRef}
           className="w-auto h-auto max-h-[calc(100vh-200px)] object-contain cursor-pointer"
-          style={{ maxWidth: '100%' }}
+          style={{ minWidth: '100%' }}
           onClick={togglePlay}
         >
           <source src={host ? hostname + media : media} />

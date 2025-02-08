@@ -188,7 +188,7 @@ const NewChatMenu = () => {
             <h2 className="text-sm dark:text-slate-200 font-semibold text-center">Create New Group</h2>
             <button
               disabled={selectedUsers.length < 2}
-              onClick={() => {if (selectedUsers.length > 2) setIsModalOpen(true)}}
+              onClick={() => {if (selectedUsers.length >= 2) setIsModalOpen(true)}}
               className="px-4 py-1 disabled:bg-gray-400 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors duration-300 ease-in-out text-sm font-medium"
             >
               Create
@@ -225,9 +225,9 @@ const NewChatMenu = () => {
             <div className="mb-4">
               <div className="flex flex-wrap gap-2 pb-4 border-b dark:border-gray-700">
                 {selectedUsers.map((user) => (
-                  <div key={user._id} className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1">
+                  <div key={user._id} className="flex items-center gap-2 shadow bg-gray-100 dark:bg-zinc-900 rounded-full px-2 py-1">
                     <Avatar>
-                      <AvatarFallback>{user.name?.slice(0,2) || `${user.firstname?.[0] || ''} ${user.lastname?.[0] || ''}`}</AvatarFallback>
+                      <AvatarFallback className='shadow-inner'>{user.name?.slice(0,2) || `${user.firstname?.[0] || ''} ${user.lastname?.[0] || ''}`}</AvatarFallback>
                       <AvatarImage 
                       src={
                         user.dp || user.displayPicture  
@@ -237,9 +237,7 @@ const NewChatMenu = () => {
                           : url +  user.displayPicture
                           )) 
                         : ''}
-                      className='w-6 h-6 rounded-full mr-2'
-                      width={24}
-                      height={24}
+                      className='rounded-full mr-2 shadow-inner'
                       alt={user.name || `${user.firstname} ${user.lastname}`}
                     />
                     </Avatar>

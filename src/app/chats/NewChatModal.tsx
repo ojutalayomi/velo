@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 
 interface NewChatModalProps {
     isOpen: boolean;
@@ -23,15 +24,14 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm,
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {username ? `Start new ${chattype}` : 'Start new chat'}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            {username ? `Are you sure you want to start a new chat with` + <b className='text-brand'>@{username}</b> : 'Are you sure you want to create a new group?'}
-          </p>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogTrigger className='hidden'>Open</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{username ? `Directly message ${username}` : 'Start new chat'}</DialogTitle>
+          <DialogDescription>
+            {username ? <>Are you sure you want to start a new chat with <b className='text-brand'>@{username}</b> </> : 'Are you sure you want to create a new group?'}
+          </DialogDescription>
           <div className="flex justify-end space-x-4">
             <button
               onClick={onClose}
@@ -47,9 +47,9 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onConfirm,
               Yes
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
   );
 };
 

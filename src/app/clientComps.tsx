@@ -2,14 +2,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Bottombar from '@/components/Bottombar';
-import Root from '@/components/Root';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Error from './error';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ConvoType, setConversations, updateConversation, setMessages, addMessage, deleteMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
-import { usePathname, useRouter } from 'next/navigation';
-import Loading from './loading'; 
+import { ConvoType, updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
+import { usePathname } from 'next/navigation';
 import UserPhoto from "@/components/UserPhoto";
 import VideoPlayer from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
@@ -34,8 +32,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const isModalRoute  = pathname?.endsWith('/photo');
     const isModalRoute1  = pathname?.includes('/photo/');
     const callRoute  = pathname?.startsWith('/call');
-    const router = useRouter();
-    const { userdata, loading, error: err, refetchUser } = useUser();
+    const { userdata } = useUser();
     const path = pathname?.replace('/','') || '';
     const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
     const [activeRoute, setActiveRouteState] = useState<string>(path);
@@ -198,7 +195,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             : null}
                 {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
                 <div id='detail' className="">
-                    {load ? <Loading /> : children}
+                    {children}
                     {isModalRoute && <UserPhoto />}
                     {isModalRoute1 && <VideoPlayer />}
                     {callRoute && <VideoChat />}

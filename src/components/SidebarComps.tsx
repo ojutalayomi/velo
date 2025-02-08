@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/popover"
 import { UserData } from '@/redux/userSlice';
 import { Statuser } from './VerificationComponent';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 export const sidebarItems = [
   {
@@ -108,20 +109,29 @@ export const SidebarItem: React.FC<{
 
   return (
     <Link href={`/${route}`}>
-      <div 
-      className={`sidebar ft dark:text-slate-200 rout ${
-        isActive ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''
-      }`} 
-      data-route={route}
-      >
-        <div 
-          className='sidebar-icon' 
-          onClick={() => handleClick(route)}
-        >
-          {item.icon}
-          <div className='rt'>{label}</div>
-        </div>
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+          <div 
+          className={`sidebar ft dark:text-slate-200 rout ${
+            isActive ? 'active sticky top-0 bottom-0 backdrop-filter backdrop-blur-[5px]' : ''
+          }`} 
+          data-route={route}
+          >
+            <div 
+              className='sidebar-icon' 
+              onClick={() => handleClick(route)}
+            >
+              {item.icon}
+              <div className='rt'>{label}</div>
+            </div>
+          </div>
+          </TooltipTrigger>
+          <TooltipContent side='right' align='center' className='900px:hidden' sideOffset={5} alignOffset={5}>
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </Link>
   );
 };

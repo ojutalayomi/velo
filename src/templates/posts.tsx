@@ -114,7 +114,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
 
   return (
     <div className='pre-blog' id={postData.PostID.slice(0,-4)}>
-      <div className='blog !dark:shadow-bar-dark select-none dark:text-slate-200' data-id={postData.PostID}>
+      <div className='blog !dark:shadow-bar-dark select-none dark:bg-zinc-900 shadow-md dark:text-slate-200' data-id={postData.PostID}>
         <div className='blogger-details'>
           <div className='blog-top-left'>
             <div className={ postData.Verified ? 'blogger-img v' : 'blogger-img'}>

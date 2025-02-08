@@ -7,7 +7,7 @@ const NotFound: React.FC = () => {
     const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center text-gray-800">
+    <div className="min-h-screen bg-white dark:bg-zinc-900 flex flex-col items-center justify-center text-gray-800">
       <h1 className="text-6xl font-bold mb-4">404</h1>
       <p className="text-2xl mb-8">Oops! Page not found</p>
       <div className="max-w-md text-center mb-8">

@@ -14,12 +14,11 @@ const Homepage: React.FC = () => {
     const { success, setReload } = usePosts();
     const homeRef = useRef<HTMLDivElement>(null);
     const scrollPositionRef = useRef(0);
-    const [isClient, setIsClient] = useState(false);
     const [load, setLoad] = useState(false);
     
     // Handle scroll event
     const handleScroll = () => {
-        if (homeRef.current) {
+        if (homeRef.current && !loading && !load) {
             scrollPositionRef.current = homeRef.current.scrollTop;
             localStorage.setItem('homeScrollPosition', scrollPositionRef.current.toString());
         }
@@ -27,7 +26,6 @@ const Homepage: React.FC = () => {
 
     // Set initial client state and restore scroll position
     useEffect(() => {
-        setIsClient(true);
         const savedPosition = localStorage.getItem('homeScrollPosition');
         if (homeRef.current && savedPosition) {
             const position = parseInt(savedPosition);
@@ -40,6 +38,21 @@ const Homepage: React.FC = () => {
             }, 100);
         }
     }, []);
+
+    useEffect(() => {
+        if(!loading && !load) return;
+        const savedPosition = localStorage.getItem('homeScrollPosition');
+        if (homeRef.current && savedPosition) {
+            const position = parseInt(savedPosition);
+            // Small delay to ensure content is rendered
+            setTimeout(() => {
+                homeRef.current?.scrollTo({
+                    top: position,
+                    behavior: 'instant' // Changed from 'smooth' for more reliable positioning
+                });
+            }, 100);
+        }
+    }, [loading, load]);
 
     return (
         <div 
@@ -54,7 +67,7 @@ const Homepage: React.FC = () => {
                 </div>
             </header>
 
-            <div className='pre-status ml-2 mt-2'>
+            <div className='pre-status pl-2 mt-2'>
                 <div className='status p-2 flex items-center justify-center gap-4 w-fit'>
                     {(loading || load) && (
                         [...Array(15)].map((_,i) => (

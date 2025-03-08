@@ -1,22 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { MongoClient, ServerApiVersion } from 'mongodb'
-
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true
-  },
-  connectTimeoutMS: 60000,
-  maxPoolSize: 10
-});
+import { getMongoClient } from '@/lib/mongodb';
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse){
     if(req.method === 'GET'){
 
         const username = req.query.username;
 
+        const client = await getMongoClient();
         await client.connect();
         await client.db("admin").command({ ping: 1 });
         console.log("Mongoconnection. You successfully connected to MongoDB!");

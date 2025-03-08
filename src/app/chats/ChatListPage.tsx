@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
@@ -12,6 +12,7 @@ import { Pin } from 'lucide-react';
 import { useSocket } from '../providers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
+import Link from 'next/link';
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
@@ -124,165 +125,166 @@ const Card: React.FC<Props> = ({chat}) => {
 
   return(
 
-    <div key={chat.id} 
-      className="bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-bar dark:shadow-bar-dark flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative" 
-      onClick={() => openChat(chat.id)} 
-      onContextMenu={(event) => {
-        event.preventDefault();
-        setShowDropdown(chat.id);
-      }}
-      onTouchStart={(event) => {
-        if (event.touches.length === 1) {
-          const touch = event.touches[0];
-          const longPressTimer = setTimeout(() => {
-            setShowDropdown(chat.id);
-          }, 500); // 500ms long press
-          
-          const cancelLongPress = () => {
-            clearTimeout(longPressTimer);
-          };
+    <Link key={chat.id} href={chat.type === 'Groups' ? `/chats/group/${chat.id}` : `/chats/${chat.id}`}>
+      <div
+        className="bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-bar dark:shadow-bar-dark flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative"
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setShowDropdown(chat.id);
+        }}
+        onTouchStart={(event) => {
+          if (event.touches.length === 1) {
+            const touch = event.touches[0];
+            const longPressTimer = setTimeout(() => {
+              setShowDropdown(chat.id);
+            }, 500); // 500ms long press
+            
+            const cancelLongPress = () => {
+              clearTimeout(longPressTimer);
+            };
 
-          document.addEventListener('touchend', cancelLongPress);
-          document.addEventListener('touchmove', cancelLongPress);
+            document.addEventListener('touchend', cancelLongPress);
+            document.addEventListener('touchmove', cancelLongPress);
 
-          return () => {
-            document.removeEventListener('touchend', cancelLongPress);
-            document.removeEventListener('touchmove', cancelLongPress);
-          };
-        }
-      }}
-    >
-      {showDropdown === chat.id && (
-        <div className="dropdown-menu absolute top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
-          <ul className="py-1">
-            {options.map((option) => (
-              <li key={option.id} 
-                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if(socket){
-                    option.action();
-                    switch (true) {
-                      case option.name.toLowerCase().includes("pin"):
-                        socket.emit('updateConversation', { 
-                          id: chat.id, 
-                          updates: { pinned: !isPinned, userId: userdata._id } 
-                        });
-                        break;
-                      case option.name.toLowerCase().includes("archive"):
-                        socket.emit('updateConversation', { 
-                          id: chat.id, 
-                          updates: { archived: !isArchived, userId: userdata._id } 
-                        });
-                        break;
-                      case option.name.toLowerCase().includes("delete"):
-                        socket.emit('updateConversation', { 
-                          id: chat.id, 
-                          updates: { deleted: !isDeleted, convo: true } 
-                        });
-                        break;
-                      case option.name.toLowerCase().includes("read"):
-                        const unread = isUnread ? 1 : 0;
-                        socket.emit('updateConversation', { 
-                          id: chat.id, 
-                          updates: { unreadCount: unread, userId: userdata._id } 
-                        });
-                        break;
-                      default:
-                        break;
-                    }
-                  }
-                }}
-              >
-                {option.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <div className="relative">
-        <Avatar>
-          <AvatarFallback>{chat.name.slice(0,2)}</AvatarFallback>
-          <AvatarImage
-          src={
-            chat.displayPicture  
-            ?  (
-              chat.displayPicture.includes('ila-') 
-              ? ''
-              : url +  chat.displayPicture
-            )
-            : ''
+            return () => {
+              document.removeEventListener('touchend', cancelLongPress);
+              document.removeEventListener('touchmove', cancelLongPress);
+            };
           }
-          onClick={(e) => {
-            e.preventDefault();
-            fullscreen();
-          }}
-          height={40} width={40} alt={chat.name} 
-          className="w-10 h-10 min-w-10 rounded-full" 
-          />
-        </Avatar>
-        {(chat.type === 'DMs' && onlineUsers.includes(chat.participants.find(id => id !== userdata._id) as string)) && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"/>}
-      </div>
-      <div className="flex-grow w-1/4">
-        <div className="flex justify-between items-baseline">
-          <div className='flex items-center gap-1'>
-            <h2 className="font-semibold truncate">{chat.name}</h2>
-            {chat.verified && 
-              <Statuser className="size-4 flex-shrink-0"/>
-            }
+        }}
+      >
+        {showDropdown === chat.id && (
+          <div className="dropdown-menu absolute top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
+            <ul className="py-1">
+              {options.map((option) => (
+                <li key={option.id} 
+                  className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if(socket){
+                      option.action();
+                      switch (true) {
+                        case option.name.toLowerCase().includes("pin"):
+                          socket.emit('updateConversation', { 
+                            id: chat.id, 
+                            updates: { pinned: !isPinned, userId: userdata._id } 
+                          });
+                          break;
+                        case option.name.toLowerCase().includes("archive"):
+                          socket.emit('updateConversation', { 
+                            id: chat.id, 
+                            updates: { archived: !isArchived, userId: userdata._id } 
+                          });
+                          break;
+                        case option.name.toLowerCase().includes("delete"):
+                          socket.emit('updateConversation', { 
+                            id: chat.id, 
+                            updates: { deleted: !isDeleted, convo: true } 
+                          });
+                          break;
+                        case option.name.toLowerCase().includes("read"):
+                          const unread = isUnread ? 1 : 0;
+                          socket.emit('updateConversation', { 
+                            id: chat.id, 
+                            updates: { unreadCount: unread, userId: userdata._id } 
+                          });
+                          break;
+                        default:
+                          break;
+                      }
+                    }
+                  }}
+                >
+                  {option.name}
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-        <p className="text-sm text-gray-600 truncate">
-          {(chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] || filteredKeys.includes(true)) 
-            ? 'Typing...' 
-            : (chat.lastMessage 
-                ? chat.lastMessage
-                : 'No message available')}
-        </p>
-      </div>
-      <div className='flex flex-col items-end gap-1'>
-        <span className="text-sm text-gray-500 text-nowrap">{time}</span>
-        <div className="flex items-center gap-2">
-          {chat.unread > 0 && (
-            <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-              {chat.unread}
-            </div>
-          )}
-          {chat.pinned && (
-            <Pin size={21} 
-            className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (socket) {
-                socket.emit('updateConversation',{ id: chat.id, updates: { pinned: !isPinned, userId: userdata._id } });
-                dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
-              }
-            }}
-            />
-          )}
-        </div>
-      </div>
-      {showFullscreen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          onClick={() => setShowFullscreen(false)}
-        >
-          <Image 
+        )}
+        <div className="relative">
+          <Avatar>
+            <AvatarFallback>{chat.name.slice(0,2)}</AvatarFallback>
+            <AvatarImage
             src={
               chat.displayPicture  
-              ? (chat.displayPicture.includes('ila-') 
-                ? '/default.jpeg'
-                : url + chat.displayPicture)
-              : '/default.jpeg'
+              ?  (
+                chat.displayPicture.includes('ila-') 
+                ? ''
+                : url +  chat.displayPicture
+              )
+              : ''
             }
-            height={500} 
-            width={500} 
-            alt={chat.name}
-            className="max-h-[90vh] w-auto object-contain rounded-lg"
-          />
+            onClick={(e) => {
+              e.preventDefault();
+              fullscreen();
+            }}
+            height={40} width={40} alt={chat.name} 
+            className="w-10 h-10 min-w-10 rounded-full" 
+            />
+          </Avatar>
+          {(chat.type === 'DMs' && onlineUsers.includes(chat.participants.find(id => id !== userdata._id) as string)) && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"/>}
         </div>
-      )}
-    </div>
+        <div className="flex-grow w-1/4">
+          <div className="flex justify-between items-baseline">
+            <div className='flex items-center gap-1'>
+              <h2 className="font-semibold truncate">{chat.name}</h2>
+              {chat.verified && 
+                <Statuser className="size-4 flex-shrink-0"/>
+              }
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 truncate">
+            {(chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] || filteredKeys.includes(true)) 
+              ? 'Typing...' 
+              : (chat.lastMessage 
+                  ? chat.lastMessage
+                  : 'No message available')}
+          </p>
+        </div>
+        <div className='flex flex-col items-end gap-1'>
+          <span className="text-sm text-gray-500 text-nowrap">{time}</span>
+          <div className="flex items-center gap-2">
+            {chat.unread > 0 && (
+              <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {chat.unread}
+              </div>
+            )}
+            {chat.pinned && (
+              <Pin size={21} 
+              className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (socket) {
+                  socket.emit('updateConversation',{ id: chat.id, updates: { pinned: !isPinned, userId: userdata._id } });
+                  dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
+                }
+              }}
+              />
+            )}
+          </div>
+        </div>
+        {showFullscreen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowFullscreen(false)}
+          >
+            <Image 
+              src={
+                chat.displayPicture  
+                ? (chat.displayPicture.includes('ila-') 
+                  ? '/default.jpeg'
+                  : url + chat.displayPicture)
+                : '/default.jpeg'
+              }
+              height={500} 
+              width={500} 
+              alt={chat.name}
+              className="max-h-[90vh] w-auto object-contain rounded-lg"
+            />
+          </div>
+        )}
+      </div>
+    </Link>
   )
 }
 

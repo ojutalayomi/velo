@@ -137,7 +137,7 @@ const NewChatMenu = () => {
     }
 
     useEffect(() => {
-        dispatch(showChat(''));
+      dispatch(showChat(''));
     }, [dispatch]);
     
     const keyHolder = [

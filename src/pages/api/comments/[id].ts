@@ -1,16 +1,5 @@
+import { getMongoClient } from '@/lib/mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ServerApiVersion } from 'mongodb'
-
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true
-  },
-  connectTimeoutMS: 60000,
-  maxPoolSize: 10
-});
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse){
     if(req.method === 'GET'){
@@ -23,6 +12,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
             console.log('Server is ready for work');
 
             // Get the collection
+            const client = await getMongoClient();
             const collection = client.db('mydb').collection('Users');
             const commentsCollection = client.db('mydb').collection('Posts(Comments)');
 

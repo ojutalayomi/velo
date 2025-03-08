@@ -8,6 +8,44 @@ const __dirname = dirname(__filename);
 import path from 'path';
 
 const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self'",
+          },
+        ],
+      },
+    ]
+  },
   async redirects() {
     return [
       {
@@ -26,15 +64,16 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.amazonaws.com',
+        hostname: 's3.amazonaws.com',
         port: '',
       },
       {
         protocol: 'https',
-        hostname: '**.twimg.com',
+        hostname: 'pbs.twimg.com',
         port: '',
       },
     ],
+    domains: ['s3.amazonaws.com', 'pbs.twimg.com'],
   },
   reactStrictMode: true,
   webpack: (config, { isServer }) => {

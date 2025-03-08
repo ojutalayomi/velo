@@ -1,20 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { randomBytes } from 'crypto';
-import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-import { ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
+import { ObjectId } from 'mongodb';
+import { ChatData, ChatSettings } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
+import { getMongoClient } from '@/lib/mongodb';
 
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-let client: MongoClient;
 const MONGODB_DB = 'mydb';
-
-function generateRandom16DigitNumber(): string {
-  let randomNumber = '';
-  for (let i = 0; i < 24; i++) {
-    randomNumber += Math.floor(Math.random() * 10).toString();
-  }
-  return randomNumber;
-}
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const { method } = req;
@@ -29,19 +19,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (!payload) return res.status(401).json(`Not Allowed`);
 
     try {
-      if (!client) {
-        client = new MongoClient(uri, {
-          serverApi: {
-            version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true
-          },
-          connectTimeoutMS: 60000,
-          maxPoolSize: 10
-        });
-        await client.connect();
-        console.log("Mongoconnection: You successfully connected to MongoDB!");
-      }
+      const client = await getMongoClient();
       const { id } = req.query;
       const updatedSettings: Partial<ChatSettings> = req.body;
       // console.log(updatedSettings)

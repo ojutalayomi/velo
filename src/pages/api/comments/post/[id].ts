@@ -4,6 +4,7 @@ import { MongoClient, ServerApiVersion } from 'mongodb'
 import mongoose from 'mongoose'
 // import Post from '../../../../templates/mogooseTemp'
 import { postUpload } from '../../../../models/s3.upload';
+import { getMongoClient } from '@/lib/mongodb';
 
 // interface ExtendedNextRequest extends NextRequest {
 //   files?: {
@@ -31,25 +32,10 @@ interface reqFiles {
   versionId: undefined
 }
 
-interface reqq {
-  ImagesOrVideos: reqFiles[]
-}
-
 function secretKeyy(){
   const secretKey = new mongoose.Types.ObjectId();
   return secretKey;
 }
-
-const uri = process.env.MONGOLINK || '';
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true
-  },
-  connectTimeoutMS: 60000,
-  maxPoolSize: 10
-});
 
 // const handle = createRouter<NextRequest, NextResponse>();
 
@@ -89,6 +75,7 @@ const post = async (req: Request | any, res: Response) => {
     // console.log('Line 90\n',filename)
 
     // Connect to MongoDB
+    const client = await getMongoClient();
     const db = client.db('mydb');
     const collection = db.collection('Users');
     const post = db.collection('Posts');

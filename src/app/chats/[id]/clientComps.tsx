@@ -153,7 +153,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     const fetchFromAPI = async (id: string) => {
       const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
       if (!response.ok) {
-        throw new Error('Failed to fetch');
+        console.log();
       }
       const data = await response.json();
       localStorage.setItem(data[0]._id, JSON.stringify({
@@ -304,10 +304,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   useEffect(() => {
     const updateTimer = () => {
-      const timeDifference = Date.now() - Date.parse(convo.timestamp);
+      const timeDifference = Date.now() - Date.parse(convo?.timestamp);
       if (timeDifference > (86400 * 1000)) {
         const today = new Date();
-        const lastUpdatedDate = new Date(convo.timestamp);
+        const lastUpdatedDate = new Date(convo?.timestamp);
         if (today.toISOString().split('T')[0] !== lastUpdatedDate.toISOString().split('T')[0]) {
           if (today.getDate() - lastUpdatedDate.getDate() === 1) {
             setTime('Yesterday.');
@@ -317,12 +317,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           }
         }
       } else {
-        setTime(updateLiveTime('chat-time', convo.timestamp));
+        setTime(updateLiveTime('chat-time', convo?.timestamp));
       }
     };
 
     updateTimer();
-  }, [convo.timestamp]);
+  }, [convo?.timestamp]);
 
   const closeQuote = () => {
     setQuote(initialQuoteState)
@@ -406,7 +406,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 <div className="flex items-center text-sm font-semibold text-left">
                   <div className='truncate'>{newPerson?.name}</div>
                   {newPerson?.verified && 
-                    <Statuser className='size-4' />
+                    <Statuser className='size-4 ml-1' />
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">

@@ -2,25 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { cookies } from 'next/headers';
-
-let client: MongoClient;
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
+import { getMongoClient } from '@/lib/mongodb';
 
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    if (!client) {
-      client = new MongoClient(uri, {
-        serverApi: {
-          version: ServerApiVersion.v1,
-          strict: true,
-          deprecationErrors: true
-        },
-        connectTimeoutMS: 60000,
-        maxPoolSize: 10
-      });
-      await client.connect();
-    }
+    const client = await getMongoClient();
 
     const tokenCollection = client.db('mydb').collection('Tokens');
     const token = cookieStore.get('velo_12')?.value;

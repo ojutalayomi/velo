@@ -77,7 +77,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const router = useRouter();
   const params = useParams<{ gid: string }>();
   const dispatch = useDispatch();
-  const { userdata, loading, error, refetchUser } = useUser();
+  const { userdata } = useUser();
   const { messages , settings, conversations, loading: convoLoading } = useSelector((state: RootState) => state.chat);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
@@ -359,7 +359,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 <div className="flex items-center text-sm font-semibold text-left">
                   <div className='truncate'>{group?.name}</div>
                   {group?.verified && 
-                    <Statuser className='size-4' />
+                    <Statuser className='size-4 ml-1' />
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">

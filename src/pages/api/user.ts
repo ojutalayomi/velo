@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ServerApiVersion } from 'mongodb'
 import { SignJWT } from 'jose'
 import { serialize } from 'cookie'
 import { UAParser } from 'ua-parser-js'
@@ -12,12 +11,11 @@ import handlebars from 'handlebars'
 import nodemailer from 'nodemailer'
 import { timeFormatter } from '@/templates/PostProps'
 import { UserData } from '@/redux/userSlice'
+import { getMongoClient } from '@/lib/mongodb'
 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -41,8 +39,6 @@ const generateRandomToken = (length: number) => {
     return crypto.randomBytes(length).toString('hex');
 };
 
-let client: MongoClient;
-
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
@@ -55,18 +51,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
   }
 
   try {
-    if (!client) {
-      client = new MongoClient(uri, {
-        serverApi: {
-          version: ServerApiVersion.v1,
-          strict: true,
-          deprecationErrors: true
-        },
-        connectTimeoutMS: 60000,
-        maxPoolSize: 10
-      });
-      await client.connect();
-    }
+    const client = await getMongoClient();
 
     const collection = client.db('mydb').collection('Users');
     const tokenCollection = client.db('mydb').collection('Tokens');
@@ -86,8 +71,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     const { name, firstname, lastname, email, username, displayPicture, verified, userId } = user;
-
-    const randomToken = generateRandomToken(10);
+    
     const time = new Date().toLocaleString();
     const formattedDate = timeFormatter(time);
 

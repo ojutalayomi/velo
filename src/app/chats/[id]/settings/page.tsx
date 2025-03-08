@@ -34,7 +34,7 @@ const chatRepository = new ChatRepository();
 
 const chatSystem = new ChatSystem(chatRepository);
 
-const ChatSettingsPage: React.FC = ({ }) => {
+const ChatSettingsPage: React.FC = () => {
   const router = useRouter();
   const params = useParams() as Params;
   const { id } = params;

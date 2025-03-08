@@ -1,12 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { randomBytes } from 'crypto';
-import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, msgStatus, NewChat, NewChat_, NewChatResponse, NewChatSettings, Participant } from '@/lib/types/type';
+import { ObjectId } from 'mongodb';
+import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, msgStatus, NewChat, NewChat_, NewChatSettings, Participant } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
 import { GroupMessageAttributes } from '../../lib/types/type';
+import { getMongoClient } from '@/lib/mongodb';
 
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-let client: MongoClient;
 const MONGODB_DB = 'mydb';
 
 function generateRandom16DigitNumber(): string {
@@ -21,6 +19,8 @@ interface Payload {
   _id: string,
   exp: number
 }
+
+const client = await getMongoClient();
       
 const func = async (_id: string): Promise<any> => {
   const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
@@ -397,19 +397,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const payload = await verifyToken(cookie as unknown as string) as unknown as Payload;
   // console.log(payload)
   if (!payload) return res.status(401).json(`Not Allowed`);
-  if (!client) {
-    client = new MongoClient(uri, {
-      serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true
-      },
-      connectTimeoutMS: 60000,
-      maxPoolSize: 10
-    });
-    await client.connect();
-    // console.log("Mongoconnection: You successfully connected to MongoDB!");
-  }
   
   switch (method) {
     case 'GET':

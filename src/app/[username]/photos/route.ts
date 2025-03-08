@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ServerApiVersion } from 'mongodb';
-import { cookies } from 'next/headers';
-
-let client: MongoClient;
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
+import { getMongoClient } from '@/lib/mongodb';
 
 export async function GET(
   request: NextRequest, 
@@ -13,21 +10,10 @@ export async function GET(
     // const username = request.nextUrl.searchParams.get('username');
     // console.log(request.nextUrl.searchParams);
     const username = (await params).username;
+    const client = await getMongoClient();
 
     if (!username) {
         return NextResponse.json({ error: 'Username is required' }, { status: 400 });
-    }
-    if (!client) {
-      client = new MongoClient(uri, {
-        serverApi: {
-          version: ServerApiVersion.v1,
-          strict: true,
-          deprecationErrors: true
-        },
-        connectTimeoutMS: 60000,
-        maxPoolSize: 10
-      });
-      await client.connect();
     }
 
     const Users = client.db('mydb').collection('Posts');

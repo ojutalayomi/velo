@@ -1,24 +1,13 @@
+import { getMongoClient } from '@/lib/mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ServerApiVersion } from 'mongodb'
-
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true
-    },
-    connectTimeoutMS: 60000,
-    maxPoolSize: 10
-});
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         const { username } = req.query;
 
         try {
-            await client.connect();
-            const db = client.db('mydb');
+            const mongoClient = await getMongoClient();
+            const db = mongoClient.db('mydb');
             const users = db.collection('Users');
 
             // Find user
@@ -28,21 +17,21 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
             }
 
             // Remove sensitive information
-            delete user.password;
-            delete user.confirmationToken;
-            delete user.resetToken;
-            delete user.resetTokenExpiry;
-            delete user.loginToken;
-            delete user.lastResetAttempt;
+            const sanitizedUser = { ...user };
+            delete sanitizedUser.password;
+            delete sanitizedUser.confirmationToken;
+            delete sanitizedUser.resetToken;
+            delete sanitizedUser.resetTokenExpiry;
+            delete sanitizedUser.loginToken;
+            delete sanitizedUser.lastResetAttempt;
 
-            return res.status(200).json(user);
+            return res.status(200).json(sanitizedUser);
 
         } catch (error) {
             console.error('Error:', error);
             return res.status(500).json({ message: 'Internal Server Error' });
-        } finally {
-            await client.close();
         }
+        // Remove the client.close() from finally block
     } else {
         res.status(405).json({ message: 'Method Not Allowed' });
     }

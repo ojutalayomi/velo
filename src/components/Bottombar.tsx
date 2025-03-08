@@ -6,9 +6,12 @@ import { useUser } from '@/hooks/useUser';
 import { Bell, User, LogIn, BadgePlus, Mail, Settings, Palette, MessageSquarePlus, Home, Search } from 'lucide-react';
 import {
   Drawer,
+  DrawerTitle,
   DrawerContent,
   DrawerFooter,
   DrawerTrigger,
+  DrawerHeader,
+  DrawerDescription,
 } from "@/components/ui/drawer"
 import {
   Popover,
@@ -19,6 +22,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Statuser } from './VerificationComponent';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
+
 interface BottombarProps {
   activeRoute: string;
   isMoreShown: boolean;
@@ -31,7 +35,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
   const { userdata, loading } = useUser();
   const { conversations } = useSelector((state: RootState) => state.chat)
   let i = 0;
-  conversations.map(convo => {
+  conversations?.map(convo => {
     i = i + convo.unread
   })
   const [isPopUp,setPopUp] = useState<boolean>(false);
@@ -113,6 +117,10 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                 </Avatar>
               </DrawerTrigger>
               <DrawerContent className='tablets1:hidden'>
+              <DrawerHeader>
+                <DrawerTitle>Velo Menu</DrawerTitle>
+                <DrawerDescription>Explore your profile and settings</DrawerDescription>
+              </DrawerHeader>
                 <div id='more' className={`flex flex-col gap-2 left-0 px-4 font-light leading-normal`}>
                   <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'general' ? 'active' : ''}`} data-route='general' onClick={() => handleClick('general')}>
                     <Settings size={25}/>
@@ -164,8 +172,8 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                     </div>
                     <div className='names flex flex-col items-center'>
                       <div className='flex dark:text-slate-200'>
-                        <p>{userdata.firstname !== '' ? userdata.firstname : 'John Doe'}</p>
-                        {userdata.verified ? <Statuser className='size-4' /> : null}
+                        <p>{userdata.firstname !== '' ? userdata.firstname + ' ' + userdata.lastname : 'John Doe'}</p>
+                        {userdata.verified ? <Statuser className='size-4 ml-1' /> : null}
                       </div>
                       <p className='username text-xs'>@{userdata.username !== '' ? userdata.username : 'johndoe'}</p>
                     </div>

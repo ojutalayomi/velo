@@ -1,9 +1,7 @@
 "use client";
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSelector } from 'react-redux';
 import { setActiveRoute, setMoreStatus } from '../redux/navigationSlice';
-import { useUser } from '@/hooks/useUser';
 import Home from './Home1';
 
 // interface RootProps {

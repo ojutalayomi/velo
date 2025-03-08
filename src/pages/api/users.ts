@@ -1,16 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb'
-import { SignJWT } from 'jose'
-import cookie from 'cookie'
-import { UAParser } from 'ua-parser-js'
-import { promises as fs } from 'fs'
-import { fileURLToPath } from 'url'
-import path, { dirname } from 'path'
-import bcrypt from 'bcrypt'
-import crypto from 'crypto'
-import handlebars from 'handlebars'
-import nodemailer from 'nodemailer'
-import { timeFormatter } from '@/templates/PostProps'
+import { ObjectId } from 'mongodb'
+import { getMongoClient } from '@/lib/mongodb'
 
 interface Schema {
   _id?: ObjectId,
@@ -48,35 +38,6 @@ interface Schema {
   name?: string
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
-// Read the HTML email template file 
-const filepath = path.join(process.cwd(), 'public/emails.hbs');
-const emailTemplateSource = await fs.readFile(filepath, 'utf8');
-
-// Create a Handlebars template
-const template = handlebars.compile(emailTemplateSource);
-
-const generateRandomToken = (length: number) => {
-    return crypto.randomBytes(length).toString('hex');
-};
-
-let client: MongoClient;
-
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method Not Allowed' });
@@ -88,18 +49,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
   }
 
   try {
-    if (!client) {
-      client = new MongoClient(uri, {
-        serverApi: {
-          version: ServerApiVersion.v1,
-          strict: true,
-          deprecationErrors: true
-        },
-        connectTimeoutMS: 60000,
-        maxPoolSize: 10
-      });
-      await client.connect();
-    }
+    const client = await getMongoClient();
 
     const collection = client.db('mydb').collection('Users');
     let users;

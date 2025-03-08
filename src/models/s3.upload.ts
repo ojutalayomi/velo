@@ -2,7 +2,7 @@ import path from 'path';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 // import { v4 as uuidv4 } from 'uuid';
-import { S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 
 // Configure AWS SDK
 const s3Client = new S3Client({

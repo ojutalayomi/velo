@@ -1,16 +1,5 @@
+import { getMongoClient } from '@/lib/mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ServerApiVersion } from 'mongodb'
-
-const uri = process.env.MONGOLINK || '';
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true
-    },
-    connectTimeoutMS: 60000,
-    maxPoolSize: 10
-});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
@@ -20,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { username } = req.query;
 
     try {
-        await client.connect();
+        const client = await getMongoClient();
         const db = client.db('mydb');
         const users = db.collection('Users');
         const posts = db.collection('Posts');
@@ -61,7 +50,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (error) {
         console.error('Error:', error);
         return res.status(500).json({ message: 'Internal Server Error' });
-    } finally {
-        await client.close();
     }
 }

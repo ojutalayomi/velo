@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb'
 import { UserData } from '@/redux/userSlice';
-
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-let client: MongoClient;
+import { getMongoClient } from '@/lib/mongodb';
 
 interface Payload {
   _id: ObjectId,
@@ -21,19 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const payload = await verifyToken(token) as unknown as Payload;
     
-    if (!client) {
-      client = new MongoClient(uri, {
-        serverApi: {
-          version: ServerApiVersion.v1,
-          strict: true,
-          deprecationErrors: true
-        },
-        connectTimeoutMS: 60000,
-        maxPoolSize: 10
-      });
-      await client.connect();
-      console.log("Mongoconnection: You successfully connected to MongoDB!");
-    }
+    const client = await getMongoClient();
 
     const userCollection = client.db('mydb').collection('Users');
     const user = await userCollection.findOne({ _id: new ObjectId(payload._id) });

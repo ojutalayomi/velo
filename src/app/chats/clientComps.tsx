@@ -1,23 +1,20 @@
 'use client'
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+import React, { useState } from 'react';
 import SwiperCore from 'swiper';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '@/app/fontAwesomeLibrary';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
-import { useDispatch, useSelector } from 'react-redux';
-import { addConversation, addMessage, ConvoType, updateConversation, setConversations } from '@/redux/chatSlice';
+import { useSelector } from 'react-redux';
+import { ConvoType } from '@/redux/chatSlice';
 import { RootState } from '@/redux/store'; 
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { Pagination, Navigation } from 'swiper/modules';
-import { MessageSquare, Pin, PinOff, Users, Hash, Search, Archive, Phone, LockKeyholeOpen, LockKeyhole, MessageCirclePlus } from 'lucide-react';
+import { MessageSquare, Users, Archive, Phone, LockKeyholeOpen, LockKeyhole, MessageCirclePlus } from 'lucide-react';
 import ChatListPage from './ChatListPage';
-import { useSocket } from '@/app/providers';;
-import { MessageAttributes } from '@/lib/types/type';
 
 interface NavigationState {
   chaT: string;
@@ -27,10 +24,8 @@ interface ConvoTypeProp {
 }
 
 export default function App({ children }: Readonly<{ children: React.ReactNode;}>) {
-  const { userdata, loading, error, refetchUser } = useUser();
+  const { userdata, loading } = useUser();
   const router = useRouter();
-  const dispatch = useDispatch();
-  const socket = useSocket();
   const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
   const [ayo, setAyo] = useState<boolean>(true);

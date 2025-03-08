@@ -1,7 +1,7 @@
 'use client'
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
-import { Moon, Search, Sun } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import ImageContent from '@/components/imageContent';
 import Homepage from '@/components/Home1';

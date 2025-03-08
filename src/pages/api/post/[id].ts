@@ -1,16 +1,5 @@
+import { getMongoClient } from '@/lib/mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ServerApiVersion } from 'mongodb'
-
-const uri = process.env.MONGOLINK ? process.env.MONGOLINK : '';
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true
-  },
-  connectTimeoutMS: 60000,
-  maxPoolSize: 10
-});
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse){
     if(req.method === 'GET'){
@@ -18,7 +7,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
       try{
         const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
         const id = req.query.id;
-        await client.connect();
+        const client = await getMongoClient();
         console.log('Connected to post.app');
         let post;
         const collection = client.db('mydb').collection('Posts');

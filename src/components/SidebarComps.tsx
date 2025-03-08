@@ -54,7 +54,7 @@ export const sidebarItems = [
   {
     route: '#',
     icon: CircleEllipsis,
-    label: 'More'
+    label: 'Others'
   }
 ];
 
@@ -66,7 +66,7 @@ export const SidebarItem = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<"
 }>( ({ item, activeRoute, handleClick, userdata, ...props }, ref) => {
   const { conversations } = useSelector((state: RootState) => state.chat)
   let i = 0;
-  conversations.map(convo => {
+  conversations?.map(convo => {
     i = i + convo.unread
   })
   const isProfile = item.route === 'profile';
@@ -74,7 +74,7 @@ export const SidebarItem = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<"
   const label = isProfile ? (userdata.username ? userdata.username : 'Profile') : item.label;
   const isActive = activeRoute === route;
 
-  if(item.label === 'More') return (
+  if(item.label === 'Others') return (
     <Popover>
       <PopoverTrigger asChild>
         <div
@@ -150,14 +150,14 @@ export const UserSection = forwardRef<HTMLDivElement, {
       loading ? 
         <UserComponentLoading loading={loading} error={error} refetchUser={refetchUser}/> : 
         <div className='dark:text-slate-200 flex flex-col gap-4 px-1 py-2'>
-          <p className='flex items-center hover:text-brand'>
+          <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='flex items-center hover:text-brand'>
             <LogIn size={25} className="mr-2" />
-            <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='hidden 900px:!flex'>Log in</Link>
-          </p>
-          <p className='flex items-center hover:text-brand'>
+            <p className='hidden 900px:!flex'>Log in</p>
+          </Link>
+          <Link href='/accounts/signup' className='flex items-center hover:text-brand'>
             <User size={25} className="mr-2" />
-            <Link href='/accounts/signup' className='hidden 900px:!flex'>Sign up</Link>
-          </p>
+            <p className='hidden 900px:!flex'>Sign up</p>
+          </Link>
         </div>
     ) : (
       <Popover open={isPopUp} onOpenChange={handlePopUp}>

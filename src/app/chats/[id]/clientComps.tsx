@@ -156,7 +156,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         console.log();
       }
       const data = await response.json();
-      localStorage.setItem(data[0]._id, JSON.stringify({
+      localStorage.setItem(data[0]?._id, JSON.stringify({
         data: data[0],
         timestamp: Date.now()
       }));

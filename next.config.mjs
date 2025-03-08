@@ -64,16 +64,15 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 's3.amazonaws.com',
+        hostname: '**.amazonaws.com',
         port: '',
       },
       {
         protocol: 'https',
-        hostname: 'pbs.twimg.com',
+        hostname: '**.twimg.com',
         port: '',
       },
     ],
-    domains: ['s3.amazonaws.com', 'pbs.twimg.com'],
   },
   reactStrictMode: true,
   webpack: (config, { isServer }) => {

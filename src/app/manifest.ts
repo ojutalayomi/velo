@@ -6,19 +6,25 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Velo",
     icons: [
         {
-            "src": "/web-app-manifest-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
+            src: "/web-app-manifest-144x144.png",
+            sizes: "144x144",
+            type: "image/png",
+            purpose: "any"
         },
         {
-        "src": "/web-app-manifest-512x512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "maskable"
+            src: "/web-app-manifest-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable"
+        },
+        {
+            src: "/web-app-manifest-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
         }
     ],
-    start_url: "./home",
+    start_url: "/home",
     display: "standalone",
     theme_color: "#000000",
     background_color: "#000000",
@@ -35,7 +41,7 @@ export default function manifest(): MetadataRoute.Manifest {
             short_name: "Profile",
             description: "View your profile",
             url: "/profile?utm_source=homescreen",
-            icons: [{ src: "/profile.webp", sizes: "192x192" }]
+            icons: [{ src: "/profile.png", sizes: "192x192" }]
         },
         {
             name: "Open Messages",
@@ -57,6 +63,22 @@ export default function manifest(): MetadataRoute.Manifest {
             description: "View your settings",
             url: "/settings?utm_source=homescreen",
             icons: [{ src: "/settings.png", sizes: "192x192" }]
+        }
+    ],
+    screenshots: [
+        {
+            src: "/mobileScreenShot_home.png",
+            sizes: "425x720",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Home screen showing main navigation and featured content"
+        },
+        {
+            src: "/largeScreenShot_home.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Home screen showing main navigation and featured content"
         }
     ]
   }

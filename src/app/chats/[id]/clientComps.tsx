@@ -410,7 +410,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onlineUsers.includes(newPerson._id) ? 'Online' : `Last seen: ${time}`}
+                  {onlineUsers.includes(newPerson?._id) ? 'Online' : `Last seen: ${time}`}
                   {convo?.isTyping[friendId] && ' • Typing...'}
                 </p>
               </div>

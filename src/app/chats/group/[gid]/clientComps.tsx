@@ -341,7 +341,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   };
 
-  const filteredKeys = Object.keys(convo?.isTyping).filter(i => i !== userdata._id).map(f => {
+  const filteredKeys = Object.keys(convo?.isTyping || {}).filter(i => i !== userdata._id).map(f => {
     return convo?.isTyping[f]
   })
 

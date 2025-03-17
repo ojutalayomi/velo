@@ -18,7 +18,8 @@ const initialFormData: FormData = {
     email: '',
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    file: null
 };
 
 const signupSlice = createSlice({
@@ -26,10 +27,18 @@ const signupSlice = createSlice({
     initialState: {
         formData: initialFormData,
         loading: false,
-        sucess: false,
+        success: false,
         error: false,
         error1: null as string | null,
-        errors: initialFormData as Record<keyof FormData, string>,
+        errors: {
+            firstname: '',
+            lastname: '',
+            email: '',
+            username: '',
+            password: '',
+            confirmPassword: '',
+            file: ''
+        },
         currentStep: 0,
     },
     reducers: {
@@ -40,7 +49,7 @@ const signupSlice = createSlice({
             state.loading = action.payload;
         },
         setSuccess: (state, action: PayloadAction<boolean>) => {
-            state.sucess = action.payload;
+            state.success = action.payload;
         },
         setError: (state, action: PayloadAction<boolean>) => {
             state.error = action.payload;

@@ -9,7 +9,7 @@ const ratelimit = new Ratelimit({
 });
 
 export const config = {
-  matcher: '/api/getuser'
+  matcher: '/api/getuserr'
 }
 
 export default async function middleware(request: NextRequest) {
@@ -17,7 +17,7 @@ export default async function middleware(request: NextRequest) {
   const { success, pending, limit, reset, remaining } = await ratelimit.limit(
     ip
   );
-  console.log(success)
+  // console.log(success)
   return success
     ? NextResponse.next()
     : NextResponse.json({ role: 'assistant', content: 'too many requests' }, {status: 429});

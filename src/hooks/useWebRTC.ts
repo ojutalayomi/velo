@@ -10,7 +10,7 @@ import {
   selectIceCandidates,
   setIceConnectionState,
 } from '@/redux/rtcSlice';
-import { useSocket } from '@/app/providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 
 interface WebRTCConfig {
   iceServers?: RTCIceServer[];

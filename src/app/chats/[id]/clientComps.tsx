@@ -11,7 +11,7 @@ import { ConvoType, updateConversation, addMessage, updateMessage, updateLiveTim
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
-import { useSocket } from '@/app/providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 import {
   Popover,
   PopoverContent,
@@ -494,10 +494,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   src={
                     newPerson?.dp || newPerson?.displayPicture  
                       ? (newPerson?.dp 
-                          ? url + newPerson.dp 
+                          ? newPerson.dp 
                           : (newPerson.displayPicture.includes('ila-') 
                               ? ''
-                              : url + newPerson.displayPicture
+                              : newPerson.displayPicture
                             )
                         ) 
                       : '/default.jpeg'

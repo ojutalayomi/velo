@@ -11,6 +11,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import Image from "next/image";
 import { ArrowLeft, Ellipsis, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Footer } from "@/components/Footer";
 
 export default function Profile({ userData, userPosts }: { userData: UserSchema, userPosts: PostData[] }) {
     const hostname = 'https://s3.amazonaws.com/profile-display-images/';
@@ -52,7 +53,7 @@ export default function Profile({ userData, userPosts }: { userData: UserSchema,
                     <div className="absolute -top-16 left-4 w-32 h-32">
                         <div className="w-full h-full rounded-full border-4 border-white dark:border-black overflow-hidden">
                             <Avatar className="h-full w-full">
-                                <AvatarImage className="w-full h-full" src={hostname+userData.displayPicture} />
+                                <AvatarImage className="w-full h-full" src={userData.displayPicture} />
                                 <AvatarFallback className="w-full h-full">
                                     {userData.firstname && userData.lastname ? userData.firstname[0] + userData.lastname[0] : ''}
                                 </AvatarFallback>
@@ -206,23 +207,7 @@ export default function Profile({ userData, userPosts }: { userData: UserSchema,
                     </div> 
 
                     {/* Footer */}
-                    <div className="!my-8 mx-4 text-xs text-gray-400 space-y-2">
-                        <div className="flex flex-wrap gap-x-2">
-                        <a href="#" className="hover:underline">About</a>·
-                        <a href="#" className="hover:underline">Help</a>·
-                        <a href="#" className="hover:underline">Press</a>·
-                        <a href="#" className="hover:underline">API</a>·
-                        <a href="#" className="hover:underline">Jobs</a>·
-                        <a href="#" className="hover:underline">Privacy</a>·
-                        <a href="#" className="hover:underline">Terms</a>
-                        </div>
-                        <div className="flex gap-x-2">
-                        <a href="#" className="hover:underline">Locations</a>·
-                        <a href="#" className="hover:underline">Language</a>·
-                        <span>NIGERIA</span>
-                        </div>
-                        <p>© {new Date().getFullYear()} VELO</p>
-                    </div>
+                    <Footer />
                 </div>
             </div>
         </div>

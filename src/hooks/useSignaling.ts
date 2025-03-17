@@ -6,7 +6,7 @@ import {
   setLocalDescription,
   addIceCandidate,
 } from '@/redux/rtcSlice';
-import { useSocket } from '@/app/providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 
 interface UseSignalingProps {
   peerConnection: RTCPeerConnection | null;

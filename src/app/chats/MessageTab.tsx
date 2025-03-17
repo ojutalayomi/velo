@@ -6,7 +6,7 @@ import { GroupMessageAttributes, MessageAttributes } from '@/lib/types/type';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
 import { updateMessageReactions, deleteMessage, updateMessage, updateLiveTime, updateConversation } from '@/redux/chatSlice'; 
-import { useSocket } from '../providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 import {
   Popover,
   PopoverContent,
@@ -260,7 +260,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             {/* Avatar for other users */}
             {senderId !== userdata._id && (
               <Image 
-                src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : url + displayPicture) : '/default.jpeg'}
+                src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : displayPicture) : '/default.jpeg'}
                 height={32} 
                 width={32} 
                 alt={sender} 

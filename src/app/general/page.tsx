@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
-import { useTheme } from '@/app/providers';
+import { useTheme } from '@/app/providers/ThemeProvider';
 import { handleThemeChange1 } from '@/components/ThemeToggle';
 import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut, Settings2, ArrowLeft } from 'lucide-react';
 

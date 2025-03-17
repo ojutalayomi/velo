@@ -10,12 +10,13 @@ import Third from './pg/third';
 
   
 const initialFormData: FormData = {
-    firstname: '',
-    lastname: '',
-    email: '',
-    username: '',
-    password: '',
-    confirmPassword: ''
+  firstname: '',
+  lastname: '',
+  email: '',
+  username: '',
+  password: '',
+  confirmPassword: '',
+  file: null
 };
 
 const SignUp: React.FC = () => {

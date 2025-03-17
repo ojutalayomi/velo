@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSocket } from '../app/providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { Label } from '@radix-ui/react-select';
 import { useSearchParams } from 'next/navigation';

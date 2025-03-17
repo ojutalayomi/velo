@@ -1,6 +1,7 @@
 // redux/chatSlice.ts
 import ChatRepository from '@/lib/class/ChatRepository';
 import ChatSystem from '@/lib/class/chatSystem';
+import { networkMonitor } from '@/lib/network';
 import { AllChats, ChatAttributes, ChatSettings, ConvoType, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { createAsyncThunk, createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
 export { ConvoType };
@@ -226,6 +227,10 @@ export default chatSlice.reducer;
 // Fetch chats on app load
 export const fetchChats = async (dispatch: Dispatch) => {
   try {
+    const networkStatus = networkMonitor.getNetworkStatus();
+
+    if(!networkStatus.online) return;
+    
     dispatch(setLoading(true));
     const chats = await chatSystem.getAllChats();
 

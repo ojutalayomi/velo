@@ -1,4 +1,14 @@
 import { jwtVerify } from 'jose';
+import { getMongoClient } from "@/lib/mongodb";
+import { ObjectId } from "bson";
+import { SignJWT } from "jose";
+import { AuthOptions as NextAuthOptions, User, Account, Profile } from "next-auth";
+import { AdapterUser } from "next-auth/adapters";
+import FacebookProvider from "next-auth/providers/facebook";
+import GoogleProvider from "next-auth/providers/google";
+import { headers, cookies } from "next/headers";
+import { UAParser } from "ua-parser-js";
+import { v4 as uuidv4 } from "uuid";
 
 export async function verifyToken(token: string) {
   try {
@@ -9,3 +19,180 @@ export async function verifyToken(token: string) {
     return null;
   }
 }
+
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID!,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+    }),
+  ],
+  secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error',
+    verifyRequest: '/auth/verify-request',
+  },
+  callbacks: {
+    async signIn({ user, account, profile }: { user: User | AdapterUser; account: Account | null; profile?: Profile | undefined; email?: { verificationRequest?: boolean | undefined; } | undefined; credentials?: Record<string, unknown> | undefined; }) {
+      try {
+        const client = await getMongoClient();
+        const db = client.db('mydb');
+        const users = db.collection("Users");
+
+        // Check if user exists
+        const existingUser = await users.findOne({ email: user.email });
+
+        if (existingUser) {
+          // Update last login and provider info for existing user
+          if (existingUser.providers) {
+            if (Object.keys(existingUser.providers).includes(account?.provider || '')) {
+              await users.updateOne(
+                { email: user.email },
+                {
+                  $set: {
+                    lastLogin: new Date().toISOString(),
+                    [`providers.${account?.provider}`]: {
+                      id: profile?.sub,
+                      lastUsed: new Date().toISOString()
+                    }
+                  }
+                }
+              );
+            }
+          } else {
+            await users.updateOne(
+              { email: user.email },
+              {
+                $set: {
+                  lastLogin: new Date().toISOString(),
+                }
+              }
+            );
+          }
+          const tokenCollection = client.db('mydb').collection('Tokens');
+          const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+          const token = await new SignJWT({ _id: existingUser._id })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setExpirationTime('15d')
+            .sign(secret);
+
+          // Extract device information
+          const userAgent = (await headers()).get('user-agent') || '';
+          const parser = new UAParser(userAgent);
+          const deviceInfo = parser.getResult();
+
+          await tokenCollection.insertOne({
+            userId: existingUser._id,
+            token,
+            deviceInfo,
+            createdAt: new Date().toISOString()
+          });
+
+          (await cookies()).set('velo_12', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV !== 'development',
+            sameSite: process.env.NODE_ENV !== 'development' ? 'strict' : 'none',
+            maxAge: 3600 * 24 * 15,
+            path: '/',
+          });
+
+          return `/home`;
+        }
+
+        // Create new user
+        const newUser = {
+          _id: new ObjectId(),
+          time: new Date().toISOString(),
+          userId: uuidv4(),
+          firstname: user.name?.split(' ')[0] || '',
+          lastname: user.name?.split(' ')[1] || '',
+          email: user.email,
+          name: user.name,
+          providers: {
+            [account?.provider || 'unknown']: {
+              id: profile?.sub,
+              lastUsed: new Date().toISOString()
+            }
+          },
+          username: '',
+          displayPicture: user.image || '',
+          isEmailConfirmed: true,
+          signUpCount: 1,
+          verified: true,
+          followers: [],
+          following: [],
+          lastUpdate: [],
+          bio: '',
+          coverPhoto: '',
+          dob: '',
+          location: '',
+          noOfUpdates: 0,
+          website: '',
+          lastLogin: new Date().toISOString()
+        };
+
+        await users.insertOne(newUser);
+        const tokenCollection = client.db('mydb').collection('Tokens');
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const token = await new SignJWT({ _id: newUser._id })
+          .setProtectedHeader({ alg: 'HS256' })
+          .setExpirationTime('15d')
+          .sign(secret);
+
+        // Extract device information
+        const userAgent = (await headers()).get('user-agent') || '';
+        const parser = new UAParser(userAgent);
+        const deviceInfo = parser.getResult();
+
+        await tokenCollection.insertOne({
+          userId: newUser._id,
+          token,
+          deviceInfo,
+          createdAt: new Date().toISOString()
+        });
+
+        (await cookies()).set('velo_12', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV !== 'development',
+          sameSite: process.env.NODE_ENV !== 'development' ? 'strict' : 'none',
+          maxAge: 3600 * 24 * 15,
+          path: '/',
+        });
+
+        return `/accounts/signup-complete?email=${encodeURIComponent(user.email || '')}`;
+
+      } catch (error) {
+        console.error('Auth error:', error);
+        return '/auth/error?error=DatabaseError';
+      }
+    },
+
+    async session({ session, user }: { session: any; user: User | AdapterUser; }) {
+      try {
+        const client = await getMongoClient();
+        const db = client.db('mydb');
+        const dbUser = await db.collection("Users").findOne({ email: user.email });
+
+        if (dbUser) {
+          session.user = {
+            ...session.user,
+            id: dbUser.userId,
+            username: dbUser.username,
+            verified: dbUser.verified
+          };
+        }
+
+        return session;
+      } catch (error) {
+        console.error('Session error:', error);
+        return session;
+      }
+    },
+  },
+};

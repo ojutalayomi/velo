@@ -4,7 +4,8 @@ export interface FormData {
     email: string;
     username: string;
     password: string;
-    confirmPassword: string
+    confirmPassword: string;
+    file: File | null;
 }
 
 export interface FormProps {

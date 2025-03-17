@@ -11,7 +11,7 @@ import { ConvoType, updateConversation, addMessage, updateMessage } from '@/redu
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
 import { useUser } from '@/hooks/useUser';
-import { useSocket } from '@/app/providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 import { Input } from '@/components/ui/input';
 import {
   Popover,

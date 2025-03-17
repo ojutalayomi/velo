@@ -2,6 +2,9 @@
 // import { useEffect } from 'react';
 import Link from 'next/link';
 import { useState } from 'react';
+import Wrapper from './AccountComponentWrapper';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
 
 interface FormData{
     email: string;
@@ -57,26 +60,27 @@ const ForgotPassword: React.FC = () => {
     };
 
     return (
-        <div className='child'>
-            <div className='item'>
+        <Wrapper 
+        header={
+            <div className='flex flex-col gap-2'>
                 <h1>Fill in your email to reset your password.</h1>
                 <h2>Don&apos;t have an account? 
-                    <Link className='link tom' href='/accounts/signup'> Sign Up</Link>
+                    <Link className='' href='/accounts/signup'> Sign Up</Link>
                 </h2>
             </div>
-            <div className='item'>
-                <form onSubmit={handleSubmit}>
-                    <div className='input-tags'>
-                        <label className='w-600'>Email</label>
-                        <input className='inps w-600 input1' type='email' name='email' id='email' value={formData.email} placeholder='Email..' onChange={handleInputChange} disabled={loading} required/>
-                        {error && <div className='error'>{error}</div>}
-                    </div>
-                    <button className='submit' disabled={loading}>
-                        {loading ? <div className='loader show'></div> : success ? <span>Reset link sent!</span> : <span>Get link</span>}
-                    </button>
-                </form>
-            </div>
-        </div>
+        }
+        body={
+            <form className='space-y-2 p-2' onSubmit={handleSubmit}>
+                <div className='flex flex-col justify-between gap-2'>
+                    <label className='font-semibold text-start'>Email</label>
+                    <Input className='font-semibold input1' type='email' name='email' id='email' value={formData.email} placeholder='Email..' onChange={handleInputChange} disabled={loading} required/>
+                    {error && <div className='error'>{error}</div>}
+                </div>
+                <Button className='submit' disabled={loading}>
+                    {loading ? <div className='loader show'></div> : success ? <span>Reset link sent!</span> : <span>Get link</span>}
+                </Button>
+            </form>
+        }/>
     ) 
 }
 

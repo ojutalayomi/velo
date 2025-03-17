@@ -147,8 +147,10 @@ export const UserSection = forwardRef<HTMLDivElement, {
 }>(({ error, loading, userdata, pathname, isPopUp, handlePopUp, refetchUser }, ref) => (
   <div ref={ref}>
     {!userdata._id ? (
-      loading ? 
-        <UserComponentLoading loading={loading} error={error} refetchUser={refetchUser}/> : 
+      loading 
+        ? 
+        <UserComponentLoading loading={loading} error={error} refetchUser={refetchUser}/> 
+        : 
         <div className='dark:text-slate-200 flex flex-col gap-4 px-1 py-2'>
           <Link href={`${pathname !== '' ? '/accounts/login?backto='+pathname : '/accounts/login'}`} className='flex items-center hover:text-brand'>
             <LogIn size={25} className="mr-2" />
@@ -212,7 +214,7 @@ const UserComponent = ({userdata}: {userdata: UserData}) => {
     <div className='user 900px:items-center hover:bg-slate-200 dark:hover:bg-neutral-900 !justify-center 900px:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 900px:shadow-bar 900px:dark:shadow-bar-dark w-full'>
       <div className='img'>
         <Image 
-          src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} 
+          src={userdata.dp ? userdata.dp : '/default.jpeg'} 
           className='displayPicture dark:border-slate-200 size-10 900px:size-auto' 
           width={30} 
           height={30} 

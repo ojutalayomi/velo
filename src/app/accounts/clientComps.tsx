@@ -13,8 +13,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     pathname?.includes('accounts') && document.dispatchEvent(event);
   }, [pathname]);
     return (
-        <>
-            {children}
-        </>
+      <>
+        {children}
+      </>
     )
 }

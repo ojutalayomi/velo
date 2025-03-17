@@ -9,7 +9,7 @@ import { RootState } from '@/redux/store';
 import { updateLiveTime, updateConversation } from '@/redux/chatSlice';
 import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type';
 import { Pin } from 'lucide-react';
-import { useSocket } from '../providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
 import Link from 'next/link';
@@ -210,7 +210,7 @@ const Card: React.FC<Props> = ({chat}) => {
               ?  (
                 chat.displayPicture.includes('ila-') 
                 ? ''
-                : url +  chat.displayPicture
+                : chat.displayPicture
               )
               : ''
             }
@@ -273,7 +273,7 @@ const Card: React.FC<Props> = ({chat}) => {
                 chat.displayPicture  
                 ? (chat.displayPicture.includes('ila-') 
                   ? '/default.jpeg'
-                  : url + chat.displayPicture)
+                  : chat.displayPicture)
                 : '/default.jpeg'
               }
               height={500} 

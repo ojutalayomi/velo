@@ -5,6 +5,8 @@ import { FormProps, FormData } from './FormProps';
 import { setErrors, handleNext, handlePrevious, updateFormData } from '../../redux/signupSlice';
 import { RootState } from '../../redux/store';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
 
 const First: React.FC = () => {
@@ -36,21 +38,21 @@ const First: React.FC = () => {
     dispatch(updateFormData({ [name]: value }));
   };
   return (
-    <div className=''>
-        <div className='input-tags'>
-            <label className="w-600 after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base" htmlFor='firstname'>Firstname</label>
-            <input className='inps w-600 input1' type='text' id='firstname' name='firstname' onInput={onInput} value={formData.firstname} onChange={onInputChange} placeholder='Firstname' required/>
+    <div className='space-y-4'>
+        <div className='flex flex-col justify-between gap-2'>
+            <label className="text-start font-semibold after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base" htmlFor='firstname'>Firstname</label>
+            <Input className='font-semibold' type='text' id='firstname' name='firstname' onInput={onInput} value={formData.firstname} onChange={onInputChange} placeholder='Firstname' required/>
             {errors.firstname && <div className='warning'>{errors.firstname}</div>}
         </div>
-        <div className='input-tags'>
-            <label className="w-600 after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base" htmlFor='lastname'>Lastname</label>
-            <input className='inps w-600 input1' type='text' id='lastname' name='lastname' onInput={onInput} value={formData.lastname} onChange={onInputChange} placeholder='Lastname' required/>
+        <div className='flex flex-col justify-between gap-2'>
+            <label className="text-start font-semibold after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base" htmlFor='lastname'>Lastname</label>
+            <Input className='font-semibold' type='text' id='lastname' name='lastname' onInput={onInput} value={formData.lastname} onChange={onInputChange} placeholder='Lastname' required/>
             {errors.lastname && <div className='warning'>{errors.lastname}</div>}
         </div>
-        <button type='button' className='next bg-gradient-to-r from-purple-500 to-pink-500' onClick={onNext}>
+        <Button type='button' className='w-full bg-brand text-white p-2 rounded-lg shadow font-semibold' onClick={onNext} disabled={!formData.firstname || !formData.lastname}>
             Next
             <div className='loader'></div>
-        </button>
+        </Button>
     </div>
   );
 };

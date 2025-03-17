@@ -2,7 +2,7 @@ import { deleteMessage, editMessage, updateConversation } from "@/redux/chatSlic
 import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { useSocket } from "../providers";
+import { useSocket } from "@/app/providers/SocketProvider";
 
 export const MultiSelect = () => {
     const dispatch = useDispatch();

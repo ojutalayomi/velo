@@ -12,7 +12,7 @@ import UserPhoto from "@/components/UserPhoto";
 import VideoPlayer from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
 import { MessageAttributes, msgStatus, NewChat_ } from '@/lib/types/type';
-import { useSocket } from '@/app/providers';
+import { useSocket } from '@/app/providers/SocketProvider';
 import VideoChat from '../components/CallPage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ConfirmCall } from '@/components/callConfirmation';
@@ -70,7 +70,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             id: data.chat._id,
             type: data.chat.chatType,
             name: data.chat.chatType === 'DMs' ? data.chat.name[Object.keys(data.chat.name).find(e => !e.includes(uid)) || ''] : data.chat.name.group,
-            displayPicture: otherParticipant?.displayPicture || 'Be the first to text',
+            displayPicture: otherParticipant?.displayPicture || '',
             description: data.chat.groupDescription || '',
             verified: data.chat.verified || false,
             lastMessage: '',

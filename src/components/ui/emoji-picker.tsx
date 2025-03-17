@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic';
 import { Smile } from 'lucide-react';
-import { useTheme } from '@/app/providers';
+import { useTheme } from '@/app/providers/ThemeProvider';
 import {
   Popover,
   PopoverContent,

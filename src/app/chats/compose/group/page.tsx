@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Users, Plus, X } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
-import { useSocket } from '@/app/providers';;
+import { useSocket } from '@/app/providers/SocketProvider';;
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
 import { ConvoType } from '@/redux/chatSlice';
@@ -231,10 +231,10 @@ const NewChatMenu = () => {
                       <AvatarImage 
                       src={
                         user.dp || user.displayPicture  
-                        ? (user.dp ? url+user.dp : (
+                        ? (user.dp ? user.dp : (
                           user.displayPicture.includes('ila-') 
                           ? ''
-                          : url +  user.displayPicture
+                          : user.displayPicture
                           )) 
                         : ''}
                       className='rounded-full mr-2 shadow-inner'

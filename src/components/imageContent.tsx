@@ -35,10 +35,10 @@ const ImageContent: React.FC<Props> = ({userdata,onClick,selectedUsers = []}) =>
             <AvatarImage 
               src={
               userdata.dp || userdata.displayPicture  
-              ? (userdata.dp ? url+userdata.dp : (
+              ? (userdata.dp ? userdata.dp : (
                 userdata.displayPicture.includes('ila-') 
                 ? ''
-                : url +  userdata.displayPicture
+                : userdata.displayPicture
                 )) 
               : ''} 
               className='displayPicture dark:border-slate-200 size-10 rounded-full mr-3' 

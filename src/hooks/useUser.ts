@@ -3,6 +3,7 @@ import { setUserData, UserData } from '@/redux/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { debounce } from 'lodash';
 import { RootState } from '@/redux/store';
+import { networkMonitor, NetworkStatus } from '@/lib/network';
 
 interface UseUserReturn {
     userdata: UserData;
@@ -12,6 +13,7 @@ interface UseUserReturn {
 }
 
 export const useUser = (): UseUserReturn => {
+    const [status, setStatus] = useState<NetworkStatus>()
     const dispatch = useDispatch();
     const userdata = useSelector((state: RootState) => state.user.userdata);
     const [loading, setLoading] = useState(true);
@@ -19,6 +21,10 @@ export const useUser = (): UseUserReturn => {
     const retriesRef = useRef(3);
     const fetchedSuccessfullyRef = useRef(false);
     const fetchUserRef = useRef<() => Promise<void>>(null);
+
+    useEffect(() => {
+        setStatus(networkMonitor.getNetworkStatus())
+    }, [])
 
     const fetchUser = useCallback(async () => {
         if (fetchedSuccessfullyRef.current) {
@@ -84,7 +90,7 @@ export const useUser = (): UseUserReturn => {
     useEffect(() => {
         const hasValidUserData = !!userdata._id;
 
-        if (!hasValidUserData && !fetchedSuccessfullyRef.current) {
+        if (!hasValidUserData && !fetchedSuccessfullyRef.current && status?.online === true) {
             handleFetchUser();
         } else {
             setLoading(false);
@@ -93,7 +99,7 @@ export const useUser = (): UseUserReturn => {
         return () => {
             debouncedFetchUser.cancel();
         };
-    }, [userdata, handleFetchUser, debouncedFetchUser]);
+    }, [userdata, handleFetchUser, debouncedFetchUser, status]);
 
     return { userdata, loading, error, refetchUser: handleFetchUser };
 };

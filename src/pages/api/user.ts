@@ -75,8 +75,6 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const time = new Date().toLocaleString();
     const formattedDate = timeFormatter(time);
 
-    await sendSignInEmail(email, firstname, lastname, time);
-
     await collection.updateOne(
       { email },
       { $set: { lastLogin: formattedDate } }
@@ -109,6 +107,8 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       path: '/',
       // domain: process.env.NODE_ENV !== 'development' ? 'example.com' : undefined,
     }));
+
+    await sendSignInEmail(email, firstname, lastname, time);
 
     res.status(200).json(newUserdata);
   } catch (error) {

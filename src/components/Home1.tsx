@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import Posts from '@/templates/posts';
 import { RefreshCw } from 'lucide-react';
 import { RootState } from '@/redux/store';
-import { usePosts } from '@/app/providers';
+import { usePosts } from '@/app/providers/PostsProvider';
 import { Skeleton } from './ui/skeleton';
 import { useUser } from '@/hooks/useUser';
 
@@ -70,7 +70,7 @@ const Homepage: React.FC = () => {
             <div className='pre-status pl-2 mt-2'>
                 <div className='status p-2 flex items-center justify-center gap-4 w-fit'>
                     {(loading || load) && (
-                        [...Array(15)].map((_,i) => (
+                        [...Array(7)].map((_,i) => (
                             <Skeleton key={"uidg"+i} className="size-10 rounded-full ring-4 ring-brand" />
                         ))
                     )}
@@ -81,7 +81,7 @@ const Homepage: React.FC = () => {
                                 id={`status-${index}`} 
                                 className='status-child rounded-full size-10 ring-4 ring-brand' 
                                 style={{ 
-                                    backgroundImage: `url(https://s3.amazonaws.com/profile-display-images/${status})`
+                                    backgroundImage: `url(${status})`
                                 }} 
                             />
                         ))

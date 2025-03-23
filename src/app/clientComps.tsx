@@ -9,7 +9,7 @@ import { useUser } from '@/hooks/useUser';
 import { ConvoType, updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
 import { usePathname } from 'next/navigation';
 import UserPhoto from "@/components/UserPhoto";
-import VideoPlayer from '@/components/PostPreview';
+import PostPreview from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
 import { MessageAttributes, msgStatus, NewChat_ } from '@/lib/types/type';
 import { useSocket } from '@/app/providers/SocketProvider';
@@ -29,8 +29,8 @@ interface ConvoTypeProp {
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const dispatch = useDispatch();
     const pathname = usePathname();
-    const isModalRoute  = pathname?.endsWith('/photo');
-    const isModalRoute1  = pathname?.includes('/photo/');
+    const showProfilePicture  = pathname?.endsWith('/photo');
+    const showPostPreview  = pathname?.includes('/photo/');
     const callRoute  = pathname?.startsWith('/call');
     const { userdata } = useUser();
     const path = pathname?.replace('/','') || '';
@@ -190,28 +190,30 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             {callIdRef.current && callNoticeRef.current && (
                 <ConfirmCall id={String(callIdRef.current)} show={Boolean(callNoticeRef)} conversations={conversations}/>
             )}
-            {!callRoute ?
+            {!callRoute 
+            ?
             <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
-            : null}
-                {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-                <div id='detail' className="">
-                    {children}
-                    {isModalRoute && <UserPhoto />}
-                    {isModalRoute1 && <VideoPlayer />}
-                    {callRoute && <VideoChat />}
-                </div>
-                {(!pathname?.includes('posts') && 
-                !pathname?.includes('chats') && 
-                !routes.includes(activeRoute) && 
-                !callRoute) ? 
-                    <Bottombar 
-                    setLoad={setLoad} 
-                    isMoreShown={isMoreShown} 
-                    activeRoute={activeRoute} 
-                    setActiveRoute={setActiveRoute} 
-                    setMoreStatus={setMoreStatus} 
-                    /> 
-                : null
+            : 
+            null
+            }
+            {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
+            <div id='detail' className="">
+                {children}
+                {showProfilePicture && <UserPhoto />}
+                {showPostPreview && <PostPreview />}
+                {callRoute && <VideoChat />}
+            </div>
+            {(!pathname?.includes('posts') && !pathname?.includes('chats') && !routes.includes(activeRoute) && !callRoute) 
+            ? 
+            <Bottombar 
+            setLoad={setLoad} 
+            isMoreShown={isMoreShown} 
+            activeRoute={activeRoute} 
+            setActiveRoute={setActiveRoute} 
+            setMoreStatus={setMoreStatus} 
+            /> 
+            : 
+            null
             } 
             </FileStorageProvider>   
         </ErrorBoundary>

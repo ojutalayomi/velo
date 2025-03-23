@@ -15,7 +15,10 @@ import MediaSlide from './mediaSlides';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
 
-type PostComponentProps = Post | PostProps;
+type PostComponentProps = {
+  postData: Post['post'],
+  showMedia?: boolean
+};
 
 interface Option {
   icon: React.ReactNode;
@@ -23,8 +26,7 @@ interface Option {
   onClick: () => void;
 }
 
-const Posts: React.FC<PostComponentProps> = (props) => {
-  const postData = 'post' in props ? props.post : props.postData;
+const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const [activePost, setActivePost] = useState<string>('');
   const [open, setOpen] = useState(false);
   const [isliked, setLiked] = useState(false);
@@ -34,10 +36,10 @@ const Posts: React.FC<PostComponentProps> = (props) => {
   const router = useRouter();
 
   useEffect(() => {
-      const interval = setInterval(() => {
-          setTime(updateLiveTime('getlivetime', postData.TimeOfPost));
-      }, 1000);
-      return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
+    const interval = setInterval(() => {
+      setTime(updateLiveTime('getlivetime', postData.TimeOfPost));
+    }, 1000);
+    return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
   }, [postData.TimeOfPost]);
 
   const handleActivePost = (route: string) => {
@@ -152,7 +154,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
             </abbr>}
         </div>
         {/* {showMore} */}
-        {postData?.Image.length > 0 &&
+        {(postData?.Image.length > 0 && showMedia) &&
           <MediaSlide postData={postData} isLink/>
         }
         {window.location.pathname.includes('posts') ? <div className='blog-time'>{timeFormatter(postData.TimeOfPost)}</div> : null}
@@ -188,7 +190,7 @@ const Posts: React.FC<PostComponentProps> = (props) => {
   );
 };
 
-export default Posts;
+export default PostCard;
 
 function Options({options, open, setOpen}:{options: Option[], open: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);

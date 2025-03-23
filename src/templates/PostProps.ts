@@ -1,26 +1,26 @@
 import moment from 'moment';
 
 export interface PostData {
-    _id: string;
-    DisplayPicture: string;
-    NameOfPoster: string;
-    Verified: boolean;
-    TimeOfPost: string;
-    Caption: string;
-    Image: string[];
-    NoOfLikes: number;
-    Liked: boolean;
-    NoOfComment: number;
-    NoOfShares: number;
-    NoOfBookmarks: number;
-    Bookmarked: boolean;
-    Username: string;
-    PostID: string;
-    Code: string;
-    WhoCanComment: string;
-    Shared: boolean;
-    Type: string;
-    ParentId: string;
+  _id: string;
+  DisplayPicture: string;
+  NameOfPoster: string;
+  Verified: boolean;
+  TimeOfPost: string;
+  Caption: string;
+  Image: string[];
+  NoOfLikes: number;
+  Liked: boolean;
+  NoOfComment: number;
+  NoOfShares: number;
+  NoOfBookmarks: number;
+  Bookmarked: boolean;
+  Username: string;
+  PostID: string;
+  Code: string;
+  WhoCanComment: string;
+  Shared: boolean;
+  Type: string;
+  ParentId: string;
 }
 
 export interface Post {
@@ -34,17 +34,17 @@ export interface Comments {
 }
 
 export interface PostProps {
-    postData: PostData;
+  postData: PostData;
 }
 
 export function formatNo(no: number) {
-    if (no >= 1000000) {
-        return (no / 1000000).toFixed(1) + 'M';
-    } else if (no >= 1000) {
-        return (no / 1000).toFixed(1) + 'K';
-    } else {
-        return no.toString();
-    }
+  if (no >= 1000000) {
+    return (no / 1000000).toFixed(1) + 'M';
+  } else if (no >= 1000) {
+    return (no / 1000).toFixed(1) + 'K';
+  } else {
+    return no.toString();
+  }
 }
 
 export function timeFormatter(Time: string) {

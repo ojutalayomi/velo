@@ -12,8 +12,9 @@ import VideoDiv from "./videoDiv"
 import { PostData } from "./PostProps"
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
+import { cn } from "@/lib/utils"
 
-const MediaSlide = ({postData, isLink = false}:{postData: PostData, isLink?: boolean}) => {
+const MediaSlide = ({ className, postData, isLink = false, ...props }: { className?: string, postData: PostData, isLink?: boolean, props?: HTMLDivElement}) => {
     const [api, setApi] = useState<CarouselApi>()
     const { index } = useParams() as { index: string }
     const [current, setCurrent] = useState(0)
@@ -48,7 +49,7 @@ const MediaSlide = ({postData, isLink = false}:{postData: PostData, isLink?: boo
     }, [postData.Image])
 
     return (
-        <div className={`relative w-full flex items-center justify-center flex-1`}>
+        <div className={cn(`relative w-full flex items-center justify-center flex-1`, className)} {...props}>
             <Carousel setApi={setApi} className="w-full h-full">
                 <CarouselContent className="h-full items-center">
                     {postData.Image?.map((media, index) => {

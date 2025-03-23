@@ -54,25 +54,21 @@ export const authOptions: NextAuthOptions = {
             if (Object.keys(existingUser.providers).includes(account?.provider || '')) {
               await users.updateOne(
                 { email: user.email },
-                {
-                  $set: {
-                    lastLogin: new Date().toISOString(),
-                    [`providers.${account?.provider}`]: {
-                      id: profile?.sub,
-                      lastUsed: new Date().toISOString()
-                    }
+                { $set: {
+                  lastLogin: new Date().toISOString(),
+                  [`providers.${account?.provider}`]: {
+                    id: profile?.sub,
+                    lastUsed: new Date().toISOString()
                   }
-                }
+                }}
               );
             }
           } else {
             await users.updateOne(
               { email: user.email },
-              {
-                $set: {
-                  lastLogin: new Date().toISOString(),
-                }
-              }
+              { $set: {
+                lastLogin: new Date().toISOString(),
+              }}
             );
           }
           const tokenCollection = client.db('mydb').collection('Tokens');
@@ -96,7 +92,7 @@ export const authOptions: NextAuthOptions = {
 
           (await cookies()).set('velo_12', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV !== 'development',
+            secure: true,
             sameSite: process.env.NODE_ENV !== 'development' ? 'strict' : 'none',
             maxAge: 3600 * 24 * 15,
             path: '/',
@@ -159,7 +155,7 @@ export const authOptions: NextAuthOptions = {
 
         (await cookies()).set('velo_12', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV !== 'development',
+          secure: true,
           sameSite: process.env.NODE_ENV !== 'development' ? 'strict' : 'none',
           maxAge: 3600 * 24 * 15,
           path: '/',

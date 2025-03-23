@@ -110,7 +110,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
             <Drawer open={open} onOpenChange={setOpen}>
               <DrawerTrigger>
                 <Avatar>
-                  <AvatarImage src={'https://s3.amazonaws.com/profile-display-images/'+userdata.dp} />
+                  <AvatarImage src={userdata.dp} />
                   <AvatarFallback>{userdata.firstname.charAt(0).toUpperCase() || 'V'}</AvatarFallback>
                 </Avatar>
               </DrawerTrigger>
@@ -162,7 +162,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                       {!loading 
                       ? 
                       <Avatar>
-                        <AvatarImage src={'https://s3.amazonaws.com/profile-display-images/'+userdata.dp} />
+                        <AvatarImage src={userdata.dp} />
                         <AvatarFallback>{userdata.firstname.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       : 

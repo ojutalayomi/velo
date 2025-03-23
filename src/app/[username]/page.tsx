@@ -7,5 +7,5 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     const userData: UserSchema = await getUser((await params).username);
     const userPosts: PostData[] = await getUserPosts((await params).username);
 
-    return <Profile userData={userData} userPosts={userPosts}/>
+    return <Profile userData={userData} userPostCard={userPosts}/>
 }

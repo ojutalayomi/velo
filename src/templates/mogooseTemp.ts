@@ -21,7 +21,7 @@ const postSchema = new mongoose.Schema({
     Code: { type: String, required: true },
     WhoCanComment: { type: String, required: true },
     Type: { type: String, required: true}
-}, { timestamps: true, collection: 'Posts' });
+}, { timestamps: true, collection: 'PostCard' });
 
 const Post = mongoose.model('Post', postSchema);
 

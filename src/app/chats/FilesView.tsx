@@ -6,7 +6,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import ImageDiv from "@/components/imageDiv";
 import VideoDiv from "@/templates/videoDiv";
 import { DocCard } from "@/components/DocCard";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { saveAs } from 'file-saver';
 
 const downloadFile = (url: string, filename: string) => {
@@ -128,24 +128,24 @@ export const MediaCollage = ({media}:{media: Attachment[]}) => {
                                     {m.size && <span className="text-gray-500 text-xs">{formatFileSize(m.size)}</span>}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                <HoverCard>
-                                    <HoverCardTrigger asChild>
-                                        <ChevronDown className="text-gray-400 transform transition hover:rotate-180"/>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent className="mr-2 p-2 w-auto">
-                                        <button
-                                            type="button"
-                                            className='flex w-full items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded'
-                                            onClick={(e) => {
-                                                e.preventDefault()
-                                                downloadFile(m.url || '', m.name)
-                                            }}
-                                        >
-                                            <Download size={16} className="text-gray-400"/>
-                                            <span className="text-gray-400">Download</span>
-                                        </button>
-                                    </HoverCardContent>
-                                </HoverCard>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <ChevronDown className="text-gray-400 transform transition hover:rotate-180"/>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="mr-2 p-2 w-auto">
+                                            <button
+                                                type="button"
+                                                className='flex w-full items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded'
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    downloadFile(m.url || '', m.name)
+                                                }}
+                                            >
+                                                <Download size={16} className="text-gray-400"/>
+                                                <span className="text-gray-400">Download</span>
+                                            </button>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
                         )

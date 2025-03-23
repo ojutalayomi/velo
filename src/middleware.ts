@@ -9,7 +9,7 @@ const ratelimit = new Ratelimit({
 });
 
 export const config = {
-  matcher: '/api/getuserr'
+  matcher: '/api/getuser'
 }
 
 export default async function middleware(request: NextRequest) {

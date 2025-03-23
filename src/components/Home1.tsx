@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import Posts from '@/templates/posts';
+import PostCard from '@/templates/posts';
 import { RefreshCw } from 'lucide-react';
 import { RootState } from '@/redux/store';
 import { usePosts } from '@/app/providers/PostsProvider';
@@ -117,7 +117,7 @@ const Homepage: React.FC = () => {
                     ))
                 ) : posts && posts.length ? (
                     posts.map(post => (
-                        <Posts key={post._id} postData={post}/>
+                        <PostCard key={post._id} postData={post}/>
                     ))
                 ) : error && (
                     <div className='flex flex-col items-center justify-center w-full h-3/4'>

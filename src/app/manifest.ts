@@ -61,7 +61,7 @@ export default function manifest(): MetadataRoute.Manifest {
             name: "Open Settings",
             short_name: "Settings",
             description: "View your settings",
-            url: "/settings?utm_source=homescreen",
+            url: "/general?utm_source=homescreen",
             icons: [{ src: "/settings.png", sizes: "192x192" }]
         }
     ],

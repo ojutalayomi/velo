@@ -2,7 +2,7 @@
 import { useParams } from 'next/navigation';
 import Image from "next/image";
 import { Comments, Post } from '../../../../templates/PostProps';
-import Posts from '../../../../templates/posts';
+import PostCard from '../../../../templates/posts';
 import { useEffect, useRef, useState } from 'react';
 import { getComments, getPost } from '../../../../components/getStatus';
 import NavBar from '../../../../components/navbar';
@@ -78,28 +78,31 @@ const PostContent: React.FC = () => {
         <div className='flex flex-col h-full w-full'>
             <NavBar route='post'/>
             <div id='postpage' className='dark:text-slate-200'>
-                {loading0 ? 
-                    <div className="flex flex-col w-full space-y-3 cursor-progress mt-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
-                        <div className='flex items-center justify-start gap-2'>
-                            <Skeleton className="size-10 rounded-full" />
-                            <div className='flex flex-col space-y-2'>
-                                <Skeleton className="h-4 w-16 rounded-xl" />
-                                <Skeleton className="h-4 w-12 rounded-xl" />
-                            </div>
-                        </div>
-                        <Skeleton className="h-8 rounded-xl" />
-                        <Skeleton className="h-40 rounded-xl" />
-                        <Skeleton className="h-4 w-16 rounded-xl" />
-                        <div className="flex items-center justify-around gap-2">
-                            {[...Array(4)].map((_,i) => (
-                                <Skeleton key={i++} className="size-8" />
-                            ))}
+                {loading0 
+                ? 
+                <div className="flex flex-col w-full space-y-3 cursor-progress mt-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
+                    <div className='flex items-center justify-start gap-2'>
+                        <Skeleton className="size-10 rounded-full" />
+                        <div className='flex flex-col space-y-2'>
+                            <Skeleton className="h-4 w-16 rounded-xl" />
+                            <Skeleton className="h-4 w-12 rounded-xl" />
                         </div>
                     </div>
+                    <Skeleton className="h-8 rounded-xl" />
+                    <Skeleton className="h-40 rounded-xl" />
+                    <Skeleton className="h-4 w-16 rounded-xl" />
+                    <div className="flex items-center justify-around gap-2">
+                        {[...Array(4)].map((_,i) => (
+                            <Skeleton key={i++} className="size-8" />
+                        ))}
+                    </div>
+                </div>
                 :
-                success?
-                        <><Posts key={success.post._id} postData={success.post} /></>
-                :  error0 && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '', fontSize: '1.5em'}} className=''>No comments!</div></div>
+                success
+                ?
+                <><PostCard key={success.post._id} postData={success.post} /></>
+                : 
+                error0 && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '', fontSize: '1.5em'}} className=''>No comments!</div></div>
                 }
 
                 <div className='commentSection'>
@@ -107,11 +110,11 @@ const PostContent: React.FC = () => {
                     {loading1 ? 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '30px', width: '30px'}} className='loader show'></div></div>
                     :
-                    success1 && success1.comments.length > 0 ? (
-                        success1.comments.map((comment) => (
-                            <Posts key={comment._id} postData={comment} />
-                        ))
-                    ) :  <div className='noComments'>No comments yet.</div>
+                    success1 && success1.comments.length > 0 
+                    ? 
+                    (success1.comments.map((comment) => ( <PostCard key={comment._id} postData={comment} /> ))) 
+                    : 
+                    <div className='noComments'>No comments yet.</div>
                     }
                     {error1 && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '90%'}}><div style={{height: '', fontSize: '1.5em'}} className=''>Post not found!</div></div>}
                 </div>

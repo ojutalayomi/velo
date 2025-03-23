@@ -1,7 +1,7 @@
 'use client'
 import { notFound, useRouter } from "next/navigation";
 import { UserSchema } from "@/lib/types/type";
-import Posts from "@/templates/posts";
+import PostCard from "@/templates/posts";
 import { PostData } from "@/templates/PostProps";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { ArrowLeft, Ellipsis, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Footer } from "@/components/Footer";
 
-export default function Profile({ userData, userPosts }: { userData: UserSchema, userPosts: PostData[] }) {
+export default function Profile({ userData, userPostCard }: { userData: UserSchema, userPostCard: PostData[] }) {
     const hostname = 'https://s3.amazonaws.com/profile-display-images/';
     const hostname1 = 'https://s3.amazonaws.com/profile-banner-images/';
     const router = useRouter()
@@ -33,7 +33,7 @@ export default function Profile({ userData, userPosts }: { userData: UserSchema,
                     />
                     <div>
                         <p className="flex items-center gap-1">{userData.firstname && userData.lastname ? userData.firstname + ' ' + userData.lastname : 'Velo'} {userData.verified && (<Statuser className="size-4"/>)}</p>
-                        <p className="text-sm text-gray-600">{userPosts.length} posts</p>
+                        <p className="text-sm text-gray-600">{userPostCard.length} posts</p>
                     </div>
                 </div>
                 {/* Cover Photo */}
@@ -90,15 +90,15 @@ export default function Profile({ userData, userPosts }: { userData: UserSchema,
                         <div className="flex gap-6 text-gray-600 dark:text-gray-400">
                             <span>{userData.followers?.length || 0} followers</span>
                             <span>{userData.following?.length || 0} following</span>
-                            <span>{userPosts.length} posts</span>
+                            <span>{userPostCard.length} posts</span>
                         </div>
                     </div>
 
-                    {/* Posts Grid */}
+                    {/* PostCard Grid */}
                     <div className="grid grid-cols-1 gap-4">
-                        {userPosts.map((post, index) => (
+                        {userPostCard.map((post, index) => (
                             <div key={post.PostID + index} className={`w-full h-fit rounded-xl bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md transition-shadow`}>
-                               <Posts postData={post} />
+                               <PostCard postData={post} />
                             </div>
                         ))}
                     </div>

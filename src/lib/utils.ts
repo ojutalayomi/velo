@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx"
 import crypto from "crypto";
 import { twMerge } from "tailwind-merge"
 
-const generateRandomToken = (length: number) => {
+export const generateRandomToken = (length: number) => {
   return crypto.randomBytes(length).toString('hex')
 }
 

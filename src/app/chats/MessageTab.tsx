@@ -260,7 +260,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
             {/* Avatar for other users */}
             {senderId !== userdata._id && (
               <Image 
-                src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : displayPicture) : '/default.jpeg'}
+                src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : url+displayPicture) : '/default.jpeg'}
                 height={32} 
                 width={32} 
                 alt={sender} 

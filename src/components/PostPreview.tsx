@@ -134,7 +134,7 @@ const PostPreview: React.FC = () => {
         {/* Top bar */}
         <div className="flex justify-between p-4">
           <ArrowLeft size={24} className='cursor-pointer' onClick={() => router.back()}/>
-            <h1>{username![0] + username?.slice(1)}&apos;s post</h1>
+            <h1>{username![0].toUpperCase() + username?.slice(1)}&apos;s post</h1>
           <Share size={24} />
         </div>
         

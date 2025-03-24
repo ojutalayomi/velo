@@ -2,11 +2,11 @@ import { getMongoClient } from '@/lib/mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse){
-    if(req.method === 'GET'){
+    if(req.method === 'POST'){
 
         try {
     
-            const token = req.query.id;
+            const token = req.query.postId;
             const pass = decodeURIComponent(req.cookies.user ? req.cookies.user : '').replace(/"/g, '');
             // await client.connect();
             console.log('Server is ready for work');

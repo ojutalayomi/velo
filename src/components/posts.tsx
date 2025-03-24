@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useState } from 'react';
-import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from './PostProps';
+import { Post, PostProps, formatNo, timeFormatter, updateLiveTime } from '../templates/PostProps';
 import { useRouter } from 'next/navigation';
 import {
   Popover,
@@ -11,9 +11,11 @@ import Link from 'next/link';
 import { Copy, Delete, Ellipsis, Flag, MessageCircleX, Minus, Save, ShieldX, UserRoundPlus } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from '@/components/ui/button';
-import MediaSlide from './mediaSlides';
+import MediaSlide from '../templates/mediaSlides';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
+import { useDispatch } from 'react-redux';
+import { updatePost } from '@/redux/postsSlice';
 
 type PostComponentProps = {
   postData: Post['post'],
@@ -27,11 +29,9 @@ interface Option {
 }
 
 const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
+  const dispatch = useDispatch()
   const [activePost, setActivePost] = useState<string>('');
   const [open, setOpen] = useState(false);
-  const [isliked, setLiked] = useState(false);
-  const [isShared, setShared] = useState(false);
-  const [isBookmarked, setBookmarked] = useState(false);
   const [time, setTime] = useState<any>();
   const router = useRouter();
 
@@ -50,13 +50,25 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
 
   const handleClick = (clicked: string) => {
     if(clicked === 'liked'){
-      return setLiked(!isliked);
+      if (postData.Liked) {
+        dispatch(updatePost({ id: postData.PostID, updates: { NoOfLikes: postData.NoOfLikes - 1, Liked: false } }));
+      } else {
+        dispatch(updatePost({ id: postData.PostID, updates: { NoOfLikes: postData.NoOfLikes + 1, Liked: true }}));
+      }
     }
     if(clicked === 'shared'){
-      return setShared(!isShared);
+      if (postData.Shared) {
+        dispatch(updatePost({ id: postData.PostID, updates: { NoOfShares: postData.NoOfShares - 1, Shared: false }}));
+      } else {
+        dispatch(updatePost({ id: postData.PostID, updates: { NoOfShares: postData.NoOfShares + 1, Shared: true }}));
+      }
     }
     if(clicked === 'bookmarked'){
-      return setBookmarked(!isBookmarked);
+      if (postData.Bookmarked) {
+        dispatch(updatePost({ id: postData.PostID, updates: { NoOfBookmarks: postData.NoOfBookmarks - 1, Bookmarked: false }}));
+      } else {
+        dispatch(updatePost({ id: postData.PostID, updates: { NoOfBookmarks: postData.NoOfBookmarks + 1, Bookmarked: true }}));
+      }
     }
   };
 
@@ -160,10 +172,10 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         {window.location.pathname.includes('posts') ? <div className='blog-time'>{timeFormatter(postData.TimeOfPost)}</div> : null}
         <div className='reaction-panel'>
           <div className='blog-foot' id='like'>
-            <svg className={isliked ? 'like-icon clicked' : 'like-icon'} width='30px' height='30px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('liked')}>
+            <svg className={postData.Liked ? 'like-icon clicked' : 'like-icon'} width='30px' height='30px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('liked')}>
               <path className='dark:stroke-slate-200 !stroke-current' d='M8.10627 18.2468C5.29819 16.0833 2 13.5422 2 9.1371C2 4.27416 7.50016 0.825464 12 5.50063L14 7.49928C14.2929 7.79212 14.7678 7.79203 15.0607 7.49908C15.3535 7.20614 15.3534 6.73127 15.0605 6.43843L13.1285 4.50712C17.3685 1.40309 22 4.67465 22 9.1371C22 13.5422 18.7018 16.0833 15.8937 18.2468C15.6019 18.4717 15.3153 18.6925 15.0383 18.9109C14 19.7294 13 20.5 12 20.5C11 20.5 10 19.7294 8.96173 18.9109C8.68471 18.6925 8.39814 18.4717 8.10627 18.2468Z' fill='#242742fd'/>
             </svg>
-            <div className='likes'>{isliked ? formatNo(postData.NoOfLikes + 1) : formatNo(postData.NoOfLikes)}</div>
+            <div className='likes'>{formatNo(postData.NoOfLikes)}</div>
           </div>
           <div className='blog-foot' id='comment' onClick={() => handleActivePost(`/${postData.Username}/posts/${postData.PostID}`)}>
             <svg className='comment-icon' width='30px' height='30px' viewBox='0 -0.5 25 25' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -173,16 +185,16 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             <div className='comments'>{formatNo(postData.NoOfComment)}</div>
           </div>
           <div className='blog-foot' id='share'>
-            <svg className={isShared ? 'share-icon clicked' : 'share-icon'} width='30px' height='30px' viewBox='-0.5 0 25 25' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('shared')}>
+            <svg className={postData.Shared ? 'share-icon clicked' : 'share-icon'} width='30px' height='30px' viewBox='-0.5 0 25 25' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('shared')}>
               <path className='dark:stroke-slate-200' d='M13.47 4.13998C12.74 4.35998 12.28 5.96 12.09 7.91C6.77997 7.91 2 13.4802 2 20.0802C4.19 14.0802 8.99995 12.45 12.14 12.45C12.34 14.21 12.79 15.6202 13.47 15.8202C15.57 16.4302 22 12.4401 22 9.98006C22 7.52006 15.57 3.52998 13.47 4.13998Z' stroke='#242742fd' strokeWidth='1.1' strokeLinecap='round' strokeLinejoin='round'/>
               </svg>
-            <div className='shares'>{isShared ? formatNo(postData.NoOfShares + 1) : formatNo(postData.NoOfShares)}</div>
+            <div className='shares'>{formatNo(postData.NoOfShares)}</div>
           </div>
           <div className='blog-foot' id='bookmark'>
-            <svg className={isBookmarked ? 'bookmark-icon clicked' : 'bookmark-icon'} viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('bookmarked')}>
+            <svg className={postData.Bookmarked ? 'bookmark-icon clicked' : 'bookmark-icon'} viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('bookmarked')}>
               <path className='dark:stroke-slate-200 !stroke-current' fillRule='evenodd' clipRule='evenodd' d='M21 11.0975V16.0909C21 19.1875 21 20.7358 20.2659 21.4123C19.9158 21.735 19.4739 21.9377 19.0031 21.9915C18.016 22.1045 16.8633 21.0849 14.5578 19.0458C13.5388 18.1445 13.0292 17.6938 12.4397 17.5751C12.1494 17.5166 11.8506 17.5166 11.5603 17.5751C10.9708 17.6938 10.4612 18.1445 9.44216 19.0458C7.13673 21.0849 5.98402 22.1045 4.99692 21.9915C4.52615 21.9377 4.08421 21.735 3.73411 21.4123C3 20.7358 3 19.1875 3 16.0909V11.0975C3 6.80891 3 4.6646 4.31802 3.3323C5.63604 2 7.75736 2 12 2C16.2426 2 18.364 2 19.682 3.3323C21 4.6646 21 6.80891 21 11.0975ZM8.25 6C8.25 5.58579 8.58579 5.25 9 5.25H15C15.4142 5.25 15.75 5.58579 15.75 6C15.75 6.41421 15.4142 6.75 15 6.75H9C8.58579 6.75 8.25 6.41421 8.25 6Z' fill='#242742fd'/>
             </svg>
-            <div className='bookmarks'>{isBookmarked ? formatNo(postData.NoOfBookmarks + 1) : formatNo(postData.NoOfBookmarks)}</div>
+            <div className='bookmarks'>{formatNo(postData.NoOfBookmarks)}</div>
           </div>
         </div>
       </div>

@@ -43,7 +43,7 @@ export function formatNo(no: number) {
   } else if (no >= 1000) {
     return (no / 1000).toFixed(1) + 'K';
   } else {
-    return no.toString();
+    return no;
   }
 }
 

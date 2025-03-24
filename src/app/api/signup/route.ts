@@ -19,8 +19,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const time = new Date().toISOString();
-    const { firstname, lastname, email, username, password } = body;
-    const displayPictureFilename = null; // Handle file upload separately
+    const { firstname, lastname, email, username, password, file } = body;
     const userId = uuidv4();
     const saltRounds = 10;
     const client = await getMongoClient();
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
                 firstname: firstname,
                 lastname: lastname,
                 password: hashedPassword,
-                displayPicture: displayPictureFilename,
+                displayPicture: file,
                 isEmailConfirmed: false, // Set to false to trigger email confirmation
                 confirmationToken: confirmationToken
             };
@@ -114,7 +113,7 @@ export async function POST(request: NextRequest) {
             email: email,
             username: username,
             password: hashedPassword,
-            displayPicture: displayPictureFilename,
+            displayPicture: file,
             isEmailConfirmed: false,
             confirmationToken: confirmationToken,
             signUpCount: 1,

@@ -2,9 +2,9 @@
 import { useParams } from 'next/navigation';
 import Image from "next/image";
 import { Comments, Post } from '../../../../templates/PostProps';
-import PostCard from '../../../../templates/posts';
+import PostCard from '../../../../components/posts';
 import { useEffect, useRef, useState } from 'react';
-import { getComments, getPost } from '../../../../components/getStatus';
+import { getComments, getPost } from '../../../../lib/getStatus';
 import NavBar from '../../../../components/navbar';
 import { useUser } from '@/hooks/useUser';
 import { Skeleton } from '@/components/ui/skeleton';

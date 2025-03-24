@@ -1,7 +1,7 @@
 'use client'
 import { notFound, useRouter } from "next/navigation";
 import { UserSchema } from "@/lib/types/type";
-import PostCard from "@/templates/posts";
+import PostCard from "@/components/posts";
 import { PostData } from "@/templates/PostProps";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button";

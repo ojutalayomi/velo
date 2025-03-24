@@ -25,7 +25,7 @@ export async function POST(request: Request) {
             )
         }
 
-        const { filename, contentType: fileType } = body
+        const { filename, contentType: fileType, bucketName } = body
 
         const client = new S3Client({ 
             region: 'us-east-1',
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         })
 
         const { url, fields } = await createPresignedPost(client, {
-            Bucket: 'profile-display-images',
+            Bucket: bucketName,
             Key: `${timeFormatter()}/${filename}-${Math.round(Math.random() * 1000)}`,
             Conditions: [
                 ['content-length-range', 0, 10485760], // up to 10 MB

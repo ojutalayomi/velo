@@ -1,16 +1,18 @@
-import { PostData } from '@/templates/PostProps';
+import { Post, PostData } from '@/templates/PostProps';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface PostsState {
   posts: PostData[];
   loading: boolean;
   error: string | null;
+  postPreview: Post
 }
 
 const initialState: PostsState = {
   posts: [],
   loading: true,
-  error: null
+  error: null,
+  postPreview: {} as Post
 };
 
 const postsSlice = createSlice({
@@ -21,10 +23,12 @@ const postsSlice = createSlice({
       state.posts = action.payload;
     },
     addPost: (state, action: PayloadAction<PostData>) => {
-      state.posts.unshift(action.payload);
+      if(!state.posts.some(post => post._id === action.payload._id)) {
+        state.posts.push(action.payload);
+      }
     },
     updatePost: (state, action: PayloadAction<{id: string, updates: Partial<PostData>}>) => {
-      const index = state.posts.findIndex(post => post._id === action.payload.id);
+      const index = state.posts.findIndex(post => post.PostID === action.payload.id);
       if (index !== -1) {
         state.posts[index] = { ...state.posts[index], ...action.payload.updates };
       }
@@ -37,10 +41,28 @@ const postsSlice = createSlice({
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
+    },
+    setPostPreview: (state, action: PayloadAction<Post>) => {
+      state.postPreview = action.payload;
+    },
+    updatePostPreview: (state, action: PayloadAction<Partial<Post['post']>>) => {
+      if (state.postPreview) {
+        const update = action.payload;
+        state.postPreview = {
+          ...state.postPreview,
+          post: {
+            ...state.postPreview.post,
+            ...update
+          }
+        };
+      }
+    },
+    clearPostPreview: (state) => {
+      state.postPreview = {} as Post;
     }
   }
 });
 
-export const { setPosts, addPost, updatePost, deletePost, setLoading, setError } = postsSlice.actions;
+export const { setPosts, addPost, updatePost, deletePost, setLoading, setError, setPostPreview, updatePostPreview, clearPostPreview } = postsSlice.actions;
 
 export default postsSlice.reducer;

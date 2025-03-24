@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getStatus, getPosts } from '@/components/getStatus';
+import { getStatus, getPosts } from '@/lib/getStatus';
 import { useDispatch } from 'react-redux';
 import { setPosts, setLoading, setError } from '@/redux/postsSlice';
 import { NetworkStatus, networkMonitor } from '@/lib/network';

@@ -55,7 +55,7 @@ const Comps: React.FC = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ filename: formData.file!.name, contentType: formData.file!.type }),
+            body: JSON.stringify({ filename: formData.file!.name, contentType: formData.file!.type, bucketName: 'profile-display-images' }),
           }
         );
 

@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SwiperCore from 'swiper';
-import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Bookmark } from 'lucide-react';
 import { Comments, formatNo, Post, PostData } from '@/templates/PostProps';
-import { getComments, getPost } from './getStatus';
+import { getComments, getPost } from '../lib/getStatus';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import MediaSlide from '@/templates/mediaSlides';
@@ -14,8 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/Footer';
 import { cn, generateRandomToken } from '@/lib/utils';
-import PostCard from '@/templates/posts';
+import PostCard from '@/components/posts';
 import { Skeleton } from './ui/skeleton';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { addPost, setPostPreview, updatePost } from '@/redux/postsSlice';
 
 
 interface Params {
@@ -27,6 +30,9 @@ interface Params {
 const PostPreview: React.FC = () => {
   const params = useParams() as Params;
   const { username, id, index } = params;
+  const dispatch = useDispatch();
+  const {message} = useSelector((state: RootState) => state.posts.postPreview)
+  const post = useSelector((state: RootState) => state.posts.posts.find(post => post.PostID === id)) as PostData;
   const [toFetch, setToFetch] = useState<boolean>(true)
   const indexInt = parseInt(index || '0');
   const router = useRouter();
@@ -35,16 +41,7 @@ const PostPreview: React.FC = () => {
   const [reload, setReload] = useState<boolean>(false);
   const [postLoading, setpostLoading] = useState<boolean>(true);
   const [postError, setpostError] = useState<string | null>(null);
-  const [postSuccess, setpostSuccess] = useState<PostData | null>(null);
-  const [likes, setLikes] = useState(formatNo(postSuccess?.NoOfLikes || 0));
-  const [isLiked, setIsLiked] = useState(false);
-  const [retweets, setRetweets] = useState(formatNo(postSuccess?.NoOfShares || 0));
-  const [isRetweeted, setIsRetweeted] = useState(false);
-  const [comments, setComments] = useState(formatNo(postSuccess?.NoOfComment || 0));
   const [replyText, setReplyText] = useState('');
-  const [success1, setSuccess1] = useState<Comments>();
-  const [loading1, setLoading1] = useState<boolean>(true);
-  const [error1, setError1] = useState<string | null>(null);
   
 
   const fetchData = useCallback(async () => {
@@ -53,36 +50,22 @@ const PostPreview: React.FC = () => {
     try {
       if(id) {
         const postResponse = await getPost(id);
-        setpostSuccess(postResponse.post);
+        dispatch(addPost(postResponse.post));
+        dispatch(setPostPreview(postResponse));
       }
     } catch (error) {
       setpostError((error as Error).message);
     } finally {
       setpostLoading(false);
-      fetchData1();
     }
   }, [id])
 
-  const fetchData1 = useCallback(async () => {
-    setLoading1(true);
-    if(id){
-      try {
-        const commentsResponse = await getComments(id);
-        setSuccess1(commentsResponse);
-      } catch (error) {
-        setError1((error as Error).message);
-      } finally {
-        setLoading1(false);
-      }
-    }
-  }, [id]);
-
   const checkLength = useCallback(() => {
-    if(postSuccess?.Image) {
-      return postSuccess?.Image.length > 1;
+    if(post?.Image) {
+      return post?.Image.length > 1;
     }
     return false;
-  }, [postSuccess?.Image])
+  }, [post?.Image])
 
   useEffect(() => {
     if (toFetch) fetchData();
@@ -93,43 +76,49 @@ const PostPreview: React.FC = () => {
     if (swiper) {
       if (swiper.activeIndex !== indexInt) {
         setToFetch(false);
-        router.push(`/${postSuccess?.Username}/posts/${postSuccess?.PostID}/photo/${swiper.activeIndex}`);
+        router.push(`/${post?.Username}/posts/${post?.PostID}/photo/${swiper.activeIndex}`);
       }
     }
   };
 
   const handleLike = () => {
-    if (isLiked) {
-      setLikes(`${parseInt(likes) - 1}`);
-      setIsLiked(false);
+    if (!post || !id) return;
+
+    if (post.Liked) {
+      dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes - 1, Liked: false } }));
     } else {
-      setLikes(`${parseInt(likes) + 1}`);
-      setIsLiked(true);
+      dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes + 1, Liked: true }}));
     }
   };
 
-  const handleRetweet = () => {
-    if (isRetweeted) {
-      setRetweets(`${parseInt(retweets) - 1}`);
-      setIsRetweeted(false);
+  const handleReshare = () => {
+    if (!post || !id) return;
+    
+    if (post?.Shared) {
+      dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares - 1, Shared: false }}));
     } else {
-      setRetweets(`${parseInt(retweets) + 1}`);
-      setIsRetweeted(true);
+      dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares + 1, Shared: true }}));
     }
   };
 
   const handleComment = () => {
+    if (!post || !id) return;
+    
     if (replyText.trim()) {
-      setComments(`${parseInt(comments) + 1}`);
+      dispatch(updatePost({ id: id, updates: { NoOfComment: post.NoOfComment + 1 }}));
       setReplyText('');
-      // Here you would typically send the comment to a backend
       console.log('New comment:', replyText);
     }
   };
 
-  const handleShare = () => {
-    // Implement share functionality
-    console.log('Share button clicked');
+  const handleBookmark = () => {
+    if (!post || !id) return;
+    
+    if (post?.Bookmarked) {
+      dispatch(updatePost({ id: id, updates: { NoOfBookmarks: post.NoOfBookmarks - 1, Bookmarked: false }}));
+    } else {
+      dispatch(updatePost({ id: id, updates: { NoOfBookmarks: post.NoOfBookmarks + 1, Bookmarked: true }}));
+    }
   };
 
   useEffect(() => {
@@ -145,6 +134,7 @@ const PostPreview: React.FC = () => {
         {/* Top bar */}
         <div className="flex justify-between p-4">
           <ArrowLeft size={24} className='cursor-pointer' onClick={() => router.back()}/>
+            <h1>{username![0] + username?.slice(1)}&apos;s post</h1>
           <Share size={24} />
         </div>
         
@@ -154,8 +144,8 @@ const PostPreview: React.FC = () => {
           ?
           <div className='flex items-center justify-center w-full h-full'><div className='loader size-7 show'></div></div>
           :
-          postSuccess ? 
-            (<MediaSlide className='w-full h-full' postData={postSuccess} />)
+          post ? 
+            (<MediaSlide className='w-full h-full' postData={post || {}} />)
           :
           postError && 
             <div className='flex flex-col items-center justify-center w-full h-full'>
@@ -167,35 +157,36 @@ const PostPreview: React.FC = () => {
         {/* Controls */}
         <div className="p-4">
           {/* Action buttons */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-around items-center">
             <button className="text-gray-400 flex items-center" 
               onClick={() => {
                 console.log('Open comments')
-                router.push(`/${postSuccess?.Username}/posts/${postSuccess?.PostID}`)
+                router.push(`/${post?.Username}/posts/${post?.PostID}`)
               }}
             >
               <MessageCircle size={24} />
-              <span className="ml-1">{comments}</span>
+              <span className="ml-1">{formatNo(post?.NoOfComment) || 0}</span>
             </button>
-            <button className={`text-gray-400 flex items-center ${isRetweeted ? 'text-green-500' : ''}`} onClick={handleRetweet}>
+            <button className={`text-gray-400 flex items-center ${post?.Shared ? 'text-green-500' : ''}`} onClick={handleReshare}>
               <Repeat2 size={24} />
-              <span className="ml-1">{retweets}</span>
+              <span className="ml-1">{formatNo(post?.NoOfShares) || 0}</span>
             </button>
-            <button className={`flex items-center ${isLiked ? 'text-brand' : 'text-gray-400'}`} onClick={handleLike}>
-              <Heart size={24} fill={isLiked ? 'currentColor' : 'none'} />
-              <span className="ml-1">{likes}</span>
+            <button className={`flex items-center ${post?.Liked ? 'text-brand' : 'text-gray-400'}`} onClick={handleLike}>
+              <Heart size={24} fill={post?.Liked ? 'currentColor' : 'none'} />
+              <span className="ml-1">{formatNo(post?.NoOfLikes) || 0}</span>
             </button>
-            <button className="text-gray-400" onClick={handleShare}>
-              <Share size={24} />
+            <button className={`flex items-center ${post?.Bookmarked ? 'text-brand' : 'text-gray-400'}`} onClick={handleBookmark}>
+              <Bookmark size={24} fill={post?.Liked ? 'currentColor' : 'none'}/>
+              <span className="ml-1">{formatNo(post?.NoOfBookmarks) || 0}</span>
             </button>
           </div>
         </div>
 
         
         {/* Reply input */}
-        <ReplyTextArea replyText={replyText} setReplyText={setReplyText} handleComment={handleComment}/>
+        <ReplyTextArea className='md:hidden' replyText={replyText} setReplyText={setReplyText} handleComment={handleComment}/>
       </div>
-      <LeftSideBar post={postSuccess!} comments={success1?.comments || []} replyText={replyText} setReplyText={setReplyText} handleComment={handleComment} className='flex-none w-1/3'/>
+      <LeftSideBar id={id || ''} replyText={replyText} setReplyText={setReplyText} handleComment={handleComment} className='flex-none w-1/3'/>
     </div>
   );
 };
@@ -203,11 +194,32 @@ const PostPreview: React.FC = () => {
 export default PostPreview;
 
 const LeftSideBar = (
-  { className, post, comments, replyText, setReplyText, handleComment, ...props }: 
-  { className?: string, post: PostData, comments: PostData[], replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void, props?: HTMLDivElement }
+  { className, id, replyText, setReplyText, handleComment, ...props }: 
+  { className?: string, id: string, replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void, props?: HTMLDivElement }
 ) => {
   const { userdata } = useUser();
-  const [commentsNo, setCommentsNo] = useState(formatNo(post?.NoOfComment || 0));
+  const post = useSelector((state: RootState) => state.posts.posts.find(post => post.PostID === id)) as PostData;
+  const [comments, setComments] = useState<Comments['comments']>();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    if(id){
+      try {
+        const commentsResponse = await getComments(id);
+        setComments(commentsResponse.comments);
+      } catch (error) {
+        setError((error as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [id, fetchData]);
 
   return (
     <div className={cn('min-h-screen hidden md:block flex-1 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50', className)} {...props}>
@@ -255,7 +267,7 @@ const LeftSideBar = (
   );
 };
 
-function ReplyTextArea ({ replyText, setReplyText, handleComment }: { replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void }) {
+function ReplyTextArea ({ className, replyText, setReplyText, handleComment }: { className?: string, replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void }) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [txtButton, setTxtButton] = useState(false);
 
@@ -280,7 +292,7 @@ function ReplyTextArea ({ replyText, setReplyText, handleComment }: { replyText:
   }, []);
 
   return (
-    <div className="p-4 border-t border-gray-700 flex">
+    <div className={cn('flex items-center p-4 bg-white dark:bg-zinc-900 dark:text-white', className)}>
       <textarea
         ref={textAreaRef} 
         value={replyText}

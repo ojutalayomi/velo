@@ -43,10 +43,10 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
           
             return res.json(posts);
         
-          } else {
-            // console.log(posts)
-            return res.json(posts);
-          }
+        } else {
+          // console.log(posts)
+          return res.json(posts);
+        }
         
     } else {
         res.status(405).json({ message: 'Method Not Allowed' });

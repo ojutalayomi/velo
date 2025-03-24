@@ -4,7 +4,6 @@ import { kv } from '@vercel/kv';
 
 const ratelimit = new Ratelimit({
   redis: kv,
-  // 1 requests from the same IP for every 30 seconds
   limiter: Ratelimit.slidingWindow(3, '30 s'),
 });
 
@@ -17,7 +16,7 @@ export default async function middleware(request: NextRequest) {
   const { success, pending, limit, reset, remaining } = await ratelimit.limit(
     ip
   );
-  // console.log(success)
+  
   return success
     ? NextResponse.next()
     : NextResponse.json({ role: 'assistant', content: 'too many requests' }, {status: 429});

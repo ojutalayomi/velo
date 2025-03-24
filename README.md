@@ -1,4 +1,4 @@
-# Ila Chat
+# Velo Chat App
 
 A real-time chat application built with Next.js, Socket.IO, and Redux.
 

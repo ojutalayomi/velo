@@ -1,26 +1,11 @@
 "use client";
-import Home from '../components/Home';
 import { useState, useEffect } from 'react'
 import { subscribeUser, unsubscribeUser, sendNotification } from './actions'
+import { urlBase64ToUint8Array } from '@/lib/utils';
  
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
- 
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
- 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i)
-  }
-  return outputArray
-}
-
 function PushNotificationManager() {
   const [isSupported, setIsSupported] = useState(false)
-  const [subscription, setSubscription] = useState<PushSubscription | null>(
-    null
-  )
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null)
   const [message, setMessage] = useState('')
  
   useEffect(() => {
@@ -55,7 +40,7 @@ function PushNotificationManager() {
   async function unsubscribeFromPush() {
     await subscription?.unsubscribe()
     setSubscription(null)
-    await unsubscribeUser()
+    if (subscription) await unsubscribeUser(subscription as any)
   }
  
   async function sendTestNotification() {

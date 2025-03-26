@@ -339,3 +339,17 @@ export type GoogleAuth = {
         exp: number
     }
 }
+export type ReactionType = {
+    type: 'like' | 'bookmark' | 'unlike' | 'unbookmark';
+    key1: 'Liked' | 'Bookmarked';
+    value1: boolean;
+    key2: 'NoOfLikes' | 'NoOfBookmarks';
+    value: 'inc' | 'dec',
+    postId: string;
+};
+export interface ClientComponentsProps {
+    children: React.ReactNode;
+}
+export interface ConvoTypeProp {
+    conversations: ConvoType[];
+}

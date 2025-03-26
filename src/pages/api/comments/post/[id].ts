@@ -65,7 +65,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     await post.updateOne({ PostID: req.query.id }, { $set: { NoOfComment: comments.NoOfComment + 1 } });
 
     for (let i: number = 0; i < array.length; i++) {
-      await array[i].insertOne({ _id: newComment.PostID, [`${array[i]}`]: [] });
+      await array[i].insertOne({ [`${array[i]}`]: [] });
     }
 
     res.json({ message: "Comment sent", data: newComment });

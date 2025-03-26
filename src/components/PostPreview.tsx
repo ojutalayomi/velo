@@ -32,7 +32,8 @@ const PostPreview: React.FC = () => {
   const { username, id, index } = params;
   const dispatch = useDispatch();
   const {message} = useSelector((state: RootState) => state.posts.postPreview)
-  const post = useSelector((state: RootState) => state.posts.posts.find(post => post.PostID === id)) as PostData;
+  const posts = useSelector((state: RootState) => state.posts.posts);
+  const post = posts.find(post => post.PostID === id) as PostData
   const [toFetch, setToFetch] = useState<boolean>(true)
   const indexInt = parseInt(index || '0');
   const router = useRouter();
@@ -48,7 +49,7 @@ const PostPreview: React.FC = () => {
     setpostLoading(true);
 
     try {
-      if(id) {
+      if(id && !post) {
         const postResponse = await getPost(id);
         dispatch(addPost(postResponse.post));
         dispatch(setPostPreview(postResponse));

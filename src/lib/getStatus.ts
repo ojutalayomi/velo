@@ -56,7 +56,7 @@ export const getPost = async (id: string | string[] | undefined): Promise<Post> 
 
 export const getComments = async (id: string | string[] | undefined): Promise<Comments> => {
     const response = await fetch(url4 + id, {
-        method: 'GET',
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         }

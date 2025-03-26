@@ -6,29 +6,27 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import Error from './error';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/hooks/useUser';
-import { ConvoType, updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
+import { updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
 import { usePathname } from 'next/navigation';
 import UserPhoto from "@/components/UserPhoto";
 import PostPreview from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
-import { MessageAttributes, msgStatus, NewChat_ } from '@/lib/types/type';
+import { ClientComponentsProps, ConvoTypeProp, MessageAttributes, msgStatus, NewChat_, ReactionType } from '@/lib/types/type';
 import { useSocket } from '@/app/providers/SocketProvider';
 import VideoChat from '../components/CallPage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ConfirmCall } from '@/components/callConfirmation';
 import { FileStorageProvider } from '@/hooks/useFileStorage';
-
-interface ClientComponentsProps {
-    children: React.ReactNode;
-}
-
-interface ConvoTypeProp {
-    conversations: ConvoType[];
-}
+import { useNetwork } from './providers/NetworkProvider';
+import { WifiOff, XCircle } from 'lucide-react';
+import { PostData } from '@/templates/PostProps';
+import { updatePost } from '@/redux/postsSlice';
+import { useAnnouncer } from '@/hooks/useAnnouncer';
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const dispatch = useDispatch();
     const pathname = usePathname();
+    const { isOnline, quality } = useNetwork()
     const showProfilePicture  = pathname?.endsWith('/photo');
     const showPostPreview  = pathname?.includes('/photo/');
     const callRoute  = pathname?.startsWith('/call');
@@ -39,10 +37,19 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const [isMoreShown, setMoreStatus] = useState(false);
     const [error, setError] = useState(null);
     const [load,setLoad] = useState<boolean>(false);
+    const { displayAnnouncement, setDisplayAnnouncement } = useAnnouncer()
     const callIdRef = useRef<string>('');
     const callNoticeRef = useRef<boolean>(false);
     const socket = useSocket();
     const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
+
+    useEffect(() => {
+        if(displayAnnouncement.status) {
+            setTimeout(() => {
+                setDisplayAnnouncement({ status: false, message: ''})
+            }, 10000);
+        }
+    }, [displayAnnouncement.status])
 
     useEffect(() => {
         setLoad(false)
@@ -129,7 +136,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     }, [dispatch, userdata._id]);
 
     useEffect(() => {
-      if (!socket) return;
+        if (!socket) return;
   
         socket.on('newMessage', handleChatMessage);
         socket.on('userTyping', handleTyping);
@@ -148,15 +155,39 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             callNoticeRef.current = true;            
             alert('Incoming call from:');
         });
+        socket.on('blog', ( data: { message: string, success: boolean } ) => {
+            setDisplayAnnouncement({
+                status: true,
+                message: data.message
+            })
+        })
+        socket.on('react_to_blog', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
+            if(data.success) return
+            dispatch(updatePost({ id: data.postId, updates: { [`${data.reaction.key1}`]: data.reaction.key1, [`${data.reaction.key2}`]: data.reaction.key2 } }));
+            setDisplayAnnouncement({
+                status: true,
+                message: data.message
+            })
+
+        })
+        socket.on('updateBlog', ( data: { excludeUser: string, blog: PostData } ) => {
+            if(data.excludeUser !== userdata._id) {
+                dispatch(updatePost({ id: data.blog.PostID, updates: data.blog }));
+                setDisplayAnnouncement({
+                    status: true,
+                    message: `New ${data.blog.Type}`
+                })
+            }
+        })
   
-      return () => {
-        socket.off('newMessage', handleChatMessage);
-        socket.off('userTyping', handleTyping);
-        socket.off('userStopTyping', handleStopTyping);
-        socket.off("lastActive")
-        socket.off('newChat', handleChat);
-        socket.off('offer');
-      };
+        return () => {
+            socket.off('newMessage', handleChatMessage);
+            socket.off('userTyping', handleTyping);
+            socket.off('userStopTyping', handleStopTyping);
+            socket.off("lastActive")
+            socket.off('newChat', handleChat);
+            socket.off('offer');
+        };
     }, [socket, handleChatMessage, handleChat, handleTyping, handleStopTyping, conversations]);
 
     const setActiveRoute = useCallback((route: string) => {
@@ -167,56 +198,61 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
       setError(null);
     };
 
-    useEffect(() => {
-        const handleContextMenu = (event: MouseEvent) => {
-            event.preventDefault();
-        };
-
-        document.addEventListener('contextmenu', handleContextMenu);
-
-        return () => {
-            document.removeEventListener('contextmenu', handleContextMenu);
-        };
-    }, []);
-
     return(
-        <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
-            <FileStorageProvider>
-            {error && (
-                <Alert variant="destructive" className="mb-4">
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
+        <>
+            {displayAnnouncement.status && (
+                <div id='announcement' className='w-screen p-2 text-center relative bg-brand text-white'>
+                    <h1>{displayAnnouncement.message}</h1>
+                    <XCircle className='absolute cursor-pointer right-3 top-1/2 transform -translate-y-1/2' size={20} onClick={() => setDisplayAnnouncement({ status: false, message: ''})} />
+                </div>
             )}
-            {callIdRef.current && callNoticeRef.current && (
-                <ConfirmCall id={String(callIdRef.current)} show={Boolean(callNoticeRef)} conversations={conversations}/>
-            )}
-            {!callRoute 
-            ?
-            <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
-            : 
-            null
-            }
-            {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-            <div id='detail' className="">
-                {children}
-                {showProfilePicture && <UserPhoto />}
-                {showPostPreview && <PostPreview />}
-                {callRoute && <VideoChat />}
+            <div id='root'>
+                <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
+                    <FileStorageProvider>
+                        {!isOnline && (
+                            <div className='absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center bg-black/80 bg-opacity-90 z-50'>
+                                <WifiOff className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-2 text-lg font-semibold">You&apos;re Offline</h3>
+                                <p className="text-sm text-muted-foreground">Please check your internet connection</p>
+                            </div>
+                        )}
+                        {error && (
+                            <Alert variant="destructive" className="mb-4">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+                        {callIdRef.current && callNoticeRef.current && (
+                            <ConfirmCall id={String(callIdRef.current)} show={Boolean(callNoticeRef)} conversations={conversations}/>
+                        )}
+                        {!callRoute 
+                        ?
+                        <Sidebar setLoad={setLoad} isMoreShown={isMoreShown} activeRoute={activeRoute} setActiveRoute={setActiveRoute} setMoreStatus={setMoreStatus} />
+                        : 
+                        null
+                        }
+                        {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
+                        <div id='detail' className="">
+                            {children}
+                            {showProfilePicture && <UserPhoto />}
+                            {showPostPreview && <PostPreview />}
+                            {callRoute && <VideoChat />}
+                        </div>
+                        {(!pathname?.includes('posts') && !pathname?.includes('chats') && !routes.includes(activeRoute) && !callRoute) 
+                        ? 
+                        <Bottombar 
+                        setLoad={setLoad} 
+                        isMoreShown={isMoreShown} 
+                        activeRoute={activeRoute} 
+                        setActiveRoute={setActiveRoute} 
+                        setMoreStatus={setMoreStatus} 
+                        /> 
+                        : 
+                        null
+                        } 
+                    </FileStorageProvider>   
+                </ErrorBoundary>
             </div>
-            {(!pathname?.includes('posts') && !pathname?.includes('chats') && !routes.includes(activeRoute) && !callRoute) 
-            ? 
-            <Bottombar 
-            setLoad={setLoad} 
-            isMoreShown={isMoreShown} 
-            activeRoute={activeRoute} 
-            setActiveRoute={setActiveRoute} 
-            setMoreStatus={setMoreStatus} 
-            /> 
-            : 
-            null
-            } 
-            </FileStorageProvider>   
-        </ErrorBoundary>
+        </>
     )
 }
 export default ClientComponents;

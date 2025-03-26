@@ -29,12 +29,10 @@ export default function RootLayout({ children, modal }: Readonly<{ children: Rea
       <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
         <Providers>
           <SpeedInsights />
-          <div id='root'>
             <ClientComponents>
               {children}
             </ClientComponents>
             {modal}
-          </div>
         </Providers>
         <Toaster />
       </body>

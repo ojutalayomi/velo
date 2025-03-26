@@ -7,7 +7,6 @@ import { setLoading, setError1, setSuccess, updateFormData } from '@/redux/signu
 import { RootState } from '@/redux/store';
 import { useAppDispatch } from '@/redux/hooks';
 import SubmitForm from '@/components/pg/submitButton';
-import { type FormData } from '@/components/pg/FormProps';
 import First from '@/components/pg/first';
 import Second from '@/components/pg/second';
 import Third from '@/components/pg/third';

@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { networkMonitor, NetworkStatus, NetworkQuality } from '@/lib/network'
 import { useToast } from '@/hooks/use-toast'
 
@@ -78,4 +78,12 @@ export default function NetworkProvider({ children }: { children: React.ReactNod
       {children}
     </NetworkContext.Provider>
   )
+}
+
+export const useNetwork = () => {
+  const context = useContext(NetworkContext)
+  if (!context) {
+    throw new Error('useNetwork must be used within a NetworkProvider')
+  }
+  return context
 }

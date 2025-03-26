@@ -1,4 +1,5 @@
 import moment from 'moment';
+import { ObjectId } from 'mongodb';
 
 export interface PostData {
   _id: string;
@@ -6,6 +7,7 @@ export interface PostData {
   NameOfPoster: string;
   Verified: boolean;
   TimeOfPost: string;
+  Visibility: string;
   Caption: string;
   Image: string[];
   NoOfLikes: number;
@@ -17,9 +19,9 @@ export interface PostData {
   Username: string;
   PostID: string;
   Code: string;
-  WhoCanComment: string;
+  WhoCanComment: 'everyone' | 'friends' | 'none';
   Shared: boolean;
-  Type: string;
+  Type: "blog" | "comment";
   ParentId: string;
 }
 

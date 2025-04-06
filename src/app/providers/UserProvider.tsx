@@ -1,9 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, createContext, ReactNode, useContext } from 'react';
 import { setUserData, UserData } from '@/redux/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { debounce } from 'lodash';
 import { RootState } from '@/redux/store';
 import { networkMonitor, NetworkStatus } from '@/lib/network';
+import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { User } from 'lucide-react';
+import { delay } from '@/lib/utils';
 
 interface UseUserReturn {
     userdata: UserData;
@@ -12,7 +17,10 @@ interface UseUserReturn {
     refetchUser: () => void;
 }
 
-export const useUser = (): UseUserReturn => {
+const UserContext = createContext<UseUserReturn | undefined>(undefined)
+
+const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const router = useRouter();
     const [status, setStatus] = useState<NetworkStatus>()
     const dispatch = useDispatch();
     const userdata = useSelector((state: RootState) => state.user.userdata);
@@ -51,10 +59,23 @@ export const useUser = (): UseUserReturn => {
             if (!response.ok) {
                 const data = await response.json();
                 if (data.message === 'Too many requests') {
-                    throw new Error('Too many requests');
+                    fetchedSuccessfullyRef.current = true;
+                    toast({
+                        title: 'User Data Is Loading',
+                        description: `Please wait, your data is been fetched`,
+                        variant: 'destructive'
+                    });
+                    await delay(30000);
+                    fetchedSuccessfullyRef.current = false;
                 } else if (data.message === 'login') {
-                    setLoading(false);
-                } else {
+                    fetchedSuccessfullyRef.current = true;
+                    toast({
+                        title: 'User needs to log in',
+                        description: `We were not able to fetch your data. Please log in or create an account with us.`,
+                        variant: 'destructive',
+                        action: <Button onClick={() => router.push("/accounts/login")}> <User/> Log in</Button>
+                    });
+                }  else {
                     throw new Error('Failed to fetch user data');
                 }
             }
@@ -99,7 +120,21 @@ export const useUser = (): UseUserReturn => {
         return () => {
             debouncedFetchUser.cancel();
         };
-    }, [userdata, handleFetchUser, debouncedFetchUser, status]);
+    }, [userdata, fetchedSuccessfullyRef.current, debouncedFetchUser, status]);
 
-    return { userdata, loading, error, refetchUser: handleFetchUser };
+    return (
+        <UserContext.Provider value={{ userdata, loading, error, refetchUser: handleFetchUser }}>
+            {children}
+        </UserContext.Provider>
+    )
 };
+
+export default UserProvider
+
+export const useUser = (): UseUserReturn => {
+  const context = useContext(UserContext)
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider')
+  }
+  return context
+}

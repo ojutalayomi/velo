@@ -3,11 +3,12 @@ import { ObjectId } from 'mongodb';
 
 export interface PostData {
   _id: string;
+  UserId: string;
   DisplayPicture: string;
   NameOfPoster: string;
   Verified: boolean;
   TimeOfPost: string;
-  Visibility: string;
+  Visibility: 'everyone' | 'friends' | 'none';
   Caption: string;
   Image: string[];
   NoOfLikes: number;
@@ -21,8 +22,9 @@ export interface PostData {
   Code: string;
   WhoCanComment: 'everyone' | 'friends' | 'none';
   Shared: boolean;
-  Type: "blog" | "comment";
+  Type: "blog" | "comment" |  "repost" | "quote";
   ParentId: string;
+  OriginalPostId?: string;
 }
 
 export interface Post {

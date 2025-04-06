@@ -1,54 +1,60 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient, ServerApiVersion } from 'mongodb'
-import { getMongoClient } from '@/lib/mongodb';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getMongoDb } from '@/lib/mongodb';
+import { Db } from 'mongodb';
+import { addInteractionFlags } from '../../lib/apiUtils';
 
-export default async function handle(req: NextApiRequest, res: NextApiResponse){
-    if(req.method === 'GET'){
+export default async function handle(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
 
-        const username = req.query.username;
+  try {
+    const username = req.query.username as string;
+    const db = await getMongoDb();
 
-        const client = await getMongoClient();
-        await client.connect();
-        await client.db("admin").command({ ping: 1 });
-        console.log("Mongoconnection. You successfully connected to MongoDB!");
-        const users = client.db('mydb').collection('Users');
-        const user = await users.findOne({ username: username });
-        const collection = client.db('mydb').collection('Posts');
-        const posts = await collection.find({}).toArray();
+    console.log('MongoDB connection established successfully!');
 
-        if (username && user) {
-            const Likes = client.db('mydb').collection('Posts(Likes)');
-            const Shares = client.db('mydb').collection('Posts(Shares)');
-            const Bookmarks = client.db('mydb').collection('Posts(Bookmarks)');
-            const collections = [Likes, Shares, Bookmarks];
-            const properties = ['likes', 'shares', 'bookmarks'];
-            const arr2 = ['Liked', 'Shared', 'Bookmarked'];
-          
-            await Promise.all(posts.map(async post => {
-              for (let i = 0; i < collections.length; i++) {
-                const collection = collections[i];
-                const field = arr2[i];
-                const fieldname = properties[i];
-                // console.log(fieldname);
-          
-                // console.log('Before: ', post[field]);
-                const result = await collection.findOne({ _id: post.PostID, [`${fieldname}.username`]: user.username });
-                if (result) {
-                  post[field] = true;
-                  // console.log('Changed Post', post[field]);
-                  // console.log('After: ', post[field]);
-                }
-              }
-            }));
-          
-            return res.json(posts);
-        
-        } else {
-          // console.log(posts)
-          return res.json(posts);
-        }
-        
-    } else {
-        res.status(405).json({ message: 'Method Not Allowed' });
+    // Fetch user details if username is provided
+    const user = username ? await db.collection('Users').findOne({ username }) : null;
+
+    // Fetch posts from multiple collections
+    const posts = await fetchPostsFromMultipleCollections(db);
+
+    // Add interaction flags if a user is found
+    if (user) {
+      await addInteractionFlags(db, posts, user._id.toString());
     }
+
+    return res.json(posts);
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
 }
+
+// -----------------------------
+// Helper Functions
+// -----------------------------
+
+/**
+ * Fetch posts from multiple collections in the database.
+ */
+async function fetchPostsFromMultipleCollections(db: Db) {
+  // Fetch posts from the 'Posts' collection
+  const posts = await db.collection('Posts').find({}).toArray();
+
+  // Fetch posts from the 'Posts(Comments)' collection
+  const comments = await db.collection('Posts(Comments)').find({}).toArray();
+
+  // Fetch posts from the 'Posts(Shares)' collection
+  const shares = await db.collection('Posts(Shares)').find({}).toArray();
+
+  // Combine all results into a single array
+  const combinedPosts = [...posts, ...comments, ...shares];
+
+  // Sort the combined posts by a common field (e.g., `TimeOfPost`) if needed
+  combinedPosts.sort((a, b) => new Date(b.TimeOfPost).getTime() - new Date(a.TimeOfPost).getTime());
+
+  return combinedPosts;
+}
+

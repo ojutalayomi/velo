@@ -5,7 +5,7 @@ import Bottombar from '@/components/Bottombar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Error from './error';
 import { useDispatch, useSelector } from 'react-redux';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
 import { usePathname } from 'next/navigation';
 import UserPhoto from "@/components/UserPhoto";
@@ -20,7 +20,7 @@ import { FileStorageProvider } from '@/hooks/useFileStorage';
 import { useNetwork } from './providers/NetworkProvider';
 import { WifiOff, XCircle } from 'lucide-react';
 import { PostData } from '@/templates/PostProps';
-import { updatePost } from '@/redux/postsSlice';
+import { addPost, updatePost } from '@/redux/postsSlice';
 import { useAnnouncer } from '@/hooks/useAnnouncer';
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
@@ -155,13 +155,13 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             callNoticeRef.current = true;            
             alert('Incoming call from:');
         });
-        socket.on('blog', ( data: { message: string, success: boolean } ) => {
+        socket.on('post_response', ( data: { message: string, success: boolean } ) => {
             setDisplayAnnouncement({
                 status: true,
                 message: data.message
             })
         })
-        socket.on('react_to_blog', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
+        socket.on('react_to_post', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
             if(data.success) return
             dispatch(updatePost({ id: data.postId, updates: { [`${data.reaction.key1}`]: data.reaction.key1, [`${data.reaction.key2}`]: data.reaction.key2 } }));
             setDisplayAnnouncement({
@@ -170,12 +170,21 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             })
 
         })
-        socket.on('updateBlog', ( data: { excludeUser: string, blog: PostData } ) => {
+        socket.on('updatePost', ( data: { excludeUser: string, blog: PostData } ) => {
             if(data.excludeUser !== userdata._id) {
                 dispatch(updatePost({ id: data.blog.PostID, updates: data.blog }));
                 setDisplayAnnouncement({
                     status: true,
                     message: `New ${data.blog.Type}`
+                })
+            }
+        })
+        socket.on('newPost', ( data: { excludeUser: string, blog: PostData } ) => {
+            if(data.excludeUser !== userdata._id) {
+                dispatch(addPost(data.blog));
+                setDisplayAnnouncement({
+                    status: true,
+                    message: `New ${data.blog.Type} from ${data.blog.Username}`
                 })
             }
         })
@@ -209,9 +218,9 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             <div id='root'>
                 <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                     <FileStorageProvider>
-                        {!isOnline && (
-                            <div className='absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center bg-black/80 bg-opacity-90 z-50'>
-                                <WifiOff className="mx-auto h-12 w-12 text-muted-foreground" />
+                        {(!isOnline && typeof window !== 'undefined') && (
+                            <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-50'>
+                                <WifiOff className="h-12 w-12 text-muted-foreground" />
                                 <h3 className="mt-2 text-lg font-semibold">You&apos;re Offline</h3>
                                 <p className="text-sm text-muted-foreground">Please check your internet connection</p>
                             </div>

@@ -6,7 +6,7 @@ import { RefreshCw } from 'lucide-react';
 import { RootState } from '@/redux/store';
 import { usePosts } from '@/app/providers/PostsProvider';
 import { Skeleton } from './ui/skeleton';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 
 const Homepage: React.FC = () => {
     const { userdata } = useUser();

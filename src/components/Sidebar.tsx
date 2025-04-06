@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { SidebarItem, UserSection, sidebarItems } from './SidebarComps';
 import { UserData } from '@/redux/userSlice';
 import { Moon, Sun } from 'lucide-react';

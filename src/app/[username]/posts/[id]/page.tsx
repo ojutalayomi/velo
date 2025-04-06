@@ -6,7 +6,7 @@ import PostCard from '../../../../components/posts';
 import { useEffect, useRef, useState } from 'react';
 import { getComments, getPost } from '../../../../lib/getStatus';
 import NavBar from '../../../../components/navbar';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PostContent: React.FC = () => {
@@ -121,7 +121,7 @@ const PostContent: React.FC = () => {
 
             </div>
             <div className='commentBar relative w-full'>
-                <Image src={userdata.dp ? 'https://s3.amazonaws.com/profile-display-images/'+userdata.dp : '/default.jpeg'} className='userPhoto' width={35} height={35} alt='logo'/>
+                <Image src={userdata.dp} className='userPhoto' width={35} height={35} alt='logo'/>
                 <div className='commentBarContent'>
                     <textarea className='make-comment' ref={textAreaRef} placeholder='Comment here...'></textarea>
                     <svg xmlns='http://www.w3.org/2000/svg' className='smile-emoji' viewBox='0 0 24 24' fill='none'>

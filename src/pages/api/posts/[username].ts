@@ -1,4 +1,6 @@
-import { getMongoClient } from '@/lib/mongodb';
+import { getMongoDb } from '@/lib/mongodb';
+import { addInteractionFlags } from '@/lib/apiUtils';
+import { ObjectId } from 'mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -6,44 +8,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const { username } = req.query;
+    const { userId } = req.query;
 
     try {
-        const client = await getMongoClient();
-        const db = client.db('mydb');
+        const db = await getMongoDb();
         const users = db.collection('Users');
         const posts = db.collection('Posts');
 
         // Find user
-        const user = await users.findOne({ username: username });
+        const user = await users.findOne({ _id: new ObjectId(userId as string) });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         // Get all posts by username
-        const userPosts = await posts.find({ Username: username }).toArray();
+        const userPosts = await db.collection('Posts').find({
+          $or: [
+            { UserId: userId },
+            { UserId: userId, collection: 'Posts(Shares)' }
+          ]
+        }).toArray();
 
-        // Get interaction collections
-        const Likes = db.collection('Posts(Likes)');
-        const Shares = db.collection('Posts(Shares)');
-        const Bookmarks = db.collection('Posts(Bookmarks)');
-        const collections = [Likes, Shares, Bookmarks];
-        const properties = ['likes', 'shares', 'bookmarks'];
-        const arr2 = ['Liked', 'Shared', 'Bookmarked'];
-
-        // Add interaction flags for the requesting user if they exist
-        await Promise.all(userPosts.map(async post => {
-            for (let i = 0; i < collections.length; i++) {
-                const collection = collections[i];
-                const field = arr2[i];
-                const fieldname = properties[i];
-                const result = await collection.findOne({ 
-                    _id: post.PostID, 
-                    [`${fieldname}.username`]: username 
-                });
-                post[field] = !!result;
-            }
-        }));
+        await addInteractionFlags(db, userPosts, user._id.toString());
 
         return res.status(200).json(userPosts);
 

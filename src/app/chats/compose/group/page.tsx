@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter } from 'next/navigation';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Users, Plus, X } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { useSocket } from '@/app/providers/SocketProvider';;
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';

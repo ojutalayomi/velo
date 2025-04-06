@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Users, Hash, Plus } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { useSocket } from '@/app/providers/SocketProvider';;
 import { useDispatch, useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';

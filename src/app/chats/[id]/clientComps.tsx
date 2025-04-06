@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ConvoType, updateConversation, addMessage, updateMessage, updateLiveTime } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { useSocket } from '@/app/providers/SocketProvider';
 import {
   Popover,
@@ -244,10 +244,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             };
             reader.readAsArrayBuffer(file as unknown as Blob);
           });
-      });
-  
-      // Wait for all files to be read
-      await Promise.all(fileReadPromises);
+        });
+    
+        // Wait for all files to be read
+        await Promise.all(fileReadPromises);
       }
   
       // Dispatch actions to update the state

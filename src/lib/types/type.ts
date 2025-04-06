@@ -353,3 +353,23 @@ export interface ClientComponentsProps {
 export interface ConvoTypeProp {
     conversations: ConvoType[];
 }
+export interface FileValidationConfig {
+    maxFileSize: number; // in bytes
+    maxTotalSize: number; // in bytes
+    maxFiles: number;
+    allowedFileTypes: string | string[];
+}export type TextOverlay = {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  color: string;
+  fontSize: number;
+  fontFamily: string;
+  bold: boolean;
+  italic: boolean;
+  align: string;
+  isDragging: boolean;
+  dragOffset: { x: number; y: number; };
+};
+

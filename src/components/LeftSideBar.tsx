@@ -2,7 +2,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import ImageContent from '@/components/imageContent';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

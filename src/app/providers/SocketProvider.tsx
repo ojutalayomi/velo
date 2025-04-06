@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { RootState, store } from "@/redux/store";
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { useDispatch, useSelector } from 'react-redux';
 import { addOnlineUser, removeOnlineUser } from '@/redux/utilsSlice';
 import { networkMonitor, NetworkStatus } from '@/lib/network';

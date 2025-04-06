@@ -16,49 +16,7 @@ import VideoDiv from "@/templates/videoDiv";
 import { DocCard } from "@/components/DocCard";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-
-interface FileValidationConfig {
-    maxFileSize: number; // in bytes
-    maxTotalSize: number; // in bytes
-    maxFiles: number;
-    allowedFileTypes: string[];
-}
-
-const FILE_VALIDATION_CONFIG: FileValidationConfig = {
-    maxFileSize: 10 * 1024 * 1024, // 10MB per file
-    maxTotalSize: 50 * 1024 * 1024, // 50MB total
-    maxFiles: 5, // Maximum 5 files
-    allowedFileTypes: [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ],
-};
-
-const validateFile = (file: File, config: FileValidationConfig) => {
-    // Check file size
-    if (file.size > config.maxFileSize) {
-      throw new Error(`File ${file.name} is too large. Maximum size is ${formatFileSize(config.maxFileSize)}`);
-    }
-  
-    // Check file type
-    if (!config.allowedFileTypes.includes(file.type)) {
-      throw new Error(`File type ${file.type} is not allowed for ${file.name}`);
-    }
-  
-    return true;
-};
-  
-const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-};
+import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 
 type Message = {
     _id: string,
@@ -89,26 +47,16 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
     const [errors, setErrors] = useState<string[]>([]);
     const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
     const [txtButton, setTxtButton] = useState(false)
-
-    useEffect(() => {
-        const handleInput = () => {
-            const textArea = textAreaRef.current;
-            if (textArea) {
-                textArea.style.height = '38px';
-                textArea.style.height = `${textArea.scrollHeight}px`;
-                if(textArea.innerHTML !== '') setTxtButton(true)
-                else setTxtButton(false)
-            }
-        };
-  
+    
+    const handleInput = () => {
         const textArea = textAreaRef.current;
         if (textArea) {
-            textArea.addEventListener('input', handleInput);
-            return () => {
-                textArea.removeEventListener('input', handleInput);
-            };
+            textArea.style.height = '38px';
+            textArea.style.height = `${textArea.scrollHeight}px`;
+            if(textArea.innerHTML !== '') setTxtButton(true)
+            else setTxtButton(false)
         }
-    }, []);
+    };
 
     useEffect(() => {
         if(attachments.length) {
@@ -135,68 +83,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
         return text.match(urlRegex) || [];
     };
 
-    const handleFiles = (e: ChangeEvent<HTMLInputElement>) => {
-        if(!inputRef.current) return
-        const files = e.target.files;
-        if (!files) return;
-    
-        const newFiles = Array.from(files);
-        const validationErrors: string[] = [];
-        const validFiles: File[] = [];
-    
-        // Check total number of files
-        if (attachments.length + newFiles.length > FILE_VALIDATION_CONFIG.maxFiles) {
-            toast({
-              title: 'Warning',
-              description: `Maximum ${FILE_VALIDATION_CONFIG.maxFiles} files allowed`,
-              variant: 'destructive'
-            });
-            clearFiles();
-          return;
-        }
-    
-        // Calculate total size including existing files
-        const existingSize = attachments.reduce((acc, file) => acc + file.size, 0);
-        const newTotalSize = newFiles.reduce((acc, file) => acc + file.size, existingSize);
-    
-        if (newTotalSize > FILE_VALIDATION_CONFIG.maxTotalSize) {
-            toast({
-              title: 'Warning',
-              description: `Total size exceeds ${formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}`,
-              variant: 'destructive'
-            });
-            return;
-        }
-    
-        // Validate each file
-        newFiles.forEach(file => {
-          try {
-            validateFile(file, FILE_VALIDATION_CONFIG);
-            validFiles.push(file);
-          } catch (error) {
-            if (error instanceof Error) {
-              validationErrors.push(error.message);
-            }
-          }
-        });
-    
-        // Update state
-        if (validationErrors.length > 0) {
-          setErrors(validationErrors);
-          validationErrors.forEach(error => toast({
-            title: 'Warning',
-            description: error
-          }));
-        }
-    
-        if (validFiles.length > 0) {
-            setFiles([...attachments, ...validFiles]);
-            
-        }
-    
-        // Reset input
-        e.target.value = '';
-    };
+    const handleFiles = fileHandler(inputRef, attachments, clearFiles, setErrors, setFiles);
 
     const urls = extractUrls(newMessage);
     const firstUrl = urls[0];
@@ -277,7 +164,8 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                                         dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
                                     }
                                 }
-                            }}                            
+                            }}
+                            onInput={handleInput}                            
                             className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
                         />
                         <EmojiPicker onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
@@ -411,7 +299,9 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                     <p className="text-xs text-gray-500">
                         Max file size: {formatFileSize(FILE_VALIDATION_CONFIG.maxFileSize)}.
                         Total max size: {formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}.
-                        Allowed types: {FILE_VALIDATION_CONFIG.allowedFileTypes.join(', ')}
+                        Allowed types: {Array.isArray(FILE_VALIDATION_CONFIG.allowedFileTypes) ? 
+                                        FILE_VALIDATION_CONFIG.allowedFileTypes.join(', ') : 
+                                        FILE_VALIDATION_CONFIG.allowedFileTypes}
                     </p>
                     <DialogDescription>
                     </DialogDescription>
@@ -515,4 +405,69 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
         </Dialog>
 
     )
+}
+
+function fileHandler(inputRef: RefObject<HTMLInputElement | null>, attachments: File[], clearFiles: () => void, setErrors: Dispatch<SetStateAction<string[]>>, setFiles: (files: File[]) => void) {
+    return (e: ChangeEvent<HTMLInputElement>) => {
+        if (!inputRef.current) return;
+        const files = e.target.files;
+        if (!files) return;
+
+        const newFiles = Array.from(files);
+        const validationErrors: string[] = [];
+        const validFiles: File[] = [];
+
+        // Check total number of files
+        if (attachments.length + newFiles.length > FILE_VALIDATION_CONFIG.maxFiles) {
+            toast({
+                title: 'Warning',
+                description: `Maximum ${FILE_VALIDATION_CONFIG.maxFiles} files allowed`,
+                variant: 'destructive'
+            });
+            clearFiles();
+            return;
+        }
+
+        // Calculate total size including existing files
+        const existingSize = attachments.reduce((acc, file) => acc + file.size, 0);
+        const newTotalSize = newFiles.reduce((acc, file) => acc + file.size, existingSize);
+
+        if (newTotalSize > FILE_VALIDATION_CONFIG.maxTotalSize) {
+            toast({
+                title: 'Warning',
+                description: `Total size exceeds ${formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}`,
+                variant: 'destructive'
+            });
+            return;
+        }
+
+        // Validate each file
+        newFiles.forEach(file => {
+            try {
+                validateFile(file, FILE_VALIDATION_CONFIG);
+                validFiles.push(file);
+            } catch (error) {
+                if (error instanceof Error) {
+                    validationErrors.push(error.message);
+                }
+            }
+        });
+
+        // Update state
+        if (validationErrors.length > 0) {
+            setErrors(validationErrors);
+            validationErrors.forEach(error => toast({
+                title: 'Warning',
+                description: error
+            }));
+        }
+
+        if (validFiles.length > 0) {
+            setFiles([...attachments, ...validFiles]);
+
+        }
+
+        // Reset input
+        e.target.value = '';
+    };
 }

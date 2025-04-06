@@ -8,7 +8,7 @@ import { useParams } from 'next/navigation';
 import MediaSlide from '@/templates/mediaSlides';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import ImageContent from '@/components/imageContent';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { Skeleton } from './ui/skeleton';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { addPost, setPostPreview, updatePost } from '@/redux/postsSlice';
+import { useSocket } from '@/app/providers/SocketProvider';
 
 
 interface Params {
@@ -29,8 +30,10 @@ interface Params {
 
 const PostPreview: React.FC = () => {
   const params = useParams() as Params;
+  const { userdata } = useUser();
   const { username, id, index } = params;
   const dispatch = useDispatch();
+  const socket = useSocket();
   const {message} = useSelector((state: RootState) => state.posts.postPreview)
   const posts = useSelector((state: RootState) => state.posts.posts);
   const post = posts.find(post => post.PostID === id) as PostData
@@ -83,17 +86,29 @@ const PostPreview: React.FC = () => {
   };
 
   const handleLike = () => {
-    if (!post || !id) return;
+    if (!post || !id || !userdata._id) return;
 
     if (post.Liked) {
       dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes - 1, Liked: false } }));
+      socket?.emit('reactToPost', {
+        type: "unlike",
+        key: "NoOfLikes",
+        value: "dec",
+        postId: id
+      });
     } else {
       dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes + 1, Liked: true }}));
+      socket?.emit('reactToPost', {
+        type: "like",
+        key: "NoOfLikes",
+        value: "inc",
+        postId: id
+      });
     }
   };
 
   const handleReshare = () => {
-    if (!post || !id) return;
+    if (!post || !id || !userdata._id) return;
     
     if (post?.Shared) {
       dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares - 1, Shared: false }}));
@@ -103,7 +118,7 @@ const PostPreview: React.FC = () => {
   };
 
   const handleComment = () => {
-    if (!post || !id) return;
+    if (!post || !id || !userdata._id) return;
     
     if (replyText.trim()) {
       dispatch(updatePost({ id: id, updates: { NoOfComment: post.NoOfComment + 1 }}));
@@ -113,12 +128,24 @@ const PostPreview: React.FC = () => {
   };
 
   const handleBookmark = () => {
-    if (!post || !id) return;
+    if (!post || !id || !userdata._id) return;
     
     if (post?.Bookmarked) {
       dispatch(updatePost({ id: id, updates: { NoOfBookmarks: post.NoOfBookmarks - 1, Bookmarked: false }}));
+      socket?.emit('reactToPost', {
+        type: "unbookmark",
+        key: "NoOfBookmarks",
+        value: "dec",
+        postId: id
+      });
     } else {
       dispatch(updatePost({ id: id, updates: { NoOfBookmarks: post.NoOfBookmarks + 1, Bookmarked: true }}));
+      socket?.emit('reactToPost', {
+        type: "bookmark",
+        key: "NoOfBookmarks",
+        value: "inc",
+        postId: id
+      });
     }
   };
 
@@ -177,7 +204,7 @@ const PostPreview: React.FC = () => {
               <span className="ml-1">{formatNo(post?.NoOfLikes) || 0}</span>
             </button>
             <button className={`flex items-center ${post?.Bookmarked ? 'text-brand' : 'text-gray-400'}`} onClick={handleBookmark}>
-              <Bookmark size={24} fill={post?.Liked ? 'currentColor' : 'none'}/>
+              <Bookmark size={24} fill={post?.Bookmarked ? 'currentColor' : 'none'}/>
               <span className="ml-1">{formatNo(post?.NoOfBookmarks) || 0}</span>
             </button>
           </div>
@@ -238,7 +265,7 @@ const LeftSideBar = (
         </div>
 
         {/* Post Section */}
-        {post 
+        {post
         ?
         <PostCard key={generateRandomToken(10)} showMedia={false} postData={post}/>
         :

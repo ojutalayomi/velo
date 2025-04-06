@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '@/app/fontAwesomeLibrary';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { useSelector } from 'react-redux';
 import { ConvoType } from '@/redux/chatSlice';
 import { RootState } from '@/redux/store'; 

@@ -106,6 +106,9 @@ const config: Config = {
 		sm: '640px',
 		md: '768px',
   		tablets1: '769px',
+  		mb: {
+  			max: '639px'
+  		},
   		mobile: {
   			max: '768px'
   		},

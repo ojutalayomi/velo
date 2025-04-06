@@ -10,7 +10,7 @@ export default function Error({
   reset: () => void
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col items-center justify-center px-4 w-full">
       <div className="w-full max-w-lg text-center space-y-8">
         <div className="space-y-4">
           <h1 className="text-6xl font-extrabold text-brand dark:text-brand/90">Error</h1>

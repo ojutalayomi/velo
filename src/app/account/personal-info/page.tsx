@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 
 const PersonalInfoPage = () => {
   const router = useRouter();

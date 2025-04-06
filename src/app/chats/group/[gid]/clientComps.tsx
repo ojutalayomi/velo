@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ConvoType, updateConversation, addMessage, updateMessage } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { useSocket } from '@/app/providers/SocketProvider';
 import { Input } from '@/components/ui/input';
 import {

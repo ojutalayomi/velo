@@ -116,7 +116,7 @@ export const authOptions: NextAuthOptions = {
               lastUsed: new Date().toISOString()
             }
           },
-          username: '',
+          username: (user.name?.split(' ')[0] || '') + uuidv4().split('-')[0],
           displayPicture: user.image || '',
           isEmailConfirmed: true,
           signUpCount: 1,

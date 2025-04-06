@@ -2,7 +2,7 @@
 import React, { useEffect, useRef,useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { Bell, User, LogIn, BadgePlus, Mail, Settings, Palette, MessageSquarePlus, Home, Search } from 'lucide-react';
 import {
   Drawer,

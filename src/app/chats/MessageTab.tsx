@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Check, CheckCheck, Copy, Ellipsis, Loader, TextQuote, Trash2, CircleCheck, CircleX } from 'lucide-react';
 import { GroupMessageAttributes, MessageAttributes } from '@/lib/types/type';
 import { useDispatch, useSelector } from 'react-redux';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/app/providers/UserProvider';
 import { updateMessageReactions, deleteMessage, updateMessage, updateLiveTime, updateConversation } from '@/redux/chatSlice'; 
 import { useSocket } from '@/app/providers/SocketProvider';
 import {

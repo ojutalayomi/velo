@@ -1,4 +1,4 @@
-import { getMongoClient } from '@/lib/mongodb';
+import { getMongoDb } from '@/lib/mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse){
@@ -7,44 +7,45 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
       try{
         const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
         const id = req.query.id;
-        const client = await getMongoClient();
+        const db = await getMongoDb();
         console.log('Connected to post.app');
-        let post;
-        const collection = client.db('mydb').collection('Posts');
-        const collection1 = client.db('mydb').collection('Posts(Comments)');
-        const postt = await collection.findOne({ PostID: id });
-        const posttt = await collection1.findOne({ PostID: id });
-        postt ? post = postt : posttt ? post = posttt : post = null;
+        const post = await db.collection('Posts').findOne({
+          $or: [
+            { PostID: id },
+            { PostID: id, collection: 'Posts(Comments)' },
+            { PostID: id, collection: 'Posts(Shares)' }
+          ]
+        });
+
         if(post){
-          const users = client.db('mydb').collection('Users');
+          const users = db.collection('Users');
           const user = await users.findOne({ loginToken: cookie });
-          if(cookie && user){
-            const Likes = client.db('mydb').collection('Posts(Likes)');
-            const Shares = client.db('mydb').collection('Posts(Shares)');
-            const Bookmarks = client.db('mydb').collection('Posts(Bookmarks)');
-            const collections = [Likes, Shares, Bookmarks];
-            const properties = ['likes', 'shares', 'bookmarks'];
-            const arr2 = ['Liked', 'Shared', 'Bookmarked'];
-    
-            for (let i = 0; i < collections.length; i++) {
-              const collection = collections[i];
-              const field = arr2[i];
-              const fieldname = properties[i];
-              // console.log(fieldname);
-        
-              // console.log('Before: ', post[field]);
-              const result = await collection.findOne({ _id: post.PostID, [`${fieldname}.username`]: user.username });
-              if (result) {
-                post[field] = true;
-                // console.log('Changed Post', post[field]);
-                // console.log('After: ', post[field]);
-              }
+            if (cookie && user) {
+              const collectionsMap = {
+                Likes: 'Liked',
+                Shares: 'Shared',
+                Bookmarks: 'Bookmarked'
+              };
+
+              await Promise.all(
+                Object.entries(collectionsMap).map(async ([collectionName, field]) => {
+                  const collection = db.collection(`Posts(${collectionName})`);
+                  const result = await (async () => {
+                    if (collectionName === 'Shares') {
+                        return collection.findOne({ OriginalPostId: post.OriginalPostId, UserId: user._id.toString() });
+                    }
+                    return collection.findOne({ postId: post.PostID, userId: user._id.toString() });
+                  })();
+                  if (result) {
+                    post[field] = true;
+                  }
+                })
+              );
+
+              return res.status(200).json({ post });
+            } else {
+              return res.status(200).json({ post, message: 'Disable Comment.' });
             }
-            return res.status(200).json({post: post});
-          } else {
-            const message =  'Disable Comment.';
-            return res.status(200).json({ post, message});
-          }
         }
         return res.status(400).json({ error: 'Oops! Post not found. You can search for other things.' });
       }

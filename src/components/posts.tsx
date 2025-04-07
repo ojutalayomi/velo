@@ -80,6 +80,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       } else if (postData.Type === 'quote') {
         const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
         if (original_post) setOriginalPost(original_post);
+        setData(postData);
       } else {
         setData(postData);
       }
@@ -291,12 +292,14 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                     <span className="text-gray-500 ml-1">@{originalPost.Username} · {time1}</span>
                   </div>
                   {/* <div className="text-gray-500 text-sm mb-2">Replying to @NintendoAmerica</div> */}
-                  {originalPost.Caption.length ? (
-                    <p className={`dark:text-white text-sm mb-2 ${originalPost.Image.length > 0 ? '' : 'col-span-2'} whitespace-pre-wrap`}>{originalPost.Caption.length > 250 ? originalPost.Caption.substring(0, 250) + '...' : originalPost.Caption}</p>
-                  ) : ''}
+                  {originalPost?.Caption ? (
+                    <p className={`dark:text-white text-sm mb-2 ${originalPost.Image.length > 0 ? '' : 'col-span-2'} whitespace-pre-wrap`}>
+                      {originalPost.Caption.length > 250 ? originalPost.Caption.substring(0, 250) + '...' : originalPost.Caption}
+                    </p>
+                  ) : null}
                   {/* {showMore} */}
                   {(originalPost.Image.length > 0) &&
-                    <MediaSlide className={`overflow-auto rounded-lg ${!originalPost.Caption.length ? 'col-span-2' : ''}`} postData={originalPost}/>
+                    <MediaSlide className={`overflow-auto rounded-lg ${!(originalPost?.Caption?.length > 0) ? 'col-span-2' : ''}`} postData={originalPost}/>
                   }
                 </div>
               </div>
@@ -443,7 +446,7 @@ function ShareButton({children, post, open, setOpen} : {children: ReactNode, pos
         onClick: () => {
           if(!post || !socket) return;
 
-          dispatch(updatePost({ id: post.PostID, updates: { NoOfLikes: post.NoOfLikes + 1, Liked: true } }));
+          dispatch(updatePost({ id: post.PostID, updates: { NoOfShares: post.NoOfShares + 1, Shared: true } }));
           socket.emit('reactToPost(share)', {
             action: "share",
             type: "repost",
@@ -457,7 +460,7 @@ function ShareButton({children, post, open, setOpen} : {children: ReactNode, pos
         text: "Undo Repost",
         onClick: () => {
           if(!post || !socket) return;
-          dispatch(updatePost({ id: post.PostID, updates: { NoOfLikes: post.NoOfLikes - 1, Liked: false } }));
+          dispatch(updatePost({ id: post.PostID, updates: { NoOfShares: post.NoOfShares - 1, Shared: false } }));
 
           socket?.emit('reactToPost(share)', {
             action: "unshare",
@@ -826,9 +829,9 @@ function ShareButton({children, post, open, setOpen} : {children: ReactNode, pos
                       <span className="text-gray-500 ml-1">@{post.Username} · {time}</span>
                     </div>
                     {/* <div className="text-gray-500 text-sm mb-2">Replying to @NintendoAmerica</div> */}
-                    {post.Caption.length ? (
+                    {post.Caption ? (
                       <p className={`dark:text-white text-sm mb-2 ${post.Image.length > 0 ? '' : 'col-span-2'} whitespace-pre-wrap`}>{post.Caption.length > 250 ? post.Caption.substring(0, 250) + '...' : post.Caption}</p>
-                    ) : ''}
+                    ) : null}
                     {/* {showMore} */}
                     {(post.Image.length > 0) &&
                       <MediaSlide className={`overflow-auto rounded-lg ${!post.Caption.length ? 'col-span-2' : ''}`} postData={post}/>

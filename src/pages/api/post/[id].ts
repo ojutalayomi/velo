@@ -9,13 +9,11 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
         const id = req.query.id;
         const db = await getMongoDb();
         console.log('Connected to post.app');
-        const post = await db.collection('Posts').findOne({
-          $or: [
-            { PostID: id },
-            { PostID: id, collection: 'Posts(Comments)' },
-            { PostID: id, collection: 'Posts(Shares)' }
-          ]
-        });
+        const collection = db.collection('Posts');
+        const collection1 = db.collection('Posts(Comments)');
+        const postt = await collection.findOne({ PostID: id });
+        const posttt = await collection1.findOne({ PostID: id });
+        const post = postt ? postt : posttt;
 
         if(post){
           const users = db.collection('Users');

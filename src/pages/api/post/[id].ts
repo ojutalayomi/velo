@@ -1,4 +1,5 @@
 import { getMongoDb } from '@/lib/mongodb';
+import { Db } from 'mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse){
@@ -9,11 +10,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
         const id = req.query.id;
         const db = await getMongoDb();
         console.log('Connected to post.app');
-        const collection = db.collection('Posts');
-        const collection1 = db.collection('Posts(Comments)');
-        const postt = await collection.findOne({ PostID: id });
-        const posttt = await collection1.findOne({ PostID: id });
-        const post = postt ? postt : posttt;
+        const post = await fetchPostsFromMultipleCollections(db, `${id}`);
 
         if(post){
           const users = db.collection('Users');
@@ -29,9 +26,6 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
                 Object.entries(collectionsMap).map(async ([collectionName, field]) => {
                   const collection = db.collection(`Posts(${collectionName})`);
                   const result = await (async () => {
-                    if (collectionName === 'Shares') {
-                        return collection.findOne({ OriginalPostId: post.OriginalPostId, UserId: user._id.toString() });
-                    }
                     return collection.findOne({ postId: post.PostID, userId: user._id.toString() });
                   })();
                   if (result) {
@@ -55,4 +49,20 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
     } else {
         res.status(405).json({ message: 'Method Not Allowed' });
     }
+}
+
+async function fetchPostsFromMultipleCollections(db: Db, id: string) {
+  // Fetch posts from the 'Posts' collection
+  const post = await db.collection('Posts').findOne({ PostID: id });
+
+  // Fetch posts from the 'Posts(Comments)' collection
+  const comment = await db.collection('Posts(Comments)').findOne({ PostID: id });
+
+  // Fetch posts from the 'Posts(Shares)' collection
+  const share = await db.collection('Posts(Shares)').findOne({ PostID: id });
+
+  // Combine all results into a single array
+  const combinedPost = post ? post : comment ? comment : share ? share : null;
+
+  return combinedPost;
 }

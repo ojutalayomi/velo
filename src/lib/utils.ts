@@ -2,9 +2,18 @@ import { clsx, type ClassValue } from "clsx"
 import crypto from "crypto";
 import { twMerge } from "tailwind-merge"
 import { FileValidationConfig } from "./types/type";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export const generateRandomToken = (length: number) => {
   return crypto.randomBytes(length).toString('hex')
+}
+
+export const navigate = (router: AppRouterInstance, path = '/home') => {
+  if (document.referrer.includes(window.location.origin)) {
+      router.back();
+  } else {
+      router.push(path);
+  }
 }
 
 export function cn(...inputs: ClassValue[]) {

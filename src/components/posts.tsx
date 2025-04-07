@@ -224,7 +224,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     <div className='pre-blog' id={data.PostID.slice(0,-4)}>
       <div className='blog !dark:shadow-bar-dark select-none dark:bg-zinc-900 shadow-md dark:text-slate-200' data-id={data.PostID}>
         {postType === 'repost' && (
-          <div className='repost'>
+          <div className='repost flex items-center gap-2'>
             <Repeat2 size={20} className='text-brand' />
             <span className='text-sm'>Reposted by {data?.Username}</span>
           </div>

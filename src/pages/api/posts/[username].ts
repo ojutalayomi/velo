@@ -1,5 +1,5 @@
-import { getMongoDb } from '@/lib/mongodb';
 import { addInteractionFlags } from '@/lib/apiUtils';
+import { getMongoDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
@@ -22,16 +22,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Get all posts by username
-        const userPosts = await db.collection('Posts').find({
-          $or: [
-            { UserId: userId },
-            { UserId: userId, collection: 'Posts(Shares)' }
-          ]
-        }).toArray();
+        const userPosts = await posts.find({ UserId: userId }).toArray();
+        const shares = await db.collection('Posts(Shares)').find({ UserId: userId }).toArray();
 
-        await addInteractionFlags(db, userPosts, user._id.toString());
+        // Combine all results into a single array
+        const combinedPosts = [...userPosts, ...shares];
 
-        return res.status(200).json(userPosts);
+        // Sort the combined posts by a common field (e.g., `TimeOfPost`) if needed
+        combinedPosts.sort((a, b) => new Date(b.TimeOfPost).getTime() - new Date(a.TimeOfPost).getTime());
+
+        // Add interaction flags for the requesting user if they exist
+        await addInteractionFlags(db, combinedPosts, user._id.toString());
+
+        return res.status(200).json(combinedPosts);
 
     } catch (error) {
         console.error('Error:', error);

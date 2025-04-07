@@ -15,6 +15,7 @@ import ChatRepository from '@/lib/class/ChatRepository';
 import NewChatModal from '../../NewChatModal';
 import { RootState } from '@/redux/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { navigate } from '@/lib/utils';
 
 type ChatType = "DMs" | "Groups" | "Channels";
 type ChatSettingsTheme = "light" | "dark";
@@ -183,7 +184,7 @@ const NewChatMenu = () => {
           <div className={`flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full px-3 py-2`}>
             <FontAwesomeIcon onClick={() => {
                 dispatch(showChat(''));
-                router.back()}
+                navigate(router)}
             } icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
             <h2 className="text-sm dark:text-slate-200 font-semibold text-center">Create New Group</h2>
             <button

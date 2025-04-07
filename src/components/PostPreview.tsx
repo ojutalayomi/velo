@@ -13,7 +13,7 @@ import ImageContent from '@/components/imageContent';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/Footer';
-import { cn, generateRandomToken } from '@/lib/utils';
+import { cn, generateRandomToken, navigate } from '@/lib/utils';
 import PostCard from '@/components/posts';
 import { Skeleton } from './ui/skeleton';
 import { useDispatch, useSelector } from 'react-redux';
@@ -161,7 +161,7 @@ const PostPreview: React.FC = () => {
       <div className="flex flex-1 flex-col h-full">
         {/* Top bar */}
         <div className="flex justify-between p-4">
-          <ArrowLeft size={24} className='cursor-pointer' onClick={() => router.back()}/>
+          <ArrowLeft size={24} className='cursor-pointer' onClick={() => navigate(router)}/>
             <h1>{username![0].toUpperCase() + username?.slice(1)}&apos;s post</h1>
           <Share size={24} />
         </div>

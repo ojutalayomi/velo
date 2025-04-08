@@ -13,7 +13,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
         // Get the collection
         const client = await getMongoClient();
         const collection = client.db('mydb').collection('Users');
-        const commentsCollection = client.db('mydb').collection('Posts(Comments)');
+        const commentsCollection = client.db('mydb').collection('Posts_Comments');
 
 
         // console.log('165', tokenn)

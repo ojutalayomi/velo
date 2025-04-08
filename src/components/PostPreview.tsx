@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { addPost, setPostPreview, updatePost } from '@/redux/postsSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
+import ShareButton from './ShareButton';
 
 
 interface Params {
@@ -195,10 +196,12 @@ const PostPreview: React.FC = () => {
               <MessageCircle size={24} />
               <span className="ml-1">{formatNo(post?.NoOfComment) || 0}</span>
             </button>
-            <button className={`text-gray-400 flex items-center ${post?.Shared ? 'text-green-500' : ''}`} onClick={handleReshare}>
-              <Repeat2 size={24} />
-              <span className="ml-1">{formatNo(post?.NoOfShares) || 0}</span>
-            </button>
+            <ShareButton post={post}>
+              <button className={`text-gray-400 flex items-center ${post?.Shared ? 'text-green-500' : ''}`} onClick={handleReshare}>
+                <Repeat2 size={24} />
+                <span className="ml-1">{formatNo(post?.NoOfShares) || 0}</span>
+              </button>
+            </ShareButton>
             <button className={`flex items-center ${post?.Liked ? 'text-brand' : 'text-gray-400'}`} onClick={handleLike}>
               <Heart size={24} fill={post?.Liked ? 'currentColor' : 'none'} />
               <span className="ml-1">{formatNo(post?.NoOfLikes) || 0}</span>

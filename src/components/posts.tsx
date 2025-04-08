@@ -260,7 +260,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         </div>
         {/* {showMore} */}
         {(data?.Image.length > 0 && showMedia) &&
-          <MediaSlide postData={postData} isLink/>
+          <MediaSlide postData={data} isLink/>
         }
         {/* Post Card */}
         {originalPost  && (

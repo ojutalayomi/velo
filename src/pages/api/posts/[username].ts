@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const { userId } = req.query;
+    const { username } = req.query;
 
     try {
         const db = await getMongoDb();
@@ -16,14 +16,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const posts = db.collection('Posts');
 
         // Find user
-        const user = await users.findOne({ _id: new ObjectId(userId as string) });
+        const user = await users.findOne({ username: username });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         // Get all posts by username
-        const userPosts = await posts.find({ UserId: userId }).toArray();
-        const shares = await db.collection('Posts(Shares)').find({ UserId: userId }).toArray();
+        const userPosts = await posts.find({ $or: [
+            { UserId: user._id.toString() },
+            { Username: user.username}
+        ] }).toArray();
+        const shares = await db.collection('Posts_Shares').find({ UserId: user._id.toString() }).toArray();
 
         // Combine all results into a single array
         const combinedPosts = [...userPosts, ...shares];

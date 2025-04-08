@@ -1,7 +1,7 @@
 import { TextOverlay } from "@/lib/types/type";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from "./ui/dialog";
 import { Crop, Sliders, MessageSquare, Type, Flag, ChevronLeft, ChevronRight, AlignLeft, Bold, Italic, AlignCenter, AlignRight, Maximize2, Search, MinusCircle, PlusCircle, ImageIcon, Loader, Loader2 } from "lucide-react";
-import { ChangeEvent, MouseEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { ChangeEvent, MouseEvent, TouchEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { DialogHeader, DialogFooter } from "./ui/dialog";
 import { Property } from 'csstype';
 import { useTheme } from "@/app/providers/ThemeProvider";
@@ -150,6 +150,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
     
     // console.log(imageRef.current.width / 2, imageRef.current.height / 2);
     const containerWidth = imageRef.current.width / 2; // Base container width
+    const containerHeight = imageRef.current.height / 2; // Base container height
     let width, height;
     
     switch (aspectRatio) {
@@ -168,7 +169,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
       case 'original':
       default:
         width = containerWidth;
-        height = containerWidth * (4/3); // Assuming original is 4:3 for demo
+        height = containerHeight; // Assuming original is 4:3 for demo
         break;
     }
     
@@ -215,9 +216,12 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
     setZoomLevel(Math.max(0, Math.min(100, percentage)));
   };
   
-  const handleSliderDrag = (e: MouseEvent<HTMLDivElement>) => {
-    if (e.buttons !== 1) return;
-    handleSliderClick(e);
+  const handleSliderDrag = (e: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
+      if ('buttons' in e && e.buttons !== 1) return; // Handle MouseEvent
+      if ('touches' in e && e.touches.length === 0) return; // Handle TouchEvent
+  
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX; // Get clientX for both events
+      handleSliderClick({ clientX } as MouseEvent<HTMLDivElement>);
   };
   
   const handleBrightnessChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -238,7 +242,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
     { id: 'flag', icon: <Flag className="h-6 w-6" />, label: 'Flag' }
   ];
 
-  const processImage = async (file: File, textOverlays: TextOverlay[], filters: string, zoomLevel: number) => {
+  const processImage = async (file: File, textOverlays: TextOverlay[], filters: string, zoomLevel: number, aspectRatio: string) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
@@ -253,8 +257,28 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
   
     // Set canvas dimensions based on the image and zoom level
     const scale = 0.5 + (zoomLevel / 100) * 1.5;
-    canvas.width = img.width * scale;
-    canvas.height = img.height * scale;
+    let canvasWidth = img.width * scale;
+    let canvasHeight = img.height * scale;
+
+    switch (aspectRatio) {
+      case '1:1': // Square
+        canvasWidth = Math.min(canvasWidth, canvasHeight);
+        canvasHeight = canvasWidth;
+        break;
+      case '16:9': // Widescreen
+        canvasHeight = canvasWidth * (9 / 16);
+        break;
+      case '4:3': // Standard
+        canvasHeight = canvasWidth * (3 / 4);
+        break;
+      case 'original': // Original aspect ratio
+      default:
+        // Keep the original dimensions
+        break;
+    }
+
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
   
     // Apply filters
     ctx.filter = filters;
@@ -294,7 +318,8 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
         files[imageIndex], // Active image
         textOverlays,
         getFilterStyles(),
-        zoomLevel
+        zoomLevel,
+        aspectRatio
       );
   
       if (editedFile) {
@@ -318,7 +343,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="bg-white max-h-screen h-[95%] gap-0 px-6 py-0 dark:bg-zinc-900 overflow-hidden mb:h-full flex flex-col">
+      <DialogContent className="bg-white max-h-screen h-[95%] gap-0 p-0 dark:bg-zinc-900 overflow-hidden mb:h-full flex flex-col">
         <DialogHeader className='dark:text-white'>
           <DialogTitle className='text-center'></DialogTitle>
           <DialogDescription className="flex justify-between items-center px-4 py-2 border-b border-gray-800">
@@ -337,14 +362,14 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
               </button> */}
               <button disabled={isLoading} onClick={handleSave} className={`flex items-center bg-brand text-white font-semibold py-2 px-6 rounded-full ml-2`}>
                 {isLoading ? 'Saving' : 'Save'}
-                {isLoading && <Loader2 className="animate-spin"/>}
+                {isLoading && <Loader2 className="animate-spin size-4"/>}
               </button>
             </span>
           </DialogDescription>
 
           {/* Toolbar with Tab Control */}
           <div className="flex justify-between items-center p-2">
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-8 justify-evenly w-full">
               <div className="flex">
                 {tabs.map((tab) => (
                   <button
@@ -462,10 +487,10 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
           <div className="flex justify-between items-center sticky bottom-0 border-gray-800 flex-1 py-3">
             
             {/* Tab Content Area - Shows different controls based on active tab */}
-            <div className="p-2 border-b border-gray-800">
+            <div className="p-2 border-gray-800 w-full">
               {activeTab === 'crop' && (
                 <>
-                  <div className="flex items-center gap-4 mb-2">
+                  <div className="flex items-center gap-4 mb-2 justify-center">
                     <span className="text-sm text-gray-400">Aspect ratio:</span>
                     <button 
                       className={`px-3 py-1 ${aspectRatio === 'original' ? 'bg-brand' : 'dark:bg-gray-800'} rounded-md text-sm`}
@@ -492,36 +517,38 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
                       4:3
                     </button>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 justify-center">
                     <Search className="h-6 w-6" />
                     <div className="flex items-center">
-                        <button 
-                        onClick={handleZoomOut} 
-                        className="focus:outline-none hover:text-brand/90 transition-colors"
-                        >
+                      <button 
+                      onClick={handleZoomOut} 
+                      className="focus:outline-none hover:text-brand/90 transition-colors"
+                      >
                         <MinusCircle className="h-6 w-6 text-gray-500" />
-                        </button>
+                      </button>
+                      <div 
+                      ref={sliderRef}
+                      className="relative w-52 h-2 bg-gray-700 rounded-full mx-2 cursor-pointer"
+                      onClick={handleSliderClick}
+                      onMouseMove={handleSliderDrag}
+                      onTouchMove={handleSliderDrag}
+                      onTouchEnd={handleSliderDrag}
+                      >
                         <div 
-                        ref={sliderRef}
-                        className="relative w-52 h-2 bg-gray-700 rounded-full mx-2 cursor-pointer"
-                        onClick={handleSliderClick}
-                        onMouseMove={handleSliderDrag}
-                        >
-                        <div 
-                            className="absolute top-0 left-0 h-2 bg-brand rounded-full"
-                            style={{ width: `${zoomLevel}%` }}
+                          className="absolute top-0 left-0 h-2 bg-brand rounded-full"
+                          style={{ width: `${zoomLevel}%` }}
                         />
                         <div 
-                            className="absolute top-0 h-6 w-6 bg-brand rounded-full -mt-2 cursor-grab active:cursor-grabbing"
-                            style={{ left: `${zoomLevel}%`, transform: 'translateX(-50%)' }}
+                          className="absolute top-0 h-6 w-6 bg-brand rounded-full -mt-2 cursor-grab active:cursor-grabbing"
+                          style={{ left: `${zoomLevel}%`, transform: 'translateX(-50%)' }}
                         />
-                        </div>
-                        <button 
-                        onClick={handleZoomIn} 
-                        className="focus:outline-none hover:text-brand/90 transition-colors"
-                        >
+                      </div>
+                      <button 
+                      onClick={handleZoomIn} 
+                      className="focus:outline-none hover:text-brand/90 transition-colors"
+                      >
                         <PlusCircle className="h-6 w-6 text-gray-500" />
-                        </button>
+                      </button>
                     </div>
                   </div>
                 </>
@@ -551,7 +578,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
               )}
               
               {activeTab === 'filters' && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                   <button 
                     className={`px-3 py-1 ${activeFilter === 'none' ? 'bg-brand' : 'dark:bg-gray-800'} rounded-md text-sm`}
                     onClick={() => setActiveFilter('none')}
@@ -705,6 +732,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
                           if (activeTextId) updateActiveText('fontSize', Number(e.target.value));
                         }}
                       >
+                        <option value="12">12</option>
                         <option value="16">16</option>
                         <option value="20">20</option>
                         <option value="24">24</option>

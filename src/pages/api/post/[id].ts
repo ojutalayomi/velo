@@ -24,7 +24,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
 
               await Promise.all(
                 Object.entries(collectionsMap).map(async ([collectionName, field]) => {
-                  const collection = db.collection(`Posts(${collectionName})`);
+                  const collection = db.collection(`Posts_${collectionName}`);
                   const result = await (async () => {
                     return collection.findOne({ postId: post.PostID, userId: user._id.toString() });
                   })();
@@ -55,11 +55,11 @@ async function fetchPostsFromMultipleCollections(db: Db, id: string) {
   // Fetch posts from the 'Posts' collection
   const post = await db.collection('Posts').findOne({ PostID: id });
 
-  // Fetch posts from the 'Posts(Comments)' collection
-  const comment = await db.collection('Posts(Comments)').findOne({ PostID: id });
+  // Fetch posts from the 'Posts_Comments' collection
+  const comment = await db.collection('Posts_Comments').findOne({ PostID: id });
 
-  // Fetch posts from the 'Posts(Shares)' collection
-  const share = await db.collection('Posts(Shares)').findOne({ PostID: id });
+  // Fetch posts from the 'Posts_Shares' collection
+  const share = await db.collection('Posts_Shares').findOne({ PostID: id });
 
   // Combine all results into a single array
   const combinedPost = post ? post : comment ? comment : share ? share : null;

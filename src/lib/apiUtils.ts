@@ -16,10 +16,8 @@ export async function addInteractionFlags(db: Db, posts: WithId<Document>[], use
     posts.map(async (post) => {
       await Promise.all(
         Object.entries(collectionsMap).map(async ([collectionName, field]) => {
-          const collection = db.collection(`Posts(${collectionName})`);
-          const result = collectionName === 'Shares'
-            ? await collection.findOne({ OriginalPostId: post.OriginalPostId, UserId: userId })
-            : await collection.findOne({ postId: post.PostID, userId: userId });
+          const collection = db.collection(`Posts_${collectionName}`);
+          const result = await collection.findOne({ postId: post.PostID, userId: userId });
 
           if (result) {
             post[field] = true;

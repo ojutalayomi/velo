@@ -180,13 +180,11 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             }
         })
         socket.on('newPost', ( data: { excludeUser: string, blog: PostData } ) => {
-            if(data.excludeUser !== userdata._id) {
-                dispatch(addPost(data.blog));
-                setDisplayAnnouncement({
-                    status: true,
-                    message: `New ${data.blog.Type} from ${data.blog.Username}`
-                })
-            }
+            dispatch(addPost(data.blog));
+            setDisplayAnnouncement({
+                status: true,
+                message: `New ${data.blog.Type} from ${data.blog.Username}`
+            })
         })
   
         return () => {

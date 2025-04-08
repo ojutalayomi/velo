@@ -43,11 +43,11 @@ async function fetchPostsFromMultipleCollections(db: Db) {
   // Fetch posts from the 'Posts' collection
   const posts = await db.collection('Posts').find({}).toArray();
 
-  // Fetch posts from the 'Posts(Comments)' collection
-  // const comments = await db.collection('Posts(Comments)').find({}).toArray();
+  // Fetch posts from the 'Posts_Comments' collection
+  // const comments = await db.collection('Posts_Comments').find({}).toArray();
 
-  // Fetch posts from the 'Posts(Shares)' collection
-  const shares = await db.collection('Posts(Shares)').find({}).toArray();
+  // Fetch posts from the 'Posts_Shares' collection
+  const shares = await db.collection('Posts_Shares').find({}).toArray();
 
   // Combine all results into a single array
   const combinedPosts = [...posts, ...shares];

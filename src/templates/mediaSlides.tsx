@@ -70,7 +70,6 @@ const MediaSlide = ({ className, postData, isLink = false, ...props }: { classNa
                                     />
                                 ) : (
                                     <VideoDiv
-                                        {...(isLink ? {link} : {})}
                                         media={media}
                                         host={isHosted} 
                                     />

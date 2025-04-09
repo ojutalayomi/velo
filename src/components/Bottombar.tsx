@@ -97,7 +97,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
               <Search size={22} className="dark:stroke-tom" />
               {/* <div>Explore</div> */}
             </div>
-            <div onClick={() => handleClick('create-post')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'create-post' ? 'active' : ''}`}>
+            <div onClick={() => handleClick('compose/post')} className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === 'create-post' ? 'active' : ''}`}>
               <BadgePlus size={22} className="dark:stroke-tom" />
               {/* <div>Post</div> */}
             </div>

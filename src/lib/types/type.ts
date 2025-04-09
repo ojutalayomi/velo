@@ -372,4 +372,8 @@ export interface FileValidationConfig {
   isDragging: boolean;
   dragOffset: { x: number; y: number; };
 };
+export interface Payload {
+  _id: string;
+  exp: number;
+}
 

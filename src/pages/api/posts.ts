@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getMongoDb } from '@/lib/mongodb';
-import { Db } from 'mongodb';
+import { Db, ObjectId } from 'mongodb';
 import { addInteractionFlags } from '../../lib/apiUtils';
+import { verifyToken } from '@/lib/auth';
+import { Payload } from '@/lib/types/type';
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -9,13 +11,17 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
   }
 
   try {
-    const username = req.query.username as string;
+    const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
+    const payload = await verifyToken(cookie) as unknown as Payload;
+    // if (!payload) return res.status(401).json({ error: `Not Allowed` });
+    // if (payload.exp < Date.now() / 1000) return res.status(401).json({ error: `Token expired` });
+
     const db = await getMongoDb();
 
     console.log('MongoDB connection established successfully!');
 
     // Fetch user details if username is provided
-    const user = username ? await db.collection('Users').findOne({ username }) : null;
+    const user = payload ? await db.collection('Users').findOne({ _id: new ObjectId(payload._id) }) : null;
 
     // Fetch posts from multiple collections
     const posts = await fetchPostsFromMultipleCollections(db);

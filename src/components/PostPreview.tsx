@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/Footer';
 import { cn, generateRandomToken, navigate } from '@/lib/utils';
-import PostCard from '@/components/posts';
+import PostCard from '@/components/PostCard';
 import { Skeleton } from './ui/skeleton';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
@@ -197,10 +197,10 @@ const PostPreview: React.FC = () => {
               <span className="ml-1">{formatNo(post?.NoOfComment) || 0}</span>
             </button>
             <ShareButton post={post}>
-              <button className={`text-gray-400 flex items-center ${post?.Shared ? 'text-green-500' : ''}`} onClick={handleReshare}>
+              <span className={`text-gray-400 flex items-center ${post?.Shared ? 'text-green-500' : ''}`} onClick={handleReshare}>
                 <Repeat2 size={24} />
                 <span className="ml-1">{formatNo(post?.NoOfShares) || 0}</span>
-              </button>
+              </span>
             </ShareButton>
             <button className={`flex items-center ${post?.Liked ? 'text-brand' : 'text-gray-400'}`} onClick={handleLike}>
               <Heart size={24} fill={post?.Liked ? 'currentColor' : 'none'} />

@@ -2,7 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import Image from "next/image";
 import { Comments, Post } from '@/templates/PostProps';
-import PostCard from '@/components/posts';
+import PostCard from '@/components/PostCard';
 import { useEffect, useRef, useState } from 'react';
 import { getComments, getPost } from '@/lib/getStatus';
 import { useUser } from '@/app/providers/UserProvider';

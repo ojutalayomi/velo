@@ -21,7 +21,7 @@ export const sidebarItems = [
     label: 'Explore'
   },
   {
-    route: 'create-post',
+    route: 'compose/post',
     icon: BadgePlus,
     label: 'Post'
   },

@@ -22,6 +22,7 @@ import { Skeleton } from './ui/skeleton';
 import { FileValidationConfig } from '@/lib/types/type';
 import { RootState } from '@/redux/store';
 import ShareButton from './ShareButton';
+import PostMaker from './PostMaker';
 
 type PostComponentProps = {
   postData: Post['post'],
@@ -55,6 +56,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const posts = useSelector((state: RootState) => state.posts.posts);
   const [activePost, setActivePost] = useState<string>('');
   const [originalPost, setOriginalPost] = useState<PostData | null>(null);
+  const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const [postType, setPostType] = useState('blog');
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState('');
@@ -68,7 +70,11 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       if (postData.Type === 'repost') {
         const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
         if (original_post) {
-          setData(original_post);
+          setData(posts.find((post: PostData) => post.PostID === postData.OriginalPostId)!);
+          if(original_post.OriginalPostId) {
+            const original_post_1 = posts.find((post: PostData) => post.PostID === original_post.OriginalPostId);
+            if (original_post_1) setOriginalPost(posts.find((post: PostData) => post.PostID === original_post.OriginalPostId)!);
+          }
         }
       } else if (postData.Type === 'quote') {
         const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
@@ -229,14 +235,15 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                 <Avatar>
                   <AvatarFallback>{data.NameOfPoster.slice(0,2)}</AvatarFallback>
                   <AvatarImage
-                  className='pdp cursor-pointer w-9 h-9' alt='blogger' 
-                  src={data.DisplayPicture}/>
+                    className='pdp cursor-pointer size-9' alt='blogger' 
+                    src={data.DisplayPicture}
+                  />
                 </Avatar>
               </Link>
             </div>
             <div className='blog-maker'>
-              <div className='blog-maker-name gap-0.5'>
-                <div className='name'><span>{data.NameOfPoster}</span></div>
+              <div className='blog-maker-name gap-1'>
+                <span className='font-bold after:content-[.]'>{data.NameOfPoster}</span>
                 {data.Verified ? <Statuser className='size-4' /> : null}
                 {window.location.pathname.includes('posts') ? null : <div className='blog-username text-brand text-xs'>@{data.Username}</div>}
               </div>
@@ -268,19 +275,18 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             <div className="border border-gray-800 rounded-xl p-4">
               <div className="flex items-start space-x-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                  <img
-                    src={originalPost.DisplayPicture}
-                    alt={originalPost.Username}
-                    className="w-full h-full object-cover"
-                  />
+                  <Avatar className='size-8'>
+                    <AvatarFallback>{originalPost.NameOfPoster.slice(0,2)}</AvatarFallback>
+                    <AvatarImage className='pdp cursor-pointer' alt='blogger' src={originalPost.DisplayPicture}/>
+                  </Avatar>
                 </div>
-                <div className="flex-1">
+                <div className="w-[90%]">
                   <div className="flex items-center col-span-2 flex-wrap">
                     <span className="font-bold dark:text-white mr-1 truncate">{originalPost.NameOfPoster}</span>
                     {originalPost.Verified && (
                       <svg className="w-4 h-4 text-brand fill-current" viewBox="0 0 24 24">
                         <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z" />
-                    </svg>
+                      </svg>
                     )}
                     <span className="text-gray-500 ml-1">@{originalPost.Username} · {time1}</span>
                   </div>
@@ -307,13 +313,15 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </svg>
             <div className='likes'>{formatNo(data.NoOfLikes)}</div>
           </div>
-          <div className='blog-foot' id='comment' onClick={() => handleActivePost(`/${data.Username}/posts/${data.PostID}`)}>
-            <svg className='comment-icon' width='30px' height='30px' viewBox='0 -0.5 25 25' fill='none' xmlns='http://www.w3.org/2000/svg'>
-              <path fillRule='evenodd' className='comment-icon-path dark:stroke-slate-200' clipRule='evenodd' d='M5.5 12C5.49988 14.613 6.95512 17.0085 9.2741 18.2127C11.5931 19.4169 14.3897 19.2292 16.527 17.726L19.5 18V12C19.5 8.13401 16.366 5 12.5 5C8.63401 5 5.5 8.13401 5.5 12Z' stroke='#242742fd' strokeWidth='1.0' strokeLinecap='round' strokeLinejoin='round'/>
-              <path className='comment-icon-path1 dark:fill-slate-200' d='M9.5 13.25C9.08579 13.25 8.75 13.5858 8.75 14C8.75 14.4142 9.08579 14.75 9.5 14.75V13.25ZM13.5 14.75C13.9142 14.75 14.25 14.4142 14.25 14C14.25 13.5858 13.9142 13.25 13.5 13.25V14.75ZM9.5 10.25C9.08579 10.25 8.75 10.5858 8.75 11C8.75 11.4142 9.08579 11.75 9.5 11.75V10.25ZM15.5 11.75C15.9142 11.75 16.25 11.4142 16.25 11C16.25 10.5858 15.9142 10.25 15.5 10.25V11.75ZM9.5 14.75H13.5V13.25H9.5V14.75ZM9.5 11.75H15.5V10.25H9.5V11.75Z' fill='#242742fd'/>
-            </svg>
-            <div className='comments'>{formatNo(data.NoOfComment)}</div>
-          </div>
+          <PostMaker type='comment' post={data} open={isPostMakerModalOpen} onOpenChange={setPostMakerModalOpen}>
+            <div className='blog-foot' id='comment'>
+              <svg className='comment-icon' width='30px' height='30px' viewBox='0 -0.5 25 25' fill='none' xmlns='http://www.w3.org/2000/svg'>
+                <path fillRule='evenodd' className='comment-icon-path dark:stroke-slate-200' clipRule='evenodd' d='M5.5 12C5.49988 14.613 6.95512 17.0085 9.2741 18.2127C11.5931 19.4169 14.3897 19.2292 16.527 17.726L19.5 18V12C19.5 8.13401 16.366 5 12.5 5C8.63401 5 5.5 8.13401 5.5 12Z' stroke='#242742fd' strokeWidth='1.0' strokeLinecap='round' strokeLinejoin='round'/>
+                <path className='comment-icon-path1 dark:fill-slate-200' d='M9.5 13.25C9.08579 13.25 8.75 13.5858 8.75 14C8.75 14.4142 9.08579 14.75 9.5 14.75V13.25ZM13.5 14.75C13.9142 14.75 14.25 14.4142 14.25 14C14.25 13.5858 13.9142 13.25 13.5 13.25V14.75ZM9.5 10.25C9.08579 10.25 8.75 10.5858 8.75 11C8.75 11.4142 9.08579 11.75 9.5 11.75V10.25ZM15.5 11.75C15.9142 11.75 16.25 11.4142 16.25 11C16.25 10.5858 15.9142 10.25 15.5 10.25V11.75ZM9.5 14.75H13.5V13.25H9.5V14.75ZM9.5 11.75H15.5V10.25H9.5V11.75Z' fill='#242742fd'/>
+              </svg>
+              <div className='comments'>{formatNo(data.NoOfComment)}</div>
+            </div>
+          </PostMaker>
           <ShareButton post={data}>
             <svg className={data.Shared ? 'share-icon clicked' : 'share-icon'} width='30px' height='30px' viewBox='-0.5 0 25 25' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('shared')}>
               <path className='dark:stroke-slate-200' d='M13.47 4.13998C12.74 4.35998 12.28 5.96 12.09 7.91C6.77997 7.91 2 13.4802 2 20.0802C4.19 14.0802 8.99995 12.45 12.14 12.45C12.34 14.21 12.79 15.6202 13.47 15.8202C15.57 16.4302 22 12.4401 22 9.98006C22 7.52006 15.57 3.52998 13.47 4.13998Z' stroke='#242742fd' strokeWidth='1.1' strokeLinecap='round' strokeLinejoin='round'/>

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import PostCard from '@/components/posts';
+import PostCard from '@/components/PostCard';
 import { RefreshCw } from 'lucide-react';
 import { RootState } from '@/redux/store';
 import { usePosts } from '@/app/providers/PostsProvider';

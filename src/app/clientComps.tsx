@@ -7,7 +7,7 @@ import Error from './error';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '@/app/providers/UserProvider';
 import { updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import UserPhoto from "@/components/UserPhoto";
 import PostPreview from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
@@ -20,15 +20,20 @@ import { FileStorageProvider } from '@/hooks/useFileStorage';
 import { useNetwork } from './providers/NetworkProvider';
 import { WifiOff, XCircle } from 'lucide-react';
 import { PostData } from '@/templates/PostProps';
-import { addPost, updatePost } from '@/redux/postsSlice';
+import { addPost, deletePost, updatePost } from '@/redux/postsSlice';
 import { useAnnouncer } from '@/hooks/useAnnouncer';
+import PostMaker from '@/components/PostMaker';
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const dispatch = useDispatch();
     const pathname = usePathname();
+    const router = useRouter();
     const { isOnline, quality } = useNetwork()
+    const [isClient, setIsClient] = useState(false);
     const showProfilePicture  = pathname?.endsWith('/photo');
     const showPostPreview  = pathname?.includes('/photo/');
+    const showPostMaker  = pathname?.includes('/compose/post');
+    const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
     const callRoute  = pathname?.startsWith('/call');
     const { userdata } = useUser();
     const path = pathname?.replace('/','') || '';
@@ -44,12 +49,16 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
 
     useEffect(() => {
-        if(displayAnnouncement.status) {
-            setTimeout(() => {
-                setDisplayAnnouncement({ status: false, message: ''})
-            }, 10000);
+        setIsClient(typeof window !== 'undefined')
+    }, [])
+
+    useEffect(() => {
+        if (pathname?.includes('/compose/post')) {
+            setPostMakerModalOpen(true)
+        } else {
+            setPostMakerModalOpen(false)
         }
-    }, [displayAnnouncement.status])
+    }, [pathname])
 
     useEffect(() => {
         setLoad(false)
@@ -161,7 +170,8 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 message: data.message
             })
         })
-        socket.on('react_to_post', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
+        socket.on('post_reaction_reponse', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
+            alert(data.message);
             if(data.success) return
             dispatch(updatePost({ id: data.postId, updates: { [`${data.reaction.key1}`]: data.reaction.key1, [`${data.reaction.key2}`]: data.reaction.key2 } }));
             setDisplayAnnouncement({
@@ -170,12 +180,21 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             })
 
         })
-        socket.on('updatePost', ( data: { excludeUser: string, blog: PostData } ) => {
+        socket.on('deletePost', ( data: { excludeUser: string, postId: string, type: string } ) => {
             if(data.excludeUser !== userdata._id) {
-                dispatch(updatePost({ id: data.blog.PostID, updates: data.blog }));
+                dispatch(deletePost(data.postId));
                 setDisplayAnnouncement({
                     status: true,
-                    message: `New ${data.blog.Type}`
+                    message: `New ${data.type}`
+                })
+            }
+        })
+        socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+            if(data.excludeUserId !== userdata._id) {
+                dispatch(updatePost({ id: data.postId, updates: data.update }));
+                setDisplayAnnouncement({
+                    status: true,
+                    message: `New ${data.type}`
                 })
             }
         })
@@ -194,6 +213,11 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             socket.off("lastActive")
             socket.off('newChat', handleChat);
             socket.off('offer');
+            socket.off('post_response');
+            socket.off('post_reaction_reponse');
+            socket.off('deletePost');
+            socket.off('updatePost');
+            socket.off('newPost')
         };
     }, [socket, handleChatMessage, handleChat, handleTyping, handleStopTyping, conversations]);
 
@@ -216,7 +240,8 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             <div id='root'>
                 <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                     <FileStorageProvider>
-                        {(!isOnline && typeof window !== 'undefined') && (
+                        <PostMaker open={isPostMakerModalOpen} onOpenChange={setPostMakerModalOpen}/>
+                        {(!isOnline && isClient) && (
                             <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-50'>
                                 <WifiOff className="h-12 w-12 text-muted-foreground" />
                                 <h3 className="mt-2 text-lg font-semibold">You&apos;re Offline</h3>

@@ -22,7 +22,7 @@ export interface PostData {
   Code: string;
   WhoCanComment: 'everyone' | 'friends' | 'none';
   Shared: boolean;
-  Type: "blog" | "comment" |  "repost" | "quote";
+  Type: "post" | "comment" |  "repost" | "quote";
   ParentId: string;
   OriginalPostId?: string;
 }

@@ -24,7 +24,7 @@ const postsSlice = createSlice({
     },
     addPost: (state, action: PayloadAction<PostData>) => {
       if(!state.posts.some(post => post._id === action.payload._id)) {
-        state.posts.push(action.payload);
+        state.posts.unshift(action.payload);
       }
     },
     updatePost: (state, action: PayloadAction<{id: string, updates: Partial<PostData>}>) => {

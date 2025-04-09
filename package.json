@@ -16,8 +16,8 @@
   "main": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "next dev",
-    "dev-exp": "next dev --experimental-https",
+    "dev": "next dev --turbopack",
+    "dev-exp": "next dev --experimental-https --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

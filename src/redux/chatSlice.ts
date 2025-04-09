@@ -4,6 +4,7 @@ import ChatSystem from '@/lib/class/chatSystem';
 import { networkMonitor } from '@/lib/network';
 import { AllChats, ChatAttributes, ChatSettings, ConvoType, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
 import { createAsyncThunk, createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
+import moment from 'moment';
 export { ConvoType };
 const chatRepository = new ChatRepository();
 
@@ -55,10 +56,15 @@ export const Time = (params: string | Date ) => {
   // Print the result
   return formattedDateStr;
 }
+export function timeFormatter(Time: string) {
+  const date = moment(Time, moment.ISO_8601);
+  const formattedDate = date.format('MMM D, YYYY h:mm:ss A');
+  return formattedDate;
+}
 
 export function updateLiveTime(response: "countdown" | "getlivetime" | "chat-time", Time: string): string {
 
-  const time = new Date(Time).getTime();
+  const time = new Date(timeFormatter(Time)).getTime();
   const now = new Date().getTime();
   let distance: number;
 

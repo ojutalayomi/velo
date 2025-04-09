@@ -256,11 +256,12 @@ export const fetchChats = async (dispatch: Dispatch) => {
             ? convo.participants.find(p => p.id !== uid)?.displayPicture
             : convo.participants.find(p => p.id === uid)?.displayPicture)
         : undefined;
-
+      
+      const getName = () => convo.participants.length === 1 ? convo.name[uid] : convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || 'Unknown Participant']
       return {
         id: convo._id,
         type: convo.chatType,
-        name: convo.chatType === 'DMs' ? convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || ''] : convo.name.group,
+        name: convo.chatType === 'DMs' ? getName() : convo.name.group,
         lastMessage: filter(participant?.lastMessageId || '') || 'Be the first to text',
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,

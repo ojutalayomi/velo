@@ -194,7 +194,7 @@ body .secondary .containeer .sub-container .child .item form .input-tags .input2
   padding: 5px 10px;
   width: 100%;
 }
-body .secondary .containeer .sub-container .child .item form .input-tags .input2 input:placeholder {
+body .secondary .containeer .sub-container .child .item form .input-tags .input2 input::placeholder {
   color: hsl(234, 29%, 20%);
 }
 body .secondary .containeer .sub-container .child .item form .forgot-password {

@@ -6,7 +6,7 @@ import { LinkPreview } from '@/components/LinkPreview';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import ImageDiv from "@/components/imageDiv";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,6 +17,7 @@ import { DocCard } from "@/components/DocCard";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
+import { Cross2Icon } from "@radix-ui/react-icons";
 
 type Message = {
     _id: string,
@@ -288,8 +289,12 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
             }
         }}>
             <DialogTrigger className="hidden"></DialogTrigger>
-            <DialogContent className="backdrop-blur-xl bg-transparent flex flex-col w-screen h-screen max-w-none">
+            <DialogContent className="backdrop-blur-xl bg-transparent border-0 flex flex-col w-screen h-screen max-w-none">
                 <DialogHeader>
+                    <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                        <Cross2Icon className="h-4 w-4" />
+                        <span className="sr-only">Close</span>
+                    </DialogClose>
                     <DialogTitle className="dark:text-white text-black">
                         Preview
                         <b className="block text-sm font-medium text-white dark:text-gray-700">

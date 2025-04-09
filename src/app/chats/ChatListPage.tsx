@@ -203,17 +203,9 @@ const Card: React.FC<Props> = ({chat}) => {
         )}
         <div className="relative">
           <Avatar>
-            <AvatarFallback>{chat.name.slice(0,2)}</AvatarFallback>
+            <AvatarFallback>{(chat.name ?? '????').slice(0,2)}</AvatarFallback>
             <AvatarImage
-            src={
-              chat.displayPicture  
-              ?  (
-                chat.displayPicture.includes('ila-') 
-                ? ''
-                : chat.displayPicture
-              )
-              : ''
-            }
+            src={chat.displayPicture}
             onClick={(e) => {
               e.preventDefault();
               fullscreen();

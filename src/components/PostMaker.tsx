@@ -3,9 +3,8 @@ import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
-import { updateLiveTime } from "@/redux/chatSlice";
 import MediaSlide from "@/templates/mediaSlides";
-import { PostData } from "@/templates/PostProps";
+import { PostData, updateLiveTime } from "@/templates/PostProps";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose, DialogHeader, DialogFooter, DialogTrigger } from "./ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { X, Paintbrush, CircleAlert, Images, CircleCheck, ChartBarDecreasing, Smile, Clock4, MapPin, Loader2 } from "lucide-react";
@@ -229,7 +228,7 @@ export default function PostMaker(
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
-            <DialogContent className="bg-white dark:bg-zinc-900 overflow-auto mb:h-full">
+            <DialogContent className="bg-white dark:bg-zinc-900 overflow-auto mb:h-full flex flex-col">
                 <DialogHeader className='dark:text-white'>
                 <DialogTitle className='text-center'></DialogTitle>
                 <DialogDescription>
@@ -244,7 +243,7 @@ export default function PostMaker(
                     </span>
                 </DialogDescription>
                 </DialogHeader>
-                <div className="max-h-80 overflow-auto">
+                <div className="max-h-80 mb:max-h-none overflow-auto">
     
                 {/* User Info and Dropdown */}
                 <div className="flex items-center space-x-3">
@@ -292,60 +291,62 @@ export default function PostMaker(
                 />
 
                 {/* Fullscreen Image Modal */}
-                    {fullscreenImage && (
-                        <Dialog open={!!fullscreenImage} onOpenChange={closeFullscreen}>
-                        <DialogContent className="bg-black flex items-center justify-center">
-                            <DialogClose className="absolute top-4 right-4 text-white">
-                            <X size={24} />
-                            </DialogClose>
-                            <img
-                            src={fullscreenImage}
-                            alt="Fullscreen"
-                            className="max-w-full max-h-full object-contain"
-                            />
-                        </DialogContent>
-                        </Dialog>
-                    )}
+                {fullscreenImage && (
+                    <Dialog open={!!fullscreenImage} onOpenChange={closeFullscreen}>
+                    <DialogContent className="bg-black flex items-center justify-center">
+                        <DialogClose className="absolute top-4 right-4 text-white">
+                        <X size={24} />
+                        </DialogClose>
+                        <img
+                        src={fullscreenImage}
+                        alt="Fullscreen"
+                        className="max-w-full max-h-full object-contain"
+                        />
+                    </DialogContent>
+                    </Dialog>
+                )}
     
                 {/** Media */}
                 {files.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 my-2">
-                    {files.map((file, index) => (
-                        <div key={index} className="relative group">
-                        {file.type.startsWith('image/') ? (
-                            <>
-                                <img
+                    <div className="overflow-x-auto">
+                        <div className="flex gap-4 items-center justify-center p-2 status w-fit">
+                        {files.map((file, index) => (
+                            <div key={index} className="relative group w-52">
+                            {file.type.startsWith('image/') ? (
+                                <>
+                                    <img
+                                    src={URL.createObjectURL(file)}
+                                    alt={file.name}
+                                    className="w-full h-40 object-cover rounded-lg"
+                                    onClick={() => handleImageClick(file)}
+                                    />
+                                    <CropMediaInterface files={files} setFiles={setFiles} imageIndex={index}>
+                                        <button
+                                        className="absolute top-2 left-2 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                        <Paintbrush size={16} />
+                                        </button>
+                                    </CropMediaInterface>
+                                </>
+                            ) : file.type.startsWith('video/') ? (
+                                <video
                                 src={URL.createObjectURL(file)}
-                                alt={file.name}
                                 className="w-full h-40 object-cover rounded-lg"
-                                onClick={() => handleImageClick(file)}
+                                controls
                                 />
-                                <CropMediaInterface files={files} setFiles={setFiles} imageIndex={index}>
-                                    <button
-                                    className="absolute top-2 left-2 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                    <Paintbrush size={16} />
-                                    </button>
-                                </CropMediaInterface>
-                            </>
-                        ) : file.type.startsWith('video/') ? (
-                            <video
-                            src={URL.createObjectURL(file)}
-                            className="w-full h-40 object-cover rounded-lg"
-                            controls
-                            />
-                        ) : null}
-                        <button
-                            onClick={() => {
-                            const newFiles = files.filter((_, i) => i !== index);
-                            setFiles(newFiles);
-                            }}
-                            className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <X size={16} />
-                        </button>
+                            ) : null}
+                            <button
+                                onClick={() => {
+                                const newFiles = files.filter((_, i) => i !== index);
+                                setFiles(newFiles);
+                                }}
+                                className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                <X size={16} />
+                            </button>
+                            </div>
+                        ))}
                         </div>
-                    ))}
                     </div>
                 )}
     

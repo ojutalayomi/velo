@@ -146,7 +146,9 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
   
   // Aspect ratio calculations
   const getAspectRatioDimensions = () => {
-    if (!imageRef.current) return {};
+    if (!imageRef.current) {
+      return {}
+    };
     
     // console.log(imageRef.current.width / 2, imageRef.current.height / 2);
     const containerWidth = imageRef.current.width / 2; // Base container width
@@ -242,7 +244,13 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
     { id: 'flag', icon: <Flag className="h-6 w-6" />, label: 'Flag' }
   ];
 
-  const processImage = async (file: File, textOverlays: TextOverlay[], filters: string, zoomLevel: number, aspectRatio: string) => {
+  const processImage = async (
+    file: File,
+    textOverlays: TextOverlay[],
+    filters: string,
+    zoomLevel: number,
+    aspectRatio: string
+  ) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
@@ -255,36 +263,68 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
       img.onload = resolve;
     });
   
-    // Set canvas dimensions based on the image and zoom level
+    // Calculate the scale and cropping area
     const scale = 0.5 + (zoomLevel / 100) * 1.5;
-    let canvasWidth = img.width * scale;
-    let canvasHeight = img.height * scale;
-
+    let cropWidth = img.width / scale;
+    let cropHeight = img.height / scale;
+  
+    let cropX = (img.width - cropWidth) / 2; // Center horizontally
+    let cropY = (img.height - cropHeight) / 2; // Center vertically
+  
+    // Adjust cropping area based on aspect ratio
     switch (aspectRatio) {
       case '1:1': // Square
-        canvasWidth = Math.min(canvasWidth, canvasHeight);
-        canvasHeight = canvasWidth;
+        if (cropWidth > cropHeight) {
+          cropX += (cropWidth - cropHeight) / 2;
+          cropWidth = cropHeight;
+        } else {
+          cropY += (cropHeight - cropWidth) / 2;
+          cropHeight = cropWidth;
+        }
         break;
       case '16:9': // Widescreen
-        canvasHeight = canvasWidth * (9 / 16);
+        if (cropWidth / cropHeight > 16 / 9) {
+          cropWidth = cropHeight * (16 / 9);
+          cropX = (img.width - cropWidth) / 2;
+        } else {
+          cropHeight = cropWidth * (9 / 16);
+          cropY = (img.height - cropHeight) / 2;
+        }
         break;
       case '4:3': // Standard
-        canvasHeight = canvasWidth * (3 / 4);
+        if (cropWidth / cropHeight > 4 / 3) {
+          cropWidth = cropHeight * (4 / 3);
+          cropX = (img.width - cropWidth) / 2;
+        } else {
+          cropHeight = cropWidth * (3 / 4);
+          cropY = (img.height - cropHeight) / 2;
+        }
         break;
       case 'original': // Original aspect ratio
       default:
-        // Keep the original dimensions
+        // No changes needed
         break;
     }
-
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
+  
+    // Set canvas dimensions to match the cropped area
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
   
     // Apply filters
     ctx.filter = filters;
   
-    // Draw the image onto the canvas
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    // Draw the cropped portion of the image onto the canvas
+    ctx.drawImage(
+      img,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
   
     // Draw text overlays
     textOverlays.forEach((overlay) => {
@@ -303,7 +343,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
         } else {
           resolve(null);
         }
-      }, file.type);
+      }, file.type, 0.95);
     });
   };
   
@@ -343,7 +383,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="bg-white max-h-screen h-[95%] gap-0 p-0 dark:bg-zinc-900 overflow-hidden mb:h-full flex flex-col">
+      <DialogContent className="bg-white dialogCloseBtnHide max-h-screen h-[95%] gap-0 p-0 dark:bg-zinc-900 overflow-hidden mb:h-full flex flex-col">
         <DialogHeader className='dark:text-white'>
           <DialogTitle className='text-center'></DialogTitle>
           <DialogDescription className="flex justify-between items-center px-4 py-2 border-b border-gray-800">

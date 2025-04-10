@@ -76,6 +76,10 @@ body {
   }
 }
 
+.dialogCloseBtnHide .dialogCloseBtn {
+  display: none;
+}
+
 
 div#home {
   scrollbar-width: none; /* Hide scrollbar in Firefox */

@@ -1,5 +1,5 @@
 import { Textarea } from "@/components/ui/textarea";
-import { X, Send, Smile, Plus, TextQuote, Folder, Image } from "lucide-react";
+import { X, Send, Smile, Plus, TextQuote, Folder, Image, Paintbrush2 } from "lucide-react";
 import { ChangeEvent, Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { LinkPreview } from '@/components/LinkPreview';
@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { Cross2Icon } from "@radix-ui/react-icons";
+import CropMediaInterface from "@/components/CropMediaInterface";
 
 type Message = {
     _id: string,
@@ -326,10 +327,18 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                                     <CarouselItem key={key+objectURL} className="flex items-center justify-center h-full w-full">
                                         {
                                             isImage ?
-                                                <ImageDiv
-                                                media={objectURL} 
-                                                host={false}
-                                                /> :
+                                                ( 
+                                                    <>
+                                                        <ImageDiv media={objectURL} host={false}/>
+                                                        <CropMediaInterface files={attachments} setFiles={setFiles} imageIndex={key}>
+                                                            <button
+                                                            className="absolute top-2 left-2 p-1 rounded-full bg-black/50 text-white opacity-0 mb:opacity-100 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                            <Paintbrush2 size={16} />
+                                                            </button>
+                                                        </CropMediaInterface>
+                                                    </>
+                                                ) :
                                             isVideo ?
                                                 <VideoDiv
                                                     media={objectURL} 

@@ -144,7 +144,7 @@ const PostContent: React.FC = () => {
                 </div>
                 {(!error0 || success?.message === 'Disable Comment.') && (
                     <div className='commentBar !sticky !pr-0 bottom-0 w-full'>
-                        <Image src={userdata.dp} className='userPhoto' width={35} height={35} alt='logo'/>
+                        <Image src={userdata.dp ?? '/velo11.png'} className='userPhoto' width={35} height={35} alt='logo'/>
                         <div className='commentBarContent'>
                             <textarea className='make-comment' ref={textAreaRef} placeholder='Comment here...'></textarea>
                             <svg xmlns='http://www.w3.org/2000/svg' className='smile-emoji' viewBox='0 0 24 24' fill='none'>

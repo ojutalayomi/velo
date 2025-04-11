@@ -45,7 +45,7 @@ const Comps: React.FC = () => {
     dispatch(setLoading(true));
     dispatch(setError1(null));
     try {
-      if(formData.file) {
+      if (formData.file && formData.file.name && formData.file.type) {
 
         const response = await fetch(
           '/api/upload',
@@ -54,35 +54,36 @@ const Comps: React.FC = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ filename: formData.file!.name, contentType: formData.file!.type, bucketName: 'profile-display-images' }),
+            body: JSON.stringify({ filename: formData.file.name, contentType: formData.file.type, bucketName: 'profile-display-images' }),
           }
         );
 
-        if (!response.ok) {
-          throw new Error('Failed to upload image');
-        }
+          if (!response.ok) {
+            throw new Error('Failed to upload image');
+          }
 
-        const { url, fields } = await response.json();
-        const formData1 = new FormData();
+          const { url, fields } = await response.json();
+          const formData1 = new FormData();
 
-        for (const key in fields) {
-          formData1.append(key, fields[key]);
-        }
+          for (const key in fields) {
+            formData1.append(key, fields[key]);
+          }
 
-        formData1.append('file', formData.file);
+          formData1.append('file', formData.file);
 
-        const uploadResponse = await fetch(url, {
-          method: 'POST',
-          body: formData1,
-        });
+          const uploadResponse = await fetch(url, {
+            method: 'POST',
+            body: formData1,
+          });
 
-        if (!uploadResponse.ok) { 
-          throw new Error('Failed to upload image');
-        } else {
-          // formData.file = url+fields.key;
-          dispatch(updateFormData({ file: url+fields.key }));
-        }
+          if (!uploadResponse.ok) { 
+            throw new Error('Failed to upload image');
+          } else {
+            dispatch(updateFormData({ file: url + fields.key }));
+          }
 
+      } else {
+        throw new Error('File must be uploaded before submitting the form');
       }
 
       const response = await SubmitForm(formData);

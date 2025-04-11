@@ -131,44 +131,44 @@ export default function PostMaker(
       try {
         let media: string[] = []
         if(files.length > 0) {
-  
-          files.forEach(async (file) => {
-            const response = await fetch(
-              '/api/upload',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ filename: file!.name, contentType: file!.type, bucketName: 'post-s' }),
-              }
-            );
-    
-            if (!response.ok) {
-              throw new Error('Failed to upload image');
-            }
-    
-            const { url, fields } = await response.json();
-            const formData1 = new FormData();
-    
-            for (const key in fields) {
-              formData1.append(key, fields[key]);
-            }
-    
-            formData1.append('file', file);
-    
-            const uploadResponse = await fetch(url, {
-              method: 'POST',
-              body: formData1,
-            });
-    
-            if (!uploadResponse.ok) { 
-              throw new Error('Failed to upload image');
-            } else {
-              // formData.file = url+fields.key;
-              media.push(url+fields.key);
-            }
-          })
+            
+            media = await Promise.all(
+                files.map(async (file) => {
+                    const response = await fetch(
+                    '/api/upload',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ filename: file!.name, contentType: file!.type, bucketName: 'post-s' }),
+                    }
+                    );
+            
+                    if (!response.ok) {
+                        throw new Error('Failed to upload image');
+                    }
+            
+                    const { url, fields } = await response.json();
+                    const formData1 = new FormData();
+            
+                    for (const key in fields) {
+                        formData1.append(key, fields[key]);
+                    }
+            
+                    formData1.append('file', file);
+            
+                    const uploadResponse = await fetch(url, {
+                        method: 'POST',
+                        body: formData1,
+                    });
+            
+                    if (!uploadResponse.ok) { 
+                        throw new Error('Failed to upload image');
+                    }
+                    return url + fields.key;
+                })
+            )
   
         }
   

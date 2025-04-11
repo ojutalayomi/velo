@@ -10,30 +10,45 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Loader2, Share } from 'lucide-react';
 import LeftSideBar from '@/components/LeftSideBar';
 import { navigate } from '@/lib/utils';
+import { useSocket } from '@/app/providers/SocketProvider';
 
 const PostContent: React.FC = () => {
-    const router = useRouter();
     const params = useParams();
-    const { userdata, loading, error, refetchUser } = useUser();
-    const [loading0, setLoading] = useState<boolean>(true);
-    const [error0, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<Post>();
-    const [loading1, setLoading1] = useState<boolean>(true);
-    const [error1, setError1] = useState<string | null>(null);
-    const [success1, setSuccess1] = useState<Comments>();
+    const router = useRouter();
+    const socket = useSocket()
+    const { userdata, loading: userdataLoading, error: userdataError, refetchUser } = useUser();
+    const [errorMessage, setErrorMessage] = useState<{
+        post?: string | null, 
+        comment?: string | null
+    }>({
+        post: null, 
+        comment: null
+    });
+    const [loading, setLoading] = useState<{
+        post?: boolean, 
+        comment?: boolean
+    }>({
+        post: true, 
+        comment: true
+    });
+    const [post, setPost] = useState<Post['post']>();
+    const [postMessage, setPostMessage] = useState<Post['message']>();
+    const [comments, setComments] = useState<Comments['comments']>();
+    const [commentsMessage, setCommentsMessage] = useState<Comments['message']>();
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
+            setLoading({ post: true });
           if(params && params.id){
             try {
                 const postsResponse = await getPost(params.id);
-                setSuccess(postsResponse);
+                setPost(postsResponse.post);
+                setPostMessage(postsResponse.message)
             } catch (error) {
-                setError((error as Error).message);
+                setErrorMessage({post: (error as Error).message});
             } finally {
-                setLoading(false);
+                setLoading({ post: false });
             }
           }
         };
@@ -43,15 +58,16 @@ const PostContent: React.FC = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading1(true);
+            setLoading({ comment: true });
           if(params && params.id){
             try {
                 const commentsResponse = await getComments(params.id);
-                setSuccess1(commentsResponse);
+                setComments(commentsResponse.comments);
+                setCommentsMessage(commentsResponse.message)
             } catch (error) {
-                setError1((error as Error).message);
+                setErrorMessage({ comment: (error as Error).message });
             } finally {
-                setLoading1(false);
+                setLoading({ comment: false });
             }
           }
         };
@@ -77,18 +93,25 @@ const PostContent: React.FC = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if(!socket) return;
+        socket.on('newComment', (comment) => {
+            setComments([...(comments || []), comment])
+        })
+    }, [socket])
+
     return (
         <div className="w-full flex h-screen max-h-screen dark:bg-black overflow-auto">
             <div className='md:w-3/5 flex flex-col h-full w-full'>
                 <div className="flex justify-between p-1 sticky top-0 z-10 bg-white dark:bg-zinc-900 shadow-md">
                     <div className='flex items-center m-2 w-full justify-between gap-2'>
                         <ArrowLeft size={24} className='cursor-pointer' onClick={() => navigate(router)}/>
-                        <h1>{success?.post.Username ? success.post.Username[0].toUpperCase() + success.post.Username.slice(1) + "'s post" : ''}</h1>
+                        <h1>{post?.Username ? post.Username[0].toUpperCase() + post.Username.slice(1) + "'s post" : ''}</h1>
                         <Share size={24} />
                     </div>
                 </div>
                 <div id='postpage' className='dark:text-slate-200'>
-                    {loading0 
+                    {loading.post 
                     ? 
                     <div className="flex flex-col w-full space-y-3 cursor-progress mt-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
                         <div className='flex items-center justify-start gap-2'>
@@ -108,43 +131,43 @@ const PostContent: React.FC = () => {
                         </div>
                     </div>
                     :
-                    success
+                    post
                     ?
-                    <PostCard key={success.post._id} postData={success.post} />
+                    <PostCard key={post._id} postData={post} />
                     : 
-                    error0 && (
+                    errorMessage.post && (
                         <div className='flex items-center justify-center w-full h-[90%]'>
-                            <div className='text-2xl'>{error0}</div>
+                            <div className='text-2xl'>{errorMessage.post}</div>
                         </div>
                     )}
 
                     <div className='commentSection'>
-                        {!error1 ? <div className='commentHeader'>Comments</div> : null}
-                        {loading1 ? (
+                        {!errorMessage.comment ? <div className='commentHeader'>Comments</div> : null}
+                        {loading.comment ? (
                             <div className='flex items-center justify-center w-full h-[90%]'>
                                 <Loader2 className='loader' size={30} />
                             </div>
                         )
                         :
-                        success1 && success1.comments.length > 0 
+                        comments && comments.length > 0 
                         ? 
-                        (success1.comments.map((comment) => ( 
+                        (comments.map((comment) => ( 
                             <PostCard key={comment._id} postData={comment} /> 
                         ))) 
                         : 
                         <div className='noComments'>No comments yet.</div>
                         }
-                        {error1 && (
+                        {errorMessage.comment && (
                             <div className='flex items-center justify-center w-full h-[90%]'>
-                                <div className='text-2xl'>{error1}</div>
+                                <div className='text-2xl'>{errorMessage.comment}</div>
                             </div>
                         )}
                     </div>
 
                 </div>
-                {(!error0 || success?.message === 'Disable Comment.') && (
+                {(!errorMessage.post || commentsMessage === 'Disable Comment.') && (
                     <div className='commentBar !sticky !pr-0 bottom-0 w-full'>
-                        <Image src={userdata.dp ?? '/velo11.png'} className='userPhoto' width={35} height={35} alt='logo'/>
+                        <Image src={userdata.dp || '/velo11.png'} className='userPhoto' width={35} height={35} alt='logo'/>
                         <div className='commentBarContent'>
                             <textarea className='make-comment' ref={textAreaRef} placeholder='Comment here...'></textarea>
                             <svg xmlns='http://www.w3.org/2000/svg' className='smile-emoji' viewBox='0 0 24 24' fill='none'>

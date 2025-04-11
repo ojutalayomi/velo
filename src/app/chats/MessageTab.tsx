@@ -53,7 +53,7 @@ type Option = {
   onClick: () => void; // Click handler function
 };
 
-const renderTextWithLinks = (text: string) => {
+export const renderTextWithLinks = (text: string) => {
   // Regex for matching URLs
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   

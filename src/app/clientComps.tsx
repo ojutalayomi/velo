@@ -170,7 +170,13 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 message: data.message
             })
         })
-        socket.on('post_reaction_reponse', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
+        socket.on('delete_post_response', ( data: { message: string, success: boolean } ) => {
+            setDisplayAnnouncement({
+                status: true,
+                message: data.message
+            })
+        })
+        socket.on('post_reaction_response', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
             alert(data.message);
             if(data.success) return
             dispatch(updatePost({ id: data.postId, updates: { [`${data.reaction.key1}`]: data.reaction.key1, [`${data.reaction.key2}`]: data.reaction.key2 } }));
@@ -181,17 +187,11 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
 
         })
         socket.on('deletePost', ( data: { excludeUser: string, postId: string, type: string } ) => {
-            if(data.excludeUser !== userdata._id) {
-                dispatch(deletePost(data.postId));
-                setDisplayAnnouncement({
-                    status: true,
-                    message: `New ${data.type}`
-                })
-            }
+            dispatch(deletePost(data.postId));
         })
         socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+            dispatch(updatePost({ id: data.postId, updates: data.update }));
             if(data.excludeUserId !== userdata._id) {
-                dispatch(updatePost({ id: data.postId, updates: data.update }));
                 setDisplayAnnouncement({
                     status: true,
                     message: `New ${data.type}`
@@ -200,10 +200,12 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         })
         socket.on('newPost', ( data: { excludeUser: string, blog: PostData } ) => {
             dispatch(addPost(data.blog));
-            setDisplayAnnouncement({
-                status: true,
-                message: `New ${data.blog.Type} from ${data.blog.Username}`
-            })
+            if(data.excludeUser !== userdata._id) {
+                setDisplayAnnouncement({
+                    status: true,
+                    message: `New ${data.blog.Type} from ${data.blog.Username}`
+                })
+            }
         })
   
         return () => {
@@ -214,6 +216,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             socket.off('newChat', handleChat);
             socket.off('offer');
             socket.off('post_response');
+            socket.off('delete_post_response');
             socket.off('post_reaction_reponse');
             socket.off('deletePost');
             socket.off('updatePost');

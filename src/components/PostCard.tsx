@@ -15,7 +15,7 @@ import MediaSlide from '../templates/mediaSlides';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
 import { useDispatch, useSelector } from 'react-redux';
-import { updatePost } from '@/redux/postsSlice';
+import { deletePost, updatePost } from '@/redux/postsSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
 import { useUser } from '@/app/providers/UserProvider';
 import { Skeleton } from './ui/skeleton';
@@ -23,6 +23,9 @@ import { FileValidationConfig } from '@/lib/types/type';
 import { RootState } from '@/redux/store';
 import ShareButton from './ShareButton';
 import PostMaker from './PostMaker';
+import { getPost } from '@/lib/getStatus';
+import { toast } from '@/hooks/use-toast';
+import { renderTextWithLinks } from '@/app/chats/MessageTab';
 
 type PostComponentProps = {
   postData: Post['post'],
@@ -61,29 +64,42 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState('');
   const [time1, setTime1] = useState('');
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
   const router = useRouter();
   const [data, setData] = useState<PostData>({} as PostData)
 
   useEffect(() => {
-    if (postData) {
-      setPostType(postData.Type);
-      if (postData.Type === 'repost') {
-        const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
-        if (original_post) {
-          setData(posts.find((post: PostData) => post.PostID === postData.OriginalPostId)!);
-          if(original_post.OriginalPostId) {
-            const original_post_1 = posts.find((post: PostData) => post.PostID === original_post.OriginalPostId);
-            if (original_post_1) setOriginalPost(posts.find((post: PostData) => post.PostID === original_post.OriginalPostId)!);
+    async function loadPost() {
+      if (postData) {
+        setPostType(postData.Type);
+        if (postData.Type === 'repost') {
+          const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
+          if (original_post) {
+            setData(posts.find((post: PostData) => post.PostID === postData.OriginalPostId)!);
+            if (original_post.OriginalPostId) {
+              const original_post_1 = posts.find((post: PostData) => post.PostID === original_post.OriginalPostId);
+              if (original_post_1) setOriginalPost(posts.find((post: PostData) => post.PostID === original_post.OriginalPostId)!);
+              else {
+                const postsResponse = await getPost(original_post.OriginalPostId);
+                setOriginalPost(postsResponse.post);
+              }
+            }
           }
+        } else if (postData.Type === 'quote') {
+          const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
+          if (original_post) setOriginalPost(original_post);
+          else {
+            const postsResponse = await getPost(postData.OriginalPostId);
+            setOriginalPost(postsResponse.post);
+          }
+          setData(postData);
+        } else {
+          setData(postData);
         }
-      } else if (postData.Type === 'quote') {
-        const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
-        if (original_post) setOriginalPost(original_post);
-        setData(postData);
-      } else {
-        setData(postData);
       }
     }
+
+    loadPost();
   }, [postData]);
 
   useEffect(() => {
@@ -183,13 +199,27 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     },
     {
       icon: <Copy size={20} />,
-      text: 'Copy link',
-      onClick: () => {}
+      text: isLinkCopied ? 'Copied' : 'Copy link',
+      onClick: async () => {
+        try {
+          await navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/${data.Username}/posts/${data.PostID}`);
+          setIsLinkCopied(true);
+          setTimeout(() => setIsLinkCopied(false),3000);
+        } catch (err) {
+          console.error('Failed to copy post link to clipboard: ', err);
+        }
+      }
     },
-    ...(data.DisplayPicture ? [{
+    ...(data.UserId === userdata._id ? [{
       icon: <Delete size={20} />,
       text: 'Delete Post',
-      onClick: () => {}
+      onClick: () => {
+        socket?.emit('deletePost', {
+          postId: data.PostID,
+          type: data.Type,
+          parentId: data.ParentId
+        });
+      }
     }] : []),
     {
       icon: <MessageCircleX size={20} />,
@@ -204,7 +234,12 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     {
       icon: <Minus size={20} />,
       text: 'Remove post',
-      onClick: () => {}
+      onClick: () => {
+        dispatch(deletePost(data.PostID));
+        toast({
+          title: 'Post Removed.',
+        })
+      }
     },
     {
       icon: <Flag size={20} />,
@@ -258,11 +293,11 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           {data.Caption && data.Caption.length > 250 && !window.location.pathname.includes('posts') ? 
             <>
               <abbr title={data.Caption}>
-                <p className='text-sm whitespace-pre-wrap'>{data.Caption.substring(0, 250)}... <span className='showMore'>show more</span></p>
+                <p className='text-sm whitespace-pre-wrap'>{renderTextWithLinks(data.Caption.substring(0, 250))}... <span className='showMore'>show more</span></p>
               </abbr>
             </> : 
             <abbr title={data.Caption}>
-              <p className='text-sm whitespace-pre-wrap'>{data.Caption}</p>
+              <p className='text-sm whitespace-pre-wrap'>{renderTextWithLinks(data.Caption)}</p>
             </abbr>}
         </div>
         {/* {showMore} */}
@@ -293,7 +328,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                   {/* <div className="text-gray-500 text-sm mb-2">Replying to @NintendoAmerica</div> */}
                   {originalPost?.Caption ? (
                     <p className={`dark:text-white text-sm mb-2 ${originalPost.Image.length > 0 ? '' : 'col-span-2'} whitespace-pre-wrap`}>
-                      {originalPost.Caption.length > 250 ? originalPost.Caption.substring(0, 250) + '...' : originalPost.Caption}
+                      {originalPost.Caption.length > 250 ? renderTextWithLinks(originalPost.Caption.substring(0, 250)) + '...' : renderTextWithLinks(originalPost.Caption)}
                     </p>
                   ) : null}
                   {/* {showMore} */}

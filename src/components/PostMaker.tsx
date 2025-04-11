@@ -15,6 +15,7 @@ import { Skeleton } from "./ui/skeleton";
 import { Input } from "./ui/input";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { renderTextWithLinks } from "@/app/chats/MessageTab";
 
 export default function PostMaker(
     {children, open, type = 'post', post, onOpenChange} : 
@@ -448,7 +449,7 @@ function MiniPostCard({ post, type = 'post' }: { post: PostData, type?: PostData
                     </div>
                     
                     {post.Caption ? (
-                        <p className={`dark:text-white text-sm mb-2 ${post.Image.length > 0 ? '' : 'col-span-2'} whitespace-pre-wrap`}>{post.Caption.length > 250 ? post.Caption.substring(0, 250) + '...' : post.Caption}</p>
+                        <p className={`dark:text-white text-sm mb-2 ${post.Image.length > 0 ? '' : 'col-span-2'} whitespace-pre-wrap`}>{post.Caption.length > 250 ? renderTextWithLinks(post.Caption.substring(0, 250)) + '...' : renderTextWithLinks(post.Caption)}</p>
                     ) : null}
                     {/* {showMore} */}
                     {(post.Image.length > 0 && type !== 'comment') &&

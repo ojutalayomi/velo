@@ -383,7 +383,7 @@ const CropMediaInterface = ({children, files, setFiles, imageIndex}:{children: R
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="bg-white dialogCloseBtnHide max-h-screen h-[95%] gap-0 p-0 dark:bg-zinc-900 overflow-hidden mb:h-full flex flex-col">
+      <DialogContent className="bg-white dialogCloseBtnHide max-h-screen mb:max-w-none h-[95%] gap-0 p-0 dark:bg-zinc-900 overflow-hidden mb:h-full flex flex-col">
         <DialogHeader className='dark:text-white'>
           <DialogTitle className='text-center'></DialogTitle>
           <DialogDescription className="flex justify-between items-center px-4 py-2 border-b border-gray-800">

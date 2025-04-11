@@ -1,6 +1,5 @@
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { S3Client } from '@aws-sdk/client-s3'
-import { v4 as uuidv4 } from 'uuid'
 import { NextResponse } from 'next/server'
 import { timeFormatter } from '@/lib/utils'
 
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
         const client = new S3Client({ 
             region: 'us-east-1',
             credentials: {
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+                accessKeyId: process.env.AWS_ACCESS_KEY_ || '',
                 secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
             }
         })

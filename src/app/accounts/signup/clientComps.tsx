@@ -48,7 +48,7 @@ const Comps: React.FC = () => {
       if(formData.file) {
 
         const response = await fetch(
-          "https://localhost:3000" + '/api/upload',
+          '/api/upload',
           {
             method: 'POST',
             headers: {

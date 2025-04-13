@@ -1,7 +1,7 @@
 "use client";
 import { useParams, useRouter } from 'next/navigation';
 import Image from "next/image";
-import { Comments, Post } from '@/templates/PostProps';
+import { Comments, Post, PostData } from '@/templates/PostProps';
 import PostCard from '@/components/PostCard';
 import { useEffect, useRef, useState } from 'react';
 import { getComments, getPost } from '@/lib/getStatus';
@@ -11,6 +11,8 @@ import { ArrowLeft, Loader2, Share } from 'lucide-react';
 import LeftSideBar from '@/components/LeftSideBar';
 import { navigate } from '@/lib/utils';
 import { useSocket } from '@/app/providers/SocketProvider';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
 const PostContent: React.FC = () => {
     const params = useParams();
@@ -18,19 +20,20 @@ const PostContent: React.FC = () => {
     const socket = useSocket()
     const { userdata, loading: userdataLoading, error: userdataError, refetchUser } = useUser();
     const [errorMessage, setErrorMessage] = useState<{
-        post?: string | null, 
-        comment?: string | null
+        post: string | null, 
+        comment: string | null
     }>({
         post: null, 
         comment: null
     });
     const [loading, setLoading] = useState<{
-        post?: boolean, 
-        comment?: boolean
+        post: boolean, 
+        comment: boolean
     }>({
         post: true, 
         comment: true
     });
+    const posts = useSelector((state: RootState) => state.posts.posts);
     const [post, setPost] = useState<Post['post']>();
     const [postMessage, setPostMessage] = useState<Post['message']>();
     const [comments, setComments] = useState<Comments['comments']>();
@@ -39,35 +42,70 @@ const PostContent: React.FC = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading({ post: true });
-          if(params && params.id){
-            try {
-                const postsResponse = await getPost(params.id);
-                setPost(postsResponse.post);
-                setPostMessage(postsResponse.message)
-            } catch (error) {
-                setErrorMessage({post: (error as Error).message});
-            } finally {
-                setLoading({ post: false });
+            setLoading((l) => {
+                return { 
+                    post: true, 
+                    comment: l.comment 
+                }
+            });
+            if(params && params.id){
+                try {
+                    const available_post = posts.find(post => post.PostID === params.id) as PostData;
+                    if (available_post) {
+                        setPost(available_post);
+                    } else {
+                        const postsResponse = await getPost(params.id);
+                        setPost(postsResponse.post);
+                        setPostMessage(postsResponse.message)
+                    }
+                } catch (error) {
+                    setErrorMessage((e) => {
+                        return {
+                            post: (error as Error).message,
+                            comment: e.comment
+                        }
+                    });
+                } finally {
+                    setLoading((l) => {
+                        return { 
+                            post: false, 
+                            comment: l.comment 
+                        }
+                    });
+                }
             }
-          }
         };
 
         fetchData();
-    }, [params,params?.id]);
+    }, [params,params?.id,posts]);
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading({ comment: true });
+            setLoading((l) => {
+                return { 
+                    post: l.post, 
+                    comment: true 
+                }
+            });
           if(params && params.id){
             try {
                 const commentsResponse = await getComments(params.id);
                 setComments(commentsResponse.comments);
                 setCommentsMessage(commentsResponse.message)
             } catch (error) {
-                setErrorMessage({ comment: (error as Error).message });
+                setErrorMessage((e) => {
+                    return { 
+                        comment: (error as Error).message, 
+                        post: e.post 
+                    }
+                });
             } finally {
-                setLoading({ comment: false });
+                setLoading((l) => {
+                    return { 
+                        post: l.post, 
+                        comment: false
+                    }
+                });
             }
           }
         };
@@ -94,10 +132,67 @@ const PostContent: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if(!socket) return;
-        socket.on('newComment', (comment) => {
-            setComments([...(comments || []), comment])
+        if(!socket || !post) return;
+        socket.on('newComment', (data: { excludeUser: string, blog: PostData }) => {
+            setComments(prevComments => {
+                if (prevComments) {
+                  return [...prevComments, data.blog];
+                }
+                return [data.blog];
+            })
         })
+        socket.on('deletePost', ( data: { excludeUser: string, postId: string, type: string } ) => {
+            if (!data.postId) return;
+            if (post?.PostID === data.postId) {
+                setPost(prevPost => {
+                    if (prevPost && prevPost._id === data.postId) {
+                        const update: Partial<PostData> = {
+                            Image: [],
+                            Caption: `${prevPost.Type.toUpperCase()} deleted this post.`,
+                            WhoCanComment: 'none',
+                        }
+                        prevPost = { ...prevPost, ...update };
+                        return prevPost;
+                    }
+                    return prevPost;
+                })
+            } else {
+                setComments(prevComments => {
+                    if (prevComments) {
+                      return prevComments.filter(comment => comment._id !== data.postId);
+                    }
+                })
+            }
+        })
+        socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+            if (!data.postId) return;
+            if (post?.PostID === data.postId) {
+                setPost(prevPost => {
+                    if (prevPost && prevPost._id === data.postId) {
+                        prevPost = { ...prevPost, ...data.update };
+                        return prevPost;
+                    }
+                    return prevPost;
+                })
+            } else {
+                setComments(prevComments => {
+                    if (prevComments) {
+                        const index = prevComments.findIndex(post => post.PostID === data.postId);
+                        if (index !== -1) {
+                            prevComments[index] = { ...prevComments[index], ...data.update };
+                            return prevComments;
+                        }
+                    }
+                    return prevComments;
+                })
+            }
+        })
+
+        return () => {
+            socket.off('newComment');
+            // socket.off('deletePost');
+            // socket.off('updatePost');
+        };
     }, [socket])
 
     return (

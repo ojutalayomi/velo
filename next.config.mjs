@@ -80,6 +80,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'post-s.s3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'files-for-chat.s3.amazonaws.com',
         port: '',
         pathname: '/**',

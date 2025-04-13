@@ -302,7 +302,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         </div>
         {/* {showMore} */}
         {(data?.Image.length > 0 && showMedia) &&
-          <MediaSlide postData={data} isLink/>
+          <MediaSlide postData={data} className={`${data?.Image.length > 0 ? 'rounded-xl overflow-auto mb-2' : ''}`} isLink/>
         }
         {/* Post Card */}
         {originalPost  && (
@@ -315,7 +315,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                     <AvatarImage className='pdp cursor-pointer' alt='blogger' src={originalPost.DisplayPicture}/>
                   </Avatar>
                 </div>
-                <div className="w-[90%]">
+                <div className={`w-[90%] ${data?.Image.length > 0 ? 'grid' : ''}`}>
                   <div className="flex items-center col-span-2 flex-wrap">
                     <span className="font-bold dark:text-white mr-1 truncate">{originalPost.NameOfPoster}</span>
                     {originalPost.Verified && (
@@ -340,7 +340,30 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </div>
           </Link>
         )}
-        {window.location.pathname.includes('posts') ? <div className='blog-time'>{timeFormatter(data.TimeOfPost)}</div> : null}
+        {window.location.pathname.includes('posts') ? (
+          <>
+          <div className='blog-time border-t pt-1'>{timeFormatter(data.TimeOfPost)}</div>
+          <div className='border-b flex flex-row flex-wrap justify-start items-center gap-2 text-xs pb-1'>
+            <div className='flex flex-row items-center gap-1'>
+              <span>{formatNo(data.NoOfLikes)}</span>
+              <span>{data.NoOfLikes > 0 ? 'Like' : 'Likes'}</span>
+            </div>
+            <div className='flex flex-row items-center gap-1'>
+              <span>{formatNo(data.NoOfComment)}</span>
+              <span>{data.NoOfComment > 0 ? 'Comment' : 'Comments'}</span>
+            </div>
+            <div className='flex flex-row items-center gap-1'>
+              <span>{formatNo(data.NoOfShares)}</span>
+              <span>{data.NoOfShares > 0 ? 'Share' : 'Shares'}</span>
+            </div>
+            <div className='flex flex-row items-center gap-1'>
+              <span>{formatNo(data.NoOfBookmarks)}</span>
+              <span>{data.NoOfBookmarks > 0 ? 'Bookmark' : 'Bookmarks'}</span>
+            </div>
+          </div>
+          </>
+        ) : null}
+        {/* <Blog Footer> */}
         <div className='reaction-panel'>
           <div className='blog-foot' id='like'>
             <svg className={data.Liked ? 'like-icon clicked' : 'like-icon'} width='30px' height='30px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg' onClick={() => handleClick('liked')}>
@@ -419,11 +442,11 @@ function Options({options, open, setOpen} : {options: Option[], open: boolean, s
       </DrawerContent>
     </Drawer>
 
-    <Popover open={isPopoverOpen} onOpenChange={handlePopoverChange}>
+    <Popover open={isPopoverOpen} onOpenChange={handlePopoverChange} modal>
       <PopoverTrigger asChild>
         <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 hidden tablets:block' onClick={() => setOpen(true)}/>
       </PopoverTrigger>
-      <PopoverContent className='bg-white hidden tablets:block dark:bg-zinc-800 w-auto space-y-2 mt-1 mr-2 p-2 rounded-md shadow-lg z-10'>
+      <PopoverContent className='bg-white hidden tablets:block dark:bg-zinc-800 w-auto space-y-2 mt-1 mr-2 p-2 rounded-md shadow-lg z-50'>
         {options.map(({ icon, text, onClick }, index) => (
           <div key={index} className='flex gap-1 items-center cursor-pointer hover:bg-slate-200 hover:dark:bg-zinc-700 p-1 rounded-md'>
             {icon}
@@ -437,7 +460,7 @@ function Options({options, open, setOpen} : {options: Option[], open: boolean, s
 }
 
 
-function RenderLoadingPlaceholder() {
+export function RenderLoadingPlaceholder() {
   return (
     <div className="flex flex-col space-y-3 cursor-progress m-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
       <div className='flex items-center justify-start gap-2'>

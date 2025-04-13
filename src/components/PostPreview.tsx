@@ -50,10 +50,10 @@ const PostPreview: React.FC = () => {
   
 
   const fetchData = useCallback(async () => {
-    setpostLoading(true);
 
     try {
       if(id && !post) {
+        setpostLoading(true);
         const postResponse = await getPost(id);
         dispatch(addPost(postResponse.post));
         dispatch(setPostPreview(postResponse));
@@ -73,9 +73,17 @@ const PostPreview: React.FC = () => {
   }, [post?.Image])
 
   useEffect(() => {
-    if (toFetch) fetchData();
+    fetchData();
+  }, [id]);
+
+  useEffect(() => {
+    // if (toFetch) fetchData();
     if (reload) fetchData();
-  }, [params, id, reload, fetchData, toFetch]);
+  }, [reload]);
+
+  useEffect(() => {
+   
+  }, [posts]);
 
   const onSlideChange = () => {
     if (swiper) {
@@ -119,12 +127,35 @@ const PostPreview: React.FC = () => {
   };
 
   const handleComment = () => {
-    if (!post || !id || !userdata._id) return;
+    if (!post || !id || !userdata._id || !socket) return;
     
     if (replyText.trim()) {
-      dispatch(updatePost({ id: id, updates: { NoOfComment: post.NoOfComment + 1 }}));
+      const Post: PostData = {
+        _id: "",
+        UserId: "",
+        DisplayPicture: "",
+        NameOfPoster: "",
+        Verified: false,
+        TimeOfPost: new Date().toISOString(),
+        Visibility: 'everyone',
+        Caption: replyText,
+        Image: [''],
+        NoOfLikes: 0,
+        Liked: false,
+        NoOfComment: 0,
+        NoOfShares: 0,
+        NoOfBookmarks: 0,
+        Bookmarked: false,
+        Username: "",
+        PostID: "",
+        Code: "",
+        WhoCanComment: 'everyone',
+        Shared: false,
+        Type: 'comment',
+        ParentId: post ? post.PostID : ''
+      }
+      socket.emit('post', Post)
       setReplyText('');
-      console.log('New comment:', replyText);
     }
   };
 
@@ -229,14 +260,15 @@ const LeftSideBar = (
   { className?: string, id: string, replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void, props?: HTMLDivElement }
 ) => {
   const { userdata } = useUser();
+  const socket = useSocket();
   const post = useSelector((state: RootState) => state.posts.posts.find(post => post.PostID === id)) as PostData;
   const [comments, setComments] = useState<Comments['comments']>();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if(id){
+      setLoading(true);
       try {
         const commentsResponse = await getComments(id);
         setComments(commentsResponse.comments);
@@ -250,7 +282,48 @@ const LeftSideBar = (
 
   useEffect(() => {
     fetchData();
-  }, [id, fetchData]);
+  }, [id]);
+
+  useEffect(() => {
+    if(!socket || !post) return;
+    socket.on('newComment', (data: { excludeUser: string, blog: PostData }) => {
+        setComments(prevComments => {
+            if (prevComments) {
+              return [...prevComments, data.blog];
+            }
+            return [data.blog];
+        })
+    })
+    socket.on('deletePost', ( data: { excludeUser: string, postId: string, type: string } ) => {
+      console.log(data)
+        if (!data.postId) return;
+        setComments(prevComments => {
+          if (prevComments) {
+            return prevComments.filter(comment => comment._id !== data.postId);
+          }
+      })
+    })
+    socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+      console.log(data)
+        if (!data.postId) return;
+        setComments(prevComments => {
+          if (prevComments) {
+              const index = prevComments.findIndex(post => post.PostID === data.postId);
+              if (index !== -1) {
+                  prevComments[index] = { ...prevComments[index], ...data.update };
+                  return prevComments;
+              }
+          }
+          return prevComments;
+      })
+    })
+
+    return () => {
+        socket.off('newComment');
+        // socket.off('deletePost');
+        // socket.off('updatePost');
+    };
+  }, [socket])
 
   return (
     <div className={cn('min-h-screen hidden md:block flex-1 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50', className)} {...props}>

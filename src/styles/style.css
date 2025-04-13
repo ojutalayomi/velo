@@ -227,7 +227,7 @@
   padding: 0 10px;
 }
 .pre-blog .blog .reaction-panel .blog-foot {
-  gap: 10px;
+  gap: 4px;
   cursor: pointer;
 }
 .pre-blog .blog .reaction-panel .blog-foot .clicked {

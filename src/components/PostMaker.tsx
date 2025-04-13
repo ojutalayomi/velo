@@ -189,7 +189,8 @@ export default function PostMaker(
                 post: quote
             });
         } else {
-            const post: PostData = {
+            if(!post && type === 'comment') return;
+            const Post: PostData = {
                 _id: "",
                 UserId: "",
                 DisplayPicture: "",
@@ -211,16 +212,16 @@ export default function PostMaker(
                 WhoCanComment: visibility as PostData['WhoCanComment'],
                 Shared: false,
                 Type: type,
-                ParentId: ""
+                ParentId: post ? post.PostID : ''
             }
-            socket.emit('post', post)
+            socket.emit('post', Post)
         }
   
       } catch (error: any) {
         console.log(error)
       } finally {
         setFiles([]);
-        if (type !== 'quote') router.back();
+        if (type === 'post') router.back();
         else onOpenChange(false);
         setIsPosting(false)
       }
@@ -402,7 +403,7 @@ export default function PostMaker(
                                     ))}
                                 </div>
             
-                                <Button disabled={!txtButton || text.length === textLimit || !text.length} onClick={handlePost} className="bg-brand hover:bg-brand/60 text-white w-full my-2 tablets:w-auto tablets:my-0 font-bold py-2 px-6 rounded-full transition-all duration-200 transform hover:scale-105">
+                                <Button disabled={!txtButton || text.length > textLimit || !text.length} onClick={handlePost} className="bg-brand hover:bg-brand/60 text-white w-full my-2 tablets:w-auto tablets:my-0 font-bold py-2 px-6 rounded-full transition-all duration-200 transform hover:scale-105">
                                     {isPosting ? 'Posting...' : 'Post'}
                                     {isPosting && <Loader2 className='animate-spin ml-2' size={16} />}
                                 </Button>

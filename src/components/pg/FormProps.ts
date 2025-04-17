@@ -2,6 +2,7 @@ export interface FormData {
     firstname: string;
     lastname: string;
     email: string;
+    displayPicture: string;
     username: string;
     password: string;
     confirmPassword: string;

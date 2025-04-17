@@ -1,5 +1,5 @@
 import { jwtVerify } from 'jose';
-import { getMongoClient } from "@/lib/mongodb";
+import { getMongoDb } from "@/lib/mongodb";
 import { ObjectId } from "bson";
 import { SignJWT } from "jose";
 import { AuthOptions as NextAuthOptions, User, Account, Profile } from "next-auth";
@@ -41,8 +41,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }: { user: User | AdapterUser; account: Account | null; profile?: Profile | undefined; email?: { verificationRequest?: boolean | undefined; } | undefined; credentials?: Record<string, unknown> | undefined; }) {
       try {
-        const client = await getMongoClient();
-        const db = client.db('mydb');
+        const db = await getMongoDb();
         const users = db.collection("Users");
 
         // Check if user exists
@@ -71,7 +70,7 @@ export const authOptions: NextAuthOptions = {
               }}
             );
           }
-          const tokenCollection = client.db('mydb').collection('Tokens');
+          const tokenCollection = db.collection('Tokens');
           const secret = new TextEncoder().encode(process.env.JWT_SECRET);
           const token = await new SignJWT({ _id: existingUser._id })
             .setProtectedHeader({ alg: 'HS256' })
@@ -121,8 +120,8 @@ export const authOptions: NextAuthOptions = {
           isEmailConfirmed: true,
           signUpCount: 1,
           verified: true,
-          followers: [],
-          following: [],
+          followers: 0,
+          following: 0,
           lastUpdate: [],
           bio: '',
           coverPhoto: '',
@@ -134,7 +133,7 @@ export const authOptions: NextAuthOptions = {
         };
 
         await users.insertOne(newUser);
-        const tokenCollection = client.db('mydb').collection('Tokens');
+        const tokenCollection = db.collection('Tokens');
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const token = await new SignJWT({ _id: newUser._id })
           .setProtectedHeader({ alg: 'HS256' })
@@ -171,8 +170,7 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, user }: { session: any; user: User | AdapterUser; }) {
       try {
-        const client = await getMongoClient();
-        const db = client.db('mydb');
+        const db = await getMongoDb();
         const dbUser = await db.collection("Users").findOne({ email: user.email });
 
         if (dbUser) {

@@ -4,11 +4,23 @@ import { Link, BadgeX, Loader, X } from "lucide-react";
 import { generateCode } from "./action";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 export default function FailedPage() {
+    const searchParams = useSearchParams();
+    const errorMessage = searchParams?.get('message');
     const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
+
+    useEffect(() => {
+        if (!errorMessage) return;
+        toast({
+            title: 'Error',
+            description: errorMessage,
+        })
+    }, [errorMessage])
 
     useEffect(() => {
         setTimeout(() => {

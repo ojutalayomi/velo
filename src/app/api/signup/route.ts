@@ -5,7 +5,7 @@ import { UAParser } from 'ua-parser-js'
 import bcrypt from 'bcrypt'
 import validator from 'validator'
 import { v4 as uuidv4 } from 'uuid'
-import { getMongoClient } from '@/lib/mongodb'
+import { getMongoDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 import { confirmationEmail } from '@/lib/email'
 
@@ -19,13 +19,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const time = new Date().toISOString();
-    const { firstname, lastname, email, username, password, file } = body;
+    const { firstname, lastname, email, username, password, displayPicture } = body;
     const userId = uuidv4();
     const saltRounds = 10;
-    const client = await getMongoClient();
+    const db = await getMongoDb();
 
-    const collection = client.db('mydb').collection('Users');
-    const tokenCollection = client.db('mydb').collection('Tokens');
+    const collection = db.collection('Users');
+    const tokenCollection = db.collection('Tokens');
 
     if (!validator.isEmail(email)) {
         console.log(`Received an invalid email: ${email}`);
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
                 firstname: firstname,
                 lastname: lastname,
                 password: hashedPassword,
-                displayPicture: file,
+                displayPicture: displayPicture,
                 isEmailConfirmed: false, // Set to false to trigger email confirmation
                 confirmationToken: confirmationToken
             };
@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
                 { $set: updateFields, $inc: { signUpCount: 1 } }, // Increment signUpCount
                 { upsert: false }
             );
+
+            await confirmationEmail(email, firstname, lastname, BaseUrl + "accounts/confirm-email/" + confirmationToken);
+            return NextResponse.json({ message: 'Confirmation email sent.' }, { status: 200 });
 
 
         } else {
@@ -99,10 +102,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: error }, { status: 409 });
         }
 
-    }
-
-
-    if (!result) {
+    } else {
         const user: { password?: string, confirmationToken?: string } & Record<string, any> = {
             _id: new ObjectId(),
             time: time,
@@ -113,13 +113,13 @@ export async function POST(request: NextRequest) {
             email: email,
             username: username,
             password: hashedPassword,
-            displayPicture: file,
+            displayPicture: displayPicture,
             isEmailConfirmed: false,
             confirmationToken: confirmationToken,
             signUpCount: 1,
             verified: false,
-            followers: [],
-            following: [],
+            followers: 0,
+            following: 0,
             lastUpdate: [],
             bio: '',
             coverPhoto: '',

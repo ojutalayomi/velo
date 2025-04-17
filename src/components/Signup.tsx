@@ -13,6 +13,7 @@ const initialFormData: FormData = {
   firstname: '',
   lastname: '',
   email: '',
+  displayPicture: '',
   username: '',
   password: '',
   confirmPassword: '',

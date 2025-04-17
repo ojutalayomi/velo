@@ -36,7 +36,7 @@ const PostPreview: React.FC = () => {
   const dispatch = useDispatch();
   const socket = useSocket();
   const {message} = useSelector((state: RootState) => state.posts.postPreview)
-  const posts = useSelector((state: RootState) => state.posts.posts);
+  const { posts, loading } = useSelector((state: RootState) => state.posts);
   const post = posts.find(post => post.PostID === id) as PostData
   const [toFetch, setToFetch] = useState<boolean>(true)
   const indexInt = parseInt(index || '0');
@@ -44,41 +44,54 @@ const PostPreview: React.FC = () => {
   const [swiper, updateSwiper] = useState<SwiperCore | null>(null);
   const [currentIndex, setCurrentIndex] = useState(indexInt)
   const [reload, setReload] = useState<boolean>(false);
-  const [postLoading, setpostLoading] = useState<boolean>(true);
-  const [postError, setpostError] = useState<string | null>(null);
+  const [postLoading, setPostLoading] = useState<boolean>(true);
+  const [postError, setPostError] = useState<string | null>(null);
+  const [currentPost, setCurrentPost] = useState<PostData | null>(null);
   const [replyText, setReplyText] = useState('');
   
 
-  const fetchData = useCallback(async () => {
-
+  const fetchPost = useCallback(async () => {
     try {
-      if(id && !post) {
-        setpostLoading(true);
-        const postResponse = await getPost(id);
-        dispatch(addPost(postResponse.post));
-        dispatch(setPostPreview(postResponse));
-      }
+      setPostLoading(true);
+      const postResponse = await getPost(id!); // Fetch the post by ID
+      if (postResponse.post.Type !== 'comment') dispatch(addPost(postResponse.post)); // Add the post to the Redux store
+      setCurrentPost(postResponse.post); // Set the fetched post to currentPost
     } catch (error) {
-      setpostError((error as Error).message);
+      setPostError((error as Error).message);
     } finally {
-      setpostLoading(false);
+      setPostLoading(false);
     }
-  }, [id])
-
-  const checkLength = useCallback(() => {
-    if(post?.Image) {
-      return post?.Image.length > 1;
-    }
-    return false;
-  }, [post?.Image])
+  }, [id, dispatch]);
 
   useEffect(() => {
-    fetchData();
-  }, [id]);
+    if (!loading) {
+      if (post) {
+        // If the post is already available in the Redux store, set it to currentPost
+        setCurrentPost(post);
+        setPostLoading(false);
+      } else if (id) {
+        // If the post is not available, fetch it
+        fetchPost();
+      }
+    }
+  }, [loading, post, id, fetchPost]);
+
+  useEffect(() => {
+    if (currentPost) {
+      // console.log('Current post is set:', currentPost);
+    }
+  }, [currentPost]);
+
+  const checkLength = useCallback(() => {
+    if(currentPost?.Image) {
+      return currentPost?.Image.length > 1;
+    }
+    return false;
+  }, [currentPost?.Image])
 
   useEffect(() => {
     // if (toFetch) fetchData();
-    if (reload) fetchData();
+    if (reload) fetchPost();
   }, [reload]);
 
   useEffect(() => {
@@ -89,7 +102,7 @@ const PostPreview: React.FC = () => {
     if (swiper) {
       if (swiper.activeIndex !== indexInt) {
         setToFetch(false);
-        router.push(`/${post?.Username}/posts/${post?.PostID}/photo/${swiper.activeIndex}`);
+        router.push(`/${currentPost?.Username}/posts/${currentPost?.PostID}/photo/${swiper.activeIndex}`);
       }
     }
   };
@@ -119,7 +132,7 @@ const PostPreview: React.FC = () => {
   const handleReshare = () => {
     if (!post || !id || !userdata._id) return;
     
-    if (post?.Shared) {
+    if (currentPost?.Shared) {
       dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares - 1, Shared: false }}));
     } else {
       dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares + 1, Shared: true }}));
@@ -162,7 +175,7 @@ const PostPreview: React.FC = () => {
   const handleBookmark = () => {
     if (!post || !id || !userdata._id) return;
     
-    if (post?.Bookmarked) {
+    if (currentPost?.Bookmarked) {
       dispatch(updatePost({ id: id, updates: { NoOfBookmarks: post.NoOfBookmarks - 1, Bookmarked: false }}));
       socket?.emit('reactToPost', {
         type: "unbookmark",
@@ -187,6 +200,38 @@ const PostPreview: React.FC = () => {
     }
   }, [indexInt, swiper]);
 
+  useEffect(() => {
+    if(!socket || !currentPost) return;
+    socket.on('deletePost', ( data: { excludeUser: string, postId: string, type: string } ) => {
+      if (!data.postId) return;
+      if (posts.find(post => post.PostID === data.postId)) {
+          setCurrentPost(prevPost => {
+              if (prevPost && prevPost._id === data.postId) {
+                  const update: Partial<PostData> = {
+                      Image: [],
+                      Caption: `${prevPost.Type.toUpperCase()} deleted this post.`,
+                      WhoCanComment: 'none',
+                  }
+                  prevPost = { ...prevPost, ...update };
+                  return prevPost;
+              }
+              return prevPost;
+          })
+      }
+    })
+    socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+        if (!data.postId) return;
+        if (posts.find(post => post.PostID === data.postId)) {
+            setCurrentPost(prevPost => {
+                if (prevPost && prevPost._id === data.postId) {
+                    prevPost = { ...prevPost, ...data.update };
+                    return prevPost;
+                }
+                return prevPost;
+            })
+        }
+    })
+  }, [socket])
 
   return (
     <div className="fixed flex top-0 left-0 z-50 bg-gray-50 dark:bg-black dark:text-white h-screen w-screen">
@@ -221,25 +266,25 @@ const PostPreview: React.FC = () => {
             <button className="text-gray-400 flex items-center" 
               onClick={() => {
                 console.log('Open comments')
-                router.push(`/${post?.Username}/posts/${post?.PostID}`)
+                router.push(`/${currentPost?.Username}/posts/${currentPost?.PostID}`)
               }}
             >
               <MessageCircle size={24} />
-              <span className="ml-1">{formatNo(post?.NoOfComment) || 0}</span>
+              <span className="ml-1">{formatNo(currentPost?.NoOfComment ?? 0)}</span>
             </button>
             <ShareButton post={post}>
-              <span className={`text-gray-400 flex items-center ${post?.Shared ? 'text-green-500' : ''}`} onClick={handleReshare}>
+              <span className={`text-gray-400 flex items-center ${currentPost?.Shared ? 'text-green-500' : ''}`} onClick={handleReshare}>
                 <Repeat2 size={24} />
-                <span className="ml-1">{formatNo(post?.NoOfShares) || 0}</span>
+                <span className="ml-1">{formatNo(currentPost?.NoOfShares ?? 0)}</span>
               </span>
             </ShareButton>
-            <button className={`flex items-center ${post?.Liked ? 'text-brand' : 'text-gray-400'}`} onClick={handleLike}>
-              <Heart size={24} fill={post?.Liked ? 'currentColor' : 'none'} />
-              <span className="ml-1">{formatNo(post?.NoOfLikes) || 0}</span>
+            <button className={`flex items-center ${currentPost?.Liked ? 'text-brand' : 'text-gray-400'}`} onClick={handleLike}>
+              <Heart size={24} fill={currentPost?.Liked ? 'currentColor' : 'none'} />
+              <span className="ml-1">{formatNo(currentPost?.NoOfLikes ?? 0)}</span>
             </button>
-            <button className={`flex items-center ${post?.Bookmarked ? 'text-brand' : 'text-gray-400'}`} onClick={handleBookmark}>
-              <Bookmark size={24} fill={post?.Bookmarked ? 'currentColor' : 'none'}/>
-              <span className="ml-1">{formatNo(post?.NoOfBookmarks) || 0}</span>
+            <button className={`flex items-center ${currentPost?.Bookmarked ? 'text-brand' : 'text-gray-400'}`} onClick={handleBookmark}>
+              <Bookmark size={24} fill={currentPost?.Bookmarked ? 'currentColor' : 'none'}/>
+              <span className="ml-1">{formatNo(currentPost?.NoOfBookmarks ?? 0)}</span>
             </button>
           </div>
         </div>
@@ -248,7 +293,7 @@ const PostPreview: React.FC = () => {
         {/* Reply input */}
         <ReplyTextArea className='md:hidden' replyText={replyText} setReplyText={setReplyText} handleComment={handleComment}/>
       </div>
-      <LeftSideBar id={id || ''} replyText={replyText} setReplyText={setReplyText} handleComment={handleComment} className='flex-none w-1/3'/>
+      <LeftSideBar id={id || ''} currentPost={currentPost} replyText={replyText} setReplyText={setReplyText} handleComment={handleComment} className='flex-none w-1/2 md:w-2/5 lg:w-1/3'/>
     </div>
   );
 };
@@ -256,12 +301,11 @@ const PostPreview: React.FC = () => {
 export default PostPreview;
 
 const LeftSideBar = (
-  { className, id, replyText, setReplyText, handleComment, ...props }: 
-  { className?: string, id: string, replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void, props?: HTMLDivElement }
+  { className, currentPost, id, replyText, setReplyText, handleComment, ...props }: 
+    { className?: string, currentPost: PostData | null, id: string, replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void, props?: HTMLDivElement }
 ) => {
   const { userdata } = useUser();
   const socket = useSocket();
-  const post = useSelector((state: RootState) => state.posts.posts.find(post => post.PostID === id)) as PostData;
   const [comments, setComments] = useState<Comments['comments']>();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -285,7 +329,7 @@ const LeftSideBar = (
   }, [id]);
 
   useEffect(() => {
-    if(!socket || !post) return;
+    if(!socket || !currentPost) return;
     socket.on('newComment', (data: { excludeUser: string, blog: PostData }) => {
         setComments(prevComments => {
             if (prevComments) {
@@ -295,7 +339,7 @@ const LeftSideBar = (
         })
     })
     socket.on('deletePost', ( data: { excludeUser: string, postId: string, type: string } ) => {
-      console.log(data)
+      // console.log(data)
         if (!data.postId) return;
         setComments(prevComments => {
           if (prevComments) {
@@ -304,7 +348,7 @@ const LeftSideBar = (
       })
     })
     socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
-      console.log(data)
+      // console.log(data)
         if (!data.postId) return;
         setComments(prevComments => {
           if (prevComments) {
@@ -319,9 +363,9 @@ const LeftSideBar = (
     })
 
     return () => {
-        socket.off('newComment');
-        // socket.off('deletePost');
-        // socket.off('updatePost');
+      socket.off('newComment');
+      // socket.off('deletePost');
+      // socket.off('updatePost');
     };
   }, [socket])
 
@@ -341,9 +385,9 @@ const LeftSideBar = (
         </div>
 
         {/* Post Section */}
-        {post
+        {currentPost
         ?
-        <PostCard key={generateRandomToken(10)} showMedia={false} postData={post}/>
+        <PostCard key={generateRandomToken(10)} showMedia={false} postData={currentPost}/>
         :
         <RenderLoadingPlaceholder/>
         }
@@ -352,7 +396,7 @@ const LeftSideBar = (
         <ReplyTextArea replyText={replyText} setReplyText={setReplyText} handleComment={handleComment}/>
 
         {/* Comments Section */}
-        {comments
+        {(comments && !loading)
         ?
         comments.map(comment => <PostCard key={generateRandomToken(10)} postData={comment}/>)
         :

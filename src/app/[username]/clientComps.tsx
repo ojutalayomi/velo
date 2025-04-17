@@ -2,22 +2,19 @@
 import { notFound, useRouter } from "next/navigation";
 import { UserSchema } from "@/lib/types/type";
 import PostCard from "@/components/PostCard";
-import { PostData } from "@/templates/PostProps";
+import { PostData, timeFormatter } from "@/templates/PostProps";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
 import { Statuser } from "@/components/VerificationComponent";
-import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Cake, Ellipsis, Link, Pin } from "lucide-react";
 import LeftSideBar from "@/components/LeftSideBar";
 import { navigate } from "@/lib/utils";
+import ContentSection from "./ContentTabs";
+import { useUser } from "../providers/UserProvider";
 
 export default function Profile({ userData, userPostCard }: { userData: UserSchema, userPostCard: PostData[] }) {
-    const hostname = 'https://s3.amazonaws.com/profile-display-images/';
-    const hostname1 = 'https://s3.amazonaws.com/profile-banner-images/';
     const router = useRouter()
-    const user = useSelector((state: RootState) => state.user.userdata)
+    const {userdata, loading} = useUser()
 
     if (!userData) {
         notFound();
@@ -40,7 +37,7 @@ export default function Profile({ userData, userPostCard }: { userData: UserSche
                 <div className="h-48 w-full bg-gray-200 dark:bg-gray-800 relative">
                     {userData.coverPhoto && (
                         <Avatar className="h-full w-full object-cover rounded-none">
-                            <AvatarImage className="w-full h-full rounded-none object-cover aspect-auto" src={hostname1+userData.coverPhoto} />
+                            <AvatarImage className="w-full h-full rounded-none object-cover aspect-auto" src={userData.coverPhoto} />
                             <AvatarFallback className="w-full h-full rounded-none">
                                 {userData.firstname && userData.lastname ? userData.firstname[0] + userData.lastname[0] + ' • Velo' : 'Velo'}
                             </AvatarFallback>
@@ -61,20 +58,15 @@ export default function Profile({ userData, userPostCard }: { userData: UserSche
                         </div>
                     </div>
 
-                    {/* Profile Info */}
-                    <div className="pt-20 pb-8">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <h1 className="text-2xl font-bold dark:text-white">{userData.name}</h1>
-                                    {userData.verified && (
-                                        <Statuser className="size-4"/>
-                                    )}
-                                </div>
-                                <p className="text-gray-600 dark:text-gray-400">@{userData.username}</p>
+                    <div className="absolute -top-4 right-4 flex items-center gap-2">
+                        {userData._id as unknown as string !== userdata._id && (
+                            <div className="rounded-full p-1 border-2 bg-white dark:bg-black border-white dark:border-black/85 overflow-hidden">
+                                <Ellipsis className="size-6" />
                             </div>
-                            {userData._id as unknown as string === user._id ?
-                            <Button onClick={() => router.push(`/${user.username}/edit`)} className="px-4 py-2 bg-brand/90 text-white rounded-full hover:bg-brand/80">
+                        )}
+                        <div className="rounded-full border-2 border-white dark:border-black overflow-hidden">
+                            {userData._id as unknown as string === userdata._id ?
+                            <Button onClick={() => router.push(`/${userData.username}/edit`)} className="px-4 py-2 bg-brand/90 text-white rounded-full hover:bg-brand/80">
                                 Edit profile
                             </Button> :
                             <Button className="px-4 py-2 bg-brand/90 text-white rounded-full hover:bg-brand/80">
@@ -82,28 +74,53 @@ export default function Profile({ userData, userPostCard }: { userData: UserSche
                             </Button>
                             }
                         </div>
+                    </div>
+
+                    {/* Profile Info */}
+                    <div className="pt-16 pb-2">
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <div className="flex items-center gap-1">
+                                    <h1 className="text-xl font-bold dark:text-white">{userData.name}</h1>
+                                    {userData.verified && (
+                                        <Statuser className="size-4"/>
+                                    )}
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-400">@{userData.username}</p>
+                            </div>
+                        </div>
 
                         {/* Bio & Stats */}
                         {userData.bio && (
-                            <p className="text-gray-800 dark:text-gray-200 mb-4">{userData.bio}</p>
+                            <p className="text-gray-800 dark:text-gray-200">{userData.bio}</p>
                         )}
+                        <div className="flex gap-4 flex-wrap">
+                            {userData.location && (
+                                <span className="text-gray-600 dark:text-gray-400 !ml-0 flex items-center gap-1"><Pin className="size-4" /> {userData.location}</span>
+                            )}
+                            {userData.dob && (
+                                <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1"><Cake className="size-4" /> {timeFormatter(new Date(userData.dob).toISOString(), false)}</span>
+                            )}
+                            {userData.website && (
+                                <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                    <Link className="size-4" />
+                                    <a href={userData.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                        {userData.website.replace("https://", "")}
+                                    </a>
+                                </span>
+                            )}
+                        </div>
+                        {/* Stats */}
                         <div className="flex gap-6 text-gray-600 dark:text-gray-400">
                             <span>{userData.followers?.length || 0} followers</span>
                             <span>{userData.following?.length || 0} following</span>
                             <span>{userPostCard.length} posts</span>
                         </div>
                     </div>
-
-                    {/* PostCard Grid */}
-                    <div className="grid grid-cols-1 gap-4">
-                        {userPostCard.map((post, index) => (
-                            <div key={post.PostID + index} className={`w-full h-fit rounded-xl bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md transition-shadow`}>
-                               <PostCard postData={post} />
-                            </div>
-                        ))}
-                    </div>
                 </div>
+                <ContentSection posts={userPostCard}/>
             </div>
+
             <LeftSideBar />
         </div>
     );

@@ -40,13 +40,14 @@ export const confirmationEmail = async (email: string, firstname: string, lastna
         html: template({
             subject: 'Email Confirmation',
             heading: 'Confirm Your Email Address',
-            message: `Please confirm your email address by clicking the link below.`,
+            message: `Please confirm your email address by clicking the button below.`,
             firstname: firstname,
             lastname: lastname,
             display: 'block',
             imageAlt: 'Confirmation Image',
-            imageSrc: 'https://ojutalayomi.github.io/feetbook/velo/public/velo11.png',
-            confirmationLink: confirmationLink
+            imageSrc: 'https://velo-virid.vercel.app/velo11.png',
+            link: confirmationLink,
+            Click: "Confirm Email",
         }),
     })
 

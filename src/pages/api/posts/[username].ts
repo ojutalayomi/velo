@@ -26,10 +26,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { UserId: user._id.toString() },
             { Username: user.username}
         ] }).toArray();
+
+        
+        const comments = await db.collection('Posts_Comments').find({ UserId: user._id.toString() }).toArray();
         const shares = await db.collection('Posts_Shares').find({ UserId: user._id.toString() }).toArray();
 
         // Combine all results into a single array
-        const combinedPosts = [...userPosts, ...shares];
+        const combinedPosts = [...userPosts, ...comments, ...shares];
 
         // Sort the combined posts by a common field (e.g., `TimeOfPost`) if needed
         combinedPosts.sort((a, b) => new Date(b.TimeOfPost).getTime() - new Date(a.TimeOfPost).getTime());

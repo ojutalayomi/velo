@@ -75,16 +75,18 @@ const Homepage: React.FC = () => {
                         ))
                     )}
                     {(!loading && !load) && (
-                        (success && success.length > 0) && success.map((status: string, index: number) => (
-                            <div 
-                                key={index} 
-                                id={`status-${index}`} 
-                                className='status-child rounded-full size-10 ring-4 ring-brand' 
-                                style={{ 
-                                    backgroundImage: `url(${status})`
-                                }} 
-                            />
-                        ))
+                        (success && success.length > 0) && success.map((status: string, index: number) => {
+                            return (
+                                <div 
+                                    key={index} 
+                                    id={`status-${index}`} 
+                                    className='status-child rounded-full size-10 ring-4 ring-brand' 
+                                    style={{ 
+                                        backgroundImage: `url(${!status.includes('/') ? '/default.jpeg' : status})`
+                                    }} 
+                                />
+                            )
+                        })
                     )}
                     {!loading && error && <RefreshCw size={30}/>}
                 </div>

@@ -73,16 +73,16 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 
         function throttle(callback: ThrottleFunction, limit: number): ThrottleFunction {
-        let waiting = false;
-        return function (this: any, ...args: any[]): void {
-            if (!waiting) {
-                callback.apply(this, args);
-                waiting = true;
-                setTimeout(() => {
-                    waiting = false;
-                }, limit);
-            }
-        };
+            let waiting = false;
+            return function (this: any, ...args: any[]): void {
+                if (!waiting) {
+                    callback.apply(this, args);
+                    waiting = true;
+                    setTimeout(() => {
+                        waiting = false;
+                    }, limit);
+                }
+            };
         }
         
         const emitActivity = throttle(() => {

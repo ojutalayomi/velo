@@ -11,6 +11,7 @@ import { useAppDispatch } from '../../redux/hooks';
 import { useSelector } from 'react-redux';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { X } from 'lucide-react';
 
   
 const Third: React.FC = () => {
@@ -101,7 +102,7 @@ const Third: React.FC = () => {
                   }}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                 >
-                  ×
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
             ) : (

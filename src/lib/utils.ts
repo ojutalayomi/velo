@@ -9,12 +9,22 @@ export const generateRandomToken = (length: number) => {
 }
 
 export const navigate = (router: AppRouterInstance, path = '/home') => {
-  if (document.referrer.includes(window.location.origin)) {
-      router.back();
+  const referrer = typeof document !== 'undefined' ? document.referrer : '';
+  const sameOrigin = referrer && referrer.includes(window.location.origin);
+
+  if (sameOrigin && window.history.length > 1) {
+    router.back();
+
+    // Optional fallback in case router.back() does nothing
+    setTimeout(() => {
+      if (window.location.pathname === path || referrer === '') {
+        router.push(path);
+      }
+    }, 300);
   } else {
-      router.push(path);
+    router.push(path);
   }
-}
+};
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -45,17 +55,29 @@ export function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 export const FILE_VALIDATION_CONFIG: FileValidationConfig = {
-    maxFileSize: 10 * 1024 * 1024, // 10MB per file
-    maxTotalSize: 50 * 1024 * 1024, // 50MB total
-    maxFiles: 5, // Maximum 5 files
-    allowedFileTypes: [
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ],
+  maxFileSize: 10 * 1024 * 1024, // 10MB per file
+  maxTotalSize: 50 * 1024 * 1024, // 50MB total
+  maxFiles: 5, // Maximum 5 files
+  allowedFileTypes: [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'image/bmp',
+    'image/tiff',
+    'image/heic',
+    'image/heif',
+    'video/mp4',
+    'video/webm',
+    'video/ogg',
+    'video/avi',
+    'video/mpeg',
+    'video/quicktime',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ],
 };
 export const validateFile = (file: File, config: FileValidationConfig) => {
     // Check file size

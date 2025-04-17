@@ -14,6 +14,7 @@ import Wrapper from '@/components/AccountComponentWrapper';
 import { setUserData } from '@/redux/userSlice';
 import { fetchChats } from '@/redux/chatSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
+import { toast } from '@/hooks/use-toast';
 
 
 const Comps: React.FC = () => {
@@ -79,7 +80,7 @@ const Comps: React.FC = () => {
           if (!uploadResponse.ok) { 
             throw new Error('Failed to upload image');
           } else {
-            dispatch(updateFormData({ file: url + fields.key }));
+            dispatch(updateFormData({ file: null, displayPicture: url + fields.key }));
           }
 
       } else {
@@ -92,6 +93,11 @@ const Comps: React.FC = () => {
 
     } catch (error: any) {
       dispatch(setError1(error.message));
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      })
     } finally {
       dispatch(setLoading(false));
     }

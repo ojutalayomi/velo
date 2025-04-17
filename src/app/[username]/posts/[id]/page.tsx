@@ -33,7 +33,7 @@ const PostContent: React.FC = () => {
         post: true, 
         comment: true
     });
-    const posts = useSelector((state: RootState) => state.posts.posts);
+    const { posts, loading: postsLoading } = useSelector((state: RootState) => state.posts);
     const [post, setPost] = useState<Post['post']>();
     const [postMessage, setPostMessage] = useState<Post['message']>();
     const [comments, setComments] = useState<Comments['comments']>();
@@ -48,7 +48,7 @@ const PostContent: React.FC = () => {
                     comment: l.comment 
                 }
             });
-            if(params && params.id){
+            if(params && params.id && !postsLoading){
                 try {
                     const available_post = posts.find(post => post.PostID === params.id) as PostData;
                     if (available_post) {
@@ -77,7 +77,7 @@ const PostContent: React.FC = () => {
         };
 
         fetchData();
-    }, [params,params?.id,posts]);
+    }, [params,params?.id,post]);
 
     useEffect(() => {
         const fetchData = async () => {

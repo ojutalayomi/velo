@@ -28,6 +28,7 @@ import { LinkPreview } from '@/components/LinkPreview';
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 import { MediaCollage } from './FilesView';
 import { Statuser } from '@/components/VerificationComponent';
+import { renderTextWithLinks } from '../../components/RenderTextWithLinks';
 
 type Message = {
   _id: string,
@@ -51,36 +52,6 @@ type Option = {
   icon: React.ElementType; // Type for the icon component
   text: string; // Text to display
   onClick: () => void; // Click handler function
-};
-
-export const renderTextWithLinks = (text: string) => {
-  // Regex for matching URLs
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  
-  // Split text into parts (links and non-links)
-  const parts = text.split(urlRegex);
-  
-  // Find all links in the text
-  const links = text.match(urlRegex) || [''];
-  
-  // Merge parts and links back together with proper rendering
-  return parts.map((part, i) => {
-    if (links.includes(part)) {
-      return (
-        <a
-          key={i}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline break-all"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
 };
 
 const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {

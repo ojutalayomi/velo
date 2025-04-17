@@ -3,6 +3,7 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { Statuser } from './VerificationComponent';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { UserData } from '@/redux/userSlice';
 
 interface Props {
   userdata: any,
@@ -27,6 +28,8 @@ export const UserProfileLazyLoader = () => {
 
 const ImageContent: React.FC<Props> = ({userdata,onClick,selectedUsers = []}) => {
     const url = 'https://s3.amazonaws.com/profile-display-images/';
+
+  if (!userdata._id) return <UserProfileLazyLoader />
     return (
       <div className="cursor-pointer px-2 py-1 rounded-full hover:bg-slate-200 hover:dark:bg-zinc-700 transition-colors duration-150 tablets1:duration-300 flex items-center justify-between" onClick={() => onClick(userdata._id)}>
         <div className="flex items-center gap-2">

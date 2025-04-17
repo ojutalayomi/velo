@@ -23,6 +23,7 @@ import { PostData } from '@/templates/PostProps';
 import { addPost, deletePost, updatePost } from '@/redux/postsSlice';
 import { useAnnouncer } from '@/hooks/useAnnouncer';
 import PostMaker from '@/components/PostMaker';
+import { toast } from '@/hooks/use-toast';
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const dispatch = useDispatch();
@@ -143,6 +144,16 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         if (data.userId === userdata._id) return null;
         dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: false } } }));
     }, [dispatch, userdata._id]);
+
+    useEffect(() => {
+        if (!socket || socket.disconnected) {
+            toast({
+                title: 'Socket Disconnected',
+                description: 'Please check your internet connection.',
+                variant: 'destructive',
+            })
+        }
+    }, [socket]);
 
     useEffect(() => {
         if (!socket) return;

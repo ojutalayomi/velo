@@ -15,7 +15,8 @@ import { Skeleton } from "./ui/skeleton";
 import { Input } from "./ui/input";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { renderTextWithLinks } from "@/app/chats/MessageTab";
+import { renderTextWithLinks } from '@/components/RenderTextWithLinks';
+import { EmojiPicker } from "./ui/emoji-picker";
 
 export default function PostMaker(
     {children, open, type = 'post', post, onOpenChange} : 
@@ -32,15 +33,15 @@ export default function PostMaker(
     const [txtButton, setTxtButton] = useState(false);
     const [text, setText] = useState('')
     const [isPosting, setIsPosting] = useState(false)
-    const textLimit = 400
+    const textLimit = userdata.verified ? 1000 : 500; // 1000 for verified users, 500 for others
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
     const buttons = [
-        { icon: Images, label: "Add Image", action: () => imageInputRef?.current?.click() },
-        { icon: ChartBarDecreasing, label: "Add Poll", action: () => console.log("Add Poll") },
-        { icon: Smile, label: "Add Emoji", action: () => console.log("Add Emoji") },
-        { icon: Clock4, label: "Schedule Post", action: () => console.log("Schedule Post") },
-        { icon: MapPin, label: "Add Location", action: () => console.log("Add Location") },
+        { id: 'media', icon: Images, label: "Add Images or Videos", action: () => imageInputRef?.current?.click() },
+        { id: 'poll', icon: ChartBarDecreasing, label: "Add Poll", action: () => console.log("Add Poll") },
+        { id: 'emoji', icon: Smile, label: "Add Emoji", action: () => {} },
+        { id: 'schedule', icon: Clock4, label: "Schedule Post", action: () => console.log("Schedule Post") },
+        { id: 'location', icon: MapPin, label: "Add Location", action: () => console.log("Add Location") },
     ];
 
     const handleImageClick = (file: File) => {
@@ -227,6 +228,9 @@ export default function PostMaker(
       }
     };
     
+    if (!userdata._id) {
+        return <SignInPrompt open={open} onClose={() => onOpenChange(false)} />;
+    }
   
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -303,7 +307,7 @@ export default function PostMaker(
                 {/* Fullscreen Image Modal */}
                 {fullscreenImage && (
                     <Dialog open={!!fullscreenImage} onOpenChange={closeFullscreen}>
-                        <DialogContent className="bg-transparent dialogCloseBtnHide border-0 h-screen max-w-none flex items-center justify-center">
+                        <DialogContent className="bg-transparent dialogCloseBtnHide border-0 gap-0 h-screen max-w-none flex items-center justify-center">
                             <DialogTitle className='text-center'></DialogTitle>
                             <DialogClose className="absolute top-4 right-4 text-white">
                                 <X size={24} />
@@ -388,12 +392,16 @@ export default function PostMaker(
                                         <TooltipProvider key={button.label+index}>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <button
-                                                        onClick={button.action}
-                                                        className="text-brand hover:bg-brand/90 group p-2 rounded-full transition-all duration-200"
-                                                    >
-                                                        <button.icon size={16} className="group-hover:text-white" />
-                                                    </button>
+                                                    {button.id === 'emoji' ? (
+                                                        <EmojiPicker onChange={(emoji: string) => setText(prev => prev + emoji)} />
+                                                    ) : (
+                                                        <button
+                                                            onClick={button.action}
+                                                            className="text-brand hover:bg-brand/90 group p-2 rounded-full transition-all duration-200"
+                                                        >
+                                                            <button.icon size={16} className="group-hover:text-white" />
+                                                        </button>
+                                                    )}
                                                 </TooltipTrigger>
                                                 <TooltipContent className="shadow-lg">
                                                     <span>{button.label}</span>
@@ -459,4 +467,34 @@ function MiniPostCard({ post, type = 'post' }: { post: PostData, type?: PostData
             </div>
         </div>
     )
+}
+
+function SignInPrompt({ open, onClose }: { open: boolean; onClose: () => void }) {
+    const router = useRouter();
+    const { userdata } = useUser();
+
+    useEffect(() => {
+        if (userdata._id) {
+            onClose();
+        }
+    }, [userdata, onClose]);
+
+    return (
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="bg-white dark:bg-zinc-900">
+                <DialogTitle className="text-center text-brand font-bold">Sign In Required</DialogTitle>
+                <DialogDescription className="text-center text-gray-500 mt-2">
+                    You need to sign in or sign up to create a post.
+                </DialogDescription>
+                <DialogFooter className="flex justify-center mt-4">
+                    <Button onClick={() => router.push("/signin")} className="bg-brand text-white">
+                        Sign In
+                    </Button>
+                    <Button onClick={() => router.push("/signup")} className="ml-2 bg-gray-500 text-white">
+                        Sign Up
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 }

@@ -51,9 +51,9 @@ export function formatNo(no: number) {
   }
 }
 
-export function timeFormatter(Time: string) {
+export function timeFormatter(Time: string, hour = true) {
   const date = moment(Time, moment.ISO_8601);
-  const formattedDate = date.format('MMM D, YYYY h:mm:ss A');
+  const formattedDate = date.format('MMM D, YYYY' + (hour ? ',  h:mm:ss A' : ''));
   return formattedDate;
 }
 

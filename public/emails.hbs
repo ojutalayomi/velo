@@ -15,7 +15,7 @@
     .button {
       display: inline-block;
       padding: 10px 20px;
-      background-color: hsl(234, 29%, 20%);
+      background-color: #ff6257;
       color: #fff;
       text-decoration: none;
       border-radius: 5px;
@@ -36,6 +36,9 @@
     .success-message-content {
       text-align: center;
       margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .success-message-content h1 {
       font-size: 32px;
@@ -62,12 +65,19 @@
 <body>
   <div class="success-message">
     <img alt="{{imageAlt}}" style="{{style}}" src="{{imageSrc}}">
-    <div class="success-message-content">
+    <div class="success-message-content" style="flex-direction: column;">
       <h1>Dear {{firstname}} {{lastname}},</h1>
       <h2>{{heading}}</h2>
       <h4>{{message}}</h4>
-      <h4>{{message1}}</h4>
-      <a href="{{link}}" style="display: {{display}};" class="button">{{Click}}</a>
+      {{#if message}}
+        <h4>{{message1}}</h4>
+      {{/if}}
+      {{#if display}}
+        <a href="{{link}}" style="display: {{display}};" class="button">{{Click}}</a>
+        <p style="display: {{display}};">Or</p>
+        <p style="display: {{display}};">Click the link below to continue to the next step:</p>
+        <a href="{{link}}" style="display: {{display}};" class="button">{{link}}</a>
+      {{/if}} 
     </div>
   </div>
   <div class="attribution"> 

@@ -2,13 +2,17 @@ import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { getMongoClient } from '@/lib/mongodb';
 import { sendConfirmationEmail } from '@/lib/email';
+import { headers } from 'next/headers';
 
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get('token');
+    const token = request.url.split('/').pop();
+        const headersList = headers();
+        const protocol = (await headersList).get("x-forwarded-proto");
+        const host = (await headersList).get("host");
+        const BaseUrl = `${protocol}://${host}/`
 
     if (!token) {
-        return NextResponse.json({ message: 'Invalid token' }, { status: 400 });
+        return NextResponse.redirect(BaseUrl+'accounts/confirm-email/failed?message=Invalid token');
     }
 
     try {
@@ -21,18 +25,18 @@ export async function GET(request: Request) {
         const user = await users.findOne({ confirmationToken: token });
 
         if (!user) {
-            return NextResponse.json({ message: 'User not found' }, { status: 404 });
+            return NextResponse.redirect(BaseUrl+'accounts/confirm-email/failed?message=User not found');
         }
 
         // Confirm the email
         await users.updateOne(
             { _id: user._id },
-            { $set: { emailConfirmed: true }, $unset: { confirmationToken: '' } }
+            { $set: { isEmailConfirmed: true }, $unset: { confirmationToken: '' } }
         );
 
         await sendConfirmationEmail(user.email, user.firstname, user.lastname, user.username);
-        return NextResponse.json({ message: 'Email confirmed successfully' }, { status: 200 });
+        return NextResponse.redirect(BaseUrl+'accounts/confirm-email/success');
     } catch (error) {
-        return NextResponse.json({ message: 'Internal server error', error: (error as Error).message }, { status: 500 });
+        return NextResponse.redirect(BaseUrl+'accounts/confirm-email/failed?message=Internal server error');
     }
 }

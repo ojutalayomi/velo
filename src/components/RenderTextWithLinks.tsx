@@ -5,7 +5,9 @@ import Link from 'next/link';
 const hashtagMentionTokenOrUrlRegex = /([#@\$]\w+|https?:\/\/[^\s]+|www\.[^\s]+)/g;
 
 export const renderTextWithLinks = (text: string) => {
-  const parts = text.split(hashtagMentionTokenOrUrlRegex);
+  const safeText = text || '';
+
+  const parts = safeText.split(hashtagMentionTokenOrUrlRegex);
 
   return parts.map((part, i) => {
     if (/^#\w+/.test(part)) {

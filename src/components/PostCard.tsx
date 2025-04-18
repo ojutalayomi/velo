@@ -125,7 +125,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
 
   const handleActivePost = (route: string) => {
     const [username,posts,id] = route.split('/');
-    activePost === id ? null : router.push(route);
+    router.push(route);
     setActivePost(id);
   }
 
@@ -282,11 +282,13 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
               </Link>
             </div>
             <div className='blog-maker'>
-              <div className='blog-maker-name gap-1'>
-                <span className='font-bold after:content-[.]'>{data.NameOfPoster}</span>
-                {data.Verified ? <Statuser className='size-4' /> : null}
-                {containsPost ? null : <div className='blog-username text-brand text-xs'>@{data.Username}</div>}
-              </div>
+              <Link href={`/${data.Username}`}>
+                <div className='flex items-center justify-start flex-wrap gap-1'>
+                  <span className='font-bold after:content-[.]'>{data.NameOfPoster}</span>
+                  {data.Verified ? <Statuser className='size-4' /> : null}
+                  {containsPost ? null : <div className='text-brand text-xs'>@{data.Username}</div>}
+                </div>
+              </Link>
               {containsPost ? <div className='blog-username text-brand'>@{data.Username}</div> : <div className='blog-time'>{time}</div>}
             </div>
           </div>
@@ -313,7 +315,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         {originalPost  && (
           <Link href={`/${originalPost.Username}/posts/${originalPost.PostID}`}>
             <div className="border border-gray-800 rounded-xl p-4">
-              <div className="flex items-start space-x-3">
+              <div className="flex items-start space-x-1">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                   <Avatar className='size-8'>
                     <AvatarFallback>{originalPost.NameOfPoster.slice(0,2)}</AvatarFallback>

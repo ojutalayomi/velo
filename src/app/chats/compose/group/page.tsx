@@ -15,7 +15,7 @@ import ChatRepository from '@/lib/class/ChatRepository';
 import NewChatModal from '../../NewChatModal';
 import { RootState } from '@/redux/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { navigate } from '@/lib/utils';
+import { useNavigateWithHistory } from '@/hooks/useNavigateWithHistory';
 
 type ChatType = "DMs" | "Groups" | "Channels";
 type ChatSettingsTheme = "light" | "dark";
@@ -43,6 +43,7 @@ interface UserDataPartial extends Partial<UserData> {
 const NewChatMenu = () => {
     const router = useRouter();
     const dispatch = useDispatch();
+    const navigate = useNavigateWithHistory();
     const {userdata, loading, error, refetchUser} = useUser();
     const socket = useSocket();
     const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
@@ -183,9 +184,9 @@ const NewChatMenu = () => {
         <div className={`mobile:bg-white mobile:dark:bg-zinc-900 tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10`}>
           <div className={`flex bg-gray-100 dark:bg-zinc-900 top-0 sticky gap-4 items-center justify-between w-full px-3 py-2`}>
             <FontAwesomeIcon onClick={() => {
-                dispatch(showChat(''));
-                navigate(router)}
-            } icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
+              dispatch(showChat(''));
+              navigate()
+            }} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
             <h2 className="text-sm dark:text-slate-200 font-semibold text-center">Create New Group</h2>
             <button
               disabled={selectedUsers.length < 2}

@@ -3,28 +3,12 @@ import crypto from "crypto";
 import { twMerge } from "tailwind-merge"
 import { FileValidationConfig } from "./types/type";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
 
 export const generateRandomToken = (length: number) => {
   return crypto.randomBytes(length).toString('hex')
 }
-
-export const navigate = (router: AppRouterInstance, path = '/home') => {
-  const referrer = typeof document !== 'undefined' ? document.referrer : '';
-  const sameOrigin = referrer && referrer.includes(window.location.origin);
-
-  if (sameOrigin && window.history.length > 1) {
-    router.back();
-
-    // Optional fallback in case router.back() does nothing
-    setTimeout(() => {
-      if (window.location.pathname === path || referrer === '') {
-        router.push(path);
-      }
-    }, 300);
-  } else {
-    router.push(path);
-  }
-};
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

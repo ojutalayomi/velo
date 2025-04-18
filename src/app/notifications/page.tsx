@@ -1,10 +1,10 @@
 'use client'
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, Heart, MessageCircle, UserPlus, Star, Bell } from 'lucide-react';
+import { useNavigateWithHistory } from '@/hooks/useNavigateWithHistory';
 
 const NotificationPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigateWithHistory();
   
   const notifications = [
     { type: 'like', user: 'Alex Johnson', content: 'liked your photo', time: '2m ago', isNew: true },
@@ -28,7 +28,7 @@ const NotificationPage: React.FC = () => {
     <div className="dark:bg-zinc-900 bg-gray-50 min-h-screen">
       {/* Header */}
       <header className="bg-white dark:bg-zinc-900 p-2 flex items-center shadow-lg">
-        <ArrowLeft size={24} className="cursor-pointer dark:text-slate-200 text-gray-600" onClick={() => router.push('/home')}/>
+        <ArrowLeft size={24} className="cursor-pointer dark:text-slate-200 text-gray-600" onClick={() => navigate()}/>
         <h1 className="dark:text-slate-200 text-xl font-semibold ml-4">Notifications</h1>
       </header>
 

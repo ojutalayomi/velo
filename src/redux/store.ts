@@ -6,6 +6,7 @@ import chatReducer from './chatSlice';
 import rtcReducer from './rtcSlice';
 import postsReducer from './postsSlice';
 import utilReducer from './utilsSlice';
+import routeReducer from './routeSlice';
 
 // Define RootState and AppDispatch types
 export type RootState = ReturnType<typeof store.getState>;
@@ -19,6 +20,7 @@ export const store = configureStore({
     rtc: rtcReducer,
     signups: signupsReducer,
     user: userReducer,
-    utils: utilReducer
+    utils: utilReducer,
+    route: routeReducer,
   },
 });

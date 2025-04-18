@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
 import { ArrowLeft, Cake, Ellipsis, Link, Pin } from "lucide-react";
 import LeftSideBar from "@/components/LeftSideBar";
-import { navigate } from "@/lib/utils";
 import ContentSection from "./ContentTabs";
 import { useUser } from "../providers/UserProvider";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 
 export default function Profile({ userData, userPostCard }: { userData: UserSchema, userPostCard: PostData[] }) {
-    const router = useRouter()
-    const {userdata, loading} = useUser()
+    const router = useRouter();
+    const {userdata, loading} = useUser();
+    const navigate = useNavigateWithHistory();
 
     if (!userData) {
         notFound();
@@ -25,7 +26,7 @@ export default function Profile({ userData, userPostCard }: { userData: UserSche
             <div className="md:w-3/5 h-screen max-h-screen dark:bg-black overflow-auto">
                 <div className={`flex backdrop-blur-lg top-0 sticky gap-4 items-center z-10 w-full px-3 py-2`}>
                     <ArrowLeft 
-                    onClick={() => navigate(router)}
+                    onClick={() => navigate()}
                     className='p-1 icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out size-8'
                     />
                     <div>

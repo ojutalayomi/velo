@@ -9,16 +9,17 @@ import { useUser } from '@/app/providers/UserProvider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Loader2, Share } from 'lucide-react';
 import LeftSideBar from '@/components/LeftSideBar';
-import { navigate } from '@/lib/utils';
 import { useSocket } from '@/app/providers/SocketProvider';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
+import { useNavigateWithHistory } from '@/hooks/useNavigateWithHistory';
 
 const PostContent: React.FC = () => {
     const params = useParams();
     const router = useRouter();
     const socket = useSocket()
     const { userdata, loading: userdataLoading, error: userdataError, refetchUser } = useUser();
+    const navigate = useNavigateWithHistory();
     const [errorMessage, setErrorMessage] = useState<{
         post: string | null, 
         comment: string | null
@@ -34,50 +35,59 @@ const PostContent: React.FC = () => {
         comment: true
     });
     const { posts, loading: postsLoading } = useSelector((state: RootState) => state.posts);
+    const post_ = posts.find(post => post.PostID === params?.id) as PostData;
     const [post, setPost] = useState<Post['post']>();
     const [postMessage, setPostMessage] = useState<Post['message']>();
     const [comments, setComments] = useState<Comments['comments']>();
     const [commentsMessage, setCommentsMessage] = useState<Comments['message']>();
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
+    const fetchPost = async (id: string) => {
+        setLoading((l) => {
+            return { 
+                post: true, 
+                comment: l.comment 
+            }
+        });
+        try {
+            const postsResponse = await getPost(id);
+            setPost(postsResponse.post);
+            setPostMessage(postsResponse.message)
+        } catch (error) {
+            setErrorMessage((e) => {
+                return {
+                    post: (error as Error).message,
+                    comment: e.comment
+                }
+            });
+        } finally {
             setLoading((l) => {
                 return { 
-                    post: true, 
+                    post: false, 
                     comment: l.comment 
                 }
             });
-            if(params && params.id && !postsLoading){
-                try {
-                    const available_post = posts.find(post => post.PostID === params.id) as PostData;
-                    if (available_post) {
-                        setPost(available_post);
-                    } else {
-                        const postsResponse = await getPost(params.id);
-                        setPost(postsResponse.post);
-                        setPostMessage(postsResponse.message)
-                    }
-                } catch (error) {
-                    setErrorMessage((e) => {
-                        return {
-                            post: (error as Error).message,
-                            comment: e.comment
-                        }
-                    });
-                } finally {
-                    setLoading((l) => {
-                        return { 
-                            post: false, 
-                            comment: l.comment 
-                        }
-                    });
-                }
-            }
-        };
+        }
+    };
 
-        fetchData();
-    }, [params,params?.id,post]);
+    useEffect(() => {
+        if (!postsLoading && params && params.id) {
+        const available_post = posts.find(post => post.PostID === params?.id) as PostData;
+          if (available_post) {
+            // If the post is already available in the Redux store, set it to currentPost
+            setPost(available_post);
+            setLoading((l) => {
+                return { 
+                    post: false, 
+                    comment: l.comment 
+                }
+            });
+          } else {
+            // If the post is not available, fetch it
+            fetchPost(params.id as string);
+          }
+        }
+    }, [postsLoading, posts, params?.id ]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -200,7 +210,7 @@ const PostContent: React.FC = () => {
             <div className='md:w-3/5 flex flex-col h-full w-full'>
                 <div className="flex justify-between p-1 sticky top-0 z-10 bg-white dark:bg-zinc-900 shadow-md">
                     <div className='flex items-center m-2 w-full justify-between gap-2'>
-                        <ArrowLeft size={24} className='cursor-pointer' onClick={() => navigate(router)}/>
+                        <ArrowLeft size={24} className='cursor-pointer' onClick={() => navigate()}/>
                         <h1>{post?.Username ? post.Username[0].toUpperCase() + post.Username.slice(1) + "'s post" : ''}</h1>
                         <Share size={24} />
                     </div>

@@ -11,7 +11,7 @@ import { Copy, Ellipsis, Loader2, Reply, Send, Settings, TextQuote, Trash2, X } 
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { ConvoType, defaultSettings } from '@/redux/chatSlice';
-import { navigate } from '@/lib/utils';
+import { useNavigateWithHistory } from '@/hooks/useNavigateWithHistory';
 
 interface ChatSettingsPageProps {
   chatSystem: ChatSystem;
@@ -37,6 +37,7 @@ const chatSystem = new ChatSystem(chatRepository);
 
 const ChatSettingsPage: React.FC = ({ }) => {
   const router = useRouter();
+  const navigate = useNavigateWithHistory();
   const params = useParams() as Params;
   const { gid } = params;
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
@@ -80,7 +81,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
       <div className={`absolute bg-white dark:bg-black dark:text-slate-200 flex flex-col items-center justify-center h-full w-full z-10 tablets1:w-1/2 tablets1:z-[unset]`}>
         <div className="absolute top-0 w-full bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 border-b">
           <div className='flex gap-4 items-center justify-start'>
-            <FontAwesomeIcon onClick={() => navigate(router)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
+            <FontAwesomeIcon onClick={() => navigate()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
             <h2 className="font-bold">Chat Settings</h2>
           </div>
           <Trash2 
@@ -97,7 +98,7 @@ const ChatSettingsPage: React.FC = ({ }) => {
     <div className={`bg-white tablets1:bg-white tablets1:w-1/2 dark:bg-black shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden absolute h-full w-full z-10 tablets1:z-[unset]`}>
       <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 border-b">
         <div className='flex gap-4 items-center justify-start'>
-          <FontAwesomeIcon onClick={() => navigate(router)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
+          <FontAwesomeIcon onClick={() => navigate()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]' size="lg" />
           <h2 className="font-bold">Chat Settings</h2>
         </div>
         <Trash2 

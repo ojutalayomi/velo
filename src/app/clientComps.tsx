@@ -24,6 +24,7 @@ import { addPost, deletePost, updatePost } from '@/redux/postsSlice';
 import { useAnnouncer } from '@/hooks/useAnnouncer';
 import PostMaker from '@/components/PostMaker';
 import { toast } from '@/hooks/use-toast';
+import { addRoute } from '@/redux/routeSlice';
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
     const dispatch = useDispatch();
@@ -52,6 +53,12 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     useEffect(() => {
         setIsClient(typeof window !== 'undefined')
     }, [])
+
+    useEffect(() => {
+        if (pathname) {
+          dispatch(addRoute(pathname)); // Add the current route to the history
+        }
+    }, [pathname, dispatch]);
 
     useEffect(() => {
         if (pathname?.includes('/compose/post')) {

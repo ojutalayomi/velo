@@ -5,17 +5,18 @@ import '../app/fontAwesomeLibrary';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import ThemeToggle from "./ThemeToggle";
-import { navigate } from "@/lib/utils";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 
 const NavBar: React.FC<{route: string}> = ({route}) => {
     const router = useRouter();
+    const navigate = useNavigateWithHistory();
     return(
         <>
             <nav>
                 <div id='nav'>
                     <div className='nav px-2.5 py-1.5'>
                         {route !== 'home' ? 
-                            <FontAwesomeIcon onClick={() => navigate(router)} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="1x" /> :
+                            <FontAwesomeIcon onClick={() => navigate()} icon={'arrow-left'} className='icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out' size="1x" /> :
                             <div className='img' style={{padding: '0px !important', visibility: 'hidden'}}>
                                 <Image src='/velo11.png' className='displayPicture' width={25} height={25} alt='logo'/>
                             </div>}

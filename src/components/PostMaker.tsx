@@ -17,12 +17,13 @@ import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { renderTextWithLinks } from '@/components/RenderTextWithLinks';
 import { EmojiPicker } from "./ui/emoji-picker";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 
 export default function PostMaker(
     {children, open, type = 'post', post, onOpenChange} : 
     {children?: ReactNode ,open: boolean, type?: PostData['Type'], post?: PostData, onOpenChange: Dispatch<SetStateAction<boolean>>}
 ) {
-    const router = useRouter();
+    const navigate = useNavigateWithHistory();
     const { userdata } = useUser();
     const socket = useSocket();
     const { files, clearFiles, setFiles } = useGlobalFileStorage();
@@ -35,6 +36,10 @@ export default function PostMaker(
     const [isPosting, setIsPosting] = useState(false)
     const textLimit = userdata.verified ? 1000 : 500; // 1000 for verified users, 500 for others
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        setTxtButton(files.length > 0)
+    }, [files])
 
     const buttons = [
         { id: 'media', icon: Images, label: "Add Images or Videos", action: () => imageInputRef?.current?.click() },
@@ -222,13 +227,16 @@ export default function PostMaker(
         console.log(error)
       } finally {
         setFiles([]);
-        if (type === 'post') router.back();
+        if (type === 'post') navigate();
         else onOpenChange(false);
         setIsPosting(false)
       }
     };
     
     if (!userdata._id) {
+        if(children) {
+            return <>{children}<SignInPrompt open={open} onClose={() => onOpenChange(false)} /></>
+        }
         return <SignInPrompt open={open} onClose={() => onOpenChange(false)} />;
     }
   
@@ -242,7 +250,7 @@ export default function PostMaker(
                         <span className="flex justify-between items-center">
                         <DialogClose 
                             className="dark:text-white hover:bg-gray-800 p-2 rounded-full transition-all duration-200 transform hover:scale-110"
-                            onClick={() => {if (type !== 'quote') router.back()}}
+                            onClick={() => {if (type === 'post') navigate()}}
                         >
                             <X size={16} />
                         </DialogClose>
@@ -411,7 +419,7 @@ export default function PostMaker(
                                     ))}
                                 </div>
             
-                                <Button disabled={!txtButton || text.length > textLimit || !text.length} onClick={handlePost} className="bg-brand hover:bg-brand/60 text-white w-full my-2 tablets:w-auto tablets:my-0 font-bold py-2 px-6 rounded-full transition-all duration-200 transform hover:scale-105">
+                                <Button disabled={!txtButton || text.length > textLimit} onClick={handlePost} className="bg-brand hover:bg-brand/60 text-white w-full my-2 tablets:w-auto tablets:my-0 font-bold py-2 px-6 rounded-full transition-all duration-200 transform hover:scale-105">
                                     {isPosting ? 'Posting...' : 'Post'}
                                     {isPosting && <Loader2 className='animate-spin ml-2' size={16} />}
                                 </Button>

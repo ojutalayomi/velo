@@ -1,24 +1,10 @@
 'use client'
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Send } from 'lucide-react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { useDispatch, useSelector } from 'react-redux';
-import { showChat } from '@/redux/navigationSlice';
-import { RootState } from '@/redux/store'; 
-
-interface NavigationState {
-  chaT: string;
-}
 
 const ChatPage: React.FC = () => {
   const router = useRouter();
-  // const dispatch = useDispatch();
-  // const { chaT } = useSelector<RootState, NavigationState>((state) => state.navigation);
-  // useEffect(() => {
-  //   dispatch(showChat('hidden'));
-  // }, [dispatch]);
 
   return (
     <div className={`bg-white tablets1:bg-white/55 tablets1:flex hidden dark:bg-black/55 shadow-md flex-col min-h-screen flex-1 rounded-lg overflow-hidden absolute tablets1:relative tablets1:w-auto h-full w-full`}>

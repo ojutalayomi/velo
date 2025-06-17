@@ -3,7 +3,7 @@ import React, { TouchEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Check, CheckCheck, Copy, Ellipsis, Loader, TextQuote, Trash2, CircleCheck, CircleX } from 'lucide-react';
 import { GroupMessageAttributes, MessageAttributes } from '@/lib/types/type';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useUser } from '@/app/providers/UserProvider';
 import { updateMessageReactions, deleteMessage, updateMessage, updateLiveTime, updateConversation } from '@/redux/chatSlice'; 
 import { useSocket } from '@/app/providers/SocketProvider';
@@ -24,11 +24,15 @@ import {
 } from "@/components/ui/drawer"
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { LinkPreview } from '@/components/LinkPreview';
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 import { MediaCollage } from './FilesView';
 import { Statuser } from '@/components/VerificationComponent';
 import { renderTextWithLinks } from '../../components/RenderTextWithLinks';
+import { ObjectId } from 'mongodb';
+import { generateObjectId } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type Message = {
   _id: string,
@@ -55,7 +59,7 @@ type Option = {
 };
 
 const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { userdata } = useUser();
   const [open, setOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -121,6 +125,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
   // Update the optionss array to use the defined type
   const IsSelected = selectedMessages.includes(String(message._id))
+  const isRead = message.isRead?.[String(userdata._id)] || false;
   const optionss: Option[] = [
     {
       icon: TextQuote,
@@ -158,9 +163,17 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
     }
   ];
 
-  const onEmojiClick = (emojiObject: any) => {
+  const onEmojiClick = (emoji: string) => {
     if (message._id) {
-      dispatch(updateMessageReactions({id: message._id as string, updates: {...message.reactions, [emojiObject]: {emoji: emojiObject, users: [userdata._id]}}}));
+      dispatch(updateMessageReactions({
+        id: message._id as string, 
+        updates: {
+          _id: generateObjectId() as unknown as ObjectId,
+          messageId: message._id as string,
+          userId: String(userdata._id),
+          reaction: emoji,
+          timestamp: new Date().toISOString()
+        }}));
       setShowEmojiPicker(false);
     }
   };
@@ -228,21 +241,8 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
         <div id={message._id as string} onClick={handleClick} onTouchStart={handleTouch} onContextMenu={handleContextMenu} className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && 'bg-brand/20 py-2'} dark:text-gray-400 flex flex-col mb-4 transition-colors duration-300`}>
 
           <div className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-start relative`}>
-            {/* Avatar for other users */}
-            {senderId !== userdata._id && (
-              <Image 
-                src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : url+displayPicture) : '/default.jpeg'}
-                height={32} 
-                width={32} 
-                alt={sender} 
-                className="rounded-full mt-1" 
-              />
-            )}
 
             <div className={`flex flex-col gap-1 flex-1 max-w-full`}>
-              {/* Quote and Link Preview */}
-              {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
-              {firstUrl && <LinkPreview url={firstUrl} />}
 
               {message.attachments.length ? (
                 <MediaCollage media={message.attachments}/>
@@ -251,7 +251,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
               {/* Message bubble */}
               <div
-                className={`relative p-3 rounded-lg ${
+                className={`relative p-2 rounded-lg ${
                   senderId === userdata._id 
                     ? "bg-brand text-white rounded-tr-none" 
                     : "bg-gray-100 dark:bg-zinc-800 rounded-tl-none"
@@ -263,14 +263,23 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                 {senderId !== userdata._id && (
                   <div className='flex items-center justify-between gap-1'>
                     <div className="flex items-center gap-1">
+                      <Avatar className="mt-1 size-8">
+                        <AvatarImage 
+                          src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : url+displayPicture) : '/default.jpeg'}
+                          alt={sender}
+                        />
+                        <AvatarFallback>{sender[0]}</AvatarFallback>
+                      </Avatar>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{sender}</span>
                       {verified && <Statuser className='size-4' />}
                     </div>
                     <Options options={optionss} open={open} setOpen={setOpen}/>
                   </div>
                 )}
-                
-                <p className="text-sm whitespace-pre-wrap break-words">
+                {/* Quote and Link Preview */}
+                {message.quotedMessageId && <Quote message={message} senderId={senderId}/>}
+                {firstUrl && <LinkPreview url={firstUrl} />}
+                <p className="py-1 text-sm whitespace-pre-wrap break-words">
                   {messageContent.length > MAX_LENGTH && !isExpanded
                     ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
                     : renderTextWithLinks(messageContent)}
@@ -301,33 +310,25 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               <div className={`${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} mt-1 flex items-center gap-1`}>
                 <EmojiPicker onChange={onEmojiClick} />
                 {senderId === userdata._id && (<Options options={optionss} open={open} setOpen={setOpen}/>)}
-                {Object.keys(message.reactions).length > 0 && (
+                {message.reactions.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {Object.entries(message.reactions)
+                    {message.reactions
                       .slice(0, 5)
-                      .map(([emoji, users], index) => {
-                        const userArray = users as unknown as string[];
-                        return (
-                          <span 
-                            key={index} 
-                            className={`px-2 py-0.5 rounded-full text-xs ${
-                              senderId === userdata._id 
-                                ? 'bg-white/10' 
-                                : 'bg-gray-200 dark:bg-zinc-700'
-                            }`}
-                            title={`${userArray.length} ${userArray.length === 1 ? 'reaction' : 'reactions'}`}
-                          >
-                            {emoji}{userArray.length > 1 && <span className="ml-1">{userArray.length}</span>}
-                          </span>
-                        );
-                      })}
-                    {Object.keys(message.reactions).length > 5 && (
+                      .map((reaction, index) => (
+                        <span 
+                          key={index}
+                          title={`${reaction.userId}`}
+                        >
+                          {reaction.reaction}
+                        </span>
+                      ))}
+                    {message.reactions.length > 5 && (
                       <span className={`px-2 py-0.5 rounded-full text-xs ${
                         senderId === userdata._id 
                           ? 'bg-white/10' 
                           : 'bg-gray-200 dark:bg-zinc-700'
                       }`}>
-                        +{Object.keys(message.reactions).length - 5}
+                        +{message.reactions.length - 5}
                       </span>
                     )}
                   </div>
@@ -345,20 +346,17 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   return(
     <>
       <div id={message._id as string} onClick={handleClick} onTouchStart={handleTouch} onContextMenu={handleContextMenu} className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && 'bg-brand/20 py-2'} dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}>
-        {/* Quote and Link Preview */}
-        {message.quotedMessage && <Quote message={message} senderId={senderId}/>}
 
         {/* Main Message Container */}
         <div className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative`}>
 
           <div className={`flex flex-col gap-1 flex-1 max-w-full`}>
-            {firstUrl && <LinkPreview url={firstUrl} />}
 
             {message.attachments.length ? <MediaCollage media={message.attachments}/> : <></>}
 
             {/* Message Bubble */}
             <div
-              className={`relative mb-1 p-3 rounded-2xl overflow-auto w-full flex flex-col shadow-sm ${
+              className={`relative mb-1 p-2 rounded-2xl overflow-auto w-full flex flex-col shadow-sm ${
                 senderId === userdata._id 
                   ? "bg-brand rounded-br-none text-white" 
                   : "bg-gray-50 rounded-bl-none dark:bg-zinc-800/80 dark:text-white"
@@ -366,9 +364,12 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
             >
+              {/* Quote and Link Preview */}
+              {message.quotedMessageId && <Quote message={message} senderId={senderId}/>}
+              {firstUrl && <LinkPreview url={firstUrl} />}
               {/* Message Content */}
               <div className="">
-                <p className="text-sm whitespace-pre-wrap break-words" style={{ fontFamily: 'inherit' }}>
+                <p className="py-1 text-sm whitespace-pre-wrap break-words" style={{ fontFamily: 'inherit' }}>
                   {messageContent.length > MAX_LENGTH && !isExpanded
                     ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
                     : renderTextWithLinks(messageContent)}
@@ -404,18 +405,13 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
           {Object.entries(message.reactions)
             .slice(0, 5)
             .map(([emoji, users], index) => {
-              const userArray = users as unknown as string[];
+              const userArray = message.reactions;
               return (
                 <span 
-                  key={index} 
-                  className={`px-2 py-1 rounded-full text-xs shadow-sm ${
-                    senderId === userdata._id 
-                      ? 'bg-white/20 backdrop-blur-sm' 
-                      : 'bg-white dark:bg-zinc-700'
-                  }`}
+                  key={index}
                   title={`${userArray.length} ${userArray.length === 1 ? 'reaction' : 'reactions'}`}
                 >
-                  {emoji}{userArray.length > 1 && <span className="ml-1 text-[10px]">{userArray.length}</span>}
+                  {users.reaction}{userArray.length > 1 && <span className="ml-1 text-[10px]">{userArray.length}</span>}
                 </span>
               );
             })}
@@ -448,10 +444,10 @@ const Quote = ({message, senderId}:{message: MessageAttributes | GroupMessageAtt
     return msg.chatId === message.chatId
   })  as GroupMessageAttributes[];
 
-  const quotedMessage = Messages?.find(m => m._id as string === message.quotedMessage);
+  const quotedMessageId = Messages?.find(m => m._id as string === message.quotedMessageId);
 
   const handleQuoteClick = () => {
-    const messageElement = document.getElementById(message.quotedMessage as string);
+    const messageElement = document.getElementById(message.quotedMessageId as string);
     if (messageElement) {
       messageElement.scrollIntoView({ behavior: 'smooth' });
       // Add a brief highlight effect
@@ -466,11 +462,31 @@ const Quote = ({message, senderId}:{message: MessageAttributes | GroupMessageAtt
 
   return (
     <div 
-      className={`flex m-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"}`}
+      className={`flex m-1 ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
       onClick={handleQuoteClick}
     >
-      <div className={`${senderId === userdata._id ? "bg-gray-100 dark:bg-zinc-900" : "bg-brand"} border-white dark:text-white rounded-lg shadow-md text-xs p-2 cursor-pointer hover:opacity-80 transition-opacity`}>
-        {renderTextWithLinks(quotedMessage?.content.substring(0, 40) || '')}
+      <div 
+        className={`
+          flex items-center gap-2 w-full max-w-full p-2 rounded-lg cursor-pointer
+          ${senderId === userdata._id 
+            ? "bg-emerald-100 dark:bg-emerald-900/30" 
+            : "bg-gray-100 dark:bg-zinc-700/50"
+          }
+          border-l-4 ${senderId === userdata._id 
+            ? "border-emerald-500" 
+            : "border-gray-400"
+          }
+          hover:bg-opacity-80 transition-all
+        `}
+      >
+        <div className="flex flex-col">
+          <span className={`text-xs font-medium ${senderId === userdata._id ? "text-emerald-700 dark:text-emerald-400" : "text-gray-700 dark:text-gray-300"}`}>
+            {quotedMessageId?.sender?.name || ""}
+          </span>
+          <span className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+            {quotedMessageId?.content}
+          </span>
+        </div>
       </div>
     </div>
   )

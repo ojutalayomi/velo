@@ -3,7 +3,7 @@ import React, { useEffect, useRef,useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/app/providers/UserProvider';
-import { Bell, User, LogIn, BadgePlus, Mail, Settings, Palette, MessageSquarePlus, Home, Search } from 'lucide-react';
+import { Bell, User, LogIn, BadgePlus, Mail, Settings, MessageSquarePlus, Home, Search } from 'lucide-react';
 import {
   Drawer,
   DrawerTitle,
@@ -110,8 +110,8 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
             <Drawer open={open} onOpenChange={setOpen}>
               <DrawerTrigger>
                 <Avatar>
-                  <AvatarImage src={userdata.dp} />
-                  <AvatarFallback>{userdata.firstname.charAt(0).toUpperCase() || 'V'}</AvatarFallback>
+                  <AvatarImage src={userdata.displayPicture} />
+                  <AvatarFallback className='size-10'>{userdata.firstname.charAt(0).toUpperCase() || 'V'}</AvatarFallback>
                 </Avatar>
               </DrawerTrigger>
               <DrawerContent className='tablets1:hidden'>
@@ -134,10 +134,6 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                       <div className='myprofile rt'>@{userdata.username}</div>
                     </div>
                   )}
-                  <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'user-interface' ? 'active' : ''}`} data-route='user-interface' onClick={() => handleClick('user-interface')}>
-                    <Palette size={25}/>
-                    <div className='user-interface rt'>User Interface</div>
-                  </div>
                   <div className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === 'feedback' ? 'active' : ''}`} data-route='feedback' onClick={() => handleClick('feedback')}>
                     <MessageSquarePlus size={25}/>
                     <div className='feedback rt'>Feedback</div>
@@ -162,7 +158,7 @@ const Root: React.FC<BottombarProps> = ({ setLoad, activeRoute, isMoreShown, set
                       {!loading 
                       ? 
                       <Avatar>
-                        <AvatarImage src={userdata.dp} />
+                        <AvatarImage src={userdata.displayPicture} />
                         <AvatarFallback>{userdata.firstname.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       : 

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb'
-import { UserData } from '@/redux/userSlice';
-import { getMongoClient } from '@/lib/mongodb';
+import { ObjectId } from 'mongodb'
+import { MongoDBClient } from '@/lib/mongodb';
 
 interface Payload {
   _id: ObjectId,
@@ -19,28 +18,16 @@ export async function GET(request: NextRequest) {
   try {
     const payload = await verifyToken(token) as unknown as Payload;
     
-    const client = await getMongoClient();
+    const db = await new MongoDBClient().init();
 
-    const userCollection = client.db('mydb').collection('Users');
-    const user = await userCollection.findOne({ _id: new ObjectId(payload._id) });
+    const userCollection = db.users();
+    const user = await userCollection.findOne({ _id: new ObjectId(payload._id) }, { projection: { _id: 1, firstname: 1, lastname: 1, name: 1, email: 1, username: 1, displayPicture: 1, verified: 1, userId: 1 } });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
-    const newUserdata = {
-        _id: user?._id.toString(),
-        firstname: user?.firstname,
-        lastname: user?.lastname,
-        name: user?.name,
-        email: user?.email,
-        username: user?.username,
-        dp: user?.displayPicture,
-        verified: user?.verified,
-        chatid: user?.userId
-    } as unknown as UserData;
 
-    return NextResponse.json(newUserdata);
+    return NextResponse.json(user);
   } catch (error) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }

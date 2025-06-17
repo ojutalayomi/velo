@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { ChatAttributes, ChatSettings, NewChatResponse, User } from "../types/type";
+import { ChatAttributes, ChatSettings, ChatType, NewChatResponse, User } from "../types/type";
 
 
 export class Newchat {
@@ -22,7 +22,7 @@ export class Newchat {
     lastMessageId: string; // Assuming ObjectId is converted to string
     timestamp: string;
     unreadCounts: { [participantId: string]: number; };
-    chatType: 'DMs' | 'Groups' | 'Channels';
+    chatType: ChatType;
     participants: string[]; // Assuming participants are represented by their IDs
     chatSettings: ChatSettings
     lastUpdated: string | Date | undefined;

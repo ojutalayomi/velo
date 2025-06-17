@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface LinkPreviewProps {
   url: string;
@@ -17,47 +18,51 @@ interface Metadata {
 export function LinkPreview({ url, direction }: LinkPreviewProps) {
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [isImage, setIsImage] = useState(false);
   const fetchPreviewRef = useRef(false);
 
   useEffect(() => {
     const fetchMetadata = async () => {
-        if (fetchPreviewRef.current) return;
-        fetchPreviewRef.current = true;
+      if (fetchPreviewRef.current) return;
+      fetchPreviewRef.current = true;
 
-        try {
-            const response = await fetch('/api/link-preview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
-            });
-            const data = await response.json();
-            setMetadata(data);
-            fetchPreviewRef.current = false;
-        } catch (error) {
-            console.error('Error fetching metadata:', error);
-        } finally {
-            setLoading(false);
-        }
+      try {
+        const response = await fetch('/api/link-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await response.json();
+        setMetadata(data);
+        setIsImage(data.image ? true : false);
+        fetchPreviewRef.current = false;
+      } catch (error) {
+        console.error('Error fetching metadata:', error);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchMetadata();
   }, [url]);
 
-  if (loading) return null;
-  if (!metadata) return null;
+  if (loading || error) return null;
+  if (!metadata || (!isImage && !metadata.favicon)) return null;
 
   if(direction) return (
     <a 
       href={url} 
       target="_blank" 
       rel="noopener noreferrer" 
-      className="block mt-2 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800"
+      className="block my-2 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800"
     >
       <div className="flex items-center p-3 gap-3">
-        {(metadata.image || metadata.favicon) && (
+        {(isImage || metadata.favicon) && (
           <div className="flex-shrink-0">
             <img
-              src={metadata.image || metadata.favicon}
+              src={isImage ? metadata.image : metadata.favicon}
               alt={metadata.title || 'Link preview'}
               width={40}
               height={40}
@@ -87,30 +92,27 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
       href={url} 
       target="_blank" 
       rel="noopener noreferrer" 
-      className="block -mb-1 max-w-min rounded-lg backdrop-blur-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800"
+      className="block my-2 rounded-lg backdrop-blur-2xl overflow-hidden bg-transparent shadow-bar"
     >
-      <div className="flex flex-col items-center p-3 gap-3 h-full">
-        {(metadata.image || metadata.favicon) && (
+      <div className="flex flex-col items-center p-2 gap-3 h-full">
+        {(isImage || metadata.favicon) && (
           <div className="flex flex-1 w-full">
-            <img
-              src={metadata.image || metadata.favicon}
-              alt={metadata.title || 'Link preview'}
-              width={40}
-              height={40}
-              className="aspect-square flex-1 rounded object-cover"
-            />
+            <Avatar className="aspect-square h-auto flex-1 rounded object-cover">
+              <AvatarImage className="object-cover rounded-none" src={isImage ? metadata.image : metadata.favicon} alt={metadata.title || 'Link preview'} />
+              <AvatarFallback className="text-brand rounded-none">{metadata.title || 'Link preview'}</AvatarFallback>
+            </Avatar>
           </div>
         )}
         <div className="flex-1 max-w-full">
           {metadata.title && (
-            <h3 className="text-sm font-medium truncate">{metadata.title.substring(0,35)}</h3>
+            <h3 className="text-sm font-medium truncate">{metadata.title}</h3>
           )}
           {metadata.description && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-              {metadata.description.substring(0,20)}
+            <p className="text-sm line-clamp-2 truncate">
+              {metadata.description}
             </p>
           )}
-          <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">
+          <p className="text-xs truncate mt-1">
             {url}
           </p>
         </div>

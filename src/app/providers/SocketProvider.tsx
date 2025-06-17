@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import io, { Socket } from 'socket.io-client';
-import { RootState, store } from "@/redux/store";
+import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { useUser } from '@/app/providers/UserProvider';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { addOnlineUser, removeOnlineUser } from '@/redux/utilsSlice';
 import { networkMonitor, NetworkStatus } from '@/lib/network';
 
@@ -16,7 +17,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     const [status, setStatus] = useState<NetworkStatus>()
     const { userdata, loading, error } = useUser();
     const { onlineUsers } = useSelector((state: RootState) => state.utils);
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
     const [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {

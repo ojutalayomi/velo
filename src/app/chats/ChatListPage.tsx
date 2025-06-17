@@ -3,16 +3,21 @@ import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/app/providers/UserProvider';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
-import { updateLiveTime, updateConversation } from '@/redux/chatSlice';
+import { useAppDispatch } from '@/redux/hooks';
+import { updateLiveTime, updateConversation, deleteConversation } from '@/redux/chatSlice';
 import { ConvoType, MessageAttributes, NewChatSettings } from '@/lib/types/type';
 import { Pin } from 'lucide-react';
 import { useSocket } from '@/app/providers/SocketProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
 import Link from 'next/link';
+import { useMediaQuery } from 'usehooks-ts';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Ellipsis } from 'lucide-react';
 
 type FilteredChatsProps = {
     filteredChats: () => Array<ConvoType>;
@@ -46,11 +51,10 @@ interface CHT {
   isOnline: boolean,
 }
 
-const Card: React.FC<Props> = ({chat}) => {
+const Card: React.FC<Props> = ({ chat }) => {
   const [time, setTime] = useState<string>();
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const socket = useSocket();
-  const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(chat?.pinned);
   const [isDeleted, setIsDeleted] = useState(chat?.deleted);
   const [isArchived, setIsArchived] = useState(chat?.archived);
@@ -59,17 +63,13 @@ const Card: React.FC<Props> = ({chat}) => {
   const [isBlocked, setIsBlocked] = useState(false);
   const { userdata } = useUser();
   const router = useRouter();
-  const dispatch = useDispatch();
-  const url = 'https://s3.amazonaws.com/profile-display-images/';
-  const chaT = useSelector<RootState>((state) => state.chat);
+  const dispatch = useAppDispatch();
   const [showFullscreen, setShowFullscreen] = useState(false);
-  
-  const openChat = (id: string) => {
-    const path = chat.type === 'Groups' ? `/chats/group/${id}` : `/chats/${id}`;
-    router.push(path);
-    dispatch(showChat(''));
-  }
-  // console.log(onlineUsers)
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const updateTimer = () => {
       const timeDifference = Date.now() - Date.parse(chat.lastUpdated);
@@ -88,32 +88,56 @@ const Card: React.FC<Props> = ({chat}) => {
         setTime(updateLiveTime('chat-time', chat.lastUpdated));
       }
     };
-
     updateTimer();
   }, [chat.lastUpdated]);
-  
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showDropdown && !(event.target as Element).closest('.dropdown-menu')) {
-        setShowDropdown(null);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showDropdown]);
 
   const options = [
     { id: 1, name: isPinned ? 'Unpin' : 'Pin', action: () => dispatch(updateConversation({ id: chat.id, updates: { pinned: !isPinned } })) },
-    { id: 2, name: isDeleted ? 'Undelete' : 'Delete', action: () => dispatch(updateConversation({ id: chat.id, updates: { deleted: !isDeleted } })) },
+    { id: 2, name: 'Delete', action: () => { dispatch(deleteConversation(chat.id)); router.replace('/chats') } },
     { id: 3, name: isArchived ? 'Unarchive' : 'Archive', action: () => dispatch(updateConversation({ id: chat.id, updates: { archived: !isArchived } })) },
     { id: 4, name: isHidden ? 'Unhide' : 'Hide', action: () => setIsHidden(!isHidden) },
     { id: 5, name: isUnread ? 'Mark as read' : 'Mark as unread', action: () => setIsUnread(!isUnread) },
     { id: 6, name: isBlocked ? 'Unblock' : 'Block', action: () => setIsBlocked(!isBlocked) },
-  ];
+  ] as const;
+
+  const handleOption = (option: typeof options[number]) => {
+    if (socket) {
+      option.action();
+      switch (true) {
+        case option.name.toLowerCase().includes("pin"):
+          socket.emit('updateConversation', {
+            id: chat.id,
+            updates: { pinned: !isPinned, userId: userdata._id }
+          });
+          setIsPinned(!isPinned);
+          break;
+        case option.name.toLowerCase().includes("archive"):
+          socket.emit('updateConversation', {
+            id: chat.id,
+            updates: { archived: !isArchived, userId: userdata._id }
+          });
+          setIsArchived(!isArchived);
+          break;
+        case option.name.toLowerCase().includes("delete"):
+          socket.emit('updateConversation', {
+            id: chat.id,
+            updates: { deleted: true, convo: true }
+          });
+          setIsDeleted(true);
+          break;
+        case option.name.toLowerCase().includes("read"):
+          const unread = isUnread ? 1 : 0;
+          socket.emit('updateConversation', {
+            id: chat.id,
+            updates: { unreadCount: unread, userId: userdata._id }
+          });
+          setIsUnread(!isUnread);
+          break;
+        default:
+          break;
+      }
+    }
+  };
 
   const fullscreen = () => {
     setShowFullscreen(true);
@@ -123,118 +147,137 @@ const Card: React.FC<Props> = ({chat}) => {
     return chat?.isTyping[f]
   })
 
-  return(
+  // Handlers for long-press (mobile), right-click (desktop), and ellipsis click
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isMobile) {
+      setDropdownOpen(true);
+    }
+  };
 
-    <Link key={chat.id} href={chat.type === 'Groups' ? `/chats/group/${chat.id}` : `/chats/${chat.id}`}>
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isMobile) {
+      longPressTimeout.current = setTimeout(() => {
+        setDrawerOpen(true);
+      }, 500);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isMobile && longPressTimeout.current) {
+      clearTimeout(longPressTimeout.current);
+      longPressTimeout.current = null;
+    }
+  };
+
+  const handleEllipsisClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropdownOpen(true);
+  };
+
+  return (
+    <Link key={chat.id} href={chat.type === 'Groups' ? `/chats/group/${chat.id}` : chat.type === 'Personal' ? `/chats/me` : `/chats/${chat.id}`}>
       <div
-        className="bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-bar dark:shadow-bar-dark flex items-center space-x-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative"
-        onContextMenu={(event) => {
-          event.preventDefault();
-          setShowDropdown(chat.id);
-        }}
-        onTouchStart={(event) => {
-          if (event.touches.length === 1) {
-            const touch = event.touches[0];
-            const longPressTimer = setTimeout(() => {
-              setShowDropdown(chat.id);
-            }, 500); // 500ms long press
-            
-            const cancelLongPress = () => {
-              clearTimeout(longPressTimer);
-            };
-
-            document.addEventListener('touchend', cancelLongPress);
-            document.addEventListener('touchmove', cancelLongPress);
-
-            return () => {
-              document.removeEventListener('touchend', cancelLongPress);
-              document.removeEventListener('touchmove', cancelLongPress);
-            };
-          }
-        }}
+        className="group bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-bar dark:shadow-bar-dark flex items-center gap-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative"
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        {showDropdown === chat.id && (
-          <div className="dropdown-menu absolute top-0 right-2 mt-2 bg-white dark:bg-zinc-800 rounded-md shadow-lg z-10" onClick={(e) => e.stopPropagation()}>
-            <ul className="py-1">
-              {options.map((option) => (
-                <li key={option.id} 
-                  className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if(socket){
-                      option.action();
-                      switch (true) {
-                        case option.name.toLowerCase().includes("pin"):
-                          socket.emit('updateConversation', { 
-                            id: chat.id, 
-                            updates: { pinned: !isPinned, userId: userdata._id } 
-                          });
-                          break;
-                        case option.name.toLowerCase().includes("archive"):
-                          socket.emit('updateConversation', { 
-                            id: chat.id, 
-                            updates: { archived: !isArchived, userId: userdata._id } 
-                          });
-                          break;
-                        case option.name.toLowerCase().includes("delete"):
-                          socket.emit('updateConversation', { 
-                            id: chat.id, 
-                            updates: { deleted: !isDeleted, convo: true } 
-                          });
-                          break;
-                        case option.name.toLowerCase().includes("read"):
-                          const unread = isUnread ? 1 : 0;
-                          socket.emit('updateConversation', { 
-                            id: chat.id, 
-                            updates: { unreadCount: unread, userId: userdata._id } 
-                          });
-                          break;
-                        default:
-                          break;
-                      }
-                    }
-                  }}
-                >
-                  {option.name}
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* Dropdown/Drawer menu button */}
+        {/* Always render dropdown, but only open when dropdownOpen is true */}
+        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="absolute right-0 mr-4 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto rounded-full p-1 border-2 bg-white dark:bg-black border-zinc-200 dark:border-zinc-900 overflow-hidden transition-opacity"
+              onClick={handleEllipsisClick}
+            >
+              <Ellipsis className="size-6" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {options.map((option) => (
+              <DropdownMenuItem
+                key={option.id}
+                className='cursor-pointer'
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleOption(option);
+                  setDropdownOpen(false);
+                }}
+              >
+                {option.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {/* Only render drawer on mobile, open on long-press */}
+        {isMobile && (
+          <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <DrawerTrigger asChild>
+              <span className="hidden"> {/* No visible trigger, open via long-press */}
+              </span>
+            </DrawerTrigger>
+            <DrawerContent aria-describedby="Options" aria-labelledby="Options">
+              <DrawerHeader className="text-left hidden">
+                <DrawerTitle className="text-left">Options</DrawerTitle>
+                <DrawerDescription className="text-left">Options</DrawerDescription>
+              </DrawerHeader>
+              <ul className="flex flex-col p-4 space-y-2">
+                {options.map((option) => (
+                  <li
+                    key={option.id}
+                    className="w-full text-left py-2 px-3 rounded hover:bg-muted cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleOption(option);
+                      setDrawerOpen(false);
+                    }}
+                  >
+                    {option.name}
+                  </li>
+                ))}
+              </ul>
+            </DrawerContent>
+          </Drawer>
         )}
+        {/* Avatar and chat info */}
         <div className="relative">
           <Avatar>
-            <AvatarFallback>{(chat.name ?? '????').slice(0,2)}</AvatarFallback>
+            <AvatarFallback>{(chat.name ?? '????').slice(0, 2)}</AvatarFallback>
             <AvatarImage
-            src={chat.displayPicture}
-            onClick={(e) => {
-              e.preventDefault();
-              fullscreen();
-            }}
-            height={40} width={40} alt={chat.name} 
-            className="w-10 h-10 min-w-10 rounded-full" 
+              src={chat.displayPicture}
+              onClick={(e) => {
+                e.preventDefault();
+                fullscreen();
+              }}
+              height={40} width={40} alt={chat.name}
+              className="w-10 h-10 min-w-10 rounded-full"
             />
           </Avatar>
-          {(chat.type === 'DMs' && onlineUsers.includes(chat.participants.find(id => id !== userdata._id) as string)) && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"/>}
+          {(chat.type === 'DMs' && onlineUsers.includes(chat.participants.find(id => id !== userdata._id) as string)) && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}
         </div>
         <div className="flex-grow w-1/4">
           <div className="flex justify-between items-baseline">
             <div className='flex items-center gap-1'>
-              <h2 className="font-semibold truncate">{chat.name}</h2>
-              {chat.verified && 
-                <Statuser className="size-4 flex-shrink-0"/>
+              <h2 className="font-semibold truncate">{chat.name + (chat.type === 'Personal' ? ' (You)' : '')}</h2>
+              {chat.verified &&
+                <Statuser className="size-4 flex-shrink-0" />
               }
             </div>
           </div>
           <p className="text-sm text-gray-600 truncate">
-            {(chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] || filteredKeys.includes(true)) 
-              ? 'Typing...' 
-              : (chat.lastMessage 
-                  ? chat.lastMessage
-                  : 'No message available')}
+            {(chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] || filteredKeys.includes(true))
+              ? 'Typing...'
+              : (chat.lastMessage
+                ? chat.lastMessage
+                : 'No message available')}
           </p>
         </div>
         <div className='flex flex-col items-end gap-1'>
-          <span className="text-sm text-gray-500 text-nowrap">{time}</span>
+          <span className="group-hover:hidden text-sm text-gray-500 text-nowrap">{time}</span>
           <div className="flex items-center gap-2">
             {chat.unread > 0 && (
               <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
@@ -242,34 +285,34 @@ const Card: React.FC<Props> = ({chat}) => {
               </div>
             )}
             {chat.pinned && (
-              <Pin size={21} 
-              className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (socket) {
-                  socket.emit('updateConversation',{ id: chat.id, updates: { pinned: !isPinned, userId: userdata._id } });
-                  dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
-                }
-              }}
+              <Pin size={21}
+                className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (socket) {
+                    socket.emit('updateConversation', { id: chat.id, updates: { pinned: !isPinned, userId: userdata._id } });
+                    dispatch(updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } }));
+                  }
+                }}
               />
             )}
           </div>
         </div>
         {showFullscreen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
             onClick={() => setShowFullscreen(false)}
           >
-            <Image 
+            <Image
               src={
-                chat.displayPicture  
-                ? (chat.displayPicture.includes('ila-') 
-                  ? '/default.jpeg'
-                  : chat.displayPicture)
-                : '/default.jpeg'
+                chat.displayPicture
+                  ? (chat.displayPicture.includes('ila-')
+                    ? '/default.jpeg'
+                    : chat.displayPicture)
+                  : '/default.jpeg'
               }
-              height={500} 
-              width={500} 
+              height={500}
+              width={500}
               alt={chat.name}
               className="max-h-[90vh] w-auto object-contain rounded-lg"
             />
@@ -280,11 +323,18 @@ const Card: React.FC<Props> = ({chat}) => {
   )
 }
 
-const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats,className = 'overflow-auto p-4 pt-2',className1 = 'mb-10'}) => {
+const ChatListPage: React.FC<FilteredChatsProps> = ({filteredChats, className = 'overflow-auto p-4 pt-2', className1 = 'mb-10'}) => {
   return (
     <div className={`flex-grow h-full ${className}`}>
       <div className={`flex flex-col gap-2 ${className1} tablets1:mb-0`}>
-        {filteredChats().sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()) // Sort by lastUpdated
+        {filteredChats()
+          .sort((a, b) => {
+            // First sort by pinned status
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            // Then sort by lastUpdated time for chats with same pinned status
+            return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
+          })
           .map((chat, index) => (
             <Card key={index} chat={chat} />
           ))}

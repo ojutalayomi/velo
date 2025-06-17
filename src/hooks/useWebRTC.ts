@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { 
   setPeerConnection, 
   setConnectionState,
@@ -11,6 +11,7 @@ import {
   setIceConnectionState,
 } from '@/redux/rtcSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
+import { useAppDispatch } from '@/redux/hooks';
 
 interface WebRTCConfig {
   iceServers?: RTCIceServer[];
@@ -25,7 +26,7 @@ export class WebRTCError extends Error {
 }
 
 export const useWebRTC = (config?: WebRTCConfig) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const socket = useSocket();
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const iceCandidates = useSelector(selectIceCandidates);

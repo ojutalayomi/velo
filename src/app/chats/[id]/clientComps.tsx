@@ -6,10 +6,11 @@ import { ChevronDown, EllipsisVertical, Phone, Video } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from '../MessageTab';
-import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, updateConversation, addMessage, updateMessage, updateLiveTime } from '@/redux/chatSlice';
+import { useSelector } from 'react-redux';
+import { ConvoType, updateConversation, addMessage, updateMessage, updateLiveTime, deleteConversation } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { useUser } from '@/app/providers/UserProvider';
 import { useSocket } from '@/app/providers/SocketProvider';
 import {
@@ -22,7 +23,7 @@ import ChatTextarea from '../ChatTextarea';
 import { useGlobalFileStorage } from '@/hooks/useFileStorage';
 import { toast } from '@/hooks/use-toast';
 import path from 'path';
-import { timeFormatter } from '@/lib/utils';
+import { generateObjectId, timeFormatter } from '@/lib/utils';
 import { clearSelectedMessages } from '@/redux/utilsSlice';
 import { MultiSelect } from '../MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -64,19 +65,10 @@ interface CHT {
   loading: boolean,
 }
 
-const generateObjectId = () => {
-  const timestamp = Math.floor(new Date().getTime() / 1000).toString(16);
-  const machineId = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-  const processId = Math.floor(Math.random() * 65535).toString(16).padStart(4, '0');
-  const counter = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-  
-  return timestamp + machineId + processId + counter;
-}
-
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
@@ -87,7 +79,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [err,setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState('');
   const [newPerson,setNewPerson] = useState<{[x: string]: keyof ConvoType}>({});
-  const pid = params?.id as string;
+  const pid = params?.id === 'me' ? conversations.find(c => c.type === 'Personal')?.id as string : params?.id as string;
   const socket = useSocket();
   const convo = conversations?.find(c => c.id === pid) as ConvoType;
   const chat = settings?.[pid];
@@ -129,7 +121,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [convo, convoLoading, dispatch, convo?.unread, socket, userdata._id])
   
   const Messages = messages?.filter( msg => {
-    // const sender = 'sender' in msg ? msg.sender.name : '';
     return msg.chatId === pid && (msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
   }) as MessageAttributes[];
 
@@ -178,7 +169,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         if (cachedData) {
           setNewPerson(cachedData);
         } else {
-          const apiData = await fetchFromAPI(userdata._id);
+          const apiData = await fetchFromAPI(String(userdata._id));
           setNewPerson(apiData);
         }
       }
@@ -191,7 +182,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [friendId, userdata]);
 
   useEffect(() => {
-    if (!friendId && !convo && !convoLoading) {
+    if ((!friendId && pid !== userdata._id) && !convo && !convoLoading) {
       console.log('Redirecting to /chats due to missing friendId and convo');
       router.push('/chats');
     }
@@ -207,21 +198,20 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   
     try {
-      const isRead = friendId ? { [userdata._id]: false, [friendId]: true } : { [userdata._id]: true };
+      const isRead = friendId ? { [String(userdata._id)]: false, [friendId]: true } : { [String(userdata._id)]: true };
   
       // Prepare the message object
       const msg = {
         _id: generateObjectId(),
         chatId: pid,
-        senderId: userdata._id,
+        senderId: String(userdata._id),
         receiverId: friendId,
         content: newMessage,
         timestamp: new Date().toISOString(),
         messageType: 'DMs',
-        isRead: isRead,
         reactions: [],
         attachments: [] as Attachment[], // Will be populated with file data
-        quotedMessage: id,
+        quotedMessageId: id,
         status: 'sending' as const,
       };
       
@@ -264,7 +254,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       dispatch(updateConversation({
         id: msg._id,
         updates: {
-          unread: msg.isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
+          unread: isRead[String(userdata._id)] ? convo.unread : (convo.unread ?? 0) + 1,
           lastMessage: msg.content,
           lastUpdated: msg.timestamp,
         },
@@ -352,7 +342,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     { id: 2, name: 'Search', action: () => openSearchBar(true) },
     { id: 3, name: 'Mute notifications', action: () => console.log('Mute notifications') },
     { id: 4, name: 'Wallpaper', action: () => console.log('Wallpaper') },
-    { id: 5, name: 'Delete', action: () => console.log('Unread') },
+    { id: 5, name: 'Delete', action: () => { dispatch(deleteConversation(pid)); router.replace('/chats') } },
     { id: 6, name: 'Report', action: () => console.log('Blocked') },
     { id: 7, name: convo?.pinned ? 'Unpin' : 'Pin', action: () => {
       dispatch(updateConversation({ id: pid, updates: { pinned: !convo?.pinned } }));
@@ -479,7 +469,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
       <div 
         ref={messageBoxRef} 
-        className="pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"
+        className="backdrop-blur-sm pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"
         onScroll={handleScroll}
       > 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">
@@ -491,17 +481,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 <Avatar className='size-20'>
                   <AvatarFallback className='capitalize'>{newPerson?.name?.slice(0,2)}</AvatarFallback>
                   <AvatarImage 
-                  src={
-                    newPerson?.dp || newPerson?.displayPicture  
-                      ? (newPerson?.dp 
-                          ? newPerson.dp 
-                          : (newPerson.displayPicture.includes('ila-') 
-                              ? ''
-                              : newPerson.displayPicture
-                            )
-                        ) 
-                      : '/default.jpeg'
-                  } 
+                  src={newPerson?.displayPicture} 
                   className='displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover' 
                   width={80} 
                   height={80} 
@@ -553,16 +533,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             return acc;
           }, [])}
         </div>
-
-        {showScrollButton && (
-          <div className='absolute rounded-full right-0 bottom-16 shadow-lg mr-4 p-2 bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex items-center gap-2'>
-            <ChevronDown
-              className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out'
-              onClick={scrollToBottom}
-            />
-          </div>
-        )}
       </div>
+
+      {showScrollButton && (
+        <div className='absolute rounded-full right-0 bottom-16 shadow-lg mr-4 p-2 bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex items-center gap-2'>
+          <ChevronDown
+            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out'
+            onClick={scrollToBottom}
+          />
+        </div>
+      )}
 
       {
       selectedMessages.length ?

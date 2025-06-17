@@ -10,8 +10,10 @@ export async function getUser(username: string) {
         const res = await fetch(`${protocol}://${host}/api/users/${username}`, {
             method: 'GET',
             cache: 'no-store',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': (await headersList).get('cookie') || ''
             }
         });
 
@@ -43,8 +45,10 @@ export async function getUserPosts(username: string) {
         const res = await fetch(`${protocol}://${host}/api/posts/${username}`, {
             method: 'GET',
             cache: 'no-store',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': (await headersList).get('cookie') || ''
             }
         });
 

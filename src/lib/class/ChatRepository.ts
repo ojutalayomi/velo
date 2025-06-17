@@ -1,4 +1,4 @@
-import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from '../types/type';
+import { AllChats, ChatAttributes, ChatDataClient, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from '../types/type';
 
 class ChatRepository {
   // Database-specific operations
@@ -10,7 +10,7 @@ class ChatRepository {
     return chats;
   }
 
-  async getChatById(id: string): Promise<ChatData | undefined> {
+  async getChatById(id: string): Promise<ChatDataClient | undefined> {
     // Fetch a chat by its ID from the database
     // and return it as a ChatAttributes object (or undefined if not found)
     const response = await fetch(`/api/chats?id=${id}`);

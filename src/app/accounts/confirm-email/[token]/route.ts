@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { getMongoClient } from '@/lib/mongodb';
+import { MongoDBClient } from '@/lib/mongodb';
 import { sendConfirmationEmail } from '@/lib/email';
 import { headers } from 'next/headers';
 
@@ -17,9 +17,8 @@ export async function GET(request: Request) {
 
     try {
         // Connect to the database
-        const client = await getMongoClient();
-        const database = client.db('mydb');
-        const users = database.collection('Users');
+        const db = await new MongoDBClient().init();
+        const users = db.users();
 
         // Find the user with the confirmationToken
         const user = await users.findOne({ confirmationToken: token });

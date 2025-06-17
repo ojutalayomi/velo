@@ -1,5 +1,5 @@
 import { verifyToken } from '@/lib/auth';
-import { getMongoDb } from '@/lib/mongodb';
+import { MongoDBClient } from '@/lib/mongodb';
 import { Payload } from '@/lib/types/type';
 import { Db, ObjectId } from 'mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
@@ -14,32 +14,43 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
         if (!req.query.id) return res.status(400).json({ error: `Post ID is required` });
         const id = req.query.id;
 
-        const db = await getMongoDb();
-        console.log('Connected to post.app');
-        const post = await fetchPostsFromMultipleCollections(db, `${id}`);
+        const db = await new MongoDBClient().init();
+        console.log('Connected to post.app ' + id);
+        const post = await searchPostFromMultipleCollections(db, `${id}`);
+        console.log(post);
 
         if(post){
-          const users = db.collection('Users');
-          const user = payload ? await users.findOne({ _id: new ObjectId(payload._id) }) : null;
+          const user = payload ? await db.users().findOne({ _id: new ObjectId(payload._id) }) : null;
 
           if (user) {
             const collectionsMap = {
               Likes: 'Liked',
               Shares: 'Shared',
-              Bookmarks: 'Bookmarked'
+              Bookmarks: 'Bookmarked',
+              IsFollowing: 'IsFollowing'
             };
 
             await Promise.all(
               Object.entries(collectionsMap).map(async ([collectionName, field]) => {
-                const collection = db.collection(`Posts_${collectionName}`);
+                const collection =
+                  (post.UserId === user._id.toString() && collectionName === 'IsFollowing')
+                  ? null
+                  : collectionName === 'IsFollowing'
+                    ? db.followers()
+                    : (db as any)[`posts${collectionName}`]();
+
+                if (!collection) return;
                 const result = await (async () => {
+                  if (collectionName === 'IsFollowing') {
+                    return collection.findOne({ followerId: user._id.toString(), followedId: post.UserId });
+                  }
                   if (collectionName === 'Shares') {
                     return collection.findOne({ OriginalPostId: post.PostID, UserId: user._id.toString() });
                   }
                   return collection.findOne({ postId: post.PostID, userId: user._id.toString() });
                 })();
                 if (result) {
-                  post[field] = true;
+                  (post as any)[field] = true;
                 }
               })
             );
@@ -61,18 +72,18 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
     }
 }
 
-async function fetchPostsFromMultipleCollections(db: Db, id: string) {
+async function searchPostFromMultipleCollections(db: MongoDBClient, id: string) {
   // Fetch posts from the 'Posts' collection
-  const post = await db.collection('Posts').findOne({ PostID: id });
+  const post = await db.posts().findOne({ PostID: id });
+  if (post) return post;
 
   // Fetch posts from the 'Posts_Comments' collection
-  const comment = await db.collection('Posts_Comments').findOne({ PostID: id });
+  const comment = await db.postsComments().findOne({ PostID: id });
+  if (comment) return comment;
 
   // Fetch posts from the 'Posts_Shares' collection
-  const share = await db.collection('Posts_Shares').findOne({ PostID: id });
+  const share = await db.postsShares().findOne({ PostID: id });
+  if (share) return share;
 
-  // Combine all results into a single array
-  const combinedPost = post ? post : comment ? comment : share ? share : null;
-
-  return combinedPost;
+  return null;
 }

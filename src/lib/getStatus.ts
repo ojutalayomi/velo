@@ -1,4 +1,5 @@
-import { Comments, Post, PostData } from "../templates/PostProps";
+import { Comments, Post } from "../templates/PostProps";
+import { PostSchema } from './types/type';
 
 const domain: string ='http://localhost:5003';
 const url1: string = '/api/status';
@@ -21,7 +22,7 @@ export const getStatus = async (): Promise<string[]> => {
     return response.json();
 };
 
-export const getPosts = async (): Promise<PostData[]> => {
+export const getPosts = async (): Promise<PostSchema[]> => {
     const response = await fetch(url2, {
         method: 'GET',
         headers: {

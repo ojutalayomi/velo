@@ -1,11 +1,11 @@
 import { getUser, getUserPosts } from "./action";
-import { UserSchema } from "@/lib/types/type";
-import { PostData } from "@/templates/PostProps";
+import { UserData } from "@/lib/types/type";
+import { PostSchema } from '@/lib/types/type';
 import Profile from "./clientComps";
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-    const userData: UserSchema = await getUser((await params).username);
-    const userPosts: PostData[] = await getUserPosts((await params).username);
+    const userData: UserData = await getUser((await params).username);
+    const userPosts: PostSchema[] = await getUserPosts((await params).username);
 
-    return <Profile userData={userData} userPostCard={userPosts}/>
+    return <Profile profileData={userData} profilePostCards={userPosts}/>
 }

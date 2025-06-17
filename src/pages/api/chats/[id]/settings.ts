@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ObjectId } from 'mongodb';
-import { ChatData, ChatSettings } from '@/lib/types/type';
+import { ChatDataClient, ChatSettings } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
-import { getMongoClient } from '@/lib/mongodb';
-
-const MONGODB_DB = 'mydb';
+import { MongoDBClient } from '@/lib/mongodb';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const { method } = req;
@@ -19,11 +17,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (!payload) return res.status(401).json(`Not Allowed`);
 
     try {
-      const client = await getMongoClient();
+      const db = await new MongoDBClient().init();
       const { id } = req.query;
       const updatedSettings: Partial<ChatSettings> = req.body;
       // console.log(updatedSettings)
-      await client.db(MONGODB_DB).collection('chats').updateOne(
+      await db.chats().updateOne(
         { _id: new ObjectId(id as string) },
         { $set: { 
           "participants.$[elem].chatSettings": updatedSettings 
@@ -33,10 +31,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           upsert: true 
         }
       );
-      const updatedChat = await client.db(MONGODB_DB).collection('chats').findOne(
+      const updatedChat = await db.chats().findOne(
         { _id: new ObjectId(id as string), "participants.id": payload._id },
         { projection: { "participants.chatSettings": 1 } }
-      ) as unknown as ChatData;
+      ) as unknown as ChatDataClient;
       const updatedChatSettings = updatedChat?.participants[0]?.chatSettings;
       return res.status(200).json(updatedChatSettings);
     } catch (error) {

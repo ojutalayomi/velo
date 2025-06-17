@@ -4,14 +4,15 @@ import Sidebar from '@/components/Sidebar';
 import Bottombar from '@/components/Bottombar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Error from './error';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useUser } from '@/app/providers/UserProvider';
 import { updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
 import { usePathname, useRouter } from 'next/navigation';
 import UserPhoto from "@/components/UserPhoto";
 import PostPreview from '@/components/PostPreview';
 import { RootState } from '@/redux/store';
-import { ClientComponentsProps, ConvoTypeProp, MessageAttributes, msgStatus, NewChat_, ReactionType } from '@/lib/types/type';
+import { useAppDispatch } from '@/redux/hooks';
+import { ClientComponentsProps, ConvoType, ConvoTypeProp, GroupMessageAttributes, MessageAttributes, msgStatus, NewChat_, Reaction, ReactionType, UserData } from '@/lib/types/type';
 import { useSocket } from '@/app/providers/SocketProvider';
 import VideoChat from '../components/CallPage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,16 +20,18 @@ import { ConfirmCall } from '@/components/callConfirmation';
 import { FileStorageProvider } from '@/hooks/useFileStorage';
 import { useNetwork } from './providers/NetworkProvider';
 import { WifiOff, XCircle } from 'lucide-react';
-import { PostData } from '@/templates/PostProps';
-import { addPost, deletePost, updatePost } from '@/redux/postsSlice';
+import { PostSchema } from '@/lib/types/type';
+import { addPost, deletePost, updatePost, updatePosts } from '@/redux/postsSlice';
 import { useAnnouncer } from '@/hooks/useAnnouncer';
 import PostMaker from '@/components/PostMaker';
 import { toast } from '@/hooks/use-toast';
 import { addRoute } from '@/redux/routeSlice';
+import NewChatMenu from '@/components/ComposeChat';
 
 const ClientComponents = ({children}: ClientComponentsProps) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const pathname = usePathname();
+    const { messages, deletedConversations } = useSelector((state: RootState) => state.chat);
     const router = useRouter();
     const { isOnline, quality } = useNetwork()
     const [isClient, setIsClient] = useState(false);
@@ -87,11 +90,11 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
   
     const handleChat = useCallback((data: NewChat_) => {
         const uid = data.requestId;
-        const participant = data.chat.participants.find(p => p.id === uid);
-        const otherParticipant = data.chat.participants.find(p => p.id !== uid);
+        const participant = data.chat.participants.find(p => p.userId === uid);
+        const otherParticipant = data.chat.participants.find(p => p.userId !== uid);
         // name: convo.chatType === 'DMs' ? convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || ''] : convo.name.group,
         const obj = {
-            id: data.chat._id,
+            id: data.chat._id.toString(),
             type: data.chat.chatType,
             name: data.chat.chatType === 'DMs' ? data.chat.name[Object.keys(data.chat.name).find(e => !e.includes(uid)) || ''] : data.chat.name.group,
             displayPicture: otherParticipant?.displayPicture || '',
@@ -105,22 +108,23 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             archived: participant?.archived || false,
             timestamp: data.chat.timestamp,
             lastUpdated: Time(data.chat.lastUpdated),
-            participants: data.chat.participants.map(p => p.id),
+            participants: data.chat.participants.map(p => p.userId),
             online: false,
             isTyping: data.chat.participants.reduce((p: { [x: string]: boolean }, r) => {
-                p[r.id] = false;
+                p[r.userId] = false;
                 return p;
             }, {} as { [x: string]: boolean })
         };
         dispatch(addConversation(obj));
         if (participant?.chatSettings) {
-            dispatch(addSetting({ [data.chat._id]: participant.chatSettings }));
+            dispatch(addSetting({ [data.chat._id.toString()]: participant.chatSettings }));
         }
         // console.log(data);
         return data;
     }, [dispatch]);
   
     const handleChatMessage = useCallback((msg: MessageAttributes) => {
+      console.log("msg", msg)
       dispatch(addMessage(msg));
       dispatch(updateMessage({
         id: String(msg._id),
@@ -134,7 +138,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         dispatch(updateConversation({
           id: conversationId,
           updates: {
-            unread: msg.isRead[userdata._id] ? conversation.unread : (conversation.unread ?? 0) + 1,
+            unread: msg.isRead?.[String(userdata._id)] ? conversation.unread : (conversation.unread ?? 0) + 1,
             lastMessage: msg.content,
             lastUpdated: msg.timestamp
           }
@@ -172,6 +176,17 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             const convo = conversations.find(c =>  c.participants.includes(userId) && c.type === 'DMs')
             dispatch(updateConversation({ id: convo?.id ?? '', updates: { timestamp: lastActive }}))
         })
+        socket.on('chatError', (data: { error: string, chatId: string, updates: Partial<ConvoType> }) => {
+            toast({
+                title: data.error,
+                variant: 'destructive',
+            })
+            if(data.updates.deleted) {
+                dispatch(addConversation(deletedConversations.find(convo => convo.id === data.chatId) as ConvoType))
+            } else {
+                dispatch(updateConversation({ id: data.chatId, updates: data.updates }))
+            }
+        })
         socket.on('newChat', (data: NewChat_) => {
             handleChat(data);
             socket.emit('joinChat', { chatId: data.chat._id });
@@ -207,16 +222,16 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         socket.on('deletePost', ( data: { excludeUser: string, postId: string, type: string } ) => {
             dispatch(deletePost(data.postId));
         })
-        socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+        socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostSchema>, type: string } ) => {
             dispatch(updatePost({ id: data.postId, updates: data.update }));
-            if(data.excludeUserId !== userdata._id) {
-                setDisplayAnnouncement({
-                    status: true,
-                    message: `New ${data.type}`
-                })
-            }
+            // if(data.excludeUserId !== userdata._id) {
+            //     setDisplayAnnouncement({
+            //         status: true,
+            //         message: `New ${data.type}`
+            //     })
+            // }
         })
-        socket.on('newPost', ( data: { excludeUser: string, blog: PostData } ) => {
+        socket.on('newPost', ( data: { excludeUser: string, blog: PostSchema } ) => {
             dispatch(addPost(data.blog));
             if(data.excludeUser !== userdata._id) {
                 setDisplayAnnouncement({
@@ -225,6 +240,73 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                 })
             }
         })
+
+        // Handle follow notifications
+        socket.on('followNotification', (data: { followedDetails: UserData, followerDetails: UserData, type: 'follow' | 'unfollow', timestamp: string }) => {
+            if (data.followedDetails._id?.toString() === userdata._id) {
+                toast({
+                    title: data.followedDetails.isFollowing
+                        ? `${data.followerDetails.username} started following you`
+                        : `${data.followerDetails.username} unfollowed you`,
+                    variant: 'default',
+                });
+            } else if (data.followerDetails._id?.toString() === userdata._id) {
+                dispatch(updatePosts({
+                    key: 'UserId', 
+                    value: data.followerDetails._id?.toString() || '', 
+                    updates: {
+                        IsFollowing: data.followedDetails.isFollowing ?? false
+                    }
+                }));
+            }
+        });
+
+        socket.on('conversationUpdated', (data: { id: string, updates: { unread: number, lastMessage: string, lastUpdated: string } }) => {
+            if (data.id === userdata._id) {
+                dispatch(updateConversation({ id: data.id, updates: data.updates }));
+            }
+        });
+        socket.on('reactionAdded', (data: Reaction) => {
+            if (data.userId === userdata._id) return;
+            const message = messages.find((msg: MessageAttributes | GroupMessageAttributes) => msg._id?.toString() === data.messageId);
+            const currentReactions = message?.reactions || [];
+            dispatch(updateMessage({ 
+                id: data.messageId,
+                updates: {
+                    reactions: [...currentReactions, { 
+                        _id: data._id, // This will be set by the server
+                        messageId: data.messageId,
+                        userId: data.userId,
+                        reaction: data.reaction,
+                        timestamp: new Date().toISOString()
+                    }]
+                }
+            }));
+        });
+
+        socket.on('reactionRemoved', (data: Reaction) => {
+            if (data.userId === userdata._id) return;
+            const message = messages.find((msg: MessageAttributes | GroupMessageAttributes) => msg._id?.toString() === data.messageId);
+            const currentReactions = message?.reactions || [];
+            dispatch(updateMessage({
+                id: data.messageId,
+                updates: {
+                    reactions: currentReactions.filter((r: { userId: string }) => r.userId !== data.userId)
+                }
+            }));
+        });
+
+        socket.on('reactionUpdated', (data: Reaction) => {
+            if (data.userId === userdata._id) return;
+            const message = messages.find((msg: MessageAttributes | GroupMessageAttributes) => msg._id?.toString() === data.messageId);
+            const currentReactions = message?.reactions || [];
+            dispatch(updateMessage({
+                id: data.messageId,
+                updates: {
+                    reactions: currentReactions.filter((r: { userId: string }) => r.userId !== data.userId)
+                }
+            }));
+        });
   
         return () => {
             socket.off('newMessage', handleChatMessage);
@@ -238,7 +320,13 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             socket.off('post_reaction_reponse');
             socket.off('deletePost');
             socket.off('updatePost');
-            socket.off('newPost')
+            socket.off('newPost');
+            socket.off('followNotification');
+            socket.off('conversationUpdated');
+            socket.off('reactionAdded');
+            socket.off('reactionRemoved');
+            socket.off('reactionUpdated');
+            socket.off('chatError');
         };
     }, [socket, handleChatMessage, handleChat, handleTyping, handleStopTyping, conversations]);
 
@@ -258,10 +346,11 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                     <XCircle className='absolute cursor-pointer right-3 top-1/2 transform -translate-y-1/2' size={20} onClick={() => setDisplayAnnouncement({ status: false, message: ''})} />
                 </div>
             )}
-            <div id='root'>
+            <div id='root' className='overflow-hidden'>
                 <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
                     <FileStorageProvider>
                         <PostMaker open={isPostMakerModalOpen} onOpenChange={setPostMakerModalOpen}/>
+                        <NewChatMenu />
                         {(!isOnline && isClient) && (
                             <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-50'>
                                 <WifiOff className="h-12 w-12 text-muted-foreground" />

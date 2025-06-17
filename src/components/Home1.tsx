@@ -7,6 +7,7 @@ import { RootState } from '@/redux/store';
 import { usePosts } from '@/app/providers/PostsProvider';
 import { Skeleton } from './ui/skeleton';
 import { useUser } from '@/app/providers/UserProvider';
+import { useRouter } from 'next/navigation';
 
 const Homepage: React.FC = () => {
     const { userdata } = useUser();
@@ -15,6 +16,7 @@ const Homepage: React.FC = () => {
     const homeRef = useRef<HTMLDivElement>(null);
     const scrollPositionRef = useRef(0);
     const [load, setLoad] = useState(false);
+    const router = useRouter();
     
     // Handle scroll event
     const handleScroll = () => {
@@ -117,10 +119,30 @@ const Homepage: React.FC = () => {
                             </div>
                         </div>
                     ))
-                ) : posts && posts.length ? (
-                    posts.map(post => (
-                        <PostCard key={post._id} postData={post}/>
-                    ))
+                ) : posts ? (
+                    posts.length > 0 ? (
+                        posts.map(post => (
+                            <PostCard key={post._id} postData={post}/>
+                        ))
+                    ) : (
+                        <div className='flex flex-col items-center justify-center w-full h-3/4 p-8 text-center'>
+                            <div className='mb-6'>
+                                <div className='text-6xl mb-4'>🎉</div>
+                                <h1 className='text-2xl font-bold mb-2 dark:text-slate-200'>Be the First!</h1>
+                                <p className='text-gray-600 dark:text-slate-400 mb-4'>Looks like no one has posted anything yet. Why not break the ice?</p>
+                            </div>
+                            <div className='bg-brand/10 p-6 rounded-lg border-2 border-dashed border-brand/30 mb-6'>
+                                <p className='text-brand font-medium'>Share your thoughts, photos, or experiences - your post could start something amazing!</p>
+                            </div>
+                            <button 
+                                onClick={() => router.push('/compose/post')}
+                                className='bg-brand hover:bg-brand/90 text-white px-6 py-3 rounded-full font-medium flex items-center gap-2 transition-colors'
+                            >
+                                <span>Create First Post</span>
+                                <span>✨</span>
+                            </button>
+                        </div>
+                    )
                 ) : error && (
                     <div className='flex flex-col items-center justify-center w-full h-3/4'>
                         <RefreshCw 

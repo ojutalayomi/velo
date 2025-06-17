@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import ImageDiv from "@/components/imageDiv";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
+import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { setToggleDialog } from "@/redux/utilsSlice";
 import VideoDiv from "@/templates/videoDiv";
 import { DocCard } from "@/components/DocCard";
@@ -36,14 +37,14 @@ interface ChatTextareaProps {
     newMessage: string;
     setNewMessage: React.Dispatch<React.SetStateAction<string>>;
     handleSendMessage: (messageId: string) => void;
-    handleTyping: () => void;
+    handleTyping?: () => void;
     closeQuote: () => void;
 }
 
 const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, handleTyping, closeQuote}: ChatTextareaProps) => {
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const inputRef = useRef<HTMLInputElement>(null)
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { toggleDialog } = useSelector((state: RootState) => state.utils);
     const [fileAccepts, setFileAccepts] = useState('')
     const [errors, setErrors] = useState<string[]>([]);
@@ -151,7 +152,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                             ref={textAreaRef}
                             onChange={(e) => {
                                 setNewMessage(e.target.value);
-                                handleTyping();
+                                handleTyping?.(); // Add optional chaining to handle undefined
                             }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
@@ -170,13 +171,10 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
                             onInput={handleInput}                            
                             className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
                         />
-                        <EmojiPicker onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
-                            <button
-                                type="button"
-                                className={`absolute inset-y-0 right-0 flex ${txtButton ? 'items-end' : 'items-center'} p-3 hover:text-brand/80 rounded-full`}
-                            >
-                                <Smile size={20} className="flex-1 text-brand" />
-                            </button>
+                        <EmojiPicker 
+                            triggerClassName={`absolute inset-y-0 right-0 flex ${txtButton ? 'items-end' : 'items-center'} p-3 hover:text-brand/80 rounded-full`} 
+                            onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
+                            <Smile size={20} className="flex-1 text-brand" />
                         </EmojiPicker>
                     </div>
                     <Button
@@ -265,12 +263,12 @@ interface UploadDialogProps {
     textAreaRef: RefObject<HTMLTextAreaElement | null>,
     newMessage: string,
     setNewMessage: Dispatch<SetStateAction<string>>,
-    handleTyping: () => void,
+    handleTyping?: () => void,
     handleSendMessage: (messageId: string) => void
 }
 
 const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, handleTyping, handleSendMessage}: UploadDialogProps) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { toggleDialog } = useSelector((state: RootState) => state.utils);
     const { files: attachments, setFiles, clearFiles } = useGlobalFileStorage();
 
@@ -375,7 +373,7 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                                 ref={textAreaRef}
                                 onChange={(e) => {
                                     setNewMessage(e.target.value);
-                                    handleTyping();
+                                    handleTyping?.();
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
@@ -393,13 +391,8 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                                 }}
                                 className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
                             />
-                            <EmojiPicker onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
-                                <button
-                                    type="button"
-                                    className="absolute inset-y-0 right-0 flex items-center p-3 hover:text-brand/80 rounded-full"
-                                >
-                                    <Smile size={20} className="flex-1 text-brand" />
-                                </button>
+                            <EmojiPicker triggerClassName="absolute inset-y-0 right-0 flex items-center p-3 hover:text-brand/80 rounded-full" onChange={(emoji) => setNewMessage(prev => prev + emoji)}>
+                                <Smile size={20} className="flex-1 text-brand" />
                             </EmojiPicker>
                         </div>
                         <Button

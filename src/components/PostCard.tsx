@@ -1,26 +1,24 @@
 "use client";
 import React, { useCallback, useEffect, useState } from 'react';
-import { Post, PostData, formatNo, timeFormatter, updateLiveTime } from '../templates/PostProps';
+import { Post, formatNo, timeFormatter, updateLiveTime } from '../templates/PostProps';
+import { PostSchema } from '@/lib/types/type';
 import { useRouter } from 'next/navigation';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { Copy, Delete, Ellipsis, Flag, MessageCircleX, Minus, Repeat2, Save, Search, ShieldX, UserRoundPlus } from 'lucide-react';
+import { Copy, Delete, Ellipsis, Flag, MessageCircleX, Minus, Repeat2, Save, Search, ShieldX, UserRoundMinus, UserRoundPlus } from 'lucide-react';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from '@/components/ui/button';
 import MediaSlide from '../templates/mediaSlides';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { deletePost, updatePost } from '@/redux/postsSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
 import { useUser } from '@/app/providers/UserProvider';
 import { Skeleton } from './ui/skeleton';
 import { FileValidationConfig } from '@/lib/types/type';
 import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import ShareButton from './ShareButton';
 import PostMaker from './PostMaker';
 import { getPost } from '@/lib/getStatus';
@@ -53,12 +51,12 @@ const FILE_VALIDATION_CONFIG: FileValidationConfig = {
 };
 
 const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const socket = useSocket();
   const { userdata } = useUser();
   const posts = useSelector((state: RootState) => state.posts.posts);
   const [activePost, setActivePost] = useState<string>('');
-  const [originalPost, setOriginalPost] = useState<PostData | null>(null);
+  const [originalPost, setOriginalPost] = useState<PostSchema | null>(null);
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const [postType, setPostType] = useState('blog');
   const [open, setOpen] = useState(false);
@@ -66,7 +64,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const [time1, setTime1] = useState('');
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const router = useRouter();
-  const [data, setData] = useState<PostData>({} as PostData)
+  const [data, setData] = useState<PostSchema>({} as PostSchema)
   const [containsPost, setContainsPost] = useState(false);
 
   useEffect(() => {
@@ -74,16 +72,16 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   }, [])
 
   useEffect(() => {
-    async function loadPost() {
+    (async () => {
       if (postData) {
         setPostType(postData.Type);
         if (postData.Type === 'repost') {
-          const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
+          const original_post = posts.find((post: PostSchema) => post.PostID === postData.OriginalPostId);
           if (original_post) {
-            setData(posts.find((post: PostData) => post.PostID === postData.OriginalPostId)!);
+            setData(posts.find((post: PostSchema) => post.PostID === postData.OriginalPostId)!);
             if (original_post.OriginalPostId) {
-              const original_post_1 = posts.find((post: PostData) => post.PostID === original_post.OriginalPostId);
-              if (original_post_1) setOriginalPost(posts.find((post: PostData) => post.PostID === original_post.OriginalPostId)!);
+              const original_post_1 = posts.find((post: PostSchema) => post.PostID === original_post.OriginalPostId);
+              if (original_post_1) setOriginalPost(posts.find((post: PostSchema) => post.PostID === original_post.OriginalPostId)!);
               else {
                 const postsResponse = await getPost(original_post.OriginalPostId);
                 setOriginalPost(postsResponse.post);
@@ -91,7 +89,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             }
           }
         } else if (postData.Type === 'quote') {
-          const original_post = posts.find((post: PostData) => post.PostID === postData.OriginalPostId);
+          const original_post = posts.find((post: PostSchema) => post.PostID === postData.OriginalPostId);
           if (original_post) setOriginalPost(original_post);
           else {
             const postsResponse = await getPost(postData.OriginalPostId);
@@ -102,9 +100,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           setData(postData);
         }
       }
-    }
-
-    loadPost();
+    })()
   }, [postData]);
 
   useEffect(() => {
@@ -191,16 +187,46 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     return false;
   }, [data?.Image])
 
+  const handleFollow = async (follow: boolean) => {
+    try {
+      const res = await fetch(`/api/follow`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          followerId: userdata._id,
+          followedId: data.UserId,
+          time: new Date().toISOString(),
+          follow: follow
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to follow user",
+        variant: "destructive",
+      });
+    }
+  }
+
   const options: Option[] = [
-    ...(data.DisplayPicture ? [{
-      icon: <UserRoundPlus size={20} />,
-      text: `Follow @${data.Username}`,
-      onClick: () => {}
+    ...(data.UserId !== userdata._id ? [{
+      icon: data.IsFollowing ? <UserRoundMinus size={20} /> : <UserRoundPlus size={20} />,
+      text: data.IsFollowing ? `Unfollow @${data.Username}` : `Follow @${data.Username}`,
+      onClick: () => {
+        handleFollow(!data.IsFollowing)
+      }
     }] : []),
     {
       icon: <Save size={20} />,
       text: 'Save post',
-      onClick: () => {}
+      onClick: () => handleClick('bookmarked')
     },
     {
       icon: <Copy size={20} />,
@@ -226,7 +252,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         });
       }
     }] : []),
-    {
+    ...(data.UserId !== userdata._id ? [{
       icon: <MessageCircleX size={20} />,
       text: `Mute @${data.Username}`,
       onClick: () => {}
@@ -237,6 +263,11 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       onClick: () => {}
     },
     {
+      icon: <Flag size={20} />,
+      text: 'Report post',
+      onClick: () => {}
+    }] : []),
+    {
       icon: <Minus size={20} />,
       text: 'Remove post',
       onClick: () => {
@@ -245,11 +276,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           title: 'Post Removed.',
         })
       }
-    },
-    {
-      icon: <Flag size={20} />,
-      text: 'Report post',
-      onClick: () => {}
     }
   ]
 
@@ -265,7 +291,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         {postType === 'repost' && (
           <div className='repost flex items-center gap-2 text-xs text-brand'>
             <Repeat2 size={20} />
-            <span>Reposted by {postData?.Username}</span>
+            <span>Reposted by <Link href={`/${postData?.Username}`} className='font-bold sm:hover:underline'>{postData?.Username}</Link></span>
           </div>
         )}
         <div className='blogger-details'>
@@ -449,19 +475,19 @@ function Options({options, open, setOpen} : {options: Option[], open: boolean, s
       </DrawerContent>
     </Drawer>
 
-    <Popover open={isPopoverOpen} onOpenChange={handlePopoverChange} modal>
-      <PopoverTrigger asChild>
+    <DropdownMenu open={isPopoverOpen} onOpenChange={handlePopoverChange}>
+      <DropdownMenuTrigger asChild>
         <Ellipsis size={20} className='cursor-pointer dark:text-gray-400 hidden tablets:block' onClick={() => setOpen(true)}/>
-      </PopoverTrigger>
-      <PopoverContent className='bg-white hidden tablets:block dark:bg-zinc-800 w-auto space-y-2 mt-1 mr-2 p-2 rounded-md shadow-lg z-50'>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className='bg-white dark:bg-zinc-800 w-auto mt-1 mr-2'>
         {options.map(({ icon, text, onClick }, index) => (
-          <div key={index} className='flex gap-1 items-center cursor-pointer hover:bg-slate-200 hover:dark:bg-zinc-700 p-1 rounded-md' onClick={onClick}>
+          <DropdownMenuItem key={index} onClick={onClick} className='flex gap-1 items-center min-w-32 cursor-pointer hover:bg-slate-200 hover:dark:bg-zinc-700'>
             {icon}
             <span className='text-base'>{text}</span>
-          </div>
+          </DropdownMenuItem>
         ))}
-      </PopoverContent>
-    </Popover>
+      </DropdownMenuContent>
+    </DropdownMenu>
     </>
   )
 }

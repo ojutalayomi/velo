@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { getStatus, getPosts } from '@/lib/getStatus';
-import { useDispatch } from 'react-redux';
 import { setPosts, setLoading, setError } from '@/redux/postsSlice';
 import { NetworkStatus, networkMonitor } from '@/lib/network';
+import { useAppDispatch } from '@/redux/hooks';
 
 const PostsContext = createContext<{ success: string[] | null, setReload: React.Dispatch<React.SetStateAction<boolean>> } | undefined>(undefined);
 
 const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [status, setStatus] = useState<NetworkStatus>()
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [success, setSuccess] = useState<string[] | null>(null);
     const [reload, setReload] = useState<boolean>(false);
 

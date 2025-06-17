@@ -1,11 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ObjectId } from 'mongodb';
-import { AllChats, ChatAttributes, ChatData, ChatSettings, Err, MessageAttributes, msgStatus, NewChat, NewChat_, NewChatSettings, Participant } from '@/lib/types/type';
+import { AllChatsServer, ChatAttributes, ChatDataClient, ChatParticipant, ChatSettings, ChatType, Err, MessageAttributes, msgStatus, NewChat, NewChat_, NewChatSettings, Participant, UserSchema } from '@/lib/types/type';
 import { verifyToken } from '@/lib/auth';
 import { GroupMessageAttributes } from '../../lib/types/type';
-import { getMongoClient } from '@/lib/mongodb';
-
-const MONGODB_DB = 'mydb';
+import { MongoDBClient } from '@/lib/mongodb';
+import { getSocketInstance } from '@/lib/socket';
 
 function generateRandom16DigitNumber(): string {
   let randomNumber = '';
@@ -20,78 +19,135 @@ interface Payload {
   exp: number
 }
 
-const client = await getMongoClient();
+const db = await new MongoDBClient().init();
       
-const func = async (_id: string): Promise<any> => {
+const func = async (_id: string): Promise<UserSchema | null> => {
   const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
-  const user = await client.db(MONGODB_DB).collection('Users').findOne({ _id: objectId as ObjectId });
+  const user = await db.users().findOne({ _id: objectId as ObjectId });
   return user;
 }
 
 export const chatRepository = {
-  getAllChats: async (req: NextApiRequest, res: NextApiResponse<AllChats | { error: string }>, payload: Payload) => {
+  getAllChats: async (req: NextApiRequest, res: NextApiResponse<AllChatsServer | { error: string }>, payload: Payload) => {
     try {
-      const chats = await client.db(MONGODB_DB).collection('chats').find({ 'participants.id': payload._id }).toArray();
+      const participantList = await db.chatParticipants().find({ userId: payload._id }).toArray();
+      const chatIds = participantList.map(chat => chat.chatId);
+      
+      const chats = await db.chats().find({ _id: { $in: chatIds.map(id => new ObjectId(id)) } }).toArray();
 
-      // Extract chatIds from the fetched chats
-      const chatIds = chats.filter(chat => chat.chatType === "Groups").map(chat => chat._id);
+      const allParticipants = await db.chatParticipants().find({ chatId: { $in: chatIds } }).toArray();
 
-      const messages = await client.db(MONGODB_DB).collection('chatMessages').find({
+      const messages = await db.chatMessages().find({
         $or: [
-          ...(chatIds.length > 0 ? [{ chatId: { $in: chatIds } }] : []), // Use $in to get messages for all chatIds if the array isn't empty
+          ...(chatIds.length > 0 ? [
+            { chatId: 
+              { 
+                $in: chatIds 
+              } 
+            }
+          ] : []), // Use $in to get messages for all chatIds if the array isn't empty
           { senderId: payload._id }, // Direct sender ID match
           { receiverId: payload._id } // Match receiver ID
         ]
-      }).toArray() as (MessageAttributes | GroupMessageAttributes)[];
+      }).toArray();
+
+      const readReceipts = await db.readReceipts().find({ messageId: { $in: messages.map(message => message._id?.toString()) } }).toArray();
+      
+      // Build a map of chatId -> chatType and chatId -> participants
+      const chatTypeMap = new Map<string, ChatType>();
+      const chatParticipantsMap = new Map<string, string[]>();
+      chats.forEach(chat => {
+        chatTypeMap.set(chat._id.toString(), chat.chatType);
+        chatParticipantsMap.set(
+          chat._id.toString(),
+          allParticipants.filter(p => p.chatId === chat._id.toString()).map(p => p.userId)
+        );
+      });
+
+      messages.forEach(message => {
+        // Ensure isRead is always an object
+        if (!message.isRead || typeof message.isRead !== 'object') {
+          message.isRead = {};
+        }
+        let chatId: string = '';
+        if (typeof message.chatId === 'string') {
+          chatId = message.chatId;
+        } else if (message.chatId && typeof message.chatId === 'object' && typeof (message.chatId as any).toString === 'function') {
+          chatId = (message.chatId as any).toString();
+        }
+        const chatType = chatTypeMap.get(chatId) || 'DMs'; // fallback to DMs if not found
+        const participants = chatParticipantsMap.get(chatId) || [];
+
+        if (chatType === 'Personal') {
+          // Only attach read receipt for the single participant
+          const userId = participants[0];
+          const receipt = readReceipts.find(r => r.messageId === message._id?.toString() && r.userId === userId);
+          message.isRead = {};
+          if (userId) {
+            message.isRead[userId] = !!(receipt && receipt.readAt);
+          }
+        } else {
+          // Attach all relevant read receipts
+          readReceipts.forEach(receipt => {
+            if (receipt.messageId === message._id?.toString()) {
+              if (!message.isRead) message.isRead = {};
+              message.isRead[receipt.userId] = !!receipt.readAt;
+            }
+          });
+        }
+      });
+
+      const newMessages = messages.map(message => ({
+        ...message,
+        isRead: message.isRead || {},
+      }));
       
       const newChatsPromises = chats
-      .filter(chat => chat.participants.some((p: Participant) => p.id === payload._id))
       .map(async chat => {
         try {
-          const a = { ...chat }; // Create a copy to avoid modifying the original
+          const a = { ...chat } as unknown as ChatDataClient; // Create a copy to avoid modifying the original
           
           // console.log('Processing chat:', a._id);
 
           a.participants = await Promise.all(
-            (a.participants || [])
-              .filter((participant: Participant) => participant !== undefined)
-              .map(async (participant: Participant) => {
+            (allParticipants || [])
+              .filter(participant => participant.chatId === chat._id.toString())
+              .map(async participant => {
                 try {
-                  if (a.chatType === 'DMs') {
-                    let user;
-                    if (a.participants.length === 2) {
-                      delete a.name[a.participants.find((p: Participant) => p.id === payload._id).id]
-                      const otherParticipant = a.participants.find((p: Participant) => p.id !== payload._id);
-                      user = await func(otherParticipant.id);
-                      a.name[otherParticipant.id] = user.name;
-                    } else {
-                      user = await func(participant.id)
+                  let user = null;
+                  if (a.chatType === 'DMs' || a.chatType === 'Personal') {
+                    user = await func(participant.userId);
+                    if (a.chatType === 'DMs') {
+                      // Set the name for the other participant
+                      if (participant.userId !== payload._id) {
+                        a.name[participant.userId] = user?.name ?? '';
+                      }
                     }
-                    a.verified = user.verified;
-                    return {
-                      id: participant.id,
-                      displayPicture: user.displayPicture,
-                      lastMessageId: participant.lastMessageId,
-                      unreadCount: participant.unreadCount,
-                      favorite: participant.favorite,
-                      pinned: participant.pinned,
-                      deleted: participant.deleted,
-                      archived: participant.archived,
-                      chatSettings: participant.chatSettings
-                    };
-                  } else {
-                    // console.log(`User with ID ${participant.id} not found.`);
-                    return participant;
+                  } else if (a.chatType === 'Groups') {
+                    user = await func(participant.userId); // Optional: fetch user info for group participants
                   }
+                  return {
+                    userId: participant.userId,
+                    displayPicture: user?.displayPicture ?? participant.displayPicture ?? '',
+                    unreadCount: participant.unreadCount,
+                    favorite: participant.favorite,
+                    pinned: participant.pinned,
+                    deleted: participant.deleted,
+                    archived: participant.archived,
+                    chatSettings: participant.chatSettings,
+                    chatType: a.chatType,
+                    chatId: a._id.toString(),
+                    _id: participant._id,
+                  } as ChatParticipant;
                 } catch (error) {
-                  console.error(`Error processing participant ${participant.id}:`, error);
+                  console.error(`Error processing participant ${participant.userId}:`, error);
                   return participant;
                 }
               })
           );
 
           // console.log('Processed chat:', a._id, 'Participants:', a.participants.length);
-          return a as unknown as ChatData;
+          return a;
         } catch (error) {
           console.error('Error processing chat:', chat._id, error);
           return null;
@@ -102,9 +158,9 @@ export const chatRepository = {
       // console.log('Total processed chats:', newChats.length);
 
       const chatSettings = newChats.reduce((acc, chat) => {
-        if (chat && chat.participants && chat.participants.some((p: Participant) => p.id === payload._id)) {
-          const participant = chat.participants.find((p: Participant) => p.id === payload._id);
-          acc[chat._id] = participant?.chatSettings as NewChatSettings;
+        if (chat && chat.participants && chat.participants.some((p) => p.userId === payload._id)) {
+          const participant = chat.participants.find((p) => p.userId === payload._id);
+          acc[chat._id.toString()] = participant?.chatSettings as NewChatSettings;
         }
         return acc;
       }, {} as { [key: string]: NewChatSettings });
@@ -112,7 +168,7 @@ export const chatRepository = {
       const newObj = {
         chats: newChats,
         chatSettings: chatSettings,
-        messages: messages,
+        messages: newMessages,
         requestId: payload._id
       }
       // console.log(newObj)
@@ -125,17 +181,18 @@ export const chatRepository = {
     }
   },
 
-  getChatById: async (req: NextApiRequest, res: NextApiResponse<ChatData | { error: string }>) => {
+  getChatById: async (req: NextApiRequest, res: NextApiResponse<ChatDataClient | { error: string }>) => {
     try {
       const { id } = req.query;
-      const chat = await client.db(MONGODB_DB).collection('chats').findOne({ _id: new ObjectId(id as string) });
+      const chat = await db.chats().findOne({ _id: new ObjectId(id as string) });
+      const chatParticipants = await db.chatParticipants().find({ chatId: id }).toArray();
       if (chat) {
         // Map the MongoDB document to ChatAttributes
-        const formattedChat: ChatData = {
-          _id: chat._id.toString(),
+        const formattedChat: ChatDataClient = {
+          _id: chat._id,
           name: chat.name || '',
-          chatType: chat.chatType as 'DMs' | 'Groups' | 'Channels',
-          participants: chat.participants || [],
+          chatType: chat.chatType as ChatType,
+          participants: chatParticipants || [],
           groupDescription: chat.groupDescription || '',
           groupDisplayPicture: chat.groupDisplayPicture || '',
           verified: chat.verified || false,
@@ -144,6 +201,7 @@ export const chatRepository = {
           isPrivate: chat.isPrivate || false,
           timestamp: chat.timestamp ? new Date(chat.timestamp).toISOString() : new Date().toISOString(),
           lastUpdated: chat.lastUpdated ? new Date(chat.lastUpdated).toISOString() : new Date().toISOString(),
+          lastMessageId: chat.lastMessageId || '',
         };
         res.status(200).json(formattedChat);
       } else {
@@ -157,13 +215,13 @@ export const chatRepository = {
 
   createChat: async (req: NextApiRequest, res: NextApiResponse<NewChat_ | { error: string }>, payload: Payload) => {
     try {
-      const chatData: Omit<NewChat, 'id'> = req.body;
+      const chatData: Omit<NewChat, 'id'> & { msg: MessageAttributes } = req.body;
 
-      const newID = new ObjectId(generateRandom16DigitNumber());
+      const newID = new ObjectId(chatData._id) || new ObjectId(generateRandom16DigitNumber());
       // ChatSettings Collection
       const chatSettings: NewChatSettings = {
         _id: new ObjectId(generateRandom16DigitNumber()),
-        chatId: newID, // Reference to the chat in Chats collection
+        chatId: newID.toString(), // Reference to the chat in Chats collection
         // General settings
         isMuted: false,
         isPinned: false,
@@ -182,55 +240,73 @@ export const chatRepository = {
       };
      
       // Chats Collection
-      // type is ChatData
-      const chat = {
+      // type is 
+      const chat = {  
         _id: newID,
         name: chatData.name || {},
-        chatType: chatData.chatType as 'DMs' | 'Groups' | 'Channels',
-        participants: chatData.participants.map(participantId => ({
-          id: participantId,
-          lastMessageId: chatData.lastMessageId, // Reference to the last message in Messages collection
-          unreadCount: chatData.unreadCounts?.[participantId] || 0,
-          favorite: Boolean(chatData.favorite),
-          pinned: Boolean(chatData.pinned),
-          deleted: Boolean(chatData.deleted),
-          archived: Boolean(chatData.archived),
-          chatSettings: chatSettings,
-          displayPicture: chatData.participantsImg?.[participantId] || ''
-        })),
+        chatType: chatData.chatType as ChatType,
         groupDescription: chatData.groupDescription || '',
         groupDisplayPicture: chatData.groupDisplayPicture || '',
         verified: false,
-        adminIds: [chatData.participants[0]], // List of admin user IDs
+        adminIds: chatData.participants, // List of admin user IDs
         isPrivate: false,
         inviteLink: chatData.chatType === 'Groups' ? `/invite/${newID.toString()}` : '',
         timestamp: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
+        lastMessageId: '',
       };
 
-      await client.db(MONGODB_DB).collection('chats').insertOne(chat);
-      // await client.db(MONGODB_DB).collection('chatSettings').insertOne(chatSettings);
+      const participants: ChatParticipant[] = chatData.participants.map(participantId => ({
+        _id: new ObjectId(),
+        unreadCount: chatData.unreadCounts?.[participantId] || 0,
+        favorite: Boolean(chatData.favorite),
+        pinned: Boolean(chatData.pinned),
+        deleted: Boolean(chatData.deleted),
+        archived: Boolean(chatData.archived),
+        chatSettings: chatSettings,
+        displayPicture: chatData.participantsImg?.[participantId] || '',
+        userId: participantId,
+        chatId: chat._id.toString(),
+        chatType: chatData.chatType,
+      }));
+
+      await db.chats().insertOne(chat);
+      await db.chatParticipants().insertMany(participants);
+      // await db.collection('chatSettings').insertOne(chatSettings);
 
       const newObj = {
         chat: await (async () => {
-          const chatCopy: ChatData = { ...chat, _id: chat._id.toString()};
+          const chatCopy: ChatDataClient = { ...chat, _id: chat._id, participants: participants};
           // delete (chatCopy as any)._id;
           
           if (chatCopy.chatType === 'DMs' && chatCopy.participants.length === 2) {
-            delete chatCopy.name[chatCopy.participants.find(p => p.id === payload._id)?.id ?? '']
+            delete chatCopy.name[chatCopy.participants.find(p => p.userId === payload._id)?.userId ?? '']
           }
           
           await Promise.all(chatCopy.participants.map(async (participant, index) => {
-            if (chatCopy.chatType === 'DMs' && participant.id !== payload._id) {
-              const user = await func(participant.id);
-              chatCopy.name[participant.id] = user.name;
-              chatCopy.participants[index].displayPicture = user.displayPicture;
+            if (chatCopy.chatType === 'DMs' && participant.userId !== payload._id) {
+              const user = await func(participant.userId);
+              chatCopy.name[participant.userId] = user?.name ?? '';
+              chatCopy.participants[index].displayPicture = user?.displayPicture ?? '';
             }
           }));
           
           return chatCopy;
         })(),
         requestId: payload._id
+      }
+  
+      // Emit the message via Socket.IO
+      const socket = getSocketInstance(payload._id);
+      if (socket) {
+        try {
+          socket.emit('chatMessage', {...chatData.msg, participants: participants});
+          socket.emit('addChat', newObj)
+          // console.log('Message emitted:', msg);
+        } catch (error) {
+          console.error('Socket emission error:', error);
+          throw new Error('Failed to emit message');
+        }
       }
 
       res.status(201).json(newObj);
@@ -243,8 +319,8 @@ export const chatRepository = {
   updateChat: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const { id } = req.query;
-      const updatedAttributes: Partial<ChatAttributes> = req.body;
-      await client.db(MONGODB_DB).collection('chats').updateOne(
+      const updatedAttributes: Partial<ChatDataClient> = req.body;
+      await db.chats().updateOne(
         { _id: new ObjectId(id as string) },
         { $set: updatedAttributes }
       );
@@ -258,32 +334,32 @@ export const chatRepository = {
   updateChatSettings: async (req: NextApiRequest, res: NextApiResponse, payload: Payload) => {
     try {
       const { id } = req.query;
-      const updatedSettings: Partial<ChatSettings> = req.body;
-      const updateObject: { [key: string]: any } = {};
+      // const updatedSettings: Partial<ChatSettings> = req.body;
+      // const updateObject: { [key: string]: any } = {};
       
-      // Create a proper update object
-      Object.keys(updatedSettings).forEach(key => {
-        updateObject[`participants.$[elem].chatSettings.${key}`] = updatedSettings[key as keyof ChatSettings];
-      });
+      // // Create a proper update object
+      // Object.keys(updatedSettings).forEach(key => {
+      //   updateObject[`participants.$[elem].chatSettings.${key}`] = updatedSettings[key as keyof ChatSettings];
+      // });
 
-      await client.db(MONGODB_DB).collection('chats').updateOne(
-        { _id: new ObjectId(id as string) },
-        { $set: updateObject },
-        { 
-          arrayFilters: [{ "elem.id": payload._id }],
-          upsert: true 
-        }
-      );
+      // await db.chats().updateOne(
+      //   { _id: new ObjectId(id as string) },
+      //   { $set: updateObject },
+      //   { 
+      //     arrayFilters: [{ "elem.id": payload._id }],
+      //     upsert: true 
+      //   }
+      // );
 
-      // Fetch the updated chat to return the new settings
-      const updatedChat = await client.db(MONGODB_DB).collection('chats').findOne(
-        { _id: new ObjectId(id as string) },
-        { projection: { "participants.$[elem].chatSettings": 1 } }
-      );
+      // // Fetch the updated chat to return the new settings
+      // const updatedChat = await db.chats().findOne(
+      //   { _id: new ObjectId(id as string) },
+      //   { projection: { "participants.$[elem].chatSettings": 1 } }
+      // );
 
-      const updatedChatSettings = updatedChat?.participants.find((p: Participant) => p.id === payload._id)?.chatSettings;
+      // const updatedChatSettings = updatedChat?.participants.find((p) => p.userId === payload._id)?.chatSettings;
 
-      res.status(200).json(updatedChatSettings);
+      res.status(200).json('');
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to update chat settings' });
@@ -293,7 +369,7 @@ export const chatRepository = {
   deleteChat: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const { id } = req.query;
-      await client.db(MONGODB_DB).collection('chats').deleteOne({ _id: new ObjectId(id as string) });
+      await db.chats().deleteOne({ _id: new ObjectId(id as string) });
       res.status(204).json('');
     } catch (error) {
       console.error(error);
@@ -305,13 +381,13 @@ export const chatRepository = {
     try {
       const { chatId } = req.query;
       const chatData: MessageAttributes = req.body;
-      const chats = await client.db(MONGODB_DB).collection('chats').findOne({ _id: new ObjectId(chatId as string) });
+      const chats = await db.chats().findOne({ _id: new ObjectId(chatId as string) });
 
       const newID = new ObjectId(generateRandom16DigitNumber());
       // Messages Collection
       const message = {
         _id: new ObjectId(chatData._id as string),
-        chatId: new ObjectId(chatId as string), // Reference to the chat in DMs collection
+        chatId: chatId as string, // Reference to the chat in DMs collection
         senderId: chatData.senderId,
         receiverId: chatData.receiverId,
         content: chatData.content,
@@ -323,19 +399,22 @@ export const chatRepository = {
         }, // Object with participant IDs as keys and their read status as values
         reactions: chatData.reactions || [],
         attachments: chatData.attachments || [],
-        quotedMessage: '0',
+        quotedMessageId: '0',
         status: 'sent' as msgStatus,
       };
-      await client.db(MONGODB_DB).collection('chats').updateOne(
-        { _id: message.chatId },
+      await db.chats().updateOne(
+        { _id: new ObjectId(message.chatId) },
         { $set: {
-          lastMessageId: message._id,
-          unreadCounts: {
-            [message.receiverId]: chats?.participants[message.receiverId] + 1,
-          }}
+            lastMessageId: message._id.toString(),
+            lastUpdated: new Date().toISOString()
+          }
         }
       );
-      await client.db(MONGODB_DB).collection('chatMessages').insertOne({
+      await db.chatParticipants().updateOne(
+        { chatId: message.chatId, userId: message.receiverId },
+        { $inc: { unreadCount: 1 } }
+      );
+      await db.chatMessages().insertOne({
         ...message,
       });
       res.status(201).json(message);
@@ -348,9 +427,9 @@ export const chatRepository = {
   deleteMyMessage: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const { chatId, messageId, userId, option } = req.query;
-      await client.db(MONGODB_DB).collection('chatMessages').deleteOne({
+      await db.chatMessages().deleteOne({
         _id: new ObjectId(messageId as string),
-        chatId: new ObjectId(chatId as string),
+        chatId: chatId as string,
         senderId: userId, // Assuming you have user authentication
       });
       res.status(200).json('Successfully deleted');
@@ -363,8 +442,8 @@ export const chatRepository = {
   deleteMessageForMe: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const { chatId, messageId, userId, option } = req.query;
-      await client.db(MONGODB_DB).collection('chatMessages').updateOne(
-        { _id: new ObjectId(messageId as string), chatId: new ObjectId(chatId as string) },
+      await db.chatMessages().updateOne(
+        { _id: new ObjectId(messageId as string), chatId: chatId as string },
         { $set: { deletedFor: { $push: userId } } } // Assuming you have user authentication
       );
       res.status(200).json('Successfully deleted');
@@ -378,8 +457,8 @@ export const chatRepository = {
     try {
       const { chatId, messageId, userId } = req.query;
       const updatedContent = req.body.content;
-      await client.db(MONGODB_DB).collection('messages').updateOne(
-        { _id: new ObjectId(messageId as string), chatId: new ObjectId(chatId as string), senderId: userId },
+      await db.chatMessages().updateOne(
+        { _id: new ObjectId(messageId as string), chatId: chatId as string, senderId: userId },
         { $set: { content: updatedContent } } // Assuming you have user authentication
       );
       res.status(200).json('success');

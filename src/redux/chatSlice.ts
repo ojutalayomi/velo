@@ -2,10 +2,12 @@
 import ChatRepository from '@/lib/class/ChatRepository';
 import ChatSystem from '@/lib/class/chatSystem';
 import { networkMonitor } from '@/lib/network';
-import { AllChats, ChatAttributes, ChatSettings, ConvoType, Err, GroupMessageAttributes, MessageAttributes, NewChat, NewChatResponse, NewChatSettings } from '@/lib/types/type';
-import { createAsyncThunk, createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
+import { ChatType, ConvoType, GroupMessageAttributes, MessageAttributes, NewChatSettings, Reaction } from '@/lib/types/type';
+import { createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
 import moment from 'moment';
+import { UserDataPartial } from './userSlice';
 export { ConvoType };
+
 const chatRepository = new ChatRepository();
 
 const chatSystem = new ChatSystem(chatRepository);
@@ -111,10 +113,22 @@ const chatSlice = createSlice({
   initialState: {
     conversations: [] as unknown as ConvoType[],
     messages: [] as unknown as (MessageAttributes | GroupMessageAttributes)[],
+    deletedConversations: [] as unknown as ConvoType[],
+    newGroupMembers: [] as unknown as UserDataPartial[],
+    groupDisplayPicture: null as File | null,
     settings: stt as unknown as ChatSetting,
     loading: true,
     error: '',
     userId: '',
+    newChat: {
+      type: '' as ChatType,
+      name: '',
+      description: '',
+      participants: [],
+      displayPicture: '',
+      lastMessage: '',
+      timestamp: '',
+    }
   },
   reducers: {
     setConversations: (state, action: PayloadAction<ConvoType[]>) => {
@@ -140,20 +154,38 @@ const chatSlice = createSlice({
           : convo
       );
     },
-    updateMessageReactions: (state, action: PayloadAction<{id: string, updates: MessageAttributes['reactions']}>) => {
+    updateMessageReactions: (state, action: PayloadAction<{id: string, updates: Reaction}>) => {
       const { id, updates } = action.payload;
       state.messages = state.messages.map(msg => {
         if (msg._id === id) {
-          return {
-            ...msg,
-            reactions: updates
-          } as MessageAttributes | GroupMessageAttributes;
+          // Check if user already reacted
+          const existingReactionIndex = msg.reactions.findIndex(r => r.userId === updates.userId);
+
+          if (existingReactionIndex !== -1) {
+            // If same reaction, remove it
+            if (msg.reactions[existingReactionIndex].reaction === updates.reaction) {
+              msg.reactions = msg.reactions.filter(r => r.userId !== updates.userId);
+            } else {
+              // If different reaction, update it
+              msg.reactions[existingReactionIndex] = updates;
+            }
+          } else {
+            // Add new reaction
+            msg.reactions.push(updates);
+          }
+          return msg;
         }
         return msg;
       });
     },
     deleteConversation: (state, action: PayloadAction<string>) => {
-      state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
+      const deletedConvo = state.conversations.find(convo => convo.id === action.payload);
+      if (deletedConvo) {
+        // Add to deletedConversations array
+        state.deletedConversations = [...state.deletedConversations, deletedConvo];
+        // Remove from active conversations
+        state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
+      }
     },
     setMessages: (state, action: PayloadAction<MessageAttributes[]>) => {
       state.messages = action.payload;
@@ -223,11 +255,35 @@ const chatSlice = createSlice({
     },
     setUserId: (state, action: PayloadAction<string>) => {
       state.userId = action.payload;
+    },
+    setNewGroupMembers: (state, action: PayloadAction<UserDataPartial[]>) => {
+      state.newGroupMembers = action.payload;
+    },
+    setGroupDisplayPicture: (state, action: PayloadAction<File | null>) => {
+      state.groupDisplayPicture = action.payload;
     }
   },
 });
 
-export const { setConversations, addConversation, updateConversation, updateMessageReactions, deleteConversation, setMessages, addMessage, editMessage, updateMessage, deleteMessage, setSettings, addSetting, setLoading, setError, setUserId } = chatSlice.actions;
+export const { 
+  setConversations, 
+  addConversation, 
+  updateConversation, 
+  updateMessageReactions, 
+  deleteConversation, 
+  setMessages, 
+  addMessage, 
+  editMessage, 
+  updateMessage, 
+  deleteMessage, 
+  setSettings, 
+  addSetting, 
+  setLoading, 
+  setError, 
+  setUserId, 
+  setNewGroupMembers,
+  setGroupDisplayPicture 
+} = chatSlice.actions;
 export default chatSlice.reducer;
 
 // Fetch chats on app load
@@ -243,40 +299,41 @@ export const fetchChats = async (dispatch: Dispatch) => {
     function filter(param: string) {
       if (!chats.messages) return;
       const filteredResults = chats.messages.filter((msg: MessageAttributes | GroupMessageAttributes) => msg._id === param);
-      return filteredResults.length > 0 ? filteredResults[0].content : 'Be the first to text';
+      const result = filteredResults[0];
+      return filteredResults.length > 0 ?  `${result.attachments.length > 0 ? '📷 ' : ''}${result.content}` : null;
     }
 
     const uid = chats.requestId;
     dispatch(setUserId(uid));
     const conversations = chats.chats?.map(convo => {
-      const participant = convo.participants.find(p => p.id === uid);
+      const participant = convo.participants.find(p => p.userId === uid);
       // const otherParticipant = convo.participants.find(p => p.id !== uid);
       const displayPicture = convo.participants
         ? (convo.participants.length > 1
-            ? convo.participants.find(p => p.id !== uid)?.displayPicture
-            : convo.participants.find(p => p.id === uid)?.displayPicture)
+            ? convo.participants.find(p => p.userId !== uid)?.displayPicture
+            : convo.participants.find(p => p.userId === uid)?.displayPicture)
         : undefined;
       
       const getName = () => convo.participants.length === 1 ? convo.name[uid] : convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || 'Unknown Participant']
       return {
-        id: convo._id,
+        id: convo._id.toString(),
         type: convo.chatType,
-        name: convo.chatType === 'DMs' ? getName() : convo.name.group,
-        lastMessage: filter(participant?.lastMessageId || '') || 'Be the first to text',
+        name: convo.chatType === 'DMs' ? getName() : convo.chatType === 'Personal' ? convo.name[uid] : convo.name.group,
+        lastMessage: filter(convo?.lastMessageId || '') || '🚫 Message not found',
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,
-        displayPicture: convo.chatType === 'DMs' ? displayPicture as string : convo.groupDisplayPicture,
-        description: convo.chatType === 'DMs' ? '' : convo.groupDescription,
+        displayPicture: convo.chatType === 'DMs' || convo.chatType === 'Personal' ? displayPicture as string : convo.groupDisplayPicture,
+        description: convo.chatType === 'DMs' || convo.chatType === 'Personal' ? '' : convo.groupDescription,
         verified: convo.verified || false,
         favorite: participant?.favorite || false,
         pinned: participant?.pinned || false,
         deleted: participant?.deleted || false,
         archived: participant?.archived || false,
         lastUpdated: Time(convo.lastUpdated),
-        participants: convo.participants.map(p => p.id),
+        participants: convo.participants.map(p => p.userId),
         online: false,
         isTyping: convo.participants.reduce((p: { [x: string]: boolean }, r) => {
-          p[r.id] = false;
+          p[r.userId] = false;
           return p;
         }, {} as { [x: string]: boolean })
       };

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SwiperCore from 'swiper';
 import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Bookmark } from 'lucide-react';
-import { Comments, formatNo, Post, PostData } from '@/templates/PostProps';
+import { Comments, formatNo, Post } from '@/templates/PostProps';
+import { PostSchema } from '@/lib/types/type';
 import { getComments, getPost } from '../lib/getStatus';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
@@ -16,8 +17,9 @@ import { Footer } from '@/components/Footer';
 import { cn, generateRandomToken } from '@/lib/utils';
 import PostCard from '@/components/PostCard';
 import { Skeleton } from './ui/skeleton';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { addPost, setPostPreview, updatePost } from '@/redux/postsSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
 import ShareButton from './ShareButton';
@@ -35,11 +37,11 @@ const PostPreview: React.FC = () => {
   const params = useParams() as Params;
   const { userdata } = useUser();
   const { username, id, index } = params;
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const socket = useSocket();
   const {message} = useSelector((state: RootState) => state.posts.postPreview)
   const { posts, loading } = useSelector((state: RootState) => state.posts);
-  const post = posts.find(post => post.PostID === id) as PostData
+  const post = posts.find(post => post.PostID === id) as PostSchema
   const [toFetch, setToFetch] = useState<boolean>(true)
   const indexInt = parseInt(index || '0');
   const router = useRouter();
@@ -48,7 +50,7 @@ const PostPreview: React.FC = () => {
   const [reload, setReload] = useState<boolean>(false);
   const [postLoading, setPostLoading] = useState<boolean>(true);
   const [postError, setPostError] = useState<string | null>(null);
-  const [currentPost, setCurrentPost] = useState<PostData | null>(null);
+  const [currentPost, setCurrentPost] = useState<PostSchema | null>(null);
   const [replyText, setReplyText] = useState('');
   
 
@@ -145,7 +147,7 @@ const PostPreview: React.FC = () => {
     if (!post || !id || !userdata._id || !socket) return;
     
     if (replyText.trim()) {
-      const Post: PostData = {
+      const Post: PostSchema = {
         _id: "",
         UserId: "",
         DisplayPicture: "",
@@ -155,6 +157,7 @@ const PostPreview: React.FC = () => {
         Visibility: 'everyone',
         Caption: replyText,
         Image: [''],
+        IsFollowing: false,
         NoOfLikes: 0,
         Liked: false,
         NoOfComment: 0,
@@ -209,7 +212,7 @@ const PostPreview: React.FC = () => {
       if (posts.find(post => post.PostID === data.postId)) {
           setCurrentPost(prevPost => {
               if (prevPost && prevPost._id === data.postId) {
-                  const update: Partial<PostData> = {
+                  const update: Partial<PostSchema> = {
                       Image: [],
                       Caption: `${prevPost.Type.toUpperCase()} deleted this post.`,
                       WhoCanComment: 'none',
@@ -221,7 +224,7 @@ const PostPreview: React.FC = () => {
           })
       }
     })
-    socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+    socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostSchema>, type: string } ) => {
         if (!data.postId) return;
         if (posts.find(post => post.PostID === data.postId)) {
             setCurrentPost(prevPost => {
@@ -304,7 +307,7 @@ export default PostPreview;
 
 const LeftSideBar = (
   { className, currentPost, id, replyText, setReplyText, handleComment, ...props }: 
-    { className?: string, currentPost: PostData | null, id: string, replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void, props?: HTMLDivElement }
+    { className?: string, currentPost: PostSchema | null, id: string, replyText: string, setReplyText: React.Dispatch<React.SetStateAction<string>>, handleComment: () => void, props?: HTMLDivElement }
 ) => {
   const { userdata } = useUser();
   const socket = useSocket();
@@ -332,7 +335,7 @@ const LeftSideBar = (
 
   useEffect(() => {
     if(!socket || !currentPost) return;
-    socket.on('newComment', (data: { excludeUser: string, blog: PostData }) => {
+    socket.on('newComment', (data: { excludeUser: string, blog: PostSchema }) => {
         setComments(prevComments => {
             if (prevComments) {
               return [...prevComments, data.blog];
@@ -349,7 +352,7 @@ const LeftSideBar = (
           }
       })
     })
-    socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostData>, type: string } ) => {
+    socket.on('updatePost', ( data: { excludeUserId: string, postId: string, update: Partial<PostSchema>, type: string } ) => {
       // console.log(data)
         if (!data.postId) return;
         setComments(prevComments => {

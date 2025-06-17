@@ -1,25 +1,17 @@
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { updateLiveTime } from "@/redux/chatSlice";
 import { updatePost } from "@/redux/postsSlice";
-import MediaSlide from "@/templates/mediaSlides";
-import { PostData } from "@/templates/PostProps";
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose, DialogHeader, DialogFooter } from "./ui/dialog";
+import { PostSchema } from '@/lib/types/type';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "./ui/dropdown-menu";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Repeat2, PenLine, X, Paintbrush, CircleAlert, Images, CircleCheck, ChartBarDecreasing, Smile, Clock4, MapPin, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ReactNode, useState, useRef, useEffect, ChangeEvent } from "react";
-import { useDispatch } from "react-redux";
-import CropMediaInterface from "./CropMediaInterface";
 import { Button } from "./ui/button";
 import { DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Drawer } from "./ui/drawer";
-import { Skeleton } from "./ui/skeleton";
-import { Input } from "./ui/input";
 import PostMaker from "./PostMaker";
+import { useAppDispatch } from "@/redux/hooks";
 
 interface Option {
   icon: React.ReactNode;
@@ -27,9 +19,9 @@ interface Option {
   onClick: () => void;
 }
 
-export default function ShareButton({children, post} : {children: ReactNode, post?: PostData}) {
+export default function ShareButton({children, post} : {children: ReactNode, post?: PostSchema}) {
     const { userdata } = useUser();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const router = useRouter();
     const socket = useSocket();
     const { files, clearFiles, setFiles } = useGlobalFileStorage();

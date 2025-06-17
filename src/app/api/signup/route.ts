@@ -5,9 +5,11 @@ import { UAParser } from 'ua-parser-js'
 import bcrypt from 'bcrypt'
 import validator from 'validator'
 import { v4 as uuidv4 } from 'uuid'
-import { getMongoDb } from '@/lib/mongodb'
+import { MongoDBClient } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 import { confirmationEmail } from '@/lib/email'
+import { UserSchema } from '@/lib/types/type'
+import { createPersonalChatForUser } from '@/lib/chat/createPersonalChat'
 
 
 export async function POST(request: NextRequest) {
@@ -22,10 +24,7 @@ export async function POST(request: NextRequest) {
     const { firstname, lastname, email, username, password, displayPicture } = body;
     const userId = uuidv4();
     const saltRounds = 10;
-    const db = await getMongoDb();
-
-    const collection = db.collection('Users');
-    const tokenCollection = db.collection('Tokens');
+    const db = await new MongoDBClient().init();
 
     if (!validator.isEmail(email)) {
         console.log(`Received an invalid email: ${email}`);
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest) {
 
 
     // Check if the username or email already exists in the collection
-    const result = await collection.findOne({ $or: [{ username: username }, { email: email }] });
+    const result = await db.users().findOne({ $or: [{ username: username }, { email: email }] });
 
     // If a matching document is found
     if (result) {
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
 
         // Check if the account has exceeded the sign-up limit
         const signUpLimitPerAccount = 5;
-        if (result.signUpCount >= signUpLimitPerAccount) {
+        if (result.signUpCount && result.signUpCount >= signUpLimitPerAccount) {
             // Return an error response indicating that sign-ups are not allowed for this account
             
             return NextResponse.json({ error: 'Sign-ups are not allowed for this account.' }, { status: 409 });
@@ -72,6 +71,7 @@ export async function POST(request: NextRequest) {
             const updateFields = {
                 firstname: firstname,
                 lastname: lastname,
+                name: `${firstname} ${lastname}`,
                 password: hashedPassword,
                 displayPicture: displayPicture,
                 isEmailConfirmed: false, // Set to false to trigger email confirmation
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
             };
 
             // Only update the fields that need to be changed
-            await collection.updateOne(
+            await db.users().updateOne(
                 { email: email }, // Filter to find the existing document
                 { $set: updateFields, $inc: { signUpCount: 1 } }, // Increment signUpCount
                 { upsert: false }
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         }
 
     } else {
-        const user: { password?: string, confirmationToken?: string } & Record<string, any> = {
+        const user: UserSchema = {
             _id: new ObjectId(),
             time: time,
             userId: userId,
@@ -126,10 +126,13 @@ export async function POST(request: NextRequest) {
             dob: '',
             location: '',
             noOfUpdates: 0,
-            website: ''
+            website: '',
+            providers: {}
         }
         // Insert the new user data into the collection
-        await collection.insertOne(user);
+        await db.users().insertOne(user as UserSchema);
+
+        await createPersonalChatForUser(user, db);
         const token = await new SignJWT({ _id: user._id })
         .setProtectedHeader({ alg: 'HS256' })
         .setExpirationTime('15d')
@@ -140,11 +143,15 @@ export async function POST(request: NextRequest) {
         const parser = new UAParser(userAgent);
         const deviceInfo = parser.getResult();
 
-        await tokenCollection.insertOne({
-            userId: user._id,
+        await db.tokens().insertOne({
+            _id: new ObjectId,
+            userId: user._id?.toString() as string,
             token,
             deviceInfo,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            // Set token expiration to 15 days from now
+            // 15 days * 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+            expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
         });
 
         (await cookies()).set('velo_12', token, {
@@ -155,8 +162,8 @@ export async function POST(request: NextRequest) {
             path: '/',
         });
 
-        delete user.password
-        delete user.confirmationToken
+        delete (user as any).password;
+        delete (user as any).confirmationToken;
 
         await confirmationEmail(email, firstname, lastname, BaseUrl+"accounts/confirm-email/"+confirmationToken);
         return NextResponse.json(user, { status: 200 });;

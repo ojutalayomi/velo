@@ -1,42 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ObjectId } from 'mongodb'
-import { getMongoClient } from '@/lib/mongodb'
-
-interface Schema {
-  _id?: ObjectId,
-  time?: string,
-  userId?: string,
-  firstname?: string,
-  lastname?: string,
-  email?: string,
-  username?: string,
-  password?: string,
-  displayPicture?: string,
-  isEmailConfirmed?: true,
-  confirmationToken?: null,
-  signUpCount?: 1,
-  lastLogin?: string,
-  loginToken?: string,
-  lastResetAttempt?: {
-    [x: string]: string
-  },
-  resetAttempts?: 6,
-  password_reset_time?: string,
-  theme?: string,
-  verified?: true,
-  followers?: [],
-  following?: [],
-  bio?: string,
-  coverPhoto?: string,
-  dob?: string,
-  lastUpdate?: string[],
-  location?: string,
-  noOfUpdates?: 9,
-  website?: string,
-  resetToken?: string,
-  resetTokenExpiry?: number,
-  name?: string
-}
+import { MongoDBClient } from '@/lib/mongodb'
+import { Payload } from '@/lib/types/type';
+import { verifyToken } from '@/lib/auth';
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -48,39 +14,102 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     return res.status(400).json({ error: 'Query parameter is required' });
   }
 
-  try {
-    const client = await getMongoClient();
+  const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
+  const payload = await verifyToken(cookie as unknown as string) as unknown as Payload;
 
-    const collection = client.db('mydb').collection('Users');
+  try {
+    const db = await new MongoDBClient().init();
     let users;
+
+    const agg = [
+      {
+        '$search': {
+          'index': 'Users', 
+          'compound': {
+            'should': [
+              {
+                'autocomplete': {
+                  'query': query, 
+                  'path': 'name', 
+                  'fuzzy': {
+                    'maxEdits': 1
+                  }, 
+                  'tokenOrder': 'any'
+                }
+              }, {
+                'autocomplete': {
+                  'query': query, 
+                  'path': 'username', 
+                  'fuzzy': {
+                    'maxEdits': 1
+                  }, 
+                  'tokenOrder': 'any'
+                }
+              }
+            ]
+          }
+        }
+      }, {
+        '$limit': 15
+      }, {
+        '$project': {
+          'password': 0, 
+          'confirmationToken': 0, 
+          'signUpCount': 0, 
+          'lastLogin': 0, 
+          'loginToken': 0, 
+          'theme': 0, 
+          'lastUpdate': 0, 
+          'password_reset_time': 0,
+          'lastResetAttempt': 0,
+          'resetAttempts': 0,
+          'resetToken': 0,
+          'resetTokenExpiry': 0,
+        }
+      }
+    ];
     if (search) {
       if (!ObjectId.isValid(query as string)) {
         return res.status(400).json({ error: 'Invalid ObjectId format' });
       }
-      const data = await collection.findOne({_id: new ObjectId(query as string)});
+      const data = await db.users().findOne(
+        {
+          _id: new ObjectId(query as string)
+        },
+        {
+          projection: {
+            password: 0, 
+            confirmationToken: 0, 
+            signUpCount: 0, 
+            lastLogin: 0, 
+            loginToken: 0, 
+            theme: 0, 
+            lastUpdate: 0, 
+            password_reset_time: 0,
+            lastResetAttempt: 0,
+            resetAttempts: 0,
+            resetToken: 0,
+            resetTokenExpiry: 0,
+          }
+        }
+      );
       users = [data];
     } else {
-      users = await collection.find({
-        $or: [
-          { name: { $regex: decodeURIComponent(query as string), $options: 'i' } },
-          { username: { $regex: decodeURIComponent(query as string), $options: 'i' } }
-        ]
-      }).toArray();
+      users = await db.users().aggregate(agg).toArray();
     }
   
     if (!users) {
       return res.status(401).json({ error: 'Invalid username or email' });
     }
 
-    const attributesToRemove = ["password", "password_reset_time", "loginToken"];
-
-    const newUsers = users.map((obj: any) => {
-        let newObj = { ...obj };
-        attributesToRemove.forEach(attr => delete newObj[attr]);
-        return newObj;
+    const newUsers = users.map(async (obj: any) => {
+      let newObj = { ...obj };
+      const isFollowing = payload ? await db.followers().findOne({ followerId: payload._id, followedId: obj._id.toString() }) : false;
+      newObj.isFollowing = isFollowing ? true : false;
+      return newObj;
     });
 
-    res.status(200).json(newUsers);
+    res.status(200).json(await Promise.all(newUsers));
   } catch (error) {
     console.error('An error occurred:', error);
     res.status(500).json({ error: 'Internal Server Error' });

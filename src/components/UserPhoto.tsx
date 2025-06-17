@@ -1,6 +1,6 @@
 'use client'
 import Image from 'next/image';
-import {X,CircleX} from 'lucide-react';
+import {ChevronLeft} from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 
@@ -45,10 +45,10 @@ const FullScreenMedia: React.FC = () => {
 
   return (
     <div 
-      className={`fixed top-0 left-0 h-screen w-screen z-50 bg-black/80 text-white flex flex-col justify-center items-center
+      className={`fixed top-0 left-0 h-screen w-screen z-[100] bg-black/80 text-white flex flex-col justify-center items-center
       `} 
     >
-        <X size={25} className='absolute cursor-pointer dark:text-white top-[10px] left-[10px] m-[10px]' onClick={toggleFullScreen}/>
+        <ChevronLeft size={25} className='absolute cursor-pointer dark:text-white top-[10px] left-[10px] m-[10px]' onClick={toggleFullScreen}/>
       {src.includes('.mp4') ? (
         <video src={src} controls autoPlay loop muted className="max-h-full max-w-full" />
       ) : (

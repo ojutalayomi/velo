@@ -1,5 +1,5 @@
 import { jwtVerify } from 'jose';
-import { getMongoDb } from "@/lib/mongodb";
+import { MongoDBClient } from "@/lib/mongodb";
 import { ObjectId } from "bson";
 import { SignJWT } from "jose";
 import { AuthOptions as NextAuthOptions, User, Account, Profile } from "next-auth";
@@ -9,6 +9,8 @@ import GoogleProvider from "next-auth/providers/google";
 import { headers, cookies } from "next/headers";
 import { UAParser } from "ua-parser-js";
 import { v4 as uuidv4 } from "uuid";
+import { UserSchema } from './types/type';
+import { createPersonalChatForUser } from './chat/createPersonalChat';
 
 export async function verifyToken(token: string) {
   try {
@@ -41,18 +43,18 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }: { user: User | AdapterUser; account: Account | null; profile?: Profile | undefined; email?: { verificationRequest?: boolean | undefined; } | undefined; credentials?: Record<string, unknown> | undefined; }) {
       try {
-        const db = await getMongoDb();
-        const users = db.collection("Users");
+        const db = await new MongoDBClient().init();
+        const users = db.users();
 
         // Check if user exists
-        const existingUser = await users.findOne({ email: user.email });
+        const existingUser = await users.findOne({ email: user.email as string });
 
         if (existingUser) {
           // Update last login and provider info for existing user
           if (existingUser.providers) {
             if (Object.keys(existingUser.providers).includes(account?.provider || '')) {
               await users.updateOne(
-                { email: user.email },
+                { email: user.email as string },
                 { $set: {
                   lastLogin: new Date().toISOString(),
                   [`providers.${account?.provider}`]: {
@@ -64,13 +66,13 @@ export const authOptions: NextAuthOptions = {
             }
           } else {
             await users.updateOne(
-              { email: user.email },
+              { email: user.email as string },
               { $set: {
                 lastLogin: new Date().toISOString(),
               }}
             );
           }
-          const tokenCollection = db.collection('Tokens');
+          const tokenCollection = db.tokens();
           const secret = new TextEncoder().encode(process.env.JWT_SECRET);
           const token = await new SignJWT({ _id: existingUser._id })
             .setProtectedHeader({ alg: 'HS256' })
@@ -83,10 +85,12 @@ export const authOptions: NextAuthOptions = {
           const deviceInfo = parser.getResult();
 
           await tokenCollection.insertOne({
-            userId: existingUser._id,
+            _id: new ObjectId,
+            userId: existingUser._id.toString(),
             token,
             deviceInfo,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
           });
 
           (await cookies()).set('velo_12', token, {
@@ -101,14 +105,15 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Create new user
-        const newUser = {
+        const newUser: UserSchema = {
           _id: new ObjectId(),
           time: new Date().toISOString(),
           userId: uuidv4(),
           firstname: user.name?.split(' ')[0] || '',
           lastname: user.name?.split(' ')[1] || '',
-          email: user.email,
-          name: user.name,
+          email: user.email as string,
+          name: user.name as string,
+          password: '',
           providers: {
             [account?.provider || 'unknown']: {
               id: profile?.sub,
@@ -129,11 +134,13 @@ export const authOptions: NextAuthOptions = {
           location: '',
           noOfUpdates: 0,
           website: '',
-          lastLogin: new Date().toISOString()
+          lastLogin: new Date().toISOString(),
         };
 
         await users.insertOne(newUser);
-        const tokenCollection = db.collection('Tokens');
+
+        await createPersonalChatForUser(newUser, db);
+        const tokenCollection = db.tokens();
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const token = await new SignJWT({ _id: newUser._id })
           .setProtectedHeader({ alg: 'HS256' })
@@ -146,10 +153,12 @@ export const authOptions: NextAuthOptions = {
         const deviceInfo = parser.getResult();
 
         await tokenCollection.insertOne({
-          userId: newUser._id,
+          _id: new ObjectId,
+          userId: newUser._id?.toString() as string,
           token,
           deviceInfo,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
         });
 
         (await cookies()).set('velo_12', token, {
@@ -170,8 +179,8 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, user }: { session: any; user: User | AdapterUser; }) {
       try {
-        const db = await getMongoDb();
-        const dbUser = await db.collection("Users").findOne({ email: user.email });
+        const db = await new MongoDBClient().init();
+        const dbUser = await db.users().findOne({ email: user.email as string });
 
         if (dbUser) {
           session.user = {

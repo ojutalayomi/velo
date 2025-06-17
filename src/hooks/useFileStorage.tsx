@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useState, ReactNode } from 'react';
+import { createContext, useContext, useCallback, useState, ReactNode, useEffect } from 'react';
 
 interface FileStorageContextType {
   files: File[];
@@ -6,12 +6,15 @@ interface FileStorageContextType {
   addFile: (newFiles: File) => void;
   removeFile: (index: number) => void;
   clearFiles: () => void;
+  groupDisplayPicture: File | null;
+  setGroupDisplayPicture: (file: File | null) => void;
 }
 
 const FileStorageContext = createContext<FileStorageContextType | undefined>(undefined);
 
 export const FileStorageProvider = ({ children }: { children: ReactNode }) => {
   const [files, setFiles] = useState<File[]>([]);
+  const [groupDisplayPicture, setGroupDisplayPicture] = useState<File | null>(null);
 
   const addFile = useCallback((newFiles: File) => {
     setFiles([...files, newFiles]);
@@ -23,6 +26,13 @@ export const FileStorageProvider = ({ children }: { children: ReactNode }) => {
 
   const clearFiles = useCallback(() => {
     setFiles([]);
+    setGroupDisplayPicture(null);
+  }, []);
+  
+  useEffect(() => {
+    return () => {
+      clearFiles();
+    }
   }, []);
 
   return (
@@ -32,7 +42,9 @@ export const FileStorageProvider = ({ children }: { children: ReactNode }) => {
         setFiles, 
         addFile, 
         removeFile, 
-        clearFiles 
+        clearFiles,
+        groupDisplayPicture,
+        setGroupDisplayPicture
       }}
     >
       {children}

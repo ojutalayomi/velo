@@ -1,5 +1,6 @@
 import { addInteractionFlags } from '@/lib/apiUtils';
-import { getMongoDb } from '@/lib/mongodb';
+import { verifyToken } from '@/lib/auth';
+import { MongoDBClient } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
@@ -11,9 +12,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { username } = req.query;
 
     try {
-        const db = await getMongoDb();
-        const users = db.collection('Users');
-        const posts = db.collection('Posts');
+        const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
+        const payload = await verifyToken(cookie);
+        const db = await new MongoDBClient().init();
+        const users = db.users();
+        const posts = db.posts();
 
         // Find user
         const user = await users.findOne({ username: username });
@@ -28,8 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ] }).toArray();
 
         
-        const comments = await db.collection('Posts_Comments').find({ UserId: user._id.toString() }).toArray();
-        const shares = await db.collection('Posts_Shares').find({ UserId: user._id.toString() }).toArray();
+        const comments = await db.postsComments().find({ UserId: user._id.toString() }).toArray();
+        const shares = await db.postsShares().find({ UserId: user._id.toString() }).toArray();
 
         // Combine all results into a single array
         const combinedPosts = [...userPosts, ...comments, ...shares];
@@ -38,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         combinedPosts.sort((a, b) => new Date(b.TimeOfPost).getTime() - new Date(a.TimeOfPost).getTime());
 
         // Add interaction flags for the requesting user if they exist
-        await addInteractionFlags(db, combinedPosts, user._id.toString());
+        await addInteractionFlags(db, combinedPosts, payload?._id as string);
 
         return res.status(200).json(combinedPosts);
 

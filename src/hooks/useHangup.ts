@@ -1,11 +1,11 @@
 import { useCallback, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
 import { 
   setPeerConnection, 
   resetConnection,
   setError,
 } from '@/redux/rtcSlice';
 import { Socket } from 'socket.io-client';
+import { useAppDispatch } from '@/redux/hooks';
 
 interface VideoRefs {
   localVideo: React.RefObject<HTMLVideoElement>;
@@ -27,7 +27,7 @@ export const useHangup = ({
   videoRefs,
   onHangup,
 }: UseHangupProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const stopAllTracks = useCallback((stream: MediaStream | null) => {
     if (!stream) return;

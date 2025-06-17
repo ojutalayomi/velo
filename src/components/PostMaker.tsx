@@ -4,7 +4,8 @@ import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import MediaSlide from "@/templates/mediaSlides";
-import { PostData, updateLiveTime } from "@/templates/PostProps";
+import { updateLiveTime } from "@/templates/PostProps";
+import { PostSchema } from '@/lib/types/type';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose, DialogHeader, DialogFooter, DialogTrigger } from "./ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { X, Paintbrush, CircleAlert, Images, CircleCheck, ChartBarDecreasing, Smile, Clock4, MapPin, Loader2 } from "lucide-react";
@@ -21,7 +22,7 @@ import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 
 export default function PostMaker(
     {children, open, type = 'post', post, onOpenChange} : 
-    {children?: ReactNode ,open: boolean, type?: PostData['Type'], post?: PostData, onOpenChange: Dispatch<SetStateAction<boolean>>}
+    {children?: ReactNode ,open: boolean, type?: PostSchema['Type'], post?: PostSchema, onOpenChange: Dispatch<SetStateAction<boolean>>}
 ) {
     const navigate = useNavigateWithHistory();
     const { userdata } = useUser();
@@ -34,7 +35,7 @@ export default function PostMaker(
     const [txtButton, setTxtButton] = useState(false);
     const [text, setText] = useState('')
     const [isPosting, setIsPosting] = useState(false)
-    const textLimit = userdata.verified ? 1000 : 500; // 1000 for verified users, 500 for others
+    const textLimit = userdata.verified ? 10000 : 1000; // 10000 for verified users, 1000 for others
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
     useEffect(() => {
@@ -180,12 +181,12 @@ export default function PostMaker(
   
         if (type === 'quote'){
             if(!post) return;
-            const quote: Partial<PostData> = {
-                Visibility: visibility as PostData['Visibility'],
+            const quote: Partial<PostSchema> = {
+                Visibility: visibility as PostSchema['Visibility'],
                 Caption: text,
                 Image: media,
                 Code: '',
-                WhoCanComment: visibility as PostData['WhoCanComment'],
+                WhoCanComment: visibility as PostSchema['WhoCanComment'],
                 OriginalPostId: post.PostID
             }
 
@@ -196,16 +197,17 @@ export default function PostMaker(
             });
         } else {
             if(!post && type === 'comment') return;
-            const Post: PostData = {
+            const Post: PostSchema = {
                 _id: "",
                 UserId: "",
                 DisplayPicture: "",
                 NameOfPoster: "",
                 Verified: false,
                 TimeOfPost: new Date().toISOString(),
-                Visibility: visibility as PostData['WhoCanComment'],
+                Visibility: visibility as PostSchema['WhoCanComment'],
                 Caption: text,
                 Image: media,
+                IsFollowing: false,
                 NoOfLikes: 0,
                 Liked: false,
                 NoOfComment: 0,
@@ -215,7 +217,7 @@ export default function PostMaker(
                 Username: "",
                 PostID: "",
                 Code: "",
-                WhoCanComment: visibility as PostData['WhoCanComment'],
+                WhoCanComment: visibility as PostSchema['WhoCanComment'],
                 Shared: false,
                 Type: type,
                 ParentId: post ? post.PostID : ''
@@ -270,9 +272,9 @@ export default function PostMaker(
                 {/* User Info and Dropdown */}
                 <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden">
-                    {userdata.dp ?
+                    {userdata.displayPicture ?
                     <img
-                        src={userdata.dp}
+                        src={userdata.displayPicture}
                         alt="Profile"
                         className="w-full h-full object-cover"
                     /> :
@@ -401,7 +403,9 @@ export default function PostMaker(
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     {button.id === 'emoji' ? (
-                                                        <EmojiPicker onChange={(emoji: string) => setText(prev => prev + emoji)} />
+                                                        <EmojiPicker triggerClassName="text-brand hover:bg-brand/90 group p-2 rounded-full transition-all duration-200" onChange={(emoji: string) => setText(prev => prev + emoji)} >
+                                                            <button.icon size={16} className="group-hover:text-white " />
+                                                        </EmojiPicker>
                                                     ) : (
                                                         <button
                                                             onClick={button.action}
@@ -432,7 +436,7 @@ export default function PostMaker(
     )
 }
 
-function MiniPostCard({ post, type = 'post' }: { post: PostData, type?: PostData ['Type']}): ReactNode {
+function MiniPostCard({ post, type = 'post' }: { post: PostSchema, type?: PostSchema ['Type']}): ReactNode {
     const [time, setTime] = useState('')
   
     useEffect(() => {

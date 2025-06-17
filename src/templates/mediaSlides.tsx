@@ -9,12 +9,12 @@ import {
     type CarouselApi
 } from "@/components/ui/carousel"
 import VideoDiv from "./videoDiv"
-import { PostData } from "./PostProps"
+import { PostSchema } from '@/lib/types/type'
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 
-const MediaSlide = ({ className, postData, isLink = false, ...props }: { className?: string, postData: PostData, isLink?: boolean, props?: HTMLDivElement}) => {
+const MediaSlide = ({ className, postData, isLink = false, ...props }: { className?: string, postData: PostSchema, isLink?: boolean, props?: HTMLDivElement}) => {
     const [api, setApi] = useState<CarouselApi>()
     const { index } = useParams() as { index: string }
     const [current, setCurrent] = useState(0)

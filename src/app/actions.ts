@@ -1,6 +1,6 @@
 'use server'
  
-import { getMongoDb } from '@/lib/mongodb'
+import { MongoDBClient } from '@/lib/mongodb'
 import webpush, { PushSubscription } from 'web-push'
  
 webpush.setVapidDetails(
@@ -13,14 +13,14 @@ let subscription: PushSubscription | null = null
  
 export async function subscribeUser(sub: PushSubscription) {
   subscription = sub
-  const db = await getMongoDb()
-  db.collection('Subscriptions').insertOne({ data: sub })
+  const db = await new MongoDBClient().init()
+  db.subscriptions().insertOne({ data: sub })
   return { success: true }
 }
  
 export async function unsubscribeUser(sub: PushSubscription) {
-  const db = await getMongoDb()
-  const result = await db.collection('Subscriptions').deleteOne({ data: sub })
+  const db = await new MongoDBClient().init()
+  const result = await db.subscriptions().deleteOne({ data: sub })
   if (result.deletedCount > 0) {
     subscription = null
     return { success: true }

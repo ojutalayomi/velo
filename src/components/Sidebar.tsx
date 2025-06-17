@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useUser } from '@/app/providers/UserProvider';
 import { SidebarItem, UserSection, sidebarItems } from './SidebarComps';
 import { UserData } from '@/redux/userSlice';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { handleThemeChange1 } from './ThemeToggle';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
   const params = useParams<{ chat: string }>();
   const { userdata, loading, error, refetchUser } = useUser();
   const [isPopUp, setPopUp] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme()
@@ -41,6 +42,19 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    const isSidebarCollapsed = localStorage.getItem('isSidebarCollapsed');
+    if (isSidebarCollapsed) {
+      setIsCollapsed(isSidebarCollapsed === 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (pathname?.includes('/chats')) {
+      setIsCollapsed(true);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     pathname === '/' ? router.push('/home') : null;
@@ -65,14 +79,15 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
             activeRoute={activeRoute}
             handleClick={handleClick}
             userdata={userdata}
+            isCollapsed={isCollapsed}
           />
         </TooltipTrigger>
-        <TooltipContent side='right' align='center' className='900px:hidden' sideOffset={5} alignOffset={5}>
+        <TooltipContent side='right' align='center' className='md:hidden' sideOffset={5} alignOffset={5}>
           {item.label}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )), [activeRoute, handleClick, userdata]);
+  )), [activeRoute, handleClick, userdata, isCollapsed]);
   
   const userSectionRef = useRef<HTMLDivElement>(null)
 
@@ -92,17 +107,27 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
     handleThemeChange1(newTheme, isOpen, setTheme, setOpen);
   };
 
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+    localStorage.setItem('isSidebarCollapsed', (!isCollapsed).toString());
+  };
+
   return (
-    <div id='sidebar' className={`${pathname?.includes("/accounts") && '!hidden'} hidden tablets:flex flex-col`}>
-      {/* <h1 className="brandname dark:text-slate-200 dark:after:text-slate-200 text-lg after:content-['V']"></h1> */}
-      <div className='flex 900px:justify-start justify-center m-2'>
+    <div id='sidebar' className={`${pathname?.includes("/accounts") ? '!hidden' : ''} hidden tablets:flex flex-col overflow-auto max-w-min relative transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
+      <button
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-20 bg-white dark:bg-zinc-800 p-1 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors z-10"
+      >
+        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+      </button>
+      <div className='flex md:justify-start justify-center m-2'>
         <Image src='/velo11.png' className='displayPicture mt-[10px] mb-[-5px]' width={30} height={30} alt='logo'/>
       </div>
       <div className='flex-1'>
         {memoizedSidebarItems}
       </div>
-      <div className="px-2 flex justify-center 900px:block">
-        <div className="900px:flex hidden justify-between items-center bg-gray-100 dark:bg-zinc-900 dark:text-gray-200 p-1 rounded-full shadow-bar dark:shadow-bar-dark">
+      <div className="px-2 flex justify-center md:block">
+        <div className={`${isCollapsed ? 'hidden' : "md:flex hidden justify-between items-center bg-gray-100 dark:bg-zinc-900 dark:text-gray-200 p-1 rounded-full shadow-bar dark:shadow-bar-dark"}`}>
           <button
             onClick={() => darkMode(false)}
             className={`flex gap-1 items-center flex-1 py-2 px-4 rounded-full ${!isDarkMode ? 'bg-white dark:bg-zinc-600 shadow-bar dark:shadow-bar-dark' : ''}`}
@@ -119,11 +144,11 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button onClick={toggleDarkMode} className="900px:hidden p-2 bg-gray-100 dark:bg-gray-700 rounded-full shadow-bar dark:shadow-bar-dark">
+              <button onClick={toggleDarkMode} className={`${isCollapsed ? "!block mx-auto" : ""} md:hidden p-2 bg-gray-100 dark:bg-gray-700 rounded-full shadow-bar dark:shadow-bar-dark`}>
                 {isDarkMode ? <Moon size={20} className="mx-auto" /> : <Sun size={20} className="mx-auto" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent side='right' align='center' className='900px:hidden' sideOffset={5} alignOffset={5}>Toggle {!isDarkMode ? 'Dark' : 'Light'} Mode</TooltipContent>
+            <TooltipContent side='right' align='center' className='md:hidden' sideOffset={5} alignOffset={5}>Toggle {!isDarkMode ? 'Dark' : 'Light'} Mode</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -135,6 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, isMoreShown, se
           userdata={userdata as UserData}
           pathname={pathname as string}
           isPopUp={isPopUp}
+          isCollapsed={isCollapsed}
           handlePopUp={handlePopUp}
           refetchUser={refetchUser}
         />

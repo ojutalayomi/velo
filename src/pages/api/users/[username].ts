@@ -1,4 +1,6 @@
-import { getMongoClient } from '@/lib/mongodb';
+import { verifyToken } from '@/lib/auth';
+import { MongoDBClient } from '@/lib/mongodb';
+import { Payload } from '@/lib/types/type';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
@@ -6,9 +8,11 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         const { username } = req.query;
 
         try {
-            const mongoClient = await getMongoClient();
-            const db = mongoClient.db('mydb');
-            const users = db.collection('Users');
+            const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
+            const payload = await verifyToken(cookie);
+            const db = await new MongoDBClient().init();
+            const users = db.users();
+            const followers = db.followers();
 
             // Find user
             const user = await users.findOne({ username: username });
@@ -16,13 +20,17 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
                 return res.status(404).json({ message: 'User not found' });
             }
 
+            if (payload) {
+                if (user?._id.toString() !== payload._id) {
+                    const isFollowing = await followers.findOne({ followerId: (payload as unknown as Payload)._id, followedId: user?._id.toString() });
+                    if (isFollowing) {
+                        user.isFollowing = true;
+                    }
+                }
+            }
+
             // Remove sensitive information
-            const sanitizedUser = { ...user };
-            delete sanitizedUser.password;
-            delete sanitizedUser.confirmationToken;
-            delete sanitizedUser.resetToken;
-            delete sanitizedUser.resetTokenExpiry;
-            delete sanitizedUser.loginToken;
+            const { password, confirmationToken, resetToken, resetTokenExpiry, loginToken, ...sanitizedUser } = user;
             delete sanitizedUser.lastResetAttempt;
 
             return res.status(200).json(sanitizedUser);

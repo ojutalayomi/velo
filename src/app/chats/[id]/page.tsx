@@ -6,7 +6,7 @@
 // import { useRouter, useParams } from 'next/navigation';
 // import MessageTab from '../MessageTab';
  // import Image from 'next/image';
-// import { useDispatch, useSelector } from 'react-redux';
+// import { useSelector } from 'react-redux';
 // import { showChat } from '@/redux/navigationSlice';
 // import { RootState } from '@/redux/store';
 // import { useUser } from '@/hooks/useUser';

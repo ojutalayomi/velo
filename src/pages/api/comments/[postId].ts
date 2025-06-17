@@ -1,6 +1,6 @@
 import { addInteractionFlags } from '@/lib/apiUtils';
 import { verifyToken } from '@/lib/auth';
-import { getMongoClient, getMongoDb } from '@/lib/mongodb';
+import { MongoDBClient } from '@/lib/mongodb';
 import { Payload } from '@/lib/types/type';
 import { ObjectId } from 'mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next'
@@ -16,9 +16,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
         console.log('Server is ready for work');
 
         // Get the collection
-        const db = await getMongoDb();
-        const collection = db.collection('Users');
-        const commentsCollection = db.collection('Posts_Comments');
+        const db = await new MongoDBClient().init();
+        const collection = db.users();
+        const commentsCollection = db.postsComments();
 
 
         // console.log('165', postId)
@@ -28,7 +28,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
             comments.map(async (comment) => {
                 // console.log(comment)
                 const usr = await collection.findOne({ username: comment.Username });
-                comment.DisplayPicture = usr?.displayPicture;
+                comment.DisplayPicture = usr?.displayPicture || '';
             })
 
             if (user) {

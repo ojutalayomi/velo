@@ -1,16 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getMongoDb } from '@/lib/mongodb';
+import { MongoDBClient } from '@/lib/mongodb';
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
-      const db = await getMongoDb();
-      const collection = db.collection('Users');
+      const db = await new MongoDBClient().init();
+      const collection = db.users();
       const status = await collection.find({}).toArray();
       const statuses: string[] = [];
       
       status.forEach(user => {
-        statuses.push(user.displayPicture);
+        statuses.push(user.displayPicture || '');
       });
       
       res.json(statuses);

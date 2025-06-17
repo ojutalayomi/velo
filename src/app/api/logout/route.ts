@@ -2,14 +2,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { cookies } from 'next/headers';
-import { getMongoClient } from '@/lib/mongodb';
+import { MongoDBClient } from '@/lib/mongodb';
 
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    const client = await getMongoClient();
+    const db = await new MongoDBClient().init();
 
-    const tokenCollection = client.db('mydb').collection('Tokens');
+    const tokenCollection = db.tokens();
     const token = cookieStore.get('velo_12')?.value;
 
     if (!token) {

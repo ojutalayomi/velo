@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Switch, Slider } from '@/components/ui';
 import ChatSystem  from '@/lib/class/chatSystem';
-import { ChatData, ChatSettings, GroupMessageAttributes, MessageAttributes, NewChatSettings } from '@/lib/types/type';
+import { ChatDataClient, ChatSettings, GroupMessageAttributes, MessageAttributes, NewChatSettings } from '@/lib/types/type';
 import ChatRepository from '@/lib/class/ChatRepository';
 import Chat from '@/lib/class/chatAttr';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -41,15 +41,15 @@ const ChatSettingsPage: React.FC = () => {
   const navigate = useNavigateWithHistory();
   const { id } = params;
   const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
-  const [chat, setChat] = useState<ChatData | 'i'>('i');
+  const [chat, setChat] = useState<ChatDataClient | 'i'>('i');
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
 
   useEffect(() => {
       const fetchChat = async () => {
         if (id) {
           const fetchedChat = await chatSystem.getChatById(id);
-          setChat(fetchedChat as ChatData);
-          const chatSettings = fetchedChat?.participants.find((participant) => participant.id === id)?.chatSettings;
+          setChat(fetchedChat as ChatDataClient);
+          const chatSettings = fetchedChat?.participants.find((participant) => participant._id.toString() === id)?.chatSettings;
           setChatSettings(chatSettings);
         }
       };

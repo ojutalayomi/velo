@@ -6,10 +6,11 @@ import { ChevronDown, EllipsisVertical, Phone, Video } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRouter, useParams } from 'next/navigation';
 import MessageTab from '../../MessageTab';
-import { useDispatch, useSelector } from 'react-redux';
-import { ConvoType, updateConversation, addMessage, updateMessage } from '@/redux/chatSlice';
+import { useSelector } from 'react-redux';
+import { ConvoType, updateConversation, addMessage, updateMessage, deleteConversation } from '@/redux/chatSlice';
 import { showChat } from '@/redux/navigationSlice';
 import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { useUser } from '@/app/providers/UserProvider';
 import { useSocket } from '@/app/providers/SocketProvider';
 import { Input } from '@/components/ui/input';
@@ -28,10 +29,6 @@ import { MultiSelect } from '../../MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface NavigationState {
-  chaT: string;
-}
 
 type Message = {
   _id: string,
@@ -53,17 +50,6 @@ const initialQuoteState = {
   state: false
 }
 
-interface ChatSetting {
-  [x: string]: NewChatSettings
-}
-
-interface CHT {
-  messages: (MessageAttributes | GroupMessageAttributes)[],
-  settings: ChatSetting,
-  conversations: ConvoType[],
-  loading: boolean,
-}
-
 const generateObjectId = () => {
   const timestamp = Math.floor(new Date().getTime() / 1000).toString(16);
   const machineId = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
@@ -76,7 +62,7 @@ const generateObjectId = () => {
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const router = useRouter();
   const params = useParams<{ gid: string }>();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { userdata } = useUser();
   const { messages , settings, conversations, loading: convoLoading } = useSelector((state: RootState) => state.chat);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
@@ -84,18 +70,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [load,setLoading] = useState<boolean>();
   const [err,setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState('');
-  const [group,setGroup] = useState<{[x: string]: any}>([]);
+  const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const gid = params?.gid as string;
   const socket = useSocket();
   const convo = conversations?.find(c => c.id === gid) as ConvoType;
   const [isPinned, setIsPinned] = useState(convo?.pinned);
-  const [isDeleted, setIsDeleted] = useState(convo?.deleted);
   const [isArchived, setIsArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const chat = settings?.[gid];
   const otherIds = convo?.participants?.filter(id => id !== userdata._id);
-  const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   let lastDateRef = useRef<string>('');
@@ -136,7 +120,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     setError(false);
 
     try {
-        setGroup(convo);
+      setGroup(convo);
     } catch (error) {
       setError(true);
       console.error('Error setting data:', error);
@@ -174,28 +158,27 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       console.log('send')
       const isRead = otherIds
         ? Object.fromEntries([
-            [userdata._id, false],
+            [String(userdata._id), false],
             ...otherIds.map((id: string) => [id, true])
           ])
-        : { [userdata._id]: true };
+        : { [String(userdata._id)]: true };
 
       const msg = { 
         _id: generateObjectId(),
         chatId: gid, 
         sender: {
-          id: userdata._id,
+          id: String(userdata._id),
           name: userdata.name,
-          displayPicture: userdata.dp,
+          displayPicture: userdata.displayPicture,
           verified: userdata.verified,
         },
         receiverId: gid,
         content: newMessage, 
         timestamp: new Date().toISOString(),
         messageType: 'Groups',
-        isRead: isRead, // Object with participant IDs as keys and their read status as values
         reactions: [],
         attachments: [] as Attachment[],
-        quotedMessage: id,
+        quotedMessageId: id,
         status: 'sending' as msgStatus,
       }
 
@@ -237,7 +220,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       dispatch(updateConversation({
         id: msg._id,
         updates: {
-          unread: msg.isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
+          unread: isRead[String(userdata._id)] ? convo.unread : (convo.unread ?? 0) + 1,
           lastMessage: msg.content,
           lastUpdated: msg.timestamp
         }
@@ -302,7 +285,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     { id: 2, name: 'Search', action: () => openSearchBar(true) },
     { id: 3, name: 'Mute notifications', action: () => console.log('Archived') },
     { id: 4, name: 'Wallpaper', action: () => console.log('Hidden') },
-    { id: 5, name: 'Delete', action: () => console.log('Unread') },
+    { id: 5, name: 'Delete', action: () => { dispatch(deleteConversation(gid)); router.replace('/chats') } },
     { id: 6, name: 'Report', action: () => console.log('Blocked') },
     { id: 7, name: !convo?.pinned ? 'Pin' : 'Unpin', action: () => {
       dispatch(updateConversation({ id: gid, updates: { pinned: !convo?.pinned } }));
@@ -363,11 +346,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {/* {Object.entries(convo?.isTyping || {}).some(([id, isTyping]) => isTyping) && 
-                    ` • ${Object.entries(convo?.isTyping || {})
-                      ?.filter(([id, isTyping]) => isTyping)
-                      .map(([id, _]) => group?.participants.find((p: { id: string }) => p.id === id)?.name || 'Someone')
-                      .join(', ')} is typing...`} */}
                   {filteredKeys.includes(true) && 'Someone is typing...'}<b className='collapse'>Group</b>
                 </p>
               </>
@@ -434,21 +412,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         }
       </div>
 
-      <div ref={messageBoxRef} onScroll={handleScroll} className="pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"> 
+      <div ref={messageBoxRef} onScroll={handleScroll} className="backdrop-blur-sm pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"> 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">
           {load ? (
             <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
           ) : (
             <>
               <div className="relative">
-                <Avatar className='size-20'>
+                <Avatar className='size-20' data-src={group?.displayPicture}>
                   <AvatarFallback className='capitalize'>{group?.name?.slice(0,2)}</AvatarFallback>
                   <AvatarImage 
-                  src={
-                    group?.groupDisplayPicture
-                      ? url + group.groupDisplayPicture
-                      : ''
-                  } 
+                  src={group?.displayPicture} 
                   className='displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover' 
                   width={80} 
                   height={80} 
@@ -501,13 +475,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
           }, [])}
         </div>
 
-        <div className={`absolute rounded-full right-0 bottom-16 shadow-lg mr-4 p-2 bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex items-center gap-2 ${showScrollButton ? 'opacity-0' : 'opacity-100'}`}>
-          <ChevronDown
-          className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out'
-          onClick={scrollToBottom}
-          />
-        </div> 
       </div>
+      <div className={`absolute rounded-full right-0 bottom-16 shadow-lg mr-4 p-2 bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex items-center gap-2 ${showScrollButton ? 'opacity-0' : 'opacity-100'}`}>
+        <ChevronDown
+        className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out'
+        onClick={scrollToBottom}
+        />
+      </div> 
 
       {
       selectedMessages.length ?

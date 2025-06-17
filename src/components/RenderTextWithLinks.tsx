@@ -53,7 +53,7 @@ export const renderTextWithLinks = (text: string) => {
         <Link
           key={`url-${i}`}
           href={url}
-          className="text-green-600 hover:underline transition-all duration-150"
+          className="text-blue-600 hover:underline transition-all duration-150"
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => console.log(`URL clicked: ${part}`)}

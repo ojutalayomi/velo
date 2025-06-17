@@ -1,44 +1,18 @@
+import { PostSchema } from '@/lib/types/type';
 import moment from 'moment';
-import { ObjectId } from 'mongodb';
-
-export interface PostData {
-  _id: string;
-  UserId: string;
-  DisplayPicture: string;
-  NameOfPoster: string;
-  Verified: boolean;
-  TimeOfPost: string;
-  Visibility: 'everyone' | 'friends' | 'none';
-  Caption: string;
-  Image: string[];
-  NoOfLikes: number;
-  Liked: boolean;
-  NoOfComment: number;
-  NoOfShares: number;
-  NoOfBookmarks: number;
-  Bookmarked: boolean;
-  Username: string;
-  PostID: string;
-  Code: string;
-  WhoCanComment: 'everyone' | 'friends' | 'none';
-  Shared: boolean;
-  Type: "post" | "comment" |  "repost" | "quote";
-  ParentId: string;
-  OriginalPostId?: string;
-}
 
 export interface Post {
-  post: PostData;
+  post: PostSchema;
   message: string;
 }
 
 export interface Comments {
-  comments: PostData[];
+  comments: PostSchema[];
   message: string;
 }
 
 export interface PostProps {
-  postData: PostData;
+  postData: PostSchema;
 }
 
 export function formatNo(no: number) {
@@ -51,9 +25,9 @@ export function formatNo(no: number) {
   }
 }
 
-export function timeFormatter(Time: string, hour = true) {
+export function timeFormatter(Time: string, year = true, hour = true) {
   const date = moment(Time, moment.ISO_8601);
-  const formattedDate = date.format('MMM D, YYYY' + (hour ? ',  h:mm:ss A' : ''));
+  const formattedDate = date.format('MMM D' + (year ? ', YYYY' : '') + (hour ? ',  h:mm:ss A' : ''));
   return formattedDate;
 }
 

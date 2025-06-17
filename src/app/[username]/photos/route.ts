@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MongoClient, ServerApiVersion } from 'mongodb';
-import { getMongoClient } from '@/lib/mongodb';
+import { MongoDBClient } from '@/lib/mongodb';
 
 export async function GET(
   request: NextRequest, 
@@ -10,13 +9,13 @@ export async function GET(
     // const username = request.nextUrl.searchParams.get('username');
     // console.log(request.nextUrl.searchParams);
     const username = (await params).username;
-    const client = await getMongoClient();
+    const db = await new MongoDBClient().init();
 
     if (!username) {
         return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
 
-    const Users = client.db('mydb').collection('Posts');
+    const Users = db.posts();
     const user = await Users.findOne({ Username: username})
 
     // const tokenCollection = client.db('mydb').collection('Tokens');

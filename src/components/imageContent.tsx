@@ -37,8 +37,8 @@ const ImageContent: React.FC<Props> = ({userdata,onClick,selectedUsers = []}) =>
             <AvatarFallback>{userdata.name?.slice(0,2) || `${userdata.firstname?.[0] || ''} ${userdata.lastname?.[0] || ''}`}</AvatarFallback>
             <AvatarImage 
               src={
-              userdata.dp || userdata.displayPicture  
-              ? (userdata.dp ? userdata.dp : (
+              userdata.displayPicture || userdata.displayPicture  
+              ? (userdata.displayPicture ? userdata.displayPicture : (
                 userdata.displayPicture.includes('ila-') 
                 ? ''
                 : userdata.displayPicture

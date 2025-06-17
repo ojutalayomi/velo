@@ -7,21 +7,28 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Theme } from 'emoji-picker-react';
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 const Picker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 interface EmojiPickerProps {
+  asChild?: boolean;
+  triggerClassName?: string;
   onChange: (emoji: string) => void;
   children?: React.ReactNode;
 }
 
-export function EmojiPicker({ onChange, children }: EmojiPickerProps) {
+export const EmojiPicker = React.forwardRef<
+  React.ElementRef<typeof PopoverTrigger>,
+  EmojiPickerProps
+>(({ onChange, children, triggerClassName, asChild }, ref) => {
   const { theme } = useTheme();
   
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        {children || <Smile className="h-4 w-4 cursor-pointer" />}
+      <PopoverTrigger asChild={asChild} className={cn("cursor-pointer", triggerClassName)} ref={ref}>
+        {children || <Smile className="h-4 w-4" />}
       </PopoverTrigger>
       <PopoverContent 
         className="w-full p-0 border-none" 
@@ -41,4 +48,8 @@ export function EmojiPicker({ onChange, children }: EmojiPickerProps) {
       </PopoverContent>
     </Popover>
   );
-} 
+});
+
+EmojiPicker.displayName = "EmojiPicker";
+
+export default EmojiPicker;

@@ -1,5 +1,4 @@
 import { useEffect, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
 import { 
   setError, 
   setIsInitiator, 
@@ -7,6 +6,7 @@ import {
   addIceCandidate,
 } from '@/redux/rtcSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
+import { useAppDispatch } from '@/redux/hooks';
 
 interface UseSignalingProps {
   peerConnection: RTCPeerConnection | null;
@@ -20,7 +20,7 @@ export const useSignaling = ({
   handleRemoteDescription,
 }: UseSignalingProps) => {
   const socket = useSocket();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (!room) return;

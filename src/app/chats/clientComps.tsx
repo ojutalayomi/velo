@@ -16,6 +16,7 @@ import { Pagination, Navigation } from 'swiper/modules';
 import { MessageSquare, Users, Archive, Phone, LockKeyholeOpen, LockKeyhole, MessageCirclePlus } from 'lucide-react';
 import ChatListPage from './ChatListPage';
 import { useNavigateWithHistory } from '@/hooks/useNavigateWithHistory';
+import ChatPage from './page';
 
 interface NavigationState {
   chaT: string;
@@ -41,20 +42,16 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
   const filterConversations = (type: string) => {
     if (!conversations) return [];
     const filteredConversations = conversations.filter(conv => {
-      if(type !== 'all' && type !== 'Archived' && type !== 'Pinned'){
-        return conv.type === type && !conv.archived && !conv.deleted && !conv.pinned &&
+      if(type !== 'all' && type !== 'Archived'){
+        return conv.type === type && !conv.archived && !conv.deleted &&
         (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
       } else if (type === 'Archived') {
         return conv.archived && 
         (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
-      } else if (type === 'Pinned') {
-        return conv.pinned && !conv.archived && !conv.deleted &&
-        (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
       } else {
-        return !conv.archived && !conv.deleted && !conv.pinned &&
+        return !conv.archived && !conv.deleted &&
         (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()));
       }
@@ -113,14 +110,6 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
             </div>
           ))}
         </div>
-        {/* Pinned */}
-        <div className="pt-1 px-3">
-          {Array.isArray(filterConversations('Pinned')) && filterConversations('Pinned')?.length > 0 ? (
-            <ChatListPage className={`${activeTab !== 'All' && 'hidden'} overflow-visible`} className1=' ' filteredChats={() => filterConversations('Pinned')}/>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400 hidden">No pinned chats</p>
-          )}
-        </div>
         {/* Slider */}
         <Swiper onSwiper={updateSwiper} onSlideChange={onSlideChange} slidesPerView={1} spaceBetween={10} modules={[Pagination, Navigation]} className="dark:text-slate-200 !flex flex-col flex-grow w-full" id='vufqnuju'>
           <SwiperSlide className='flex flex-col flex-grow self-stretch justify-center' style={{ height: 'auto' }}>
@@ -171,7 +160,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
                   <button
                     type="button"
                     className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
-                    onClick={() => router.push('/chats/compose/group')}
+                    onClick={() => router.push('/chats/compose?type=group')}
                   >
                     New Group
                   </button>
@@ -197,7 +186,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode;}
           {/* add a new page here if needed */}
         </div>
       </div>
-      {children}
+      {children ? children : <ChatPage />}
     </div>
   );
 }

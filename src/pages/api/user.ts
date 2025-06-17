@@ -11,7 +11,8 @@ import handlebars from 'handlebars'
 import nodemailer from 'nodemailer'
 import { timeFormatter } from '@/templates/PostProps'
 import { UserData } from '@/redux/userSlice'
-import { getMongoClient } from '@/lib/mongodb'
+import { MongoDBClient } from '@/lib/mongodb'
+import { ObjectId } from 'mongodb'
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,10 +36,6 @@ const emailTemplateSource = await fs.readFile(filepath, 'utf8');
 // Create a Handlebars template
 const template = handlebars.compile(emailTemplateSource);
 
-const generateRandomToken = (length: number) => {
-    return crypto.randomBytes(length).toString('hex');
-};
-
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
@@ -51,10 +48,10 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
   }
 
   try {
-    const client = await getMongoClient();
+    const db = await new MongoDBClient().init();
 
-    const collection = client.db('mydb').collection('Users');
-    const tokenCollection = client.db('mydb').collection('Tokens');
+    const collection = db.users();
+    const tokenCollection = db.tokens();
     const user = await collection.findOne({ $or: [{ username: UsernameOrEmail }, { email: UsernameOrEmail }] });
 
     if (!user) {
@@ -70,7 +67,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    const { name, firstname, lastname, email, username, displayPicture, verified, userId } = user;
+    // const following = (await db.followers().find({ followerId: user._id.toString() }).toArray()).length;
+
+    const { name, firstname, lastname, email, username, displayPicture, verified, userId, followers, following } = user;
     
     const time = new Date().toLocaleString();
     const formattedDate = timeFormatter(time);
@@ -80,7 +79,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       { $set: { lastLogin: formattedDate } }
     );
 
-    const newUserdata = { _id: user._id ,name, firstname, lastname, email, username, dp: displayPicture, verified, userId } as unknown as UserData;
+    const newUserdata = { _id: user._id ,name, firstname, lastname, email, username, dp: displayPicture, verified, userId, followers, following } as unknown as UserData;
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const token = await new SignJWT({ _id: user._id })
@@ -93,16 +92,18 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const deviceInfo = parser.getResult();
 
     await tokenCollection.insertOne({
-      userId: user._id,
+      _id: new ObjectId,
+      userId: user._id.toString(),
       token,
       deviceInfo,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
     });
 
     res.setHeader('Set-Cookie', serialize('velo_12', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: process.env.NODE_ENV !== 'development' ? 'strict': 'none',
+      secure: true,
+      sameSite: process.env.NODE_ENV !== 'development' ? 'strict' : 'none',
       maxAge: 3600 * 24 * 15,
       path: '/',
       // domain: process.env.NODE_ENV !== 'development' ? 'example.com' : undefined,

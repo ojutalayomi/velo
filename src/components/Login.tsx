@@ -6,10 +6,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './fontAwesomeLibrary';
 import SignInComponent from './SignInController';
 import { setUserData } from '@/redux/userSlice'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { fetchChats } from '@/redux/chatSlice';
 import { useSocket } from '@/app/providers/SocketProvider';
 import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import Wrapper from './AccountComponentWrapper';
@@ -25,7 +26,7 @@ const initialFormData: FormData = {
 };
 
 const Login: React.FC = () => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const router = useRouter()
     const searchParams = useSearchParams();
     const backTo = searchParams?.get('backto');

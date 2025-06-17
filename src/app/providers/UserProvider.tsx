@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef, createContext, ReactNode, useContext } from 'react';
 import { setUserData, UserData } from '@/redux/userSlice';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { debounce } from 'lodash';
 import { RootState } from '@/redux/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { networkMonitor, NetworkStatus } from '@/lib/network';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ const UserContext = createContext<UseUserReturn | undefined>(undefined)
 const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const router = useRouter();
     const [status, setStatus] = useState<NetworkStatus>()
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const userdata = useSelector((state: RootState) => state.user.userdata);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

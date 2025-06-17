@@ -5,20 +5,57 @@ export interface User {
     id: number;
 }
 
+export interface ReadReceipt {
+    _id: ObjectId;
+    messageId: string;
+    userId: string;
+    chatId: string;
+    readAt: string;
+}
+
+export interface Reaction{
+  _id: ObjectId,
+  messageId: string,
+  userId: string,
+  reaction: string,
+  timestamp: string
+}
+
+export type ChatType = 'Personal' | 'DMs' | 'Groups' | 'Channels';
+
+export interface ChatData {
+  _id: ObjectId;
+  name: {
+      [id: string]: string
+  };
+  chatType: ChatType;
+  participants: Participant[];
+  groupDescription: string;
+  groupDisplayPicture: string;
+  verified: boolean;
+  adminIds: string[];
+  inviteLink: string;
+  isPrivate: boolean;
+  timestamp: string;
+  lastUpdated: string;
+}
+
 export interface ChatSettings {
+    _id: ObjectId;
+    chatId: string;
     // General settings
     isMuted: boolean;
     isPinned: boolean;
     isArchived: boolean;
-    notificationSound?: string; // Path to a sound file
-    notificationVolume?: number; // Volume level (0-100)
-    wallpaper?: string; // Path to an image file
+    notificationSound: string; // Path to a sound file
+    notificationVolume: number; // Volume level (0-100)
+    wallpaper: string; // Path to an image file
     theme: 'light' | 'dark';
   
     // Specific to group chats
     isPrivate?: boolean;
     inviteLink?: string;
-    members?: string[]; // List of user IDs
+    members: string[]; // List of user IDs
     adminIds?: string[]; // List of admin user IDs
   
     // Specific to direct messages
@@ -33,7 +70,7 @@ export interface ChatAttributes {
     timestamp: string; // Consider using a specific date/time type library
     unread: boolean;
     chatId?: string; // Optional chat ID
-    chatType: 'DMs' | 'Groups' | 'Channels';
+    chatType: ChatType;
     participants?: User[]; // Separate type for participants
     chatSettings?: ChatSettings; // Separate type for settings
     messageId?: string;
@@ -56,7 +93,7 @@ export interface NewChatResponse {
     lastMessageId: string;
     timestamp: string;
     unreadCounts: { [participantId: string]: number };
-    chatType: 'DMs' | 'Groups' | 'Channels';
+    chatType: ChatType;
     participants: string[];
     chatSettings: ChatSettings
     lastUpdated: Date | string | undefined;
@@ -67,7 +104,7 @@ export interface NewChat {
     _id?: string | ObjectId | undefined; // Assuming ObjectId is converted to string
     id?: string;
     name: { [id: string]: string };
-    chatType: 'DMs' | 'Groups' | 'Channels';
+    chatType: ChatType;
     groupDescription: string;
     groupDisplayPicture: string;
     participants: string[]; // Assuming participants are represented by their IDs
@@ -82,9 +119,23 @@ export interface NewChat {
     timestamp?: Date | undefined;
 }
 
+export interface ChatParticipant {
+    _id: ObjectId;
+    chatId: string;
+    unreadCount: number;
+    favorite: boolean;
+    pinned: boolean;
+    deleted: boolean;
+    archived: boolean;
+    chatSettings: ChatSettings;
+    displayPicture: string;
+    userId: string;
+    chatType: ChatType;
+}
+
 export interface NewChatSettings {
     _id: ObjectId; // Assuming ObjectId is converted to string
-    chatId: ObjectId; // Reference to the chat in Chats collection
+    chatId: string; // Reference to the chat in Chats collection
   
     // General settings
     isMuted: boolean;
@@ -106,11 +157,6 @@ export interface NewChatSettings {
 type Globals = "-moz-initial" | "inherit" | "initial" | "revert" | "revert-layer" | "unset";
 export type UserSelect = "text" | "none" | Globals | "auto" | "-moz-none" | "all" | "contain" | "element"
 
-interface Reaction {
-    emoji: string;
-    users: string[];
-  }
-
 export type msgStatus = 'sending' | 'sent' | 'delivered' | 'failed';
 
 export type Attachment = {
@@ -124,16 +170,16 @@ export type Attachment = {
 
 export interface MessageAttributes {
     _id?: ObjectId | string;
-    chatId: ObjectId | string; // Reference to the chat in Chats collection
+    chatId: string;
     senderId: string;
     receiverId: string;
     content: string;
     timestamp: string;
+    isRead?: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
     messageType: string;
-    isRead: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
     reactions: Reaction[];
     attachments: Attachment[];
-    quotedMessage: string;
+    quotedMessageId: string;
     status: msgStatus;
 }
 
@@ -154,7 +200,7 @@ export interface GroupMessageAttributes {
     isRead: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
     reactions: Reaction[];
     attachments: Attachment[];
-    quotedMessage: string;
+    quotedMessageId: string;
     status: msgStatus;
 }
 
@@ -162,43 +208,55 @@ export interface Err {
     [x: string]: string
 }
 
-export interface UserSchema {
-    _id?: ObjectId,
-    time?: string,
-    userId?: string,
-    firstname?: string,
-    lastname?: string,
-    email?: string,
-    username?: string,
-    password?: string,
+export interface UserData{
+    _id?: ObjectId | string | undefined,
+    time: string,
+    userId: string,
+    firstname: string,
+    lastname: string,
+    email: string,
+    username: string,
     displayPicture?: string,
-    isEmailConfirmed?: true,
-    confirmationToken?: null,
-    signUpCount?: 1,
+    isEmailConfirmed?: boolean,
     lastLogin?: string,
-    loginToken?: string,
     lastResetAttempt?: {
       [x: string]: string
     },
-    resetAttempts?: 6,
+    providers: {
+        [x: string]: {
+            id: string | undefined;
+            lastUsed: string;
+        };
+    },
+    resetAttempts?: number,
     password_reset_time?: string,
     theme?: string,
-    verified?: true,
-    followers?: [],
-    following?: [],
+    verified?: boolean,
+    followers?: number,
+    following?: number,
+    isFollowing?: boolean,
+    isPrivate?: boolean,
     bio?: string,
     coverPhoto?: string,
     dob?: string,
     lastUpdate?: string[],
     location?: string,
-    noOfUpdates?: 9,
     website?: string,
-    resetToken?: string,
-    resetTokenExpiry?: number,
-    name?: string
+    name: string
 }
 
-export interface PostSchema {
+export interface UserSchema extends UserData {
+    _id?: ObjectId,
+    password: string,
+    signUpCount?: number,
+    resetToken?: string,
+    resetTokenExpiry?: number,
+    confirmationToken?: string,
+    loginToken?: string,
+    noOfUpdates?: number,
+}
+
+export interface PostSchema_ {
     _id: {
         $oid: string
     };
@@ -208,6 +266,7 @@ export interface PostSchema {
     TimeOfPost: string;
     Caption: string;
     Image: string[];
+    IsFollowing?: boolean;
     NoOfLikes: {
         $numberInt: string
     };
@@ -233,7 +292,17 @@ export interface PostSchema {
 
 
 export type AllChats = {
-    chats: ChatData[],
+    chats: ChatDataClient[],
+    chatSettings: {
+        [key: string]: NewChatSettings;
+    };
+    messages?: (MessageAttributes)[],
+    requestId: string
+}
+
+
+export type AllChatsServer = {
+    chats: ChatDataServer[],
     chatSettings: {
         [key: string]: NewChatSettings;
     };
@@ -254,17 +323,16 @@ export interface Participant {
 }
 
 export interface NewChat_ {
-    chat: ChatData;
+    chat: ChatDataClient;
     requestId: string;
 }
 
-export interface ChatData {
-    _id: string;
+export interface ChatDataServer {
+    _id: ObjectId;
     name: {
         [id: string]: string
     };
-    chatType: 'DMs' | 'Groups' | 'Channels';
-    participants: Participant[];
+    chatType: ChatType;
     groupDescription: string;
     groupDisplayPicture: string;
     verified: boolean;
@@ -272,7 +340,12 @@ export interface ChatData {
     inviteLink: string;
     isPrivate: boolean;
     timestamp: string;
+    lastMessageId: string;
     lastUpdated: string;
+}
+
+export interface ChatDataClient extends ChatDataServer {
+    participants: ChatParticipant[];
 }
 
 export interface ConvoType {
@@ -358,7 +431,9 @@ export interface FileValidationConfig {
     maxTotalSize: number; // in bytes
     maxFiles: number;
     allowedFileTypes: string | string[];
-}export type TextOverlay = {
+}
+
+export type TextOverlay = {
   id: string;
   text: string;
   x: number;
@@ -375,5 +450,31 @@ export interface FileValidationConfig {
 export interface Payload {
   _id: string;
   exp: number;
+}
+export interface PostSchema {
+  _id: string;
+  UserId: string;
+  DisplayPicture: string;
+  NameOfPoster: string;
+  Verified: boolean;
+  TimeOfPost: string;
+  Visibility: 'everyone' | 'friends' | 'none';
+  Caption: string;
+  Image: string[];
+  IsFollowing: boolean;
+  NoOfLikes: number;
+  Liked: boolean;
+  NoOfComment: number;
+  NoOfShares: number;
+  NoOfBookmarks: number;
+  Bookmarked: boolean;
+  Username: string;
+  PostID: string;
+  Code: string;
+  WhoCanComment: 'everyone' | 'friends' | 'none';
+  Shared: boolean;
+  Type: "post" | "comment" | "repost" | "quote";
+  ParentId: string;
+  OriginalPostId?: string;
 }
 

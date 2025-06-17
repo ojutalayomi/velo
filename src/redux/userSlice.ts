@@ -1,27 +1,19 @@
+import { UserData } from '@/lib/types/type';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface UserData {
-  _id: string,
-  firstname: string,
-  lastname: string,
-  name: string,
-  email: string,
-  username: string,
-  dp: string,
-  verified: boolean
-  chatid: string,
-};
+export type { UserData } from '@/lib/types/type';
 
 const userdata: UserData = {
   firstname: '',
   lastname: '',
   email: '',
   username: '',
-  dp: '',
+  displayPicture: '',
   verified: false,
-  chatid: '',
   _id: '',
-  name: ''
+  name: '',
+  time: '',
+  userId: '',
+  providers: {}
 }
 
 const userSlice = createSlice({
@@ -38,3 +30,6 @@ const userSlice = createSlice({
 
 export const { setUserData } = userSlice.actions;
 export default userSlice.reducer;
+export interface UserDataPartial extends Partial<UserData> {
+  displayPicture: string;
+}

@@ -14,8 +14,8 @@ export const transporter = nodemailer.createTransport({
     secure: true,
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
     }
 })
 
@@ -34,21 +34,21 @@ export const confirmationEmail = async (email: string, firstname: string, lastna
 
     // send mail with defined transport object
     let info = await transporter.sendMail({
-        from: 'Velo <no-reply@velo.com>', // sender address
-        to: email, // list of receivers
-        subject: 'Email Confirmation', // Subject line
-        html: template({
-            subject: 'Email Confirmation',
-            heading: 'Confirm Your Email Address',
-            message: `Please confirm your email address by clicking the button below.`,
-            firstname: firstname,
-            lastname: lastname,
-            display: 'block',
-            imageAlt: 'Confirmation Image',
-            imageSrc: 'https://velo-virid.vercel.app/velo11.png',
-            link: confirmationLink,
-            Click: "Confirm Email",
-        }),
+      from: 'Velo <no-reply@velo.com>', // sender address
+      to: email, // list of receivers
+      subject: 'Email Confirmation', // Subject line
+      html: template({
+        subject: 'Email Confirmation',
+        heading: 'Confirm Your Email Address',
+        message: `Please confirm your email address by clicking the button below.`,
+        firstname: firstname,
+        lastname: lastname,
+        display: 'block',
+        imageAlt: 'Confirmation Image',
+        imageSrc: 'https://velo-virid.vercel.app/velo11.png',
+        link: confirmationLink,
+        Click: "Confirm Email",
+      }),
     })
 
     console.log('Message sent: %s', info.messageId)

@@ -7,6 +7,7 @@ import rtcReducer from './rtcSlice';
 import postsReducer from './postsSlice';
 import utilReducer from './utilsSlice';
 import routeReducer from './routeSlice';
+import { useDispatch as useReduxDispatch } from 'react-redux';
 
 // Define RootState and AppDispatch types
 export type RootState = ReturnType<typeof store.getState>;
@@ -24,3 +25,6 @@ export const store = configureStore({
     route: routeReducer,
   },
 });
+
+// Proper React hook for typed dispatch
+export const useDispatch: () => AppDispatch = useReduxDispatch;

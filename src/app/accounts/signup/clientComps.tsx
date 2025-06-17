@@ -59,29 +59,29 @@ const Comps: React.FC = () => {
           }
         );
 
-          if (!response.ok) {
-            throw new Error('Failed to upload image');
-          }
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
 
-          const { url, fields } = await response.json();
-          const formData1 = new FormData();
+        const { url, fields } = await response.json();
+        const formData1 = new FormData();
 
-          for (const key in fields) {
-            formData1.append(key, fields[key]);
-          }
+        for (const key in fields) {
+          formData1.append(key, fields[key]);
+        }
 
-          formData1.append('file', formData.file);
+        formData1.append('file', formData.file);
 
-          const uploadResponse = await fetch(url, {
-            method: 'POST',
-            body: formData1,
-          });
+        const uploadResponse = await fetch(url, {
+          method: 'POST',
+          body: formData1,
+        });
 
-          if (!uploadResponse.ok) { 
-            throw new Error('Failed to upload image');
-          } else {
-            dispatch(updateFormData({ file: null, displayPicture: url + fields.key }));
-          }
+        if (!uploadResponse.ok) { 
+          throw new Error('Failed to upload image');
+        } else {
+          dispatch(updateFormData({ file: null, displayPicture: url + fields.key }));
+        }
 
       } else {
         throw new Error('File must be uploaded before submitting the form');

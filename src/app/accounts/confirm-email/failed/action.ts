@@ -1,5 +1,5 @@
 'use server'
-import { getMongoClient } from '@/lib/mongodb';
+import { MongoDBClient } from '@/lib/mongodb';
 import { confirmationEmail } from '@/lib/email';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,26 +8,24 @@ export async function generateCode(data: { email: string }) {
 
     try {
         // Generate a new confirmation code
-        const confirmationCode = uuidv4();
+        const confirmationToken = uuidv4();
 
-        const client = await getMongoClient();
-        const db = client.db('mydb');
+        const db = await new MongoDBClient().init();
 
-        const user = await db.collection('Users').findOne({ email });
+        const user = await db.users().findOne({ email });
 
         if(user){
             if(user.isEmailConfirmed){
                 return { message: 'Email already confirmed' };
             }
-
             // Store the confirmation code in the database
-            await db.collection('Users').insertOne({
-                email,
-                confirmationCode,
-            });
+            await db.users().updateOne(
+                { email },
+                { $set: { confirmationToken } }
+            );
 
             // Generate the confirmation link
-            const confirmationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/confirm-email?code=${confirmationCode}`;
+            const confirmationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/confirm-email?code=${confirmationToken}`;
 
             // Send the confirmation link through email
             await confirmationEmail(email, user.firstname, user.lastname, confirmationLink);

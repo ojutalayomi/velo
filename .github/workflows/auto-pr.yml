@@ -48,4 +48,4 @@ jobs:
             Please review the changes and merge when ready.
             
             **Note:** This PR was automatically created by GitHub Actions.
-          github_token: ${{ secrets.GITHUB_TOKEN }} 
+          github_token: ${{ secrets.PR_CREATOR_TOKEN }} 

@@ -51,7 +51,7 @@ const Comps: React.FC = () => {
         const response = await fetch(
           '/api/upload',
           {
-            method: 'POST',c
+            method: 'POST',
             body: JSON.stringify({ filename: formData.file.name, contentType: formData.file.type, bucketName: 'profile-display-images' }),
           }
         );

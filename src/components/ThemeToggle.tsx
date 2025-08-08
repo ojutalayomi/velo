@@ -3,8 +3,9 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { Sun, Moon, Monitor } from 'lucide-react'
+import { Theme } from '@/app/providers/ThemeProvider'
 
-export const handleThemeChange1 = (value: string, isOpen: boolean, setTheme: (theme: string) => void, setOpen: React.Dispatch<React.SetStateAction<boolean>>) => {
+export const handleThemeChange1 = (value: string, isOpen: boolean, setTheme: (theme: Theme) => void, setOpen: React.Dispatch<React.SetStateAction<boolean>>) => {
   setOpen(!isOpen)
   const selectedTheme = value as 'light' | 'dark' | 'system'
   if (selectedTheme === 'system') {

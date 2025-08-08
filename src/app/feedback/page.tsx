@@ -3,7 +3,7 @@ import FeedbackClient from './FeedbackClient';
 
 export default function FeedbackPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<></>}>
       <FeedbackClient />
     </Suspense>
   );

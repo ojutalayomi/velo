@@ -3,7 +3,7 @@ import Explore from '../../components/Explore';
 
 export default function ExplorePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<></>}>
       <Explore />
     </Suspense>
   );

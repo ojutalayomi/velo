@@ -22,6 +22,9 @@ jobs:
         run: npm install
       - name: Run build
         run: npm run build
+        env:
+          MONGOLINK: ${{ secrets.MONGOLINK }}
+          MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE }}
   create-pr:
     needs: test
     if: ${{ needs.test.result == 'success' }}

@@ -26,12 +26,8 @@ export interface VideoSchema {
 
 const uri = process.env.MONGOLINK || '';
 
-if (!uri) {
-  throw new Error('Please add your MongoDB URI to .env');
-}
-
 let client: MongoClient | null = null;
-let clientPromise: Promise<MongoClient>;
+let clientPromise: Promise<MongoClient> | null = null;
 
 const options = {
   serverApi: {
@@ -46,27 +42,32 @@ const options = {
   waitQueueTimeoutMS: 30000,
 };
 
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  let globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>
+function ensureClientPromise(): Promise<MongoClient> {
+  if (!clientPromise) {
+    if (!uri) {
+      throw new Error('Please add your MongoDB URI to .env');
+    }
+    if (process.env.NODE_ENV === 'development') {
+      const globalWithMongo = global as typeof globalThis & {
+        _mongoClientPromise?: Promise<MongoClient>
+      };
+      if (!globalWithMongo._mongoClientPromise) {
+        client = new MongoClient(uri, options);
+        globalWithMongo._mongoClientPromise = client.connect();
+      }
+      clientPromise = globalWithMongo._mongoClientPromise;
+    } else {
+      client = new MongoClient(uri, options);
+      clientPromise = client.connect();
+    }
   }
-
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
-  }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+  return clientPromise!;
 }
 
 export async function getMongoClient() {
+  const promise = ensureClientPromise();
   if (!client || !client.connect) {
-    client = await clientPromise;
+    client = await promise;
   }
   return client;
 }
@@ -89,7 +90,7 @@ export class MongoDBClient {
    */
   async init() {
     this.client = await getMongoClient();
-    this.db = this.client.db(this.dbName);
+    this.db = this.client.db(this.dbName || undefined);
     return this;
   }
 
@@ -254,4 +255,4 @@ export async function closeMongoConnection() {
   }
 }
 
-export default clientPromise;
+export default clientPromise as unknown as Promise<MongoClient> | null;

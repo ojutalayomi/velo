@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function FailedPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<></>}>
             <FailedPageClient />
         </Suspense>
     )

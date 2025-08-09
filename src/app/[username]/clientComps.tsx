@@ -130,7 +130,7 @@ export default function Profile({ profileData: pd, profilePostCards }: { profile
                 <div className={`flex backdrop-blur-lg top-0 sticky gap-4 items-center z-10 w-full px-3 py-2`}>
                     <ArrowLeft 
                     onClick={() => navigate()}
-                    className='p-1 icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out size-8'
+                    className='p-1 text-gray-600 hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out size-8'
                     />
                     <div>
                         <p className="flex items-center gap-1">{profileData.firstname && profileData.lastname ? profileData.firstname + ' ' + profileData.lastname : 'Velo'} {profileData.verified && (<Statuser className="size-4"/>)}</p>

@@ -25,10 +25,13 @@ const userSlice = createSlice({
     setUserData: (state, action: PayloadAction<UserData>) => {
       state.userdata = action.payload;
     },
+    updateUserData: (state, action: PayloadAction<UserData>) => {
+      state.userdata = { ...state.userdata, ...action.payload };
+    },
   },
 });
 
-export const { setUserData } = userSlice.actions;
+export const { setUserData, updateUserData } = userSlice.actions;
 export default userSlice.reducer;
 export interface UserDataPartial extends Partial<UserData> {
   displayPicture: string;

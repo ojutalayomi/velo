@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, ChangeEvent } from 'react'
+import { useState, useRef, ChangeEvent, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -7,28 +7,47 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Camera, Loader2 } from 'lucide-react'
-import { useUser } from '@/app/providers/UserProvider'
 import { toast } from '@/hooks/use-toast'
 import { useNavigateWithHistory } from '@/hooks/useNavigateWithHistory'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
+import LeftSideBar from '@/components/LeftSideBar'
+import { updateUserData } from '@/redux/userSlice'
+import { useDispatch } from 'react-redux'
 
 export default function EditProfile() {
+  const dispatch = useDispatch()
   const userdata = useSelector((state: RootState) => state.user.userdata)
   const router = useRouter()
   const navigate = useNavigateWithHistory()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: userdata.name || '',
-    bio: userdata.bio || '',
-    location: userdata.location || '',
-    website: userdata.website || '',
-    displayPicture: userdata.displayPicture || '',
-    coverPhoto: userdata.coverPhoto || ''
+    name: '',
+    bio: '',
+    location: '',
+    website: '',
+    displayPicture: '',
+    coverPhoto: ''
   })
+  
+  const [selectedFiles, setSelectedFiles] = useState<{
+    displayPicture?: File;
+    coverPhoto?: File;
+  }>({})
   
   const dpInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setFormData({
+        name: userdata.name || '',
+        bio: userdata.bio || '',
+        location: userdata.location || '',
+        website: userdata.website || '',
+        displayPicture: userdata.displayPicture || '',
+        coverPhoto: userdata.coverPhoto || ''
+    })
+  }, [userdata])
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -39,18 +58,20 @@ export default function EditProfile() {
   }
 
   const uploadImage = async (file: File, type: 'displayPicture' | 'coverPhoto') => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', type)
-    
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          filename: file.name,
+          contentType: file.type,
+          bucketName: 'profile-display-images'
+        })
       })
       
       if (!res.ok) throw new Error('Upload failed')
-      
       const data = await res.json()
       return data.url
     } catch (error) {
@@ -76,13 +97,18 @@ export default function EditProfile() {
       return
     }
 
-    const url = await uploadImage(file, type)
-    if (url) {
-      setFormData(prev => ({
-        ...prev,
-        [type]: url
-      }))
-    }
+    // Store the file for later upload
+    setSelectedFiles(prev => ({
+      ...prev,
+      [type]: file
+    }))
+
+    // Create a temporary URL for preview
+    const previewUrl = URL.createObjectURL(file)
+    setFormData(prev => ({
+      ...prev,
+      [type]: previewUrl
+    }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,15 +116,33 @@ export default function EditProfile() {
     setIsLoading(true)
 
     try {
+      let displayPictureUrl = formData.displayPicture
+      let coverPhotoUrl = formData.coverPhoto
+
+      // Only upload if new files were selected
+      if (selectedFiles.displayPicture) {
+        displayPictureUrl = await uploadImage(selectedFiles.displayPicture, 'displayPicture')
+      }
+      if (selectedFiles.coverPhoto) {
+        coverPhotoUrl = await uploadImage(selectedFiles.coverPhoto, 'coverPhoto')
+      }
+
       const res = await fetch('/api/user/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          displayPicture: displayPictureUrl,
+          coverPhoto: coverPhotoUrl
+        })
       })
 
       if (!res.ok) throw new Error('Update failed')
+
+      const data = await res.json()
+      dispatch(updateUserData(data.data))
 
       toast({
         title: "Profile updated successfully"
@@ -116,26 +160,25 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="w-full min-h-screen dark:bg-black">
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="flex items-center gap-4 mb-6">
+    <div className="w-full flex h-screen max-h-screen dark:bg-black overflow-auto">
+      <div className="md:w-3/5 flex-1 h-screen max-h-screen dark:bg-black overflow-auto">
+        <div className="flex backdrop-blur-lg top-0 sticky gap-4 items-center z-10 w-full px-3 py-2">
           <ArrowLeft
             onClick={() => navigate()}
             className="cursor-pointer size-6"
           />
-          <h1 className="text-2xl font-bold">Edit Profile</h1>
+          <h1 className="text-xl font-bold">Edit Profile</h1>
         </div>
 
         <form onSubmit={handleSubmit}>
           {/* Cover Photo */}
           <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-800 mb-16">
-            {formData.coverPhoto && (
-              <img 
-                src={formData.coverPhoto} 
-                alt="Cover"
-                className="w-full h-full object-cover"
-              />
-            )}
+             <Avatar className="h-full w-full object-cover rounded-none" data-s3-url={formData.coverPhoto || userdata.coverPhoto}>
+                <AvatarImage className="w-full h-full rounded-none object-cover aspect-auto" src={formData.coverPhoto || userdata.coverPhoto} />
+                <AvatarFallback className="w-full h-full rounded-none">
+                    {userdata.firstname?.[0]}{userdata.lastname?.[0]}
+                </AvatarFallback>
+            </Avatar>
             <Button
               type="button"
               variant="ghost"
@@ -155,14 +198,14 @@ export default function EditProfile() {
             {/* Profile Picture */}
             <div className="absolute -bottom-12 left-4">
               <div className="relative w-24 h-24">
-                <Avatar className="w-24 h-24 border-4 border-white dark:border-black">
-                  <AvatarImage src={formData.displayPicture} />
+                <Avatar className="w-24 h-24 border-4 border-white dark:border-black" data-s3-url={formData.displayPicture || userdata.displayPicture}>
+                  <AvatarImage src={formData.displayPicture || userdata.displayPicture} />
                   <AvatarFallback>{userdata.firstname?.[0]}{userdata.lastname?.[0]}</AvatarFallback>
                 </Avatar>
                 <Button
                   type="button"
                   variant="ghost"
-                  className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
+                  className="absolute inset-0 h-full rounded-full flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
                   onClick={() => dpInputRef.current?.click()}
                 >
                   <Camera className="size-5" />
@@ -178,7 +221,7 @@ export default function EditProfile() {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 px-2">
             <div>
               <Label htmlFor="name">Name</Label>
               <Input
@@ -239,6 +282,7 @@ export default function EditProfile() {
           </div>
         </form>
       </div>
+      <LeftSideBar />
     </div>
   )
 }

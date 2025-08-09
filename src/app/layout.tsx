@@ -26,7 +26,7 @@ export default function RootLayout({ children, modal }: Readonly<{ children: Rea
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}>
+      <body className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`} suppressHydrationWarning>
         <Providers>
           <SpeedInsights />
             <ClientComponents>

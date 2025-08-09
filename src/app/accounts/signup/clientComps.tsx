@@ -52,9 +52,6 @@ const Comps: React.FC = () => {
           '/api/upload',
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify({ filename: formData.file.name, contentType: formData.file.type, bucketName: 'profile-display-images' }),
           }
         );

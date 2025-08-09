@@ -404,7 +404,7 @@ const NewChatMenuClient = () => {
 
 export default function NewChatMenu() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<></>}>
       <NewChatMenuClient />
     </Suspense>
   );

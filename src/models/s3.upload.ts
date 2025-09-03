@@ -14,7 +14,7 @@ const s3Client = new S3Client({
 });
 
 function timeFormatter1(time: string){
-  console.log(time)
+// console.log(time)
   // Split the input date into its components
   const [datePart, timePart] = time.split(', ');
   let [month, day, year] = datePart.split('/');

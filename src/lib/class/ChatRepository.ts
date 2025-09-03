@@ -46,7 +46,7 @@ class ChatRepository {
 
   async updateChatSettings(id: string, updatedSettings: Partial<ChatSettings>): Promise<any> {
     // Update the chat settings in the database
-    console.log(updatedSettings)
+  // console.log(updatedSettings)
     const response = await fetch(`/api/chats/${id}/settings`, {
         method: 'PUT',
         headers: {

@@ -18,7 +18,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     const db = await new MongoDBClient().init();
 
-    console.log('MongoDB connection established successfully!');
+  // console.log('MongoDB connection established successfully!');
 
     // Fetch user details if username is provided
     const user = payload ? await db.users().findOne({ _id: new ObjectId(payload._id) }) : null;

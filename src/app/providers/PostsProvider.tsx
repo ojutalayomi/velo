@@ -14,7 +14,7 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     useEffect(() => {
         setStatus(networkMonitor.getNetworkStatus())
-        console.log(networkMonitor.getNetworkStatus())
+      // console.log(networkMonitor.getNetworkStatus())
     }, [])
 
     useEffect(() => {

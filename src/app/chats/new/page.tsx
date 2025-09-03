@@ -34,10 +34,6 @@ import { formatNo, timeFormatter } from '@/templates/PostProps';
 import { Button } from '@/components/ui/button';
 import { UserDataPartial } from '@/redux/userSlice';
 
-interface NavigationState {
-  chaT: string;
-}
-
 type Message = {
   _id: string,
   senderId: string,
@@ -176,7 +172,7 @@ const ChatPage = () => {
     const fetchFromAPI = async (id: string) => {
       const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
       if (!response.ok) {
-        console.log();
+      // console.log();
       }
       const data = await response.json();
       localStorage.setItem(data[0]?._id, JSON.stringify({

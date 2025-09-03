@@ -37,7 +37,7 @@ const HelpSupportPage = () => {
   const handleSubmitTicket = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement ticket submission logic
-    console.log('Support ticket submitted');
+  // console.log('Support ticket submitted');
   };
 
   return (

@@ -10,7 +10,7 @@ import crypto from 'crypto'
 import handlebars from 'handlebars'
 import nodemailer from 'nodemailer'
 import { timeFormatter } from '@/templates/PostProps'
-import { UserData } from '@/redux/userSlice'
+import { UserData } from '@/lib/types/type'
 import { MongoDBClient } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
@@ -62,7 +62,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       return res.status(401).json({ error: 'Email not confirmed' });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(password, user.password as string);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Invalid password' });
     }
@@ -137,5 +137,5 @@ const sendSignInEmail = async(email: string, firstname: string,lastname: string,
       }),
   });
 
-  console.log('Message sent: %s', info.messageId);
+// console.log('Message sent: %s', info.messageId);
 }

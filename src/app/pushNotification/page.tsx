@@ -61,7 +61,7 @@ function PushNotificationManager() {
       setSubscription(sub);
       const serializedSub = JSON.parse(JSON.stringify(sub));
       await subscribeUser(serializedSub);
-      console.log('Successfully subscribed to push notifications');
+    // console.log('Successfully subscribed to push notifications');
     } catch (error) {
       console.error('Push subscription error:', error);
     }
@@ -85,7 +85,7 @@ function PushNotificationManager() {
       };
       await unsubscribeUser(subscriptionWithKeys);
       setSubscription(null);
-      console.log('Successfully unsubscribed from push notifications');
+    // console.log('Successfully unsubscribed from push notifications');
     } catch (error) {
       console.error('Push unsubscription error:', error);
     }

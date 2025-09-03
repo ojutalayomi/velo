@@ -1,0 +1,42 @@
+name: Auto Merge PR to Main
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Run build
+        run: npm run build
+        env:
+          MONGOLINK: ${{ secrets.MONGOLINK }}
+          MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE }}
+
+  merge:
+    needs: test
+    if: ${{ needs.test.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge PR
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.PR_CREATOR_TOKEN }}
+          MERGE_LABELS: ""
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "Auto-merge PR to main"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"

@@ -41,7 +41,7 @@ function FailedPageClient() {
         const response = await generateCode({ 
             email: email
         });
-        console.log(response)
+      // console.log(response)
         setMessage(response.message)
         setLoading(false)
     }

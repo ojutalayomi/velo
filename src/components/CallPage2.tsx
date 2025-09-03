@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Camera, Mic, MicOff, Video, VideoOff, Phone, Settings } from 'lucide-react';
+import React from 'react';
+import { Mic, MicOff, Video, VideoOff, Phone } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -11,7 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Devices, SelectedDevices } from './CallPage';
+
+type Devices = {
+  videoDevices: MediaDeviceInfo[],
+  audioInputDevices: MediaDeviceInfo[],
+}
+
+type SelectedDevices = {
+  videoDeviceId: string,
+  audioInputDeviceId: string,
+}
 
 interface CallConfirmationProps {
     name: string,

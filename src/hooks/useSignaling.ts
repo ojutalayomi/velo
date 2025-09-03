@@ -54,23 +54,8 @@ export const useSignaling = ({
   }, [peerConnection, socket, room, handleRemoteDescription, dispatch, handleSignalingError]);
 
   const handleUserJoined = useCallback(async () => {
-    if (!peerConnection || !socket) return;
-
-    try {
-      dispatch(setIsInitiator(true));
-      const offer = await peerConnection.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true,
-      });
-      
-      await peerConnection.setLocalDescription(offer);
-      dispatch(setLocalDescription(offer));
-      
-      socket.emit('offer', { room, offer });
-    } catch (error) {
-      handleSignalingError(error as Error, 'create offer');
-    }
-  }, [peerConnection, socket, room, dispatch, handleSignalingError]);
+    // No-op: initiator is handled explicitly by caller side
+  }, []);
 
   const handleAnswer = useCallback(async (answer: RTCSessionDescription) => {
     if (!peerConnection) return;

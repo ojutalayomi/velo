@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Bottombar from '@/components/Bottombar';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -48,8 +48,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     const [error, setError] = useState(null);
     const [load,setLoad] = useState<boolean>(false);
     const { displayAnnouncement, setDisplayAnnouncement } = useAnnouncer()
-    const callIdRef = useRef<string>('');
-    const callNoticeRef = useRef<boolean>(false);
+    const [incomingCallId, setIncomingCallId] = useState<string | null>(null);
     const socket = useSocket();
     const routes = ['accounts/login','accounts/signup','accounts/forgot-password','accounts/reset-password']
 
@@ -110,10 +109,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             lastUpdated: Time(data.chat.lastUpdated),
             participants: data.chat.participants.map(p => p.userId),
             online: false,
-            isTyping: data.chat.participants.reduce((p: { [x: string]: boolean }, r) => {
-                p[r.userId] = false;
-                return p;
-            }, {} as { [x: string]: boolean })
+            isTypingList: []
         };
         dispatch(addConversation(obj));
         if (participant?.chatSettings) {
@@ -124,7 +120,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
     }, [dispatch]);
   
     const handleChatMessage = useCallback((msg: MessageAttributes) => {
-      console.log("msg", msg)
+    // console.log("msg", msg)
       dispatch(addMessage(msg));
       dispatch(updateMessage({
         id: String(msg._id),
@@ -146,14 +142,33 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
       }
     }, [dispatch, gt, userdata._id]);
 
-    const handleTyping = useCallback((data: { userId: string, to: string, chatId: string }) => {
-        if (data.userId === userdata._id) return null;
-        dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: true } } }));
+    const handleTyping = useCallback((data: { user: UserData, to: string, chatId: string }) => {
+        if (data.user._id === userdata._id) return null;
+        const conversation = conversations.find(c => c.id === data.chatId);
+        if (conversation) {
+            dispatch(updateConversation({ 
+                id: data.chatId, 
+                updates: { 
+                    isTypingList: [
+                        ...conversation.isTypingList,
+                        { id: data.user._id as string, name: data.user.name, displayPicture: data.user.displayPicture || '', username: data.user.username, isTyping: true, chatId: data.chatId }
+                    ] 
+                } 
+            }));
+        }
     }, [dispatch, userdata._id]);
 
-    const handleStopTyping = useCallback((data: { userId: string, to: string, chatId: string }) => {
-        if (data.userId === userdata._id) return null;
-        dispatch(updateConversation({ id: data.chatId, updates: { isTyping: { [data.userId]: false } } }));
+    const handleStopTyping = useCallback((data: { user: UserData, to: string, chatId: string }) => {
+        if (data.user._id === userdata._id) return null;
+        const conversation = conversations.find(c => c.id === data.chatId);
+        if (conversation) {
+            dispatch(updateConversation({ 
+                id: data.chatId, 
+                updates: { 
+                    isTypingList: conversation.isTypingList.filter(u => u.id !== data.user._id) 
+                } 
+            }));
+        }
     }, [dispatch, userdata._id]);
 
     useEffect(() => {
@@ -191,11 +206,20 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             handleChat(data);
             socket.emit('joinChat', { chatId: data.chat._id });
         });
-        socket.on('callOffer', async ( data: { offer: RTCSessionDescription, room: string } ) => {
-            const { room } = data;
-            callIdRef.current = room;
-            callNoticeRef.current = true;            
-            alert('Incoming call from:');
+        // New invite event to trigger call confirmation
+        socket.on('call:invite', ({ callId, roomId, callerId, callType, chatType }: { callId: string, roomId: string, callerId: string, callType: 'audio' | 'video', chatType: 'DMs' | 'Groups' }) => {
+            console.log('[call] invite received', { callId, roomId, callerId, callType, chatType });
+            setIncomingCallId(callId);
+            // Optionally, you could store more call info in state if needed
+            // setIncomingCallInfo({ callId, roomId, callerId, callType, chatType });
+        });
+        // Back-compat: still handle offer as invite trigger
+        socket.on('offer', async ( data: { offer: RTCSessionDescription, room: string } ) => {
+            const { room, offer } = data as any;
+            try {
+                localStorage.setItem(`webrtc:offer:${room}`,(typeof offer === 'string' ? offer : JSON.stringify(offer)));
+            } catch {}
+            setIncomingCallId(room);
         });
         socket.on('post_response', ( data: { message: string, success: boolean } ) => {
             setDisplayAnnouncement({
@@ -210,7 +234,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             })
         })
         socket.on('post_reaction_response', ( data: { message: string, success: boolean, postId: string, reaction: ReactionType } ) => {
-            alert(data.message);
+            // alert(data.message);
             if(data.success) return
             dispatch(updatePost({ id: data.postId, updates: { [`${data.reaction.key1}`]: data.reaction.key1, [`${data.reaction.key2}`]: data.reaction.key2 } }));
             setDisplayAnnouncement({
@@ -363,8 +387,8 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
-                        {callIdRef.current && callNoticeRef.current && (
-                            <ConfirmCall id={String(callIdRef.current)} show={Boolean(callNoticeRef)} conversations={conversations}/>
+                        {incomingCallId && (
+                            <ConfirmCall id={incomingCallId} show={true} conversations={conversations}/>
                         )}
                         {!callRoute 
                         ?

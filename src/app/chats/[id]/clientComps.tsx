@@ -29,6 +29,9 @@ import { MultiSelect } from '../MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CallButton } from '@/components/call';
+import { useCallManager } from '@/hooks/useCallManager';
+import { CallStatus, IncomingCall } from '@/components/call';
 
 interface NavigationState {
   chaT: string;
@@ -70,8 +73,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const params = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
-  const { messages , settings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
+  const { messages , settings: chatSettings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
+  const { settings: userSettings } = useSelector((state: RootState) => state.user);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
   const [time ,setTime] = useState('');
@@ -81,15 +85,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [newPerson,setNewPerson] = useState<{[x: string]: keyof ConvoType}>({});
   const pid = params?.id === 'me' ? conversations.find(c => c.type === 'Personal')?.id as string : params?.id as string;
   const socket = useSocket();
+  const callHooks = useCallManager(socket!) || null;
   const convo = conversations?.find(c => c.id === pid) as ConvoType;
-  const chat = settings?.[pid];
+  const chat = chatSettings?.[pid];
   const [isPinned, setIsPinned] = useState(convo?.pinned);
   const [isDeleted, setIsDeleted] = useState(convo?.deleted);
   const [isArchived, setIsArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
-  const url = 'https://s3.amazonaws.com/profile-display-images/';
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   let lastDateRef = useRef<string>('');
@@ -144,7 +148,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     const fetchFromAPI = async (id: string) => {
       const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
       if (!response.ok) {
-        console.log();
+      // console.log();
       }
       const data = await response.json();
       localStorage.setItem(data[0]?._id, JSON.stringify({
@@ -183,7 +187,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   useEffect(() => {
     if ((!friendId && pid !== userdata._id) && !convo && !convoLoading) {
-      console.log('Redirecting to /chats due to missing friendId and convo');
+    // console.log('Redirecting to /chats due to missing friendId and convo');
       router.push('/chats');
     }
   }, [convo, convoLoading, friendId, router]);
@@ -325,15 +329,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }
 
   const handleTyping = () => {
-    if (!socket || !pid) return;
-    socket.emit('typing', { userId: userdata._id, to: `user:${friendId}`, chatId: pid });
+    if (!socket || !pid || !userSettings.showTypingStatus) return;
+    socket.emit('typing', { user: userdata, to: `user:${friendId}`, chatId: pid });
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', { userId: userdata._id, to: `user:${friendId}`, chatId: pid });
+      if (userSettings.showTypingStatus) {
+        socket.emit('stopTyping', { user: userdata, to: `user:${friendId}`, chatId: pid });
+      }
     }, 3000);
   };
 
@@ -401,20 +407,21 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {onlineUsers.includes(newPerson?._id) ? 'Online' : `Last seen: ${time}`}
-                  {convo?.isTyping[friendId] && ' • Typing...'}
+                  {convo?.isTypingList.filter(i => i.chatId === pid).map(i => i.name).length > 0 && ` • ${convo?.isTypingList.find(i => i.chatId === pid)?.name} is typing...`}
                 </p>
               </div>
             }
           </div>
           <div className='flex items-center gap-2'>
-            <Phone
-            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => console.log(`audio call`)}
-            />
-            <Video 
-            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => router.push(`/call/?id=${pid}`)}
-            />
+            {callHooks && (
+              <CallButton
+                roomId={pid}
+                targetUserId={friendId}
+                chatType={'DMs'}
+                onInitiateCall={callHooks.initiateCall}
+                disabled={callHooks.callState.isInCall}
+              />
+            )}
             <Popover>
               <PopoverTrigger>
                 <EllipsisVertical 
@@ -466,6 +473,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         </div>
       }
       </div>
+
+      {/* Call Status */}
+      {callHooks && callHooks.callState.isInCall && (
+        <CallStatus
+          state={callHooks.callState.isConnecting ? 'connecting' : callHooks.callState.isConnected ? 'connected' : 'idle'}
+          callType={callHooks.callState.callType || 'audio'}
+          roomId={callHooks.callState.roomId || ''}
+        />
+      )}
 
       <div 
         ref={messageBoxRef} 
@@ -533,6 +549,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             return acc;
           }, [])}
         </div>
+        {convo?.isTypingList?.filter(i => i.chatId === pid).map(i => i.name).length > 0 && (
+          <div key={`typing-${convo?.isTypingList.find(i => i.chatId === pid)?.id}`} className="text-center my-2 sticky top-0 z-[1]">
+            <span className='bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full text-xs shadow-sm'>{convo?.isTypingList.find(i => i.chatId === pid)?.name} is typing...</span>
+          </div>
+        )}
       </div>
 
       {showScrollButton && (
@@ -550,6 +571,30 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote}/>
       }
       {children}
+      
+      {/* Incoming Call Handler */}
+      {callHooks && socket && (
+        <IncomingCall
+          socket={socket}
+          onAccept={async (callData) => {
+            // Handle incoming call acceptance
+            console.log('Incoming call accepted:', callData);
+            try {
+              await callHooks.answerCall(callData.callId, true, {
+                roomId: callData.roomId,
+                callType: callData.callType,
+                chatType: callData.chatType
+              });
+            } catch (error) {
+              console.error('Failed to answer call:', error);
+            }
+          }}
+          onDecline={() => {
+            // Handle incoming call decline
+            console.log('Incoming call declined');
+          }}
+        />
+      )}
     </div>
   );
 };

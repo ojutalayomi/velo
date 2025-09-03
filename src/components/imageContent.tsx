@@ -3,7 +3,6 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { Statuser } from './VerificationComponent';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { UserData } from '@/redux/userSlice';
 
 interface Props {
   userdata: any,

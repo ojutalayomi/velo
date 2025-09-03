@@ -18,7 +18,6 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from '@/redux/store';
 import { useAppDispatch } from '@/redux/hooks';
-import { updatePost, updatePosts } from "@/redux/postsSlice";
 import { useSocket } from "@/app/providers/SocketProvider";
 
 export default function Profile({ profileData: pd, profilePostCards }: { profileData: UserData, profilePostCards: PostSchema[] }) {

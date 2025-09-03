@@ -210,18 +210,31 @@ export interface Err {
 
 export interface UserData{
     _id?: ObjectId | string | undefined,
-    time: string,
-    userId: string,
-    firstname: string,
-    lastname: string,
-    email: string,
-    username: string,
+    bio?: string,
+    confirmationToken?: string,
+    coverPhoto?: string,
+    dob?: string,
     displayPicture?: string,
+    email: string,
+    firstname: string,
+    followers?: number,
+    following?: number,
     isEmailConfirmed?: boolean,
+    isFollowing?: boolean,
+    isPrivate?: boolean,
     lastLogin?: string,
+    lastname: string,
     lastResetAttempt?: {
       [x: string]: string
     },
+    lastSeen?: string,
+    lastUpdate?: string[],
+    location?: string,
+    loginToken?: string,
+    name: string,
+    noOfUpdates?: number,
+    password?: string,
+    password_reset_time?: string,
     providers: {
         [x: string]: {
             id: string | undefined;
@@ -229,21 +242,16 @@ export interface UserData{
         };
     },
     resetAttempts?: number,
-    password_reset_time?: string,
+    resetToken?: string,
+    resetTokenExpiry?: number,
+    signUpCount?: number,
     theme?: string,
+    time: string,
+    userId: string,
+    username: string,
     verified?: boolean,
-    followers?: number,
-    following?: number,
-    isFollowing?: boolean,
-    isPrivate?: boolean,
-    bio?: string,
-    coverPhoto?: string,
-    dob?: string,
-    lastUpdate?: string[],
-    location?: string,
-    website?: string,
-    name: string
-}
+    website?: string
+  }
 
 export interface UserSchema extends UserData {
     _id?: ObjectId,
@@ -365,9 +373,14 @@ export interface ConvoType {
     lastUpdated: string,
     participants: string[],
     online: boolean,
-    isTyping: {
-      [x: string]: boolean
-    }
+    isTypingList: {
+        id: string,
+        name: string,
+        displayPicture: string,
+        username: string,
+        isTyping: boolean,
+        chatId: string
+    }[]
 }
 export type hook<P = any, Q = boolean, R = boolean> = {
     payload: P,
@@ -478,3 +491,11 @@ export interface PostSchema {
   OriginalPostId?: string;
 }
 
+export interface UserSettings {
+  twoFactorAuth: boolean;
+  loginAlerts: boolean;
+  showOnlineStatus: boolean;
+  showLastSeen: boolean;
+  showReadReceipts: boolean;
+  showTypingStatus: boolean;
+}

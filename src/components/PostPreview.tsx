@@ -270,7 +270,7 @@ const PostPreview: React.FC = () => {
           <div className="flex justify-around items-center">
             <button className="text-gray-400 flex items-center" 
               onClick={() => {
-                console.log('Open comments')
+              // console.log('Open comments')
                 router.push(`/${currentPost?.Username}/posts/${currentPost?.PostID}`)
               }}
             >

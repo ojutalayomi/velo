@@ -72,10 +72,10 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const MAX_LENGTH = 300; // Adjust this number to change when the "Read more" appears
 
-  const senderId = 'sender' in message ? message.sender.id : message.senderId;
-  const sender = 'sender' in message ? message.sender.name : '';
-  const verified = 'sender' in message ? message.sender.verified : false;
-  const displayPicture = 'sender' in message ? message.sender.displayPicture : '';
+  const senderId = 'sender' in message ? message?.sender?.id : message.senderId;
+  const sender = 'sender' in message ? message?.sender?.name : '';
+  const verified = 'sender' in message ? message?.sender?.verified : false;
+  const displayPicture = 'sender' in message ? message?.sender?.displayPicture : '';
   const url = 'https://s3.amazonaws.com/profile-display-images/';
 
   useEffect(() => {
@@ -242,7 +242,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
           <div className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-start relative`}>
 
-            <div className={`flex flex-col gap-1 flex-1 max-w-full`}>
+            <div className={`flex flex-col gap-1 flex-1 max-w-full ${senderId === userdata._id ? "items-end" : "items-start"}`}>
 
               {message.attachments.length ? (
                 <MediaCollage media={message.attachments}/>
@@ -251,7 +251,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
               {/* Message bubble */}
               <div
-                className={`relative p-2 rounded-lg ${
+                className={`relative p-2 rounded-lg max-w-full ${
                   senderId === userdata._id 
                     ? "bg-brand text-white rounded-tr-none" 
                     : "bg-gray-100 dark:bg-zinc-800 rounded-tl-none"
@@ -350,13 +350,13 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
         {/* Main Message Container */}
         <div className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative`}>
 
-          <div className={`flex flex-col gap-1 flex-1 max-w-full`}>
+          <div className={`flex flex-col gap-1 flex-1 max-w-full ${senderId === userdata._id ? "items-end" : "items-start"}`}>
 
             {message.attachments.length ? <MediaCollage media={message.attachments}/> : <></>}
 
             {/* Message Bubble */}
             <div
-              className={`relative mb-1 p-2 rounded-2xl overflow-auto w-full flex flex-col shadow-sm ${
+              className={`relative mb-1 p-2 rounded-2xl overflow-auto max-w-full flex flex-col shadow-sm ${
                 senderId === userdata._id 
                   ? "bg-brand rounded-br-none text-white" 
                   : "bg-gray-50 rounded-bl-none dark:bg-zinc-800/80 dark:text-white"
@@ -440,7 +440,7 @@ const Quote = ({message, senderId}:{message: MessageAttributes | GroupMessageAtt
   const messages = useSelector((state: RootState) => state.chat.messages);
   
   const Messages = messages?.filter( msg => {
-    const sender = 'sender' in msg ? msg.sender.name : '';
+    const sender = 'sender' in msg ? msg?.sender?.name : '';
     return msg.chatId === message.chatId
   })  as GroupMessageAttributes[];
 
@@ -479,7 +479,7 @@ const Quote = ({message, senderId}:{message: MessageAttributes | GroupMessageAtt
           hover:bg-opacity-80 transition-all
         `}
       >
-        <div className="flex flex-col">
+        <div className="flex flex-col overflow-auto max-w-full">
           <span className={`text-xs font-medium ${senderId === userdata._id ? "text-emerald-700 dark:text-emerald-400" : "text-gray-700 dark:text-gray-300"}`}>
             {quotedMessageId?.sender?.name || ""}
           </span>

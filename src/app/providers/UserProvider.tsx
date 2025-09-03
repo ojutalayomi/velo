@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, createContext, ReactNode, useContext } from 'react';
-import { setUserData, UserData } from '@/redux/userSlice';
+import { setUserData } from '@/redux/userSlice';
 import { useSelector } from 'react-redux';
 import { debounce } from 'lodash';
 import { RootState } from '@/redux/store';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { User } from 'lucide-react';
 import { delay } from '@/lib/utils';
+import { UserData } from '@/lib/types/type';
 
 interface UseUserReturn {
     userdata: UserData;

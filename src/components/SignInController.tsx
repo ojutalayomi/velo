@@ -1,4 +1,4 @@
-import { UserData } from "@/redux/userSlice";
+import { UserData } from "@/lib/types/type";
 
 // 'use client'
 interface FormData{

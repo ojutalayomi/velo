@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { RootState } from '@/redux/store';
 import { useAppDispatch } from '@/redux/hooks';
@@ -16,6 +16,7 @@ const SocketContext = createContext<Socket | null>(null);
 const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [status, setStatus] = useState<NetworkStatus>()
     const { userdata, loading, error } = useUser();
+    const { settings } = useSelector((state: RootState) => state.user);
     const { onlineUsers } = useSelector((state: RootState) => state.utils);
     const dispatch = useAppDispatch()
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -36,12 +37,12 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
         });
 
         socketIo.on('connect', () => {
-            console.log('Connected'); // Log the connection status message
+          // console.log('Connected'); // Log the connection status message
             if (userdata?._id) {
                 socketIo.emit('register', userdata._id); // Emit 'register' event with user's ID
                 // console.log('Registered with ID:', userdata._id);
             } else {
-                console.log('User ID is not available for registration');
+              // console.log('User ID is not available for registration');
             }
         });
 
@@ -49,7 +50,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
         // console.log('User status updated:', data);
         // Update UI with new status
             if(onlineUsers.includes(data.userId)) return
-            if(data.status === 'online'){
+            if(data.status === 'online' && settings?.showOnlineStatus){
                 dispatch(addOnlineUser(data.userId))
             } else {
                 dispatch(removeOnlineUser(data.userId))
@@ -57,7 +58,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
         });
 
         socketIo.on('disconnect', (reason: any) => {
-            console.log('Disconnected:', reason);
+          // console.log('Disconnected:', reason);
         });
 
         socketIo.on('connect_error', (err: any) => {

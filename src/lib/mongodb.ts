@@ -1,5 +1,5 @@
 import { Db, MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-import { ChatDataServer, ChatParticipant, ChatSettings, MessageAttributes, PostSchema, Reaction, ReadReceipt, UserSchema } from './types/type';
+import { ChatDataServer, ChatParticipant, ChatSettings, MessageAttributes, PostSchema, Reaction, ReadReceipt, UserData, UserSettings } from './types/type';
 import { IResult } from 'ua-parser-js';
 
 export interface FollowersSchema {
@@ -171,7 +171,7 @@ export class MongoDBClient {
    * @returns Collection for storing user profiles
    */
   users() {
-    return this.db.collection<UserSchema>('Users');
+    return this.db.collection<UserData>('Users');
   }
 
   /**
@@ -235,7 +235,7 @@ export class MongoDBClient {
    * @returns Collection for storing user preferences
    */
   userSettings() {
-    return this.db.collection('User_Settings');
+    return this.db.collection<UserSettings>('User_Settings');
   }
 
   /**

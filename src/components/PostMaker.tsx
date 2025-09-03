@@ -226,7 +226,7 @@ export default function PostMaker(
         }
   
       } catch (error: any) {
-        console.log(error)
+      // console.log(error)
       } finally {
         setFiles([]);
         if (type === 'post') navigate();

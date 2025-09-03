@@ -17,7 +17,7 @@ const FeedbackModal: React.FC<{isOpen: () => boolean; onClose: () => void}> = ({
   const handleSubmit = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     // Handle form submission logic here
-    console.log('Feedback submitted:', message);
+  // console.log('Feedback submitted:', message);
     setMessage('');
     onClose();
   };

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from "next/image";
 import { BadgePlus, RefreshCw, Bell, Mail, User, LogIn, Ellipsis, CircleEllipsis, Settings, CircleHelp, Home, Search, User2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { UserData } from '@/redux/userSlice';
+import { UserData } from '@/lib/types/type';
 import { Statuser } from './VerificationComponent';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';

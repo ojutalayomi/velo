@@ -15,9 +15,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
         const id = req.query.id;
 
         const db = await new MongoDBClient().init();
-        console.log('Connected to post.app ' + id);
+      // console.log('Connected to post.app ' + id);
         const post = await searchPostFromMultipleCollections(db, `${id}`);
-        console.log(post);
+      // console.log(post);
 
         if(post){
           const user = payload ? await db.users().findOne({ _id: new ObjectId(payload._id) }) : null;

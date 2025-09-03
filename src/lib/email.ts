@@ -2,12 +2,12 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
@@ -111,15 +111,15 @@ export const confirmationEmail = async (
   confirmationLink: string
 ) => {
   const html = generateEmailHtml({
-    subject: 'Email Confirmation',
-    heading: 'Confirm Your Email Address',
+        subject: 'Email Confirmation',
+        heading: 'Confirm Your Email Address',
     message: 'Please confirm your email address by clicking the button below.',
     firstname,
     lastname,
-    display: 'block',
-    imageAlt: 'Confirmation Image',
-    imageSrc: 'https://velo-virid.vercel.app/velo11.png',
-    link: confirmationLink,
+        display: 'block',
+        imageAlt: 'Confirmation Image',
+        imageSrc: 'https://velo-virid.vercel.app/velo11.png',
+        link: confirmationLink,
     Click: 'Confirm Email',
   });
 
@@ -130,7 +130,7 @@ export const confirmationEmail = async (
     html,
   });
 
-  console.log('Message sent: %s', info.messageId);
+// console.log('Message sent: %s', info.messageId);
 };
 
 export async function sendConfirmationEmail(
@@ -160,9 +160,9 @@ export async function sendConfirmationEmail(
     },
     function (error, info) {
       if (error) {
-        console.log(error);
+      // console.log(error);
       } else {
-        console.log('Email sent: ' + info.response);
+      // console.log('Email sent: ' + info.response);
       }
     }
   );

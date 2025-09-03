@@ -213,7 +213,7 @@ const chatSlice = createSlice({
           .slice()
           .reverse()
           .find(msg => {
-            const senderId = 'sender' in msg ? msg.sender.id : msg.senderId;
+            const senderId = 'sender' in msg ? msg?.sender?.id : msg.senderId;
             senderId === state.userId
           });
         
@@ -319,7 +319,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
         id: convo._id.toString(),
         type: convo.chatType,
         name: convo.chatType === 'DMs' ? getName() : convo.chatType === 'Personal' ? convo.name[uid] : convo.name.group,
-        lastMessage: filter(convo?.lastMessageId || '') || '🚫 Message not found',
+        lastMessage: convo.lastMessageId ? filter(convo?.lastMessageId) || '🚫 Message not found' : "📝 Be the first to send a message",
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,
         displayPicture: convo.chatType === 'DMs' || convo.chatType === 'Personal' ? displayPicture as string : convo.groupDisplayPicture,
@@ -332,10 +332,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
         lastUpdated: Time(convo.lastUpdated),
         participants: convo.participants.map(p => p.userId),
         online: false,
-        isTyping: convo.participants.reduce((p: { [x: string]: boolean }, r) => {
-          p[r.userId] = false;
-          return p;
-        }, {} as { [x: string]: boolean })
+        isTypingList: []
       };
     });
 

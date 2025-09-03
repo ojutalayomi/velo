@@ -29,16 +29,6 @@ interface Props {
   chat: ConvoType
 }
 
-interface NavigationState {
-    chaT: string;
-}
-
-interface ChatState {
-  isTyping: {
-    [key: string]: boolean;
-  };
-}
-
 interface ChatSetting {
   [x: string]: NewChatSettings
 }
@@ -143,9 +133,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     setShowFullscreen(true);
   }
 
-  const filteredKeys = Object.keys(chat?.isTyping).filter(i => i !== userdata._id).map(f => {
-    return chat?.isTyping[f]
-  })
+  const filteredIsTypingList = chat?.isTypingList.filter(i => i.chatId === chat.id);
 
   // Handlers for long-press (mobile), right-click (desktop), and ellipsis click
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -269,11 +257,11 @@ const Card: React.FC<Props> = ({ chat }) => {
             </div>
           </div>
           <p className="text-sm text-gray-600 truncate">
-            {(chat.isTyping[chat.participants.find(id => id !== userdata._id) as string] || filteredKeys.includes(true))
-              ? 'Typing...'
-              : (chat.lastMessage
-                ? chat.lastMessage
-                : 'No message available')}
+            {filteredIsTypingList?.length > 0 ? 
+            (chat.type === 'DMs' 
+            ? filteredIsTypingList.map(i => i.name).join(', ') + ' ' + 'is' + ' typing...' 
+            : filteredIsTypingList.map(i => i.name).join(', ') + ' ' + (filteredIsTypingList.length > 1 ? 'are' : 'is') + ' typing...')
+            : chat.lastMessage}
           </p>
         </div>
         <div className='flex flex-col items-end gap-1'>

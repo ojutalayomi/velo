@@ -1,176 +1,212 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { useSelector } from 'react-redux';
-import { 
-  setPeerConnection, 
-  setConnectionState,
-  addIceCandidate,
-  clearIceCandidates,
-  setRemoteDescription,
-  selectPeerConnection,
-  selectIceCandidates,
-  setIceConnectionState,
-} from '@/redux/rtcSlice';
-import { useSocket } from '@/app/providers/SocketProvider';
-import { useAppDispatch } from '@/redux/hooks';
+import { useCallback, useRef, useState } from 'react';
 
-interface WebRTCConfig {
-  iceServers?: RTCIceServer[];
-  room: string;
+export interface WebRTCState {
+  isConnected: boolean;
+  isConnecting: boolean;
+  hasLocalStream: boolean;
+  hasRemoteStream: boolean;
+  error: string | null;
 }
 
-export class WebRTCError extends Error {
-  constructor(message: string, public originalError?: Error) {
-    super(message);
-    this.name = 'WebRTCError';
-  }
+export interface WebRTCActions {
+  initialize: () => Promise<MediaStream | null>;
+  createOffer: () => Promise<RTCSessionDescriptionInit | null>;
+  createAnswer: () => Promise<RTCSessionDescriptionInit | null>;
+  setRemoteDescription: (description: RTCSessionDescriptionInit) => Promise<void>;
+  addIceCandidate: (candidate: RTCIceCandidateInit) => Promise<void>;
+  toggleAudio: () => void;
+  toggleVideo: () => void;
+  cleanup: () => void;
 }
 
-export const useWebRTC = (config?: WebRTCConfig) => {
-  const dispatch = useAppDispatch();
-  const socket = useSocket();
-  const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const iceCandidates = useSelector(selectIceCandidates);
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+export const useWebRTC = (
+  roomId: string,
+  onIceCandidate?: (candidate: RTCIceCandidateInit) => void,
+  onTrack?: (stream: MediaStream) => void
+): [WebRTCState, WebRTCActions, RTCPeerConnection | null] => {
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const [state, setState] = useState<WebRTCState>({
+    isConnected: false,
+    isConnecting: false,
+    hasLocalStream: false,
+    hasRemoteStream: false,
+    error: null,
+  });
 
-  const initializePeerConnection = useCallback(() => {
+  // Initialize WebRTC
+  const initialize = useCallback(async (): Promise<MediaStream | null> => {
     try {
-      if (peerConnection.current) {
-        peerConnection.current.close();
-      }
+      // Get user media
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
 
-      const newPeerConnection = new RTCPeerConnection({
-        iceServers: config?.iceServers || [
-          { urls: 'stun:stun.l.google.com:19302' }
+      localStreamRef.current = stream;
+      setState(prev => ({ ...prev, hasLocalStream: true, error: null }));
+
+      // Create peer connection
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
         ],
       });
 
-      // Connection state monitoring
-      newPeerConnection.onconnectionstatechange = () => {
-        dispatch(setConnectionState(newPeerConnection.connectionState));
-        
-        // Reset timeout on state change
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-        }
+      peerConnectionRef.current = pc;
 
-        // Set new timeout for failed connections
-        if (newPeerConnection.connectionState === 'connecting') {
-          connectionTimeoutRef.current = setTimeout(() => {
-            if (newPeerConnection.connectionState === 'connecting') {
-              console.warn('Connection attempt timed out');
-              newPeerConnection.close();
-            }
-          }, 30000); // 30 second timeout
+      // Add local tracks
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+      });
+
+      // Handle remote stream
+      pc.ontrack = (event) => {
+        if (event.streams[0]) {
+          setState(prev => ({ ...prev, hasRemoteStream: true }));
+          onTrack?.(event.streams[0]);
         }
       };
 
-      newPeerConnection.oniceconnectionstatechange = () => {
-        dispatch(setIceConnectionState(newPeerConnection.iceConnectionState));
-      };
-
-      newPeerConnection.onicecandidate = (event) => {
-        if (event.candidate && socket) {
-          const room = config?.room;
-          const candidate = event.candidate;
-          socket.emit('candidate', { room, candidate } );
+      // Handle ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate && onIceCandidate) {
+          onIceCandidate(event.candidate);
         }
       };
 
-      // Handle connection failures
-      newPeerConnection.onicecandidateerror = (event: RTCPeerConnectionIceErrorEvent) => {
-        console.error('ICE candidate error:', event);
+      // Handle connection state changes
+      pc.onconnectionstatechange = () => {
+        const connectionState = pc.connectionState;
+        setState(prev => ({
+          ...prev,
+          isConnected: connectionState === 'connected',
+          isConnecting: connectionState === 'connecting',
+        }));
       };
 
-      peerConnection.current = newPeerConnection;
-      return newPeerConnection;
+      // Handle ICE connection state changes
+      pc.oniceconnectionstatechange = () => {
+        const iceState = pc.iceConnectionState;
+        if (iceState === 'failed') {
+          setState(prev => ({ ...prev, error: 'ICE connection failed' }));
+        }
+      };
+
+      return stream;
     } catch (error) {
-      throw new WebRTCError('Failed to initialize peer connection', error as Error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize WebRTC';
+      setState(prev => ({ ...prev, error: errorMessage }));
+      return null;
     }
-  }, [peerConnection, config?.iceServers, config?.room, dispatch, socket]);
+  }, [onIceCandidate, onTrack]);
 
-  const handleRemoteDescription = useCallback(async (description: RTCSessionDescription) => {
-    if (!peerConnection.current) {
-      throw new WebRTCError('No peer connection available');
-    }
+  // Create offer
+  const createOffer = useCallback(async (): Promise<RTCSessionDescriptionInit | null> => {
+    if (!peerConnectionRef.current) return null;
 
     try {
-      await peerConnection.current.setRemoteDescription(description);
-      dispatch(setRemoteDescription(description));
-      
-      // Add any queued ICE candidates
-      for (const candidate of iceCandidates) {
-        try {
-          await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (error) {
-          console.warn('Failed to add ICE candidate:', error);
-          // Continue with remaining candidates even if one fails
-        }
-      }
-      dispatch(clearIceCandidates());
-    } catch (error) {
-      throw new WebRTCError('Failed to set remote description', error as Error);
-    }
-  }, [peerConnection, iceCandidates, dispatch]);
-
-  const addTrack = useCallback((track: MediaStreamTrack, stream: MediaStream) => {
-    if (!peerConnection.current) {
-      throw new WebRTCError('No peer connection available');
-    }
-
-    try {
-      return peerConnection.current.addTrack(track, stream);
-    } catch (error) {
-      throw new WebRTCError('Failed to add media track', error as Error);
-    }
-  }, [peerConnection]);
-
-  const createOffer = useCallback(async (options?: RTCOfferOptions) => {
-    if (!peerConnection.current) {
-      throw new WebRTCError('No peer connection available');
-    }
-
-    try {
-      const offer = await peerConnection.current.createOffer(options);
-      await peerConnection.current.setLocalDescription(offer);
+      const offer = await peerConnectionRef.current.createOffer();
+      await peerConnectionRef.current.setLocalDescription(offer);
       return offer;
     } catch (error) {
-      throw new WebRTCError('Failed to create offer', error as Error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create offer';
+      setState(prev => ({ ...prev, error: errorMessage }));
+      return null;
     }
-  }, [peerConnection]);
+  }, []);
 
-  const createAnswer = useCallback(async (options?: RTCAnswerOptions) => {
-    if (!peerConnection.current) {
-      throw new WebRTCError('No peer connection available');
-    }
+  // Create answer
+  const createAnswer = useCallback(async (): Promise<RTCSessionDescriptionInit | null> => {
+    if (!peerConnectionRef.current) return null;
 
     try {
-      const answer = await peerConnection.current.createAnswer(options);
-      await peerConnection.current.setLocalDescription(answer);
+      const answer = await peerConnectionRef.current.createAnswer();
+      await peerConnectionRef.current.setLocalDescription(answer);
       return answer;
     } catch (error) {
-      throw new WebRTCError('Failed to create answer', error as Error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create answer';
+      setState(prev => ({ ...prev, error: errorMessage }));
+      return null;
     }
-  }, [peerConnection]);
+  }, []);
 
-  // Cleanup on unmount
-  const pc = peerConnection.current;
-  useEffect(() => {
-    return () => {
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
-      if (pc) {
-        pc.close();
-      }
-    };
-  }, [pc]);
+  // Set remote description
+  const setRemoteDescription = useCallback(async (description: RTCSessionDescriptionInit): Promise<void> => {
+    if (!peerConnectionRef.current) return;
 
-  return {
-    initializePeerConnection,
-    handleRemoteDescription,
-    addTrack,
+    try {
+      await peerConnectionRef.current.setRemoteDescription(description);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set remote description';
+      setState(prev => ({ ...prev, error: errorMessage }));
+    }
+  }, []);
+
+  // Add ICE candidate
+  const addIceCandidate = useCallback(async (candidate: RTCIceCandidateInit): Promise<void> => {
+    if (!peerConnectionRef.current) return;
+
+    try {
+      await peerConnectionRef.current.addIceCandidate(candidate);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add ICE candidate';
+      setState(prev => ({ ...prev, error: errorMessage }));
+    }
+  }, []);
+
+  // Toggle audio
+  const toggleAudio = useCallback(() => {
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+      }
+    }
+  }, []);
+
+  // Toggle video
+  const toggleVideo = useCallback(() => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+      }
+    }
+  }, []);
+
+  // Cleanup
+  const cleanup = useCallback(() => {
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+
+    setState({
+      isConnected: false,
+      isConnecting: false,
+      hasLocalStream: false,
+      hasRemoteStream: false,
+      error: null,
+    });
+  }, []);
+
+  const actions: WebRTCActions = {
+    initialize,
     createOffer,
     createAnswer,
-    pc,
+    setRemoteDescription,
+    addIceCandidate,
+    toggleAudio,
+    toggleVideo,
+    cleanup,
   };
+
+  return [state, actions, peerConnectionRef.current];
 };

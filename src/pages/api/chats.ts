@@ -24,7 +24,7 @@ const db = await new MongoDBClient().init();
 const func = async (_id: string): Promise<UserSchema | null> => {
   const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
   const user = await db.users().findOne({ _id: objectId as ObjectId });
-  return user;
+  return user as UserSchema;
 }
 
 export const chatRepository = {

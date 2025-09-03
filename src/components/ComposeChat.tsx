@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { showChat } from '@/redux/navigationSlice';
 import { ConvoType, setNewGroupMembers } from '@/redux/chatSlice';
 import ImageContent, { UserProfileLazyLoader } from '@/components/imageContent';
-import { UserData, UserDataPartial } from '@/redux/userSlice';
+import { UserDataPartial } from '@/redux/userSlice';
 import { RootState } from '@/redux/store';
 import { useAppDispatch } from '@/redux/hooks';
 import { useNavigateWithHistory } from '@/hooks/useNavigateWithHistory';
@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent } from './ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useGlobalFileStorage } from '@/hooks/useFileStorage';
+import { UserData } from '@/lib/types/type';
 
 interface Props {
   [x: string]: any

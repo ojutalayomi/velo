@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const db = await new MongoDBClient().init();
 
     if (!validator.isEmail(email)) {
-        console.log(`Received an invalid email: ${email}`);
+      // console.log(`Received an invalid email: ${email}`);
         return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
     }
 

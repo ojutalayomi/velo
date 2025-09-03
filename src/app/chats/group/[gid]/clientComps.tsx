@@ -29,6 +29,9 @@ import { MultiSelect } from '../../MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Statuser } from '@/components/VerificationComponent';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CallButton } from '@/components/call';
+import { useCallManager } from '@/hooks/useCallManager';
+import { CallStatus, IncomingCall } from '@/components/call';
 
 type Message = {
   _id: string,
@@ -64,7 +67,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const params = useParams<{ gid: string }>();
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
-  const { messages , settings, conversations, loading: convoLoading } = useSelector((state: RootState) => state.chat);
+  const { settings: userSettings } = useSelector((state: RootState) => state.user);
+  const { messages , settings: chatSettings, conversations, loading: convoLoading } = useSelector((state: RootState) => state.chat);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
   const [isNew,setNew] = useState<boolean>(true);
   const [load,setLoading] = useState<boolean>();
@@ -73,12 +77,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const gid = params?.gid as string;
   const socket = useSocket();
+  const callHooks = useCallManager(socket!) || null;
   const convo = conversations?.find(c => c.id === gid) as ConvoType;
   const [isPinned, setIsPinned] = useState(convo?.pinned);
   const [isArchived, setIsArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const chat = settings?.[gid];
+  const chat = chatSettings?.[gid];
   const otherIds = convo?.participants?.filter(id => id !== userdata._id);
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -111,7 +116,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }, [convo, convoLoading, dispatch, convo?.unread, socket, userdata._id])
   
   const Messages = messages?.filter( msg => {
-    const sender = 'sender' in msg ? msg.sender.name : '';
+    const sender = 'sender' in msg ? msg?.sender?.name : '';
     return msg.chatId === gid && (msg.content.toLowerCase().includes(searchQuery.toLowerCase()) || sender.toLowerCase().includes(searchQuery.toLowerCase()))
   })  as GroupMessageAttributes[];
 
@@ -131,7 +136,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
 
   useEffect(() => {
     if (!otherIds && !convo && !convoLoading) {
-      console.log('Redirecting to /chats due to missing otherIds and convo');
+    // console.log('Redirecting to /chats due to missing otherIds and convo');
       router.push('/chats');
     }
   }, [convo, convoLoading, otherIds, router]);
@@ -155,7 +160,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       return; // Don't send empty messages or messages without attachments
     }
     try {
-      console.log('send')
+    // console.log('send')
       const isRead = otherIds
         ? Object.fromEntries([
             [String(userdata._id), false],
@@ -168,9 +173,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         chatId: gid, 
         sender: {
           id: String(userdata._id),
-          name: userdata.name,
-          displayPicture: userdata.displayPicture,
-          verified: userdata.verified,
+          name: userdata?.name,
+          displayPicture: userdata?.displayPicture,
+          verified: userdata?.verified,
         },
         receiverId: gid,
         content: newMessage, 
@@ -268,15 +273,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   }
 
   const handleTyping = () => {
-    if (!socket || !gid) return;
-    socket.emit('typing', { userId: userdata._id, to: `group:${gid}`, chatId: gid });
+    if (!socket || !gid || !userSettings.showTypingStatus) return;
+    socket.emit('typing', { user: userdata, to: `group:${gid}`, chatId: gid });
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stopTyping', { userId: userdata._id, to: `group:${gid}`, chatId: gid });
+      if (userSettings.showTypingStatus) {
+        socket.emit('stopTyping', { user: userdata, to: `group:${gid}`, chatId: gid });
+      }
     }, 3000);
   };
 
@@ -324,9 +331,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
     }
   };
 
-  const filteredKeys = Object.keys(convo?.isTyping || {}).filter(i => i !== userdata._id).map(f => {
-    return convo?.isTyping[f]
-  })
+  const filteredIsTypingList = convo?.isTypingList.filter(i => i.chatId !== gid);
 
   return (
     <div className={`bg-bgLight tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}>
@@ -346,20 +351,20 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   }
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {filteredKeys.includes(true) && 'Someone is typing...'}<b className='collapse'>Group</b>
+                  {filteredIsTypingList?.length > 0 && `${filteredIsTypingList.map(i => i.name)[0]} is typing...`}<b className='collapse'>Group</b>
                 </p>
               </>
             }
           </div>
           <div className='flex items-center gap-2'>
-            <Phone
-            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => console.log(`audio call`)}
-            />
-            <Video 
-            className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]'
-            onClick={() => router.push(`/call/?id=${gid}`)}
-            />
+            {callHooks && (
+              <CallButton
+                roomId={gid}
+                chatType={'Groups'}
+                onInitiateCall={callHooks.initiateCall}
+                disabled={callHooks.callState.isInCall}
+              />
+            )}
             <Popover>
               <PopoverTrigger>
                 <EllipsisVertical 
@@ -412,6 +417,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         }
       </div>
 
+      {/* Call Status */}
+      {callHooks && callHooks.callState.isInCall && (
+        <CallStatus
+          state={callHooks.callState.isConnecting ? 'connecting' : callHooks.callState.isConnected ? 'connected' : 'idle'}
+          callType={callHooks.callState.callType || 'audio'}
+          roomId={callHooks.callState.roomId || ''}
+        />
+      )}
+
       <div ref={messageBoxRef} onScroll={handleScroll} className="backdrop-blur-sm pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"> 
         <div className="cursor-pointer flex flex-col gap-2 items-center relative">
           {load ? (
@@ -420,7 +434,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             <>
               <div className="relative">
                 <Avatar className='size-20' data-src={group?.displayPicture}>
-                  <AvatarFallback className='capitalize'>{group?.name?.slice(0,2)}</AvatarFallback>
+                  <AvatarFallback className='capitalize'>{group?.name?.slice(0,2) || ''}</AvatarFallback>
                   <AvatarImage 
                   src={group?.displayPicture} 
                   className='displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover' 
@@ -442,7 +456,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
             : (
                 <>
-                  {group?.name ? group.name : <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />}
+                  {group?.name ? group.name || '' : <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />}
                   {/* {group?.verified && 
                     <Statuser className='size-4' />
                   } */}
@@ -474,7 +488,19 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
             return acc;
           }, [])}
         </div>
-
+        {filteredIsTypingList?.length > 0 && (
+          <div key={`typing-${filteredIsTypingList[0].id}`} className="text-center my-2 sticky top-0 z-[1]">
+            <div className='flex items-center justify-center flex-wrap gap-2 -space-x-2'>
+              {filteredIsTypingList.slice(0,2).map(i => (
+                <Avatar className='size-4' key={i.id+i.name} data-src={i.displayPicture}>
+                  <AvatarFallback className='capitalize'>{i.name?.slice(0,2)}</AvatarFallback>
+                  <AvatarImage src={i.displayPicture} className='displayPicture dark:border-slate-200 size-4 rounded-full object-cover' width={16} height={16} alt='Display Picture' />
+                </Avatar>
+              ))}
+            </div>
+            <span className='bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full text-xs shadow-sm'>{filteredIsTypingList.slice(0,2).map(i => i.name).join(', ')} {filteredIsTypingList.slice(0,2).map(i => i.name).length > 1 ? 'are' : 'is'} typing...</span>
+          </div>
+        )}
       </div>
       <div className={`absolute rounded-full right-0 bottom-16 shadow-lg mr-4 p-2 bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex items-center gap-2 ${showScrollButton ? 'opacity-0' : 'opacity-100'}`}>
         <ChevronDown
@@ -489,6 +515,26 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
       <ChatTextarea quote={quote} newMessage={newMessage} setNewMessage={setNewMessage} handleSendMessage={handleSendMessage} handleTyping={handleTyping} closeQuote={closeQuote}/>
       }
       {children}
+      
+      {/* Incoming Call Handler */}
+      {callHooks && socket && (
+        <IncomingCall
+          socket={socket}
+          onAccept={async (callData) => {
+            // Handle incoming call acceptance
+            console.log('Incoming call accepted:', callData);
+            try {
+              await callHooks.answerCall(callData.callId, true);
+            } catch (error) {
+              console.error('Failed to answer call:', error);
+            }
+          }}
+          onDecline={() => {
+            // Handle incoming call decline
+            console.log('Incoming call declined');
+          }}
+        />
+      )}
     </div>
   );
 };

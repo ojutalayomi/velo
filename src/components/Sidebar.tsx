@@ -3,7 +3,7 @@ import { useRouter, usePathname, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useUser } from '@/app/providers/UserProvider';
 import { SidebarItem, UserSection, sidebarItems } from './SidebarComps';
-import { UserData } from '@/redux/userSlice';
+import { UserData } from '@/lib/types/type';
 import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { handleThemeChange1 } from './ThemeToggle';

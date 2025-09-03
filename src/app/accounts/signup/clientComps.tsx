@@ -34,7 +34,7 @@ const Comps: React.FC = () => {
     fetchData();
     if(socket) {
         socket.on('connect', () => {
-          console.log('Connected to server');
+        // console.log('Connected to server');
           socket.emit('register', userData._id);
         });
     }

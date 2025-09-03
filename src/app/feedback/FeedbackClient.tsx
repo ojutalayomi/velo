@@ -24,7 +24,7 @@ const FeedbackPage = () => {
 
   const handleSubmit = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    console.log('Feedback submitted:', message);
+  // console.log('Feedback submitted:', message);
     setMessage('');
   };
 

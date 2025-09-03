@@ -13,7 +13,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse){
         const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : '').replace(/"/g, '');
         const payload = await verifyToken(cookie as unknown as string) as unknown as Payload;
         // await client.connect();
-        console.log('Server is ready for work');
+      // console.log('Server is ready for work');
 
         // Get the collection
         const db = await new MongoDBClient().init();

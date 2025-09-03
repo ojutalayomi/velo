@@ -93,7 +93,7 @@ const ChatTextarea = ({quote, newMessage, setNewMessage,  handleSendMessage, han
 
     return (
         <div className="w-full relative">
-            <div className="fixed tablets1:absolute bottom-0 left-0 tablets1:left-auto right-0 tablets1:right-auto tablets1:w-full px-2 py-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg border-t dark:border-zinc-800 z-50">
+            <div className="fixed tablets1:absolute bottom-0 left-0 tablets1:left-auto right-0 tablets1:right-auto tablets1:w-full px-2 py-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg border-t dark:border-zinc-800 z-10">
                 {quote.state && (
                     <div 
                         className="mb-2 mx-2 bg-gray-100 dark:bg-zinc-800 rounded-lg p-3"
@@ -400,7 +400,7 @@ const UploadDialog = ({quote, inputRef, textAreaRef, newMessage, setNewMessage, 
                             onClick={() => {
                                 handleSendMessage(quote.message?._id)
                                 dispatch(setToggleDialog(!toggleDialog))
-                                console.log('send')
+                              // console.log('send')
                             }}
                             className="!p-2 px-1 mb-1.5 h-auto dark:hover:bg-neutral-800 bg-transparent cursor-pointer text-white rounded-full transition-colors"
                         >

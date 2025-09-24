@@ -52,6 +52,7 @@ export const chatRepository = {
       }).toArray();
 
       const readReceipts = await db.readReceipts().find({ messageId: { $in: messages.map(message => message._id?.toString()) } }).toArray();
+      const reactions = await db.chatReactions().find({ messageId: { $in: messages.map(message => message._id?.toString()) } }).toArray();
       
       // Build a map of chatId -> chatType and chatId -> participants
       const chatTypeMap = new Map<string, ChatType>();
@@ -95,12 +96,14 @@ export const chatRepository = {
             }
           });
         }
+        message.reactions = reactions.filter(reaction => reaction.messageId === message._id?.toString());
       });
 
       const newMessages = messages.map(message => ({
         ...message,
         isRead: message.isRead || {},
-      }));
+        reactions: message.reactions || [],
+      })) as (MessageAttributes & GroupMessageAttributes)[];
       
       const newChatsPromises = chats
       .map(async chat => {

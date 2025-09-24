@@ -118,7 +118,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const Messages = messages?.filter( msg => {
     const sender = 'sender' in msg ? msg?.sender?.name : '';
     return msg.chatId === gid && (msg.content.toLowerCase().includes(searchQuery.toLowerCase()) || sender.toLowerCase().includes(searchQuery.toLowerCase()))
-  })  as GroupMessageAttributes[];
+  }) as GroupMessageAttributes[];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -221,7 +221,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         }
       })
 
-      dispatch(addMessage(msgCopy as unknown as MessageAttributes));
+      dispatch(addMessage(msgCopy as unknown as MessageAttributes & GroupMessageAttributes));
       dispatch(updateConversation({
         id: msg._id,
         updates: {
@@ -480,7 +480,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
                   </div>
                 ) : null}
                 
-                <MessageTab key={message._id as string} chat='Groups' message={message} setQuote={setQuote}/>
+                <MessageTab key={message._id as string} chat='Groups' message={message as MessageAttributes & GroupMessageAttributes} setQuote={setQuote}/>
               </Fragment>
             );
             lastDateRef.current = messageDate;

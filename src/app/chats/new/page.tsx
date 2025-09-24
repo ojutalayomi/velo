@@ -388,7 +388,7 @@ const ChatPage = () => {
         return;
       }
       
-      dispatch(addMessage(msgCopy));
+      dispatch(addMessage(msgCopy as unknown as MessageAttributes & GroupMessageAttributes));
       dispatch(updateConversation({
         id: msg.chatId,
         updates: {

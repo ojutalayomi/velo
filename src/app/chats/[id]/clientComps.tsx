@@ -62,7 +62,7 @@ interface ChatSetting {
 }
 
 interface CHT {
-  messages: (MessageAttributes | GroupMessageAttributes)[],
+  messages: (MessageAttributes & GroupMessageAttributes)[],
   settings: ChatSetting,
   conversations: ConvoType[],
   loading: boolean,
@@ -73,7 +73,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   const params = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const { userdata, loading, error, refetchUser } = useUser();
-  const { messages , settings: chatSettings, conversations, loading: convoLoading } = useSelector<RootState, CHT>((state: RootState) => state.chat);
+  const { messages , settings: chatSettings, conversations, loading: convoLoading } = useSelector((state: RootState) => state.chat);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const { settings: userSettings } = useSelector((state: RootState) => state.user);
   const [quote,setQuote] = useState<QuoteProp>(initialQuoteState);
@@ -126,7 +126,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
   
   const Messages = messages?.filter( msg => {
     return msg.chatId === pid && (msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
-  }) as MessageAttributes[];
+  }) as (MessageAttributes & GroupMessageAttributes)[];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -254,7 +254,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode;}>) => {
         }
       })
       
-      dispatch(addMessage(msgCopy));
+      dispatch(addMessage(msgCopy as unknown as MessageAttributes & GroupMessageAttributes));
       dispatch(updateConversation({
         id: msg._id,
         updates: {

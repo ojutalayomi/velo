@@ -112,7 +112,7 @@ const chatSlice = createSlice({
   name: 'chat',
   initialState: {
     conversations: [] as unknown as ConvoType[],
-    messages: [] as unknown as (MessageAttributes | GroupMessageAttributes)[],
+    messages: [] as unknown as (MessageAttributes & GroupMessageAttributes)[],
     deletedConversations: [] as unknown as ConvoType[],
     newGroupMembers: [] as unknown as UserDataPartial[],
     groupDisplayPicture: null as File | null,
@@ -187,10 +187,10 @@ const chatSlice = createSlice({
         state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
       }
     },
-    setMessages: (state, action: PayloadAction<MessageAttributes[]>) => {
+    setMessages: (state, action: PayloadAction<(MessageAttributes & GroupMessageAttributes)[]>) => {
       state.messages = action.payload;
     },
-    addMessage: (state, action: PayloadAction<MessageAttributes>) => {
+    addMessage: (state, action: PayloadAction<(MessageAttributes & GroupMessageAttributes)>) => {
       if (!state.messages.some(msg => msg._id === action.payload._id)) {
         state.messages.push(action.payload);
       }
@@ -213,7 +213,7 @@ const chatSlice = createSlice({
           .slice()
           .reverse()
           .find(msg => {
-            const senderId = 'sender' in msg ? msg?.sender?.id : msg.senderId;
+            const senderId = msg.messageType === 'Groups' ? msg?.sender?.id : msg.senderId;
             senderId === state.userId
           });
         
@@ -298,7 +298,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
 
     function filter(param: string) {
       if (!chats.messages) return;
-      const filteredResults = chats.messages.filter((msg: MessageAttributes | GroupMessageAttributes) => msg._id === param);
+      const filteredResults = chats.messages.filter((msg: MessageAttributes & GroupMessageAttributes) => msg._id === param);
       const result = filteredResults[0];
       return filteredResults.length > 0 ?  `${result.attachments.length > 0 ? '📷 ' : ''}${result.content}` : null;
     }
@@ -337,7 +337,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
     });
 
     dispatch(setConversations(conversations));
-    dispatch(setMessages(chats.messages as MessageAttributes[]));
+    dispatch(setMessages(chats.messages as (MessageAttributes & GroupMessageAttributes)[]));
     dispatch(setSettings(chats.chatSettings));
     return conversations;
   } catch (error) {

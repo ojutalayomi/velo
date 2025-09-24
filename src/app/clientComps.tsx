@@ -6,7 +6,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import Error from './error';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/app/providers/UserProvider';
-import { updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage } from '@/redux/chatSlice';
+import { updateConversation, addMessage, addSetting, fetchChats, addConversation, Time, updateMessage, updateMessageReactions } from '@/redux/chatSlice';
 import { usePathname, useRouter } from 'next/navigation';
 import UserPhoto from "@/components/UserPhoto";
 import PostPreview from '@/components/PostPreview';
@@ -119,7 +119,7 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         return data;
     }, [dispatch]);
   
-    const handleChatMessage = useCallback((msg: MessageAttributes) => {
+    const handleChatMessage = useCallback((msg: MessageAttributes & GroupMessageAttributes) => {
     // console.log("msg", msg)
       dispatch(addMessage(msg));
       dispatch(updateMessage({
@@ -170,16 +170,6 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
             }));
         }
     }, [dispatch, userdata._id]);
-
-    useEffect(() => {
-        if (!socket || socket.disconnected) {
-            toast({
-                title: 'Socket Disconnected',
-                description: 'Please check your internet connection.',
-                variant: 'destructive',
-            })
-        }
-    }, [socket]);
 
     useEffect(() => {
         if (!socket) return;
@@ -292,42 +282,42 @@ const ClientComponents = ({children}: ClientComponentsProps) => {
         });
         socket.on('reactionAdded', (data: Reaction) => {
             if (data.userId === userdata._id) return;
-            const message = messages.find((msg: MessageAttributes | GroupMessageAttributes) => msg._id?.toString() === data.messageId);
-            const currentReactions = message?.reactions || [];
-            dispatch(updateMessage({ 
-                id: data.messageId,
+            dispatch(updateMessageReactions({
+                id: data.messageId, 
                 updates: {
-                    reactions: [...currentReactions, { 
-                        _id: data._id, // This will be set by the server
-                        messageId: data.messageId,
-                        userId: data.userId,
-                        reaction: data.reaction,
-                        timestamp: new Date().toISOString()
-                    }]
+                  _id: data._id,
+                  messageId: data.messageId,
+                  userId: data.userId,
+                  reaction: data.reaction,
+                  timestamp: data.timestamp
                 }
             }));
         });
 
         socket.on('reactionRemoved', (data: Reaction) => {
             if (data.userId === userdata._id) return;
-            const message = messages.find((msg: MessageAttributes | GroupMessageAttributes) => msg._id?.toString() === data.messageId);
-            const currentReactions = message?.reactions || [];
-            dispatch(updateMessage({
+            dispatch(updateMessageReactions({
                 id: data.messageId,
                 updates: {
-                    reactions: currentReactions.filter((r: { userId: string }) => r.userId !== data.userId)
+                    _id: data._id,
+                    messageId: data.messageId,
+                    userId: data.userId,
+                    reaction: data.reaction,
+                    timestamp: data.timestamp
                 }
             }));
         });
 
         socket.on('reactionUpdated', (data: Reaction) => {
             if (data.userId === userdata._id) return;
-            const message = messages.find((msg: MessageAttributes | GroupMessageAttributes) => msg._id?.toString() === data.messageId);
-            const currentReactions = message?.reactions || [];
-            dispatch(updateMessage({
+            dispatch(updateMessageReactions({
                 id: data.messageId,
                 updates: {
-                    reactions: currentReactions.filter((r: { userId: string }) => r.userId !== data.userId)
+                    _id: data._id,
+                    messageId: data.messageId,
+                    userId: data.userId,
+                    reaction: data.reaction,
+                    timestamp: data.timestamp
                 }
             }));
         });

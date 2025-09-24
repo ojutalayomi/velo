@@ -1,8 +1,8 @@
 'use client'
 import React, { TouchEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Check, CheckCheck, Copy, Ellipsis, Loader, TextQuote, Trash2, CircleCheck, CircleX } from 'lucide-react';
-import { GroupMessageAttributes, MessageAttributes } from '@/lib/types/type';
+import { Check, CheckCheck, Copy, Ellipsis, Loader, TextQuote, Trash2, CircleCheck, CircleX, SmilePlus } from 'lucide-react';
+import { GroupMessageAttributes, MessageAttributes, Reaction } from '@/lib/types/type';
 import { useSelector } from 'react-redux';
 import { useUser } from '@/app/providers/UserProvider';
 import { updateMessageReactions, deleteMessage, updateMessage, updateLiveTime, updateConversation } from '@/redux/chatSlice'; 
@@ -11,8 +11,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerClose,
@@ -21,8 +21,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer"
-import { EmojiPicker } from "@/components/ui/emoji-picker";
+} from "@/components/ui/drawer";
 import { RootState } from '@/redux/store';
 import { useAppDispatch } from '@/redux/hooks';
 import { LinkPreview } from '@/components/LinkPreview';
@@ -33,6 +32,7 @@ import { renderTextWithLinks } from '../../components/RenderTextWithLinks';
 import { ObjectId } from 'mongodb';
 import { generateObjectId } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ReactionsInfo } from './ReactionsInfo';
 
 type Message = {
   _id: string,
@@ -46,7 +46,7 @@ type QuoteProp = {
 }
 
 type Props = {
-  message: MessageAttributes | GroupMessageAttributes,
+  message: MessageAttributes & GroupMessageAttributes,
   setQuote: React.Dispatch<React.SetStateAction<QuoteProp>>,
   chat?: string,
 }
@@ -68,14 +68,14 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
   const [time, setTime] = useState<string>(updateLiveTime('chat-time', message.timestamp));
   const socket = useSocket();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [rectionInfoDisplay, setReactionInfoDisplay] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const MAX_LENGTH = 300; // Adjust this number to change when the "Read more" appears
 
-  const senderId = 'sender' in message ? message?.sender?.id : message.senderId;
-  const sender = 'sender' in message ? message?.sender?.name : '';
-  const verified = 'sender' in message ? message?.sender?.verified : false;
-  const displayPicture = 'sender' in message ? message?.sender?.displayPicture : '';
+  const senderId = message.messageType === 'Groups' ? message?.sender?.id : message.senderId;
+  const sender = message.messageType === 'Groups' ? message?.sender?.name : '';
+  const verified = message.messageType === 'Groups' ? message?.sender?.verified : false;
+  const displayPicture = message.messageType === 'Groups' ? message?.sender?.displayPicture : '';
   const url = 'https://s3.amazonaws.com/profile-display-images/';
 
   useEffect(() => {
@@ -157,26 +157,16 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
       }
     }] : []),
     {
+      icon: SmilePlus,
+      text: 'React',
+      onClick: () => setReactionInfoDisplay(true)
+    },
+    {
       icon: IsSelected ? CircleX : CircleCheck,
       text: IsSelected ? 'Unselect message': 'Select message',
       onClick: () => dispatch(IsSelected ? removeSelectedMessage(message._id as string) : addSelectedMessage(message._id as string))
     }
   ];
-
-  const onEmojiClick = (emoji: string) => {
-    if (message._id) {
-      dispatch(updateMessageReactions({
-        id: message._id as string, 
-        updates: {
-          _id: generateObjectId() as unknown as ObjectId,
-          messageId: message._id as string,
-          userId: String(userdata._id),
-          reaction: emoji,
-          timestamp: new Date().toISOString()
-        }}));
-      setShowEmojiPicker(false);
-    }
-  };
 
   const extractUrls = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -268,7 +258,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
                           src={displayPicture ? (displayPicture.includes('ila-') ? '/default.jpeg' : url+displayPicture) : '/default.jpeg'}
                           alt={sender}
                         />
-                        <AvatarFallback>{sender[0]}</AvatarFallback>
+                        <AvatarFallback>{sender?.slice(0,2)}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{sender}</span>
                       {verified && <Statuser className='size-4' />}
@@ -307,38 +297,20 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
               </div>
 
               {/* Reactions */}
-              <div className={`${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} mt-1 flex items-center gap-1`}>
-                <EmojiPicker onChange={onEmojiClick} />
-                {senderId === userdata._id && (<Options options={optionss} open={open} setOpen={setOpen}/>)}
-                {message.reactions.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {message.reactions
-                      .slice(0, 5)
-                      .map((reaction, index) => (
-                        <span 
-                          key={index}
-                          title={`${reaction.userId}`}
-                        >
-                          {reaction.reaction}
-                        </span>
-                      ))}
-                    {message.reactions.length > 5 && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${
-                        senderId === userdata._id 
-                          ? 'bg-white/10' 
-                          : 'bg-gray-200 dark:bg-zinc-700'
-                      }`}>
-                        +{message.reactions.length - 5}
-                      </span>
-                    )}
+              <div className={`${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} -mt-3 z-10 flex items-center gap-1`}>
+                {senderId === userdata._id && (
+                  <div className='flex items-center gap-1 dark:bg-zinc-800 bg-white rounded-full p-1 border dark:border-gray-200'>
+                    <Options options={optionss} open={open} setOpen={setOpen}/>
                   </div>
                 )}
+                <ReactionSection message={message} senderId={senderId} setReactionInfoDisplay={setReactionInfoDisplay}/>
               </div>
 
             </div>
 
           </div>
         </div>
+        {rectionInfoDisplay && <ReactionsInfo message={message} setReactionInfoDisplay={setReactionInfoDisplay}/>}
       </>
     )
   }
@@ -400,40 +372,84 @@ const MessageTab = ({ message, setQuote, chat = "DMs"}:Props) => {
 
         {/* Message Footer */}
         {/* Reactions */}
-        <div className='mt-1 flex items-center gap-1'>
-          <EmojiPicker onChange={onEmojiClick} />
-          {Object.entries(message.reactions)
-            .slice(0, 5)
-            .map(([emoji, users], index) => {
-              const userArray = message.reactions;
-              return (
-                <span 
-                  key={index}
-                  title={`${userArray.length} ${userArray.length === 1 ? 'reaction' : 'reactions'}`}
-                >
-                  {users.reaction}{userArray.length > 1 && <span className="ml-1 text-[10px]">{userArray.length}</span>}
-                </span>
-              );
-            })}
-          {Object.keys(message.reactions).length > 5 && (
-            <span 
-              className={`px-2 py-1 rounded-full text-xs shadow-sm ${
-                senderId === userdata._id 
-                  ? 'bg-white/20 backdrop-blur-sm' 
-                  : 'bg-white dark:bg-zinc-700'
-              }`}
-            >
-              +{Object.keys(message.reactions).length - 5}
-            </span>
-          )}
-        </div>
-
+        <ReactionSection message={message} senderId={senderId} setReactionInfoDisplay={setReactionInfoDisplay}/>
       </div>
+      {rectionInfoDisplay && <ReactionsInfo message={message} setReactionInfoDisplay={setReactionInfoDisplay}/>}
     </>
   )
 }
 
 export default MessageTab;
+
+const ReactionSection = ({message, senderId, setReactionInfoDisplay}:{message: MessageAttributes | GroupMessageAttributes, senderId: string, setReactionInfoDisplay: React.Dispatch<React.SetStateAction<boolean>>}) => {
+  const { userdata } = useUser();
+  const socket = useSocket();
+  const dispatch = useAppDispatch();
+
+  const onEmojiClick = (emoji: string) => {
+    if (message._id) {
+      if(socket){
+        dispatch(updateMessageReactions({
+          id: message._id as string, 
+          updates: {
+            _id: generateObjectId() as unknown as ObjectId,
+            messageId: message._id as string,
+            userId: String(userdata._id),
+            reaction: emoji,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        socket.emit('addReaction', {
+          messageId: message._id as string,
+          userId: String(userdata._id),
+          reaction: emoji,
+          timestamp: new Date().toISOString()
+        });
+        setReactionInfoDisplay(false);
+      }
+    }
+  };
+
+  const reactionArray: Reaction[] = [];
+
+  if (message.reactions.length === 0) return null;
+
+  return (
+    <div 
+    className="-mt-3 z-10 flex flex-wrap gap-1 items-center dark:bg-zinc-800 bg-white rounded-full px-1 py-0.5 border dark:border-gray-200"
+    onClick={() => setReactionInfoDisplay(true)}
+    >
+      {message.reactions
+        .reduce((acc: React.ReactNode[], reaction, index) => {
+          if (!reactionArray.find(r => r.reaction === reaction.reaction) && reactionArray.length <= 5) {
+            reactionArray.push(reaction);
+            const reactionCount = message.reactions.filter(r => r.reaction === reaction.reaction).length;
+            const check = reactionCount > 1 && message.reactions.find(r => r.userId === userdata._id && r.reaction === reaction.reaction);
+            acc.push(
+              <span 
+                key={index}
+                title={`${reaction.userId}`}
+                className='cursor-pointer text-xs'
+              >
+                {reaction.reaction}{reactionCount > 1 && <sub className="ml-0.5 text-xs">{reactionCount}</sub>}
+              </span>
+            );
+          }
+          return acc;
+        }, [])
+      }
+      {reactionArray.length > 5 && (
+        <span className={`px-2 py-0.5 rounded-full text-xs ${
+          senderId === userdata._id 
+            ? 'bg-white/10' 
+            : 'bg-gray-200 dark:bg-zinc-700'
+        }`}>
+          +{reactionArray.length - 5}
+        </span>
+      )}
+    </div>
+  )
+}
 
 const Quote = ({message, senderId}:{message: MessageAttributes | GroupMessageAttributes, senderId: string}) => {
   const { userdata } = useUser();
@@ -515,7 +531,7 @@ function Options({options, open, setOpen}:{options: Option[], open: boolean, set
         <DrawerTrigger asChild>
           <button 
             type="button"
-            className='tablets:hidden'
+            className='hidden'
             aria-label="Open message options"
           >
             <Ellipsis size={20} className='cursor-pointer dark:text-gray-400' />

@@ -304,7 +304,7 @@ export type AllChats = {
     chatSettings: {
         [key: string]: NewChatSettings;
     };
-    messages?: (MessageAttributes)[],
+    messages?: (MessageAttributes & GroupMessageAttributes)[],
     requestId: string
 }
 
@@ -314,7 +314,7 @@ export type AllChatsServer = {
     chatSettings: {
         [key: string]: NewChatSettings;
     };
-    messages?: (MessageAttributes | GroupMessageAttributes)[],
+    messages?: (MessageAttributes & GroupMessageAttributes)[],
     requestId: string
 }
 

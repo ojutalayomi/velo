@@ -1,49 +1,41 @@
+// profile/layout.tsx
 import { Metadata } from "next";
 import { getUser } from "./action";
 
-let baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-let description = "Velo is a modern social platform for sharing, connecting, and discovering new content.";
-let title = "Velo App";
+let baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
+let defaultDescription = "Velo is a modern social platform for sharing, connecting, and discovering new content.";
+let defaultTitle = "Velo App";
 let siteName = "Velo";
-let image = baseUrl + '/velo11.png';
+let defaultImage = baseUrl + '/velo11.png';
 
-let metadata: Metadata;
+export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
+    const user = await getUser(params.username);
 
-export default async function ProfileLayout({ children, params }: { children: React.ReactNode, params: Promise<{ username: string }> }) {
-    const user = await getUser((await params).username);
-    title = user.name + ' - ' + title;
-    description = user.bio || description;
-    image = user.displayPicture || image;
+    const title = `${user.name} - ${defaultTitle}`;
+    const description = user.bio || defaultDescription;
+    const image = user.displayPicture || defaultImage;
 
-    metadata = {
-        title: title,
-        description: description,
+    return {
+        title,
+        description,
         openGraph: {
-            images: [
-            {
-                url: image,
-            }
-            ],
-            siteName: siteName,
-            title: title,
-            description: description,
+            images: [{ url: image }],
+            siteName,
+            title,
+            description,
             url: baseUrl,
             type: "website",
             locale: "en_US"
         },
         twitter: {
-            images: [
-            {
-                url: image,
-            }
-            ],
+            images: [{ url: image }],
             card: "summary_large_image",
-            title: title,
-            description: description
+            title,
+            description
         }
     };
-  
-  return children
 }
 
-export { metadata };
+export default function ProfileLayout({ children }: { children: React.ReactNode }) {
+    return children;
+}

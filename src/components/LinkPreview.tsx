@@ -51,7 +51,7 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
   if (loading || error) return null;
   if (!metadata || (!isImage && !metadata.favicon)) return null;
 
-  if(direction) return (
+  if(direction === "row") return (
     <a 
       href={url} 
       target="_blank" 
@@ -60,15 +60,10 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
     >
       <div className="flex items-center p-3 gap-3">
         {(isImage || metadata.favicon) && (
-          <div className="flex-shrink-0">
-            <img
-              src={isImage ? metadata.image : metadata.favicon}
-              alt={metadata.title || 'Link preview'}
-              width={40}
-              height={40}
-              className="rounded object-cover"
-            />
-          </div>
+          <Avatar className="rounded object-cover">
+            <AvatarImage className="rounded object-cover" src={isImage ? metadata.image : metadata.favicon} alt={metadata.title || 'Link preview'} />
+            <AvatarFallback>{metadata.title || 'Link preview'}</AvatarFallback>
+          </Avatar>
         )}
         <div className="flex-1 min-w-0">
           {metadata.title && (

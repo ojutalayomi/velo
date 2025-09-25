@@ -1,7 +1,8 @@
 'use server'
+import { PostSchema, UserData } from "@/lib/types/type";
 import { headers } from "next/headers";
 
-export async function getUser(username: string) {
+export async function getUser(username: string): Promise<UserData> {
     try {
         const headersList = headers();
         const protocol = (await headersList).get("x-forwarded-proto");
@@ -19,20 +20,20 @@ export async function getUser(username: string) {
 
         if (!res.ok) {
             console.error(`Error fetching user: ${res.status} ${res.statusText}`);
-            return null;
+            return {} as UserData;
         }
 
         const text = await res.text();
         try {
-            return JSON.parse(text);
+            return JSON.parse(text) as UserData;
         } catch (e) {
             console.error('Failed to parse response as JSON:', text.substring(0, 200));
-            return null;
+            return {} as UserData;
         }
 
     } catch (error) {
         console.error("Error fetching user:", error);
-        return null;
+        return {} as UserData;
     }
 }
 
@@ -59,7 +60,7 @@ export async function getUserPosts(username: string) {
 
         const text = await res.text();
         try {
-            return JSON.parse(text);
+            return JSON.parse(text) as PostSchema[];
         } catch (e) {
             console.error('Failed to parse response as JSON:', text.substring(0, 200));
             return [];

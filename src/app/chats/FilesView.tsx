@@ -1,4 +1,4 @@
-import { ChevronDown, Download, File, Share } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, File, Share } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { Attachment } from "@/lib/types/type";
 import {
@@ -46,7 +46,8 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
   const moreThanFour = mediaLength > 4;
   const excess = mediaLength - 4;
   const mediaType = media.map((m) => m.type.split("/")[0])[0];
-
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
   const fileColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "pdf":
@@ -95,7 +96,7 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
       {mediaType === "image" ? (
         <div className="grid grid-cols-2 gap-2 p-2 text-xs">
           {media.map((m, key) => {
-            if (moreThanFour && key > 2) return;
+            if (moreThanFour && key > 2) return null;
             return (
               <div
                 key={m.name}
@@ -125,7 +126,7 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
         </div>
       ) : (
         <div className="flex flex-col p-1 gap-2">
-          {media.map((m, key) => {
+          {media.map(m => {
             const type = m.type.split("/")[1];
             const type1 = () => {
               if (type === "vnd.openxmlformats-officedocument.wordprocessingml.document") {
@@ -160,11 +161,11 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <DropdownMenu>
+                  <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                     <DropdownMenuTrigger asChild>
-                      <ChevronDown className="text-gray-400 transform transition hover:rotate-180" />
+                      {isDropdownOpen ? <ChevronDown className="text-gray-400" /> : <ChevronUp className="text-gray-400" />}
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="mr-2 p-2 w-auto">
+                    <DropdownMenuContent className="mr-2 w-auto p-2">
                       <button
                         type="button"
                         className="flex w-full items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded"

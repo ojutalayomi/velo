@@ -1,12 +1,25 @@
+/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
-import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
-import { Attachment, MessageAttributes, msgStatus } from "@/lib/types/type";
-import Image from "next/image";
-import { ChevronDown, EllipsisVertical } from "lucide-react";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChevronDown, EllipsisVertical } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import MessageTab from "../../MessageTab";
+import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
+import { CallButton , CallStatus, IncomingCall } from "@/components/call";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Statuser } from "@/components/VerificationComponent";
+import { toast } from "@/hooks/use-toast";
+import { useCallManager } from "@/hooks/useCallManager";
+import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { Attachment, MessageAttributes, msgStatus } from "@/lib/types/type";
+import { timeFormatter } from "@/lib/utils";
 import {
   ConvoType,
   updateConversation,
@@ -14,26 +27,15 @@ import {
   updateMessage,
   deleteConversation,
 } from "@/redux/chatSlice";
+import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { useUser } from "@/app/providers/UserProvider";
-import { useSocket } from "@/app/providers/SocketProvider";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import ChatTextarea from "../../ChatTextarea";
-import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { toast } from "@/hooks/use-toast";
-import path from "path";
-import { timeFormatter } from "@/lib/utils";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
+
+import ChatTextarea from "../../ChatTextarea";
+import MessageTab from "../../MessageTab";
 import { MultiSelect } from "../../MultiSelect";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Statuser } from "@/components/VerificationComponent";
-import { Skeleton } from "@/components/ui/skeleton";
-import { CallButton } from "@/components/call";
-import { useCallManager } from "@/hooks/useCallManager";
-import { CallStatus, IncomingCall } from "@/components/call";
+
 
 type Message = {
   _id: string;
@@ -83,24 +85,22 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     loading: convoLoading,
   } = useSelector((state: RootState) => state.chat);
   const [quote, setQuote] = useState<QuoteProp>(initialQuoteState);
-  const [isNew, setNew] = useState<boolean>(true);
   const [load, setLoading] = useState<boolean>();
   const [err, setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState("");
+  const convo = conversations?.find((c) => c.id === gid) as ConvoType;
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const gid = params?.gid as string;
   const socket = useSocket();
   const callHooks = useCallManager(socket!) || null;
-  const convo = conversations?.find((c) => c.id === gid) as ConvoType;
   const [isPinned, setIsPinned] = useState(convo?.pinned);
   const [isArchived, setIsArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const chat = chatSettings?.[gid];
   const otherIds = convo?.participants?.filter((id) => id !== userdata._id);
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  let lastDateRef = useRef<string>("");
+  const lastDateRef = useRef<string>("");
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -372,29 +372,29 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
   };
 
-  const filteredIsTypingList = convo?.isTypingList.filter((i) => i.chatId !== gid);
+  const filteredIsTypingList = convo?.isTypingList.filter((i) => i.chatId === gid);
 
   return (
     <div
-      className={`bg-bgLight tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}
+      className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 z-10">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
-            <div className="flex gap-4 items-center justify-start">
+            <div className="flex items-center justify-start gap-4">
               <FontAwesomeIcon
                 onClick={handleClick}
                 icon={"arrow-left"}
-                className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+                className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 size="lg"
               />
               {load ? (
-                <Skeleton className="w-24 h-4 bg-gray-200 rounded mb-1" />
+                <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
                 <>
-                  <div className="flex items-center text-sm font-semibold text-left">
+                  <div className="flex items-center text-left text-sm font-semibold">
                     <div className="truncate">{group?.name}</div>
-                    {group?.verified && <Statuser className="size-4 ml-1" />}
+                    {group?.verified && <Statuser className="ml-1 size-4" />}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {filteredIsTypingList?.length > 0 &&
@@ -415,14 +415,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
               <Popover>
                 <PopoverTrigger>
-                  <EllipsisVertical className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]" />
+                  <EllipsisVertical className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
                 </PopoverTrigger>
-                <PopoverContent className="bg-white dark:bg-zinc-800 max-w-52 mt-2 mr-2 p-0 rounded-md shadow-lg z-10">
+                <PopoverContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
                   <ul className="py-1">
                     {options.map((option) => (
                       <li
                         key={option.id}
-                        className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
+                        className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (socket) {
@@ -455,11 +455,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2 w-full">
+          <div className="flex w-full items-center gap-2">
             <FontAwesomeIcon
               onClick={() => openSearchBar(false)}
               icon={"arrow-left"}
-              className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+              className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
               size="lg"
             />
             <Input
@@ -471,7 +471,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             />
             <button
               onClick={() => setSearchQuery("")}
-              className={`${searchQuery === "" && "hidden "} text-brand hover:text-brand/70 font-bold py-2`}
+              className={`${searchQuery === "" && "hidden "} py-2 font-bold text-brand hover:text-brand/70`}
             >
               Clear
             </button>
@@ -497,11 +497,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       <div
         ref={messageBoxRef}
         onScroll={handleScroll}
-        className="backdrop-blur-sm pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-sm"
       >
-        <div className="cursor-pointer flex flex-col gap-2 items-center relative">
+        <div className="relative flex cursor-pointer flex-col items-center gap-2">
           {load ? (
-            <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
+            <div className="size-20 animate-pulse rounded-full bg-gray-200" />
           ) : (
             <>
               <div className="relative">
@@ -511,7 +511,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   </AvatarFallback>
                   <AvatarImage
                     src={group?.displayPicture}
-                    className="displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover"
+                    className="displayPicture size-20 rounded-full object-cover dark:border-slate-200"
                     width={80}
                     height={80}
                     alt="Display Picture"
@@ -525,15 +525,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           )}
 
           <div className="text-center">
-            <p className="flex items-center justify-center font-bold dark:text-slate-200 text-sm">
+            <p className="flex items-center justify-center text-sm font-bold dark:text-slate-200">
               {load ? (
-                <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
+                <span className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
               ) : (
                 <>
                   {group?.name ? (
                     group.name || ""
                   ) : (
-                    <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
+                    <span className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
                   )}
                   {/* {group?.verified && 
                     <Statuser className='size-4' />
@@ -544,7 +544,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             {/* <p className="text-xs text-gray-500 dark:text-gray-400">{load || !group?.username ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" /> : '@'+group.username }</p> */}
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {load || !group?.description ? (
-                <span className="w-36 h-4 bg-gray-200 rounded animate-pulse mb-1" />
+                <span className="mb-1 h-4 w-36 animate-pulse rounded bg-gray-200" />
               ) : (
                 group.description
               )}
@@ -565,9 +565,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   <div
                     key={`date-${messageDate}`}
                     data-date={messageDate}
-                    className="text-center my-2 sticky top-0 z-[1]"
+                    className="sticky top-0 z-[1] my-2 text-center"
                   >
-                    <span className="bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full text-xs shadow-sm">
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
                       {messageDate}
                     </span>
                   </div>
@@ -589,15 +589,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         {filteredIsTypingList?.length > 0 && (
           <div
             key={`typing-${filteredIsTypingList[0].id}`}
-            className="text-center my-2 sticky top-0 z-[1]"
+            className="sticky top-0 z-[1] mb-4 mt-2 text-center"
           >
-            <div className="flex items-center justify-center flex-wrap gap-2 -space-x-2">
-              {filteredIsTypingList.slice(0, 2).map((i) => (
+            <div className="flex flex-wrap items-center justify-center gap-2 -space-x-2">
+              {filteredIsTypingList.slice(0, 3).map((i) => (
                 <Avatar className="size-4" key={i.id + i.name} data-src={i.displayPicture}>
                   <AvatarFallback className="capitalize">{i.name?.slice(0, 2)}</AvatarFallback>
                   <AvatarImage
                     src={i.displayPicture}
-                    className="displayPicture dark:border-slate-200 size-4 rounded-full object-cover"
+                    className="displayPicture size-4 rounded-full object-cover dark:border-slate-200"
                     width={16}
                     height={16}
                     alt="Display Picture"
@@ -605,22 +605,22 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 </Avatar>
               ))}
             </div>
-            <span className="bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full text-xs shadow-sm">
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
               {filteredIsTypingList
-                .slice(0, 2)
+                .slice(0, 3)
                 .map((i) => i.name)
                 .join(", ")}{" "}
-              {filteredIsTypingList.slice(0, 2).map((i) => i.name).length > 1 ? "are" : "is"}{" "}
+              {filteredIsTypingList.slice(0, 3).map((i) => i.name).length > 1 ? "are" : "is"}{" "}
               typing...
             </span>
           </div>
         )}
       </div>
       <div
-        className={`absolute rounded-full right-0 bottom-16 shadow-lg mr-4 p-2 bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex items-center gap-2 ${showScrollButton ? "opacity-0" : "opacity-100"}`}
+        className={`absolute bottom-16 right-0 mr-4 flex items-center gap-2 rounded-full bg-gray-100 p-2 shadow-lg dark:bg-zinc-900 dark:text-slate-200 ${showScrollButton ? "opacity-0" : "opacity-100"}`}
       >
         <ChevronDown
-          className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"
+          className="cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
           onClick={scrollToBottom}
         />
       </div>

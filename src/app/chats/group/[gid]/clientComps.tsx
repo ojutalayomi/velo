@@ -88,9 +88,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [load, setLoading] = useState<boolean>();
   const [err, setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState("");
+  const gid = params?.gid as string;
   const convo = conversations?.find((c) => c.id === gid) as ConvoType;
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
-  const gid = params?.gid as string;
   const socket = useSocket();
   const callHooks = useCallManager(socket!) || null;
   const [isPinned, setIsPinned] = useState(convo?.pinned);

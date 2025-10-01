@@ -1,3 +1,4 @@
+/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 import React, { TouchEvent, useEffect, useState } from "react";
 import Image from "next/image";
@@ -98,15 +99,15 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
   const renderStatusIcon = (status: string) => {
     switch (status) {
       case "sending":
-        return <Loader size={15} className="animate-spin  min-w-3" />;
+        return <Loader size={15} className="min-w-3  animate-spin" />;
       case "sent":
         return <Check size={15} className=" min-w-3" />;
       case "delivered":
-        return <CheckCheck size={15} className="dark:text-gray-400  min-w-3" />;
+        return <CheckCheck size={15} className="min-w-3  dark:text-gray-400" />;
       case "failed":
-        return <b className="text-red-800  min-w-3">Not sent!</b>;
+        return <b className="min-w-3  text-red-800">Not sent!</b>;
       default:
-        return <CheckCheck size={15} className="text-green-500  min-w-3" />;
+        return <CheckCheck size={15} className="min-w-3  text-green-500" />;
     }
   };
 
@@ -220,7 +221,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
             ? removeSelectedMessage(message._id as string)
             : addSelectedMessage(message._id as string)
         );
-      }, 500);
+      }, 1000);
 
       const cancelLongPress = () => {
         clearTimeout(longPressTimer);
@@ -247,7 +248,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
 
   const handleTouch1 = (e: TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 1) {
-      const longPressTimer = setTimeout(() => setOpen(true), 500);
+      const longPressTimer = setTimeout(() => setOpen(true), 1000);
       const cancelLongPress = () => clearTimeout(longPressTimer);
       document.addEventListener("touchend", cancelLongPress);
       document.addEventListener("touchmove", cancelLongPress);
@@ -277,22 +278,22 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
           onClick={handleClick}
           onTouchStart={handleTouch}
           onContextMenu={handleContextMenu}
-          className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} dark:text-gray-400 flex flex-col mb-4 transition-colors duration-300`}
+          className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} mb-4 flex flex-col transition-colors duration-300 dark:text-gray-400`}
         >
           <div
-            className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-3 items-start relative`}
+            className={`flex max-w-[90%] flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} relative items-start gap-3`}
           >
             <div
-              className={`flex flex-col gap-1 flex-1 max-w-full ${senderId === userdata._id ? "items-end" : "items-start"}`}
+              className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
             >
               {message.attachments.length ? <MediaCollage media={message.attachments} /> : <></>}
 
               {/* Message bubble */}
               <div
-                className={`relative p-2 rounded-lg max-w-full ${
+                className={`relative max-w-full rounded-lg p-2 ${
                   senderId === userdata._id
                     ? "bg-brand text-white rounded-tr-none"
-                    : "bg-gray-100 dark:bg-zinc-800 rounded-tl-none"
+                    : "rounded-tl-none bg-gray-100 dark:bg-zinc-800"
                 }`}
                 onTouchStart={handleTouch1}
                 onContextMenu={handleContextMenu1}
@@ -316,7 +317,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
                 {/* Quote and Link Preview */}
                 {message.quotedMessageId && <Quote message={message} senderId={senderId} />}
                 {firstUrl && <LinkPreview url={firstUrl} />}
-                <p className="py-1 text-sm whitespace-pre-wrap break-words">
+                <p className="whitespace-pre-wrap break-words py-1 text-sm">
                   {messageContent.length > MAX_LENGTH && !isExpanded
                     ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
                     : renderTextWithLinks(messageContent)}
@@ -326,7 +327,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
                   <Button
                     variant="link"
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className={`text-sm mt-1 ${
+                    className={`mt-1 text-sm ${
                       senderId === userdata._id ? "text-gray-200" : "text-gray-500"
                     } hover:underline`}
                   >
@@ -336,7 +337,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
 
                 {/* Time and status */}
                 <div
-                  className={`flex items-center gap-2 text-xs text-nowrap ${
+                  className={`flex items-center gap-2 text-nowrap text-xs ${
                     senderId === userdata._id ? "justify-end" : "justify-start"
                   }`}
                 >
@@ -347,10 +348,10 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
 
               {/* Reactions */}
               <div
-                className={`${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} -mt-3 z-10 flex items-center gap-1`}
+                className={`${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} z-10 -mt-3 flex items-center gap-1`}
               >
                 {senderId === userdata._id && (
-                  <div className="flex items-center gap-1 dark:bg-zinc-800 bg-white rounded-full p-1 border dark:border-gray-200">
+                  <div className="flex items-center gap-1 rounded-full border bg-white p-1 dark:border-gray-200 dark:bg-zinc-800">
                     <Options options={optionss} open={open} setOpen={setOpen} />
                   </div>
                 )}
@@ -377,23 +378,23 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
         onClick={handleClick}
         onTouchStart={handleTouch}
         onContextMenu={handleContextMenu}
-        className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} dark:text-gray-400 flex flex-col mb-2 transition-colors duration-300`}
+        className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} mb-2 flex flex-col transition-colors duration-300 dark:text-gray-400`}
       >
         {/* Main Message Container */}
         <div
-          className={`flex flex-1 max-w-[90%] ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} gap-2 items-center relative`}
+          className={`flex max-w-[90%] flex-1 ${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} relative items-center gap-2`}
         >
           <div
-            className={`flex flex-col gap-1 flex-1 max-w-full ${senderId === userdata._id ? "items-end" : "items-start"}`}
+            className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
           >
             {message.attachments.length ? <MediaCollage media={message.attachments} /> : <></>}
 
             {/* Message Bubble */}
             <div
-              className={`relative mb-1 p-2 rounded-2xl overflow-auto max-w-full flex flex-col shadow-sm ${
+              className={`relative mb-1 flex max-w-full flex-col overflow-auto rounded-2xl p-2 shadow-sm ${
                 senderId === userdata._id
-                  ? "bg-brand rounded-br-none text-white"
-                  : "bg-gray-50 rounded-bl-none dark:bg-zinc-800/80 dark:text-white"
+                  ? "rounded-br-none bg-brand text-white"
+                  : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
               } text-left`}
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
@@ -404,7 +405,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
               {/* Message Content */}
               <div className="">
                 <p
-                  className="py-1 text-sm whitespace-pre-wrap break-words"
+                  className="whitespace-pre-wrap break-words py-1 text-sm"
                   style={{ fontFamily: "inherit" }}
                 >
                   {messageContent.length > MAX_LENGTH && !isExpanded
@@ -415,7 +416,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
                   <Button
                     variant="link"
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className={`text-sm mt-1 ${
+                    className={`mt-1 text-sm ${
                       senderId === userdata._id ? "text-gray-200" : "text-gray-500"
                     } hover:underline`}
                   >
@@ -424,9 +425,9 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
                 )}
               </div>
               <div
-                className={`${senderId === userdata._id ? "text-right justify-end" : "text-left justify-start"} text-nowrap flex items-center gap-2 text-xs mt-1`}
+                className={`${senderId === userdata._id ? "justify-end text-right" : "justify-start text-left"} mt-1 flex items-center gap-2 text-nowrap text-xs`}
               >
-                <div className="dark:after:text-slate-200 after:content-[ • ]">{time}</div>
+                <div className="after:content-[ • ] dark:after:text-slate-200">{time}</div>
                 {senderId === userdata._id && renderStatusIcon(message.status)}
               </div>
             </div>
@@ -498,7 +499,7 @@ const ReactionSection = ({
 
   return (
     <div
-      className="-mt-3 z-10 flex flex-wrap gap-1 items-center dark:bg-zinc-800 bg-white rounded-full px-1 py-0.5 border dark:border-gray-200"
+      className="z-10 -mt-3 flex flex-wrap items-center gap-1 rounded-full border bg-white px-1 py-0.5 dark:border-gray-200 dark:bg-zinc-800"
       onClick={() => setReactionInfoDisplay(true)}
     >
       {message.reactions.reduce((acc: React.ReactNode[], reaction, index) => {
@@ -526,7 +527,7 @@ const ReactionSection = ({
       }, [])}
       {reactionArray.length > 5 && (
         <span
-          className={`px-2 py-0.5 rounded-full text-xs ${
+          className={`rounded-full px-2 py-0.5 text-xs ${
             senderId === userdata._id ? "bg-white/10" : "bg-gray-200 dark:bg-zinc-700"
           }`}
         >
@@ -564,28 +565,28 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
 
   return (
     <div
-      className={`flex m-1 ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
+      className={`m-1 flex ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
       onClick={handleQuoteClick}
     >
       <div
         className={`
-          flex items-center gap-2 w-full max-w-full p-2 rounded-lg cursor-pointer
+          flex w-full max-w-full cursor-pointer items-center gap-2 rounded-lg p-2
           ${
             senderId === userdata._id
               ? "bg-emerald-100 dark:bg-emerald-900/30"
               : "bg-gray-100 dark:bg-zinc-700/50"
           }
           border-l-4 ${senderId === userdata._id ? "border-emerald-500" : "border-gray-400"}
-          hover:bg-opacity-80 transition-all
+          transition-all hover:bg-opacity-80
         `}
       >
-        <div className="flex flex-col overflow-auto max-w-full">
+        <div className="flex max-w-full flex-col overflow-auto">
           <span
             className={`text-xs font-medium ${senderId === userdata._id ? "text-emerald-700 dark:text-emerald-400" : "text-gray-700 dark:text-gray-300"}`}
           >
             {quotedMessageId?.sender?.name || ""}
           </span>
-          <span className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+          <span className="line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
             {quotedMessageId?.content}
           </span>
         </div>
@@ -636,7 +637,7 @@ function Options({
               <button
                 key={index}
                 type="button"
-                className="flex w-full items-center gap-3 py-3 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded px-2"
+                className="flex w-full items-center gap-3 rounded px-2 py-3 hover:bg-gray-100 dark:hover:bg-zinc-700"
                 onClick={(e) => {
                   e.preventDefault();
                   onClick();
@@ -664,7 +665,7 @@ function Options({
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="bg-white dark:bg-zinc-800 hidden tablets:block min-w-[160px] p-1 rounded-md shadow-lg w-auto"
+          className="hidden w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg tablets:block dark:bg-zinc-800"
           align="end"
           sideOffset={5}
         >
@@ -673,7 +674,7 @@ function Options({
               <button
                 key={index}
                 type="button"
-                className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded"
+                className="flex items-center gap-2 rounded p-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
                 onClick={(e) => {
                   e.preventDefault();
                   onClick();

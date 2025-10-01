@@ -59,9 +59,14 @@ body .secondary .containeer .sub-container {
 }
 body .secondary .containeer .sub-container .child {
   -webkit-backdrop-filter: blur(10px);
-          backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border-radius: 20px;
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  box-shadow:
+    rgba(0, 0, 0, 0.25) 0px 54px 55px,
+    rgba(0, 0, 0, 0.12) 0px -12px 30px,
+    rgba(0, 0, 0, 0.12) 0px 4px 6px,
+    rgba(0, 0, 0, 0.17) 0px 12px 13px,
+    rgba(0, 0, 0, 0.09) 0px -3px 5px;
   font-size: 11px;
   max-width: 585px;
   padding: 10px 15px;
@@ -101,7 +106,8 @@ body .secondary .containeer .sub-container .child .item .otherOptions {
   flex-direction: row;
   justify-content: space-between;
 }
-body .secondary .containeer .sub-container .child .item .otherOptions .google, body .secondary .containeer .sub-container .child .item .otherOptions .facebook {
+body .secondary .containeer .sub-container .child .item .otherOptions .google,
+body .secondary .containeer .sub-container .child .item .otherOptions .facebook {
   align-items: center;
   display: flex !important;
   flex-direction: row;
@@ -116,20 +122,24 @@ body .secondary .containeer .sub-container .child .item .otherOptions .google, b
   padding: 10px;
   width: 48%;
 }
-body .secondary .containeer .sub-container .child .item .otherOptions .google:disabled:hover, body .secondary .containeer .sub-container .child .item .otherOptions .facebook:disabled:hover {
+body .secondary .containeer .sub-container .child .item .otherOptions .google:disabled:hover,
+body .secondary .containeer .sub-container .child .item .otherOptions .facebook:disabled:hover {
   background: revert;
   cursor: not-allowed;
 }
-body .secondary .containeer .sub-container .child .item .otherOptions .google b, body .secondary .containeer .sub-container .child .item .otherOptions .facebook b {
+body .secondary .containeer .sub-container .child .item .otherOptions .google b,
+body .secondary .containeer .sub-container .child .item .otherOptions .facebook b {
   color: hsl(234, 29%, 20%);
   font-size: 15px;
 }
-body .secondary .containeer .sub-container .child .item .otherOptions .google svg, body .secondary .containeer .sub-container .child .item .otherOptions .facebook svg {
+body .secondary .containeer .sub-container .child .item .otherOptions .google svg,
+body .secondary .containeer .sub-container .child .item .otherOptions .facebook svg {
   height: 20px;
   width: 20px;
 }
 @media (min-width: 769px) {
-  body .secondary .containeer .sub-container .child .item .otherOptions .google:hover, body .secondary .containeer .sub-container .child .item .otherOptions .facebook:hover {
+  body .secondary .containeer .sub-container .child .item .otherOptions .google:hover,
+  body .secondary .containeer .sub-container .child .item .otherOptions .facebook:hover {
     background: tomato;
     color: white;
   }
@@ -137,7 +147,8 @@ body .secondary .containeer .sub-container .child .item .otherOptions .google sv
 body .secondary .containeer .sub-container .child .item form .input-tags:focus-within label {
   color: tomato;
 }
-body .secondary .containeer .sub-container .child .item form .input-tags:focus-within .input1, body .secondary .containeer .sub-container .child .item form .input-tags:focus-within .input2 {
+body .secondary .containeer .sub-container .child .item form .input-tags:focus-within .input1,
+body .secondary .containeer .sub-container .child .item form .input-tags:focus-within .input2 {
   outline: 2px solid tomato;
 }
 body .secondary .containeer .sub-container .child .item form .input-tags label {
@@ -194,7 +205,16 @@ body .secondary .containeer .sub-container .child .item form .input-tags .input2
   padding: 5px 10px;
   width: 100%;
 }
-body .secondary .containeer .sub-container .child .item form .input-tags .input2 input::placeholder {
+body
+  .secondary
+  .containeer
+  .sub-container
+  .child
+  .item
+  form
+  .input-tags
+  .input2
+  input::placeholder {
   color: hsl(234, 29%, 20%);
 }
 body .secondary .containeer .sub-container .child .item form .forgot-password {
@@ -213,10 +233,14 @@ body .secondary .containeer .sub-container .child .item form .buttons {
   flex-direction: row;
   justify-content: space-between;
 }
-body .secondary .containeer .sub-container .child .item form .buttons .previous, body .secondary .containeer .sub-container .child .item form .buttons .next, body .secondary .containeer .sub-container .child .item form .buttons .submit {
+body .secondary .containeer .sub-container .child .item form .buttons .previous,
+body .secondary .containeer .sub-container .child .item form .buttons .next,
+body .secondary .containeer .sub-container .child .item form .buttons .submit {
   width: 48%;
 }
-body .secondary .containeer .sub-container .child .item form .previous, body .secondary .containeer .sub-container .child .item form .next, body .secondary .containeer .sub-container .child .item form .submit {
+body .secondary .containeer .sub-container .child .item form .previous,
+body .secondary .containeer .sub-container .child .item form .next,
+body .secondary .containeer .sub-container .child .item form .submit {
   align-items: center;
   display: flex !important;
   flex-direction: row;
@@ -233,21 +257,27 @@ body .secondary .containeer .sub-container .child .item form .previous, body .se
   cursor: pointer;
   margin: 10px 0 0;
 }
-body .secondary .containeer .sub-container .child .item form .previous:disabled, body .secondary .containeer .sub-container .child .item form .next:disabled, body .secondary .containeer .sub-container .child .item form .submit:disabled {
+body .secondary .containeer .sub-container .child .item form .previous:disabled,
+body .secondary .containeer .sub-container .child .item form .next:disabled,
+body .secondary .containeer .sub-container .child .item form .submit:disabled {
   background: revert;
   cursor: not-allowed;
 }
-body .secondary .containeer .sub-container .child .item form .previous:disabled:hover, body .secondary .containeer .sub-container .child .item form .next:disabled:hover, body .secondary .containeer .sub-container .child .item form .submit:disabled:hover {
+body .secondary .containeer .sub-container .child .item form .previous:disabled:hover,
+body .secondary .containeer .sub-container .child .item form .next:disabled:hover,
+body .secondary .containeer .sub-container .child .item form .submit:disabled:hover {
   background: revert;
   cursor: not-allowed;
 }
-body .secondary .containeer .sub-container .child .item form .previous .loader, body .secondary .containeer .sub-container .child .item form .next .loader, body .secondary .containeer .sub-container .child .item form .submit .loader {
+body .secondary .containeer .sub-container .child .item form .previous .loader,
+body .secondary .containeer .sub-container .child .item form .next .loader,
+body .secondary .containeer .sub-container .child .item form .submit .loader {
   animation: spin 2s linear infinite;
   border: 5px dotted #0b173d;
-  border-bottom-color: #34A853;
-  border-left-color: #FBBC05;
-  border-right-color: #4285F4;
-  border-top-color: #EB4335;
+  border-bottom-color: #34a853;
+  border-left-color: #fbbc05;
+  border-right-color: #4285f4;
+  border-top-color: #eb4335;
   border-radius: 50%;
   display: none;
   height: 25px;
@@ -262,6 +292,8 @@ body .secondary .containeer .sub-container .child .item form .previous .loader, 
     transform: rotate(360deg);
   }
 }
-body .secondary .containeer .sub-container .child .item form .previous .show, body .secondary .containeer .sub-container .child .item form .next .show, body .secondary .containeer .sub-container .child .item form .submit .show {
+body .secondary .containeer .sub-container .child .item form .previous .show,
+body .secondary .containeer .sub-container .child .item form .next .show,
+body .secondary .containeer .sub-container .child .item form .submit .show {
   display: inline;
-}/*# sourceMappingURL=accounts.css.map */
+} /*# sourceMappingURL=accounts.css.map */

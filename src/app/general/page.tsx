@@ -1,12 +1,23 @@
-'use client'
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useUser } from '@/app/providers/UserProvider';
-import { useTheme } from '@/app/providers/ThemeProvider';
-import { handleThemeChange1 } from '@/components/ThemeToggle';
-import { ChevronRight, Bell, Lock, User, Moon, HelpCircle, LogIn, LogOut, Settings2, ArrowLeft } from 'lucide-react';
-import LeftSideBar from '@/components/LeftSideBar';
+"use client";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser } from "@/app/providers/UserProvider";
+import { useTheme } from "@/app/providers/ThemeProvider";
+import { handleThemeChange1 } from "@/components/ThemeToggle";
+import {
+  ChevronRight,
+  Bell,
+  Lock,
+  User,
+  Moon,
+  HelpCircle,
+  LogIn,
+  LogOut,
+  Settings2,
+  ArrowLeft,
+} from "lucide-react";
+import LeftSideBar from "@/components/LeftSideBar";
 
 interface SettingsItem {
   icon: React.ReactNode;
@@ -29,15 +40,15 @@ const SettingsPage = () => {
   const { theme, setTheme } = useTheme();
   const [isOpen, setOpen] = useState<boolean>(false);
   const [isChecked, setIsChecked] = useState(false);
-  const pathTo = pathname !== '' ? `login?backto=${pathname}` : 'login';
+  const pathTo = pathname !== "" ? `login?backto=${pathname}` : "login";
 
   useEffect(() => {
-    setIsChecked(theme === 'dark');
+    setIsChecked(theme === "dark");
   }, [theme]);
 
   const handleThemeChange = (checked: boolean) => {
     setIsChecked(checked);
-    const value = checked ? 'dark' : 'light';
+    const value = checked ? "dark" : "light";
     handleThemeChange1(value, isOpen, setTheme, setOpen);
   };
 
@@ -47,48 +58,48 @@ const SettingsPage = () => {
 
   const settingsCategories: SettingsCategory[] = [
     {
-      title: 'Account',
+      title: "Account",
       items: [
-        { 
-          icon: <User className="text-blue-500" size={20} />, 
-          label: 'Personal Information',
-          description: 'Manage your personal details',
+        {
+          icon: <User className="text-blue-500" size={20} />,
+          label: "Personal Information",
+          description: "Manage your personal details",
           hasChevron: true,
-          path: '/account/personal-info'
+          path: "/account/personal-info",
         },
-        { 
-          icon: <Bell className="text-yellow-500" size={20} />, 
-          label: 'Notifications',
-          description: 'Control your notification preferences', 
+        {
+          icon: <Bell className="text-yellow-500" size={20} />,
+          label: "Notifications",
+          description: "Control your notification preferences",
           hasChevron: true,
-          path: '/notifications'
+          path: "/notifications",
         },
-        { 
-          icon: <Lock className="text-green-500" size={20} />, 
-          label: 'Privacy and Security',
-          description: 'Manage your account security',
+        {
+          icon: <Lock className="text-green-500" size={20} />,
+          label: "Privacy and Security",
+          description: "Manage your account security",
           hasChevron: true,
-          path: '/account/privacy-security'
+          path: "/account/privacy-security",
         },
-      ]
+      ],
     },
     {
-      title: 'Preferences',
+      title: "Preferences",
       items: [
-        { 
-          icon: <Moon className="text-purple-500" size={20} />, 
-          label: 'Dark Mode',
-          description: 'Toggle dark/light theme',
-          hasToggle: true 
+        {
+          icon: <Moon className="text-purple-500" size={20} />,
+          label: "Dark Mode",
+          description: "Toggle dark/light theme",
+          hasToggle: true,
         },
-        { 
-          icon: <HelpCircle className="text-red-500" size={20} />, 
-          label: 'Help & Support',
-          description: 'Get help and contact support',
+        {
+          icon: <HelpCircle className="text-red-500" size={20} />,
+          label: "Help & Support",
+          description: "Get help and contact support",
           hasChevron: true,
-          path: '/help-support'
+          path: "/help-support",
         },
-      ]
+      ],
     },
   ];
 
@@ -97,8 +108,8 @@ const SettingsPage = () => {
       <div className="md:w-3/5 overflow-hidden w-full">
         <header className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b dark:border-neutral-800">
           <div className="px-4 py-2 flex items-center gap-4">
-            <button 
-              onClick={() => router.push('/home')}
+            <button
+              onClick={() => router.push("/home")}
               className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -118,7 +129,7 @@ const SettingsPage = () => {
               </h2>
               <div className="bg-white dark:bg-neutral-800 rounded-xl overflow-hidden shadow-sm divide-y dark:divide-neutral-700">
                 {category.items.map((item, itemIndex) => (
-                  <div 
+                  <div
                     key={itemIndex}
                     onClick={() => item.path && handleItemClick(item.path)}
                     className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
@@ -128,17 +139,13 @@ const SettingsPage = () => {
                         {item.icon}
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">
-                          {item.label}
-                        </h3>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{item.label}</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {item.description}
                         </p>
                       </div>
                     </div>
-                    {item.hasChevron && (
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    )}
+                    {item.hasChevron && <ChevronRight className="w-5 h-5 text-gray-400" />}
                     {item.hasToggle && (
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -156,8 +163,8 @@ const SettingsPage = () => {
             </section>
           ))}
 
-          <Link 
-            href={`/accounts/${!loading && !userdata.username ? pathTo : 'logout'}`}
+          <Link
+            href={`/accounts/${!loading && !userdata.username ? pathTo : "logout"}`}
             className="block"
           >
             <button className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 font-medium">
@@ -176,7 +183,7 @@ const SettingsPage = () => {
           </Link>
         </main>
       </div>
-      <LeftSideBar/>
+      <LeftSideBar />
     </div>
   );
 };

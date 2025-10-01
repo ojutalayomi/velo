@@ -1,30 +1,30 @@
-'use client'
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import { useUser } from '@/app/providers/UserProvider';
+"use client";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, User, Mail, Phone, MapPin, Calendar } from "lucide-react";
+import { useUser } from "@/app/providers/UserProvider";
 
 const PersonalInfoPage = () => {
   const router = useRouter();
   const { userdata, loading } = useUser();
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    location: '',
-    birthdate: '',
-    bio: ''
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    birthdate: "",
+    bio: "",
   });
 
   useEffect(() => {
     if (!loading && userdata) {
       setFormData({
-        fullName: userdata.firstname + ' ' + userdata.lastname || '',
-        email: userdata.email || '',
-        phone: '',
-        location: '',
-        birthdate: '',
-        bio: ''
+        fullName: userdata.firstname + " " + userdata.lastname || "",
+        email: userdata.email || "",
+        phone: "",
+        location: "",
+        birthdate: "",
+        bio: "",
       });
     }
   }, [userdata, loading]);
@@ -32,14 +32,14 @@ const PersonalInfoPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement update logic
-  // console.log('Form submitted:', formData);
+    // console.log('Form submitted:', formData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -47,21 +47,26 @@ const PersonalInfoPage = () => {
     <div className="max-h-screen overflow-auto bg-gray-50 dark:bg-zinc-900">
       <header className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b dark:border-neutral-800">
         <div className="px-4 py-2 flex items-center gap-4">
-          <button 
-            onClick={() => router.push('/general')}
+          <button
+            onClick={() => router.push("/general")}
             className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
           <div className="flex items-center gap-2">
             <User className="w-6 h-6 text-gray-900 dark:text-white" />
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Personal Information</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Personal Information
+            </h1>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto p-4">
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm"
+        >
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

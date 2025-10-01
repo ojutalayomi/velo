@@ -5,7 +5,14 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Ellipsis } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
@@ -14,7 +21,13 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 
-export default function ProfileMenu({ username, profileId }: { username: string, profileId: string }) {
+export default function ProfileMenu({
+  username,
+  profileId,
+}: {
+  username: string;
+  profileId: string;
+}) {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 640px)");
   const userdata = useSelector((state: RootState) => state.user.userdata);
@@ -43,14 +56,36 @@ export default function ProfileMenu({ username, profileId }: { username: string,
   // For mobile drawer, use plain buttons
   const mobileMenuItems = (
     <div className="flex flex-col p-4 space-y-2">
-      <button onClick={handleShare} className="w-full text-left py-2 px-3 rounded hover:bg-muted">Share profile via…</button>
-      <button onClick={handleCopyLink} className="w-full text-left py-2 px-3 rounded hover:bg-muted">Copy link to profile</button>
+      <button onClick={handleShare} className="w-full text-left py-2 px-3 rounded hover:bg-muted">
+        Share profile via…
+      </button>
+      <button
+        onClick={handleCopyLink}
+        className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+      >
+        Copy link to profile
+      </button>
       {profileId !== userdata._id && (
         <>
           <hr className="my-2 border-gray-200 dark:border-gray-700" />
-          <button onClick={handleMute} className="w-full text-left py-2 px-3 rounded hover:bg-muted">Mute</button>
-          <button onClick={handleBlock} className="w-full text-left py-2 px-3 rounded hover:bg-muted">Block</button>
-          <button onClick={handleReport} className="w-full text-left py-2 px-3 rounded hover:bg-muted">Report</button>
+          <button
+            onClick={handleMute}
+            className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+          >
+            Mute
+          </button>
+          <button
+            onClick={handleBlock}
+            className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+          >
+            Block
+          </button>
+          <button
+            onClick={handleReport}
+            className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+          >
+            Report
+          </button>
         </>
       )}
     </div>
@@ -65,11 +100,11 @@ export default function ProfileMenu({ username, profileId }: { username: string,
           </button>
         </DrawerTrigger>
         <DrawerContent aria-describedby="Options" aria-labelledby="Options">
-            <DrawerHeader className="text-left hidden">
-                <DrawerTitle className="text-left">Options</DrawerTitle>
-                <DrawerDescription className="text-left">Options</DrawerDescription>
-            </DrawerHeader>
-            {mobileMenuItems}
+          <DrawerHeader className="text-left hidden">
+            <DrawerTitle className="text-left">Options</DrawerTitle>
+            <DrawerDescription className="text-left">Options</DrawerDescription>
+          </DrawerHeader>
+          {mobileMenuItems}
         </DrawerContent>
       </Drawer>
     );
@@ -97,4 +132,4 @@ export default function ProfileMenu({ username, profileId }: { username: string,
       </DropdownMenuContent>
     </DropdownMenu>
   );
-} 
+}

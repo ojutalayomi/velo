@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
-    return children;
+  return children;
 };
 
 export default Layout;

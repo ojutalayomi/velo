@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from "react";
 
 export interface WebRTCState {
   isConnected: boolean;
@@ -44,27 +44,27 @@ export const useWebRTC = (
       });
 
       localStreamRef.current = stream;
-      setState(prev => ({ ...prev, hasLocalStream: true, error: null }));
+      setState((prev) => ({ ...prev, hasLocalStream: true, error: null }));
 
       // Create peer connection
       const pc = new RTCPeerConnection({
         iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
         ],
       });
 
       peerConnectionRef.current = pc;
 
       // Add local tracks
-      stream.getTracks().forEach(track => {
+      stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
 
       // Handle remote stream
       pc.ontrack = (event) => {
         if (event.streams[0]) {
-          setState(prev => ({ ...prev, hasRemoteStream: true }));
+          setState((prev) => ({ ...prev, hasRemoteStream: true }));
           onTrack?.(event.streams[0]);
         }
       };
@@ -79,25 +79,25 @@ export const useWebRTC = (
       // Handle connection state changes
       pc.onconnectionstatechange = () => {
         const connectionState = pc.connectionState;
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
-          isConnected: connectionState === 'connected',
-          isConnecting: connectionState === 'connecting',
+          isConnected: connectionState === "connected",
+          isConnecting: connectionState === "connecting",
         }));
       };
 
       // Handle ICE connection state changes
       pc.oniceconnectionstatechange = () => {
         const iceState = pc.iceConnectionState;
-        if (iceState === 'failed') {
-          setState(prev => ({ ...prev, error: 'ICE connection failed' }));
+        if (iceState === "failed") {
+          setState((prev) => ({ ...prev, error: "ICE connection failed" }));
         }
       };
 
       return stream;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize WebRTC';
-      setState(prev => ({ ...prev, error: errorMessage }));
+      const errorMessage = error instanceof Error ? error.message : "Failed to initialize WebRTC";
+      setState((prev) => ({ ...prev, error: errorMessage }));
       return null;
     }
   }, [onIceCandidate, onTrack]);
@@ -111,8 +111,8 @@ export const useWebRTC = (
       await peerConnectionRef.current.setLocalDescription(offer);
       return offer;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create offer';
-      setState(prev => ({ ...prev, error: errorMessage }));
+      const errorMessage = error instanceof Error ? error.message : "Failed to create offer";
+      setState((prev) => ({ ...prev, error: errorMessage }));
       return null;
     }
   }, []);
@@ -126,23 +126,27 @@ export const useWebRTC = (
       await peerConnectionRef.current.setLocalDescription(answer);
       return answer;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create answer';
-      setState(prev => ({ ...prev, error: errorMessage }));
+      const errorMessage = error instanceof Error ? error.message : "Failed to create answer";
+      setState((prev) => ({ ...prev, error: errorMessage }));
       return null;
     }
   }, []);
 
   // Set remote description
-  const setRemoteDescription = useCallback(async (description: RTCSessionDescriptionInit): Promise<void> => {
-    if (!peerConnectionRef.current) return;
+  const setRemoteDescription = useCallback(
+    async (description: RTCSessionDescriptionInit): Promise<void> => {
+      if (!peerConnectionRef.current) return;
 
-    try {
-      await peerConnectionRef.current.setRemoteDescription(description);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to set remote description';
-      setState(prev => ({ ...prev, error: errorMessage }));
-    }
-  }, []);
+      try {
+        await peerConnectionRef.current.setRemoteDescription(description);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to set remote description";
+        setState((prev) => ({ ...prev, error: errorMessage }));
+      }
+    },
+    []
+  );
 
   // Add ICE candidate
   const addIceCandidate = useCallback(async (candidate: RTCIceCandidateInit): Promise<void> => {
@@ -151,8 +155,8 @@ export const useWebRTC = (
     try {
       await peerConnectionRef.current.addIceCandidate(candidate);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add ICE candidate';
-      setState(prev => ({ ...prev, error: errorMessage }));
+      const errorMessage = error instanceof Error ? error.message : "Failed to add ICE candidate";
+      setState((prev) => ({ ...prev, error: errorMessage }));
     }
   }, []);
 
@@ -184,7 +188,7 @@ export const useWebRTC = (
     }
 
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
     }
 

@@ -1,6 +1,7 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const postSchema = new mongoose.Schema({
+const postSchema = new mongoose.Schema(
+  {
     _id: mongoose.Schema.Types.ObjectId,
     ParentID: { type: String, required: false },
     DisplayPicture: { type: String, required: true },
@@ -9,7 +10,7 @@ const postSchema = new mongoose.Schema({
     TimeOfPost: { type: String, required: true },
     Visibility: { type: String, required: true },
     Caption: { type: String, required: true },
-    Image: { type: [String], required: true },  // Array of strings for image URLs
+    Image: { type: [String], required: true }, // Array of strings for image URLs
     NoOfLikes: { type: Number, default: 0 },
     Liked: { type: Boolean, default: false },
     NoOfComment: { type: Number, default: 0 },
@@ -20,9 +21,11 @@ const postSchema = new mongoose.Schema({
     PostID: { type: String, required: true },
     Code: { type: String, required: true },
     WhoCanComment: { type: String, required: true },
-    Type: { type: String, required: true}
-}, { timestamps: true, collection: 'PostCard' });
+    Type: { type: String, required: true },
+  },
+  { timestamps: true, collection: "PostCard" }
+);
 
-const Post = mongoose.model('Post', postSchema);
+const Post = mongoose.model("Post", postSchema);
 
 export default Post;

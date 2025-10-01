@@ -1,6 +1,17 @@
-import { AllChats, ChatAttributes, ChatDataClient, ChatSettings, Err, MessageAttributes, NewChat, NewChat_, NewChatResponse, NewChatSettings } from "../types/type";
+import {
+  AllChats,
+  ChatAttributes,
+  ChatDataClient,
+  ChatSettings,
+  Err,
+  MessageAttributes,
+  NewChat,
+  NewChat_,
+  NewChatResponse,
+  NewChatSettings,
+} from "../types/type";
 import Chat, { Newchat } from "./chatAttr";
-import ChatRepository from './ChatRepository';
+import ChatRepository from "./ChatRepository";
 
 class ChatSystem {
   private chatRepository: ChatRepository;
@@ -17,7 +28,7 @@ class ChatSystem {
 
   async getChatById(id: string): Promise<ChatDataClient | undefined> {
     const chatAttributes = await this.chatRepository.getChatById(id);
-    return chatAttributes ? (chatAttributes) : undefined;
+    return chatAttributes ? chatAttributes : undefined;
   }
 
   async addChat(chatAttributes: NewChat): Promise<NewChat_> {
@@ -29,7 +40,10 @@ class ChatSystem {
     await this.chatRepository.updateChat(id, updatedAttributes);
   }
 
-  async updateChatSettings(id: string, updatedSettings: Partial<NewChatSettings>): Promise<NewChatSettings> {
+  async updateChatSettings(
+    id: string,
+    updatedSettings: Partial<NewChatSettings>
+  ): Promise<NewChatSettings> {
     return await this.chatRepository.updateChatSettings(id, updatedSettings);
   }
 
@@ -38,19 +52,22 @@ class ChatSystem {
   }
 
   async sendMessage(newMessage: MessageAttributes, id: string): Promise<MessageAttributes | Err> {
-    const createdMessage = await this.chatRepository.sendMessage(newMessage,id);
+    const createdMessage = await this.chatRepository.sendMessage(newMessage, id);
     return createdMessage;
   }
 
-  async deleteMessageForMe(id: {[x: string]: string}): Promise<string> {
+  async deleteMessageForMe(id: { [x: string]: string }): Promise<string> {
     return await this.chatRepository.deleteMessageForMe(id);
   }
 
-  async deleteMyMessage(id: {[x: string]: string}): Promise<string> {
+  async deleteMyMessage(id: { [x: string]: string }): Promise<string> {
     return await this.chatRepository.deleteMyMessage(id);
   }
 
-  async editMessage(id: {[x: string]: string}, updatedAttributes: Partial<MessageAttributes>): Promise<string> {
+  async editMessage(
+    id: { [x: string]: string },
+    updatedAttributes: Partial<MessageAttributes>
+  ): Promise<string> {
     return await this.chatRepository.editMessage(id, updatedAttributes);
   }
 }

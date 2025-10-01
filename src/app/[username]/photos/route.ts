@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { MongoDBClient } from '@/lib/mongodb';
+import { NextRequest, NextResponse } from "next/server";
+import { MongoDBClient } from "@/lib/mongodb";
 
 export async function GET(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: Promise<{ username: string }> }
 ) {
   try {
@@ -12,11 +12,11 @@ export async function GET(
     const db = await new MongoDBClient().init();
 
     if (!username) {
-        return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+      return NextResponse.json({ error: "Username is required" }, { status: 400 });
     }
 
     const Users = db.posts();
-    const user = await Users.findOne({ Username: username})
+    const user = await Users.findOne({ Username: username });
 
     // const tokenCollection = client.db('mydb').collection('Tokens');
     // const cookieStore = cookies();
@@ -27,29 +27,31 @@ export async function GET(
     // }
 
     // Create a new response
-    const imageUrl = !user!.DisplayPicture.includes('https://') ? "https://s3.amazonaws.com/profile-display-images/"+user!.DisplayPicture : user!.DisplayPicture;
+    const imageUrl = !user!.DisplayPicture.includes("https://")
+      ? "https://s3.amazonaws.com/profile-display-images/" + user!.DisplayPicture
+      : user!.DisplayPicture;
     // Fetch the image
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
-      return NextResponse.json({ error: 'Failed to fetch image' }, { status: 500 });
+      return NextResponse.json({ error: "Failed to fetch image" }, { status: 500 });
     }
 
     // Get the image buffer and content type
     const imageBuffer = await imageResponse.arrayBuffer();
-    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+    const contentType = imageResponse.headers.get("content-type") || "image/jpeg";
 
     // Create and return the response with the image
     const response = new NextResponse(imageBuffer, {
       status: 200,
       headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=3600',
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=3600",
       },
     });
 
     return response;
   } catch (error) {
-    console.error('An error occurred:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("An error occurred:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

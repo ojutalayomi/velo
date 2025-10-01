@@ -1,11 +1,11 @@
-'use client'
+"use client";
 // import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 // import Image from 'next/image';
 // import { Copy, Ellipsis, Reply, Send, Settings, TextQuote, Trash2, X } from 'lucide-react';
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // import { useRouter, useParams } from 'next/navigation';
 // import MessageTab from '../MessageTab';
- // import Image from 'next/image';
+// import Image from 'next/image';
 // import { useSelector } from 'react-redux';
 // import { showChat } from '@/redux/navigationSlice';
 // import { RootState } from '@/redux/store';

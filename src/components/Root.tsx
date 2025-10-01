@@ -1,10 +1,10 @@
 "use client";
-import React, { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useSelector } from 'react-redux';
-import { setActiveRoute, setMoreStatus } from '../redux/navigationSlice';
-import { useUser } from '@/app/providers/UserProvider';
-import Home from './Home1';
+import React, { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
+import { setActiveRoute, setMoreStatus } from "../redux/navigationSlice";
+import { useUser } from "@/app/providers/UserProvider";
+import Home from "./Home1";
 
 interface RootProps {
   activeRoute: string;
@@ -19,27 +19,30 @@ const Root: React.FC<RootProps> = ({ activeRoute, setActiveRoute, setMoreStatus 
   const pathname = usePathname();
 
   useEffect(() => {
-    if (typeof setActiveRoute === 'function' && typeof setMoreStatus === 'function') {
-      pathname === '/' ? router.push('/home') : null;
-      const route = pathname ? pathname.slice(1) || '' : ''; 
+    if (typeof setActiveRoute === "function" && typeof setMoreStatus === "function") {
+      pathname === "/" ? router.push("/home") : null;
+      const route = pathname ? pathname.slice(1) || "" : "";
       setActiveRoute(route);
     }
   }, [router, pathname, setActiveRoute, setMoreStatus]);
 
-
   const handleClickMore = (command: string) => {
-    if (typeof setMoreStatus === 'function') {
-      command === 'close' ? setMoreStatus(false) : setMoreStatus(true);
+    if (typeof setMoreStatus === "function") {
+      command === "close" ? setMoreStatus(false) : setMoreStatus(true);
     }
   };
 
-    return (
-      <>
-        <div id="pre-home" className={`tablets:w-3/5 !flex-[1_1_20%] ${activeRoute === 'home' || activeRoute === '' ? '' : 'h-hide'}`}  onClick={() => handleClickMore('close')}>
-          <Home />
-        </div>
-      </>
-    );
-}
+  return (
+    <>
+      <div
+        id="pre-home"
+        className={`tablets:w-3/5 !flex-[1_1_20%] ${activeRoute === "home" || activeRoute === "" ? "" : "h-hide"}`}
+        onClick={() => handleClickMore("close")}
+      >
+        <Home />
+      </div>
+    </>
+  );
+};
 
 export default Root;

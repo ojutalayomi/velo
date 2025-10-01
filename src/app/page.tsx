@@ -1,59 +1,57 @@
 "use client";
-import { useState, useEffect } from 'react'
-import { subscribeUser, unsubscribeUser, sendNotification } from './actions'
-import { urlBase64ToUint8Array } from '@/lib/utils';
- 
+import { useState, useEffect } from "react";
+import { subscribeUser, unsubscribeUser, sendNotification } from "./actions";
+import { urlBase64ToUint8Array } from "@/lib/utils";
+
 function PushNotificationManager() {
-  const [isSupported, setIsSupported] = useState(false)
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null)
-  const [message, setMessage] = useState('')
- 
+  const [isSupported, setIsSupported] = useState(false);
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [message, setMessage] = useState("");
+
   useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true)
-      registerServiceWorker()
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      setIsSupported(true);
+      registerServiceWorker();
     }
-  }, [])
- 
+  }, []);
+
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/',
-      updateViaCache: 'none',
-    })
-    const sub = await registration.pushManager.getSubscription()
-    setSubscription(sub)
+    const registration = await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+      updateViaCache: "none",
+    });
+    const sub = await registration.pushManager.getSubscription();
+    setSubscription(sub);
   }
- 
+
   async function subscribeToPush() {
-    const registration = await navigator.serviceWorker.ready
+    const registration = await navigator.serviceWorker.ready;
     const sub = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-      ),
-    })
-    setSubscription(sub)
-    const serializedSub = JSON.parse(JSON.stringify(sub))
-    await subscribeUser(serializedSub)
+      applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+    });
+    setSubscription(sub);
+    const serializedSub = JSON.parse(JSON.stringify(sub));
+    await subscribeUser(serializedSub);
   }
- 
+
   async function unsubscribeFromPush() {
-    await subscription?.unsubscribe()
-    setSubscription(null)
-    if (subscription) await unsubscribeUser(subscription as any)
+    await subscription?.unsubscribe();
+    setSubscription(null);
+    if (subscription) await unsubscribeUser(subscription as any);
   }
- 
+
   async function sendTestNotification() {
     if (subscription) {
-      await sendNotification(message)
-      setMessage('')
+      await sendNotification(message);
+      setMessage("");
     }
   }
- 
+
   if (!isSupported) {
-    return <p>Push notifications are not supported in this browser.</p>
+    return <p>Push notifications are not supported in this browser.</p>;
   }
- 
+
   return (
     <div>
       <h3>Push Notifications</h3>
@@ -76,25 +74,23 @@ function PushNotificationManager() {
         </>
       )}
     </div>
-  )
+  );
 }
 
 function InstallPrompt() {
-  const [isIOS, setIsIOS] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
- 
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
   useEffect(() => {
-    setIsIOS(
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
-    )
- 
-    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches)
-  }, [])
- 
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream);
+
+    setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
+  }, []);
+
   if (isStandalone) {
-    return null // Don't show install button if already installed
+    return null; // Don't show install button if already installed
   }
- 
+
   return (
     <div>
       <h3>Install App</h3>
@@ -103,25 +99,26 @@ function InstallPrompt() {
         <p>
           To install this app on your iOS device, tap the share button
           <span role="img" aria-label="share icon">
-            {' '}
-            ⎋{' '}
+            {" "}
+            ⎋{" "}
           </span>
           and then &quot;Add to Home Screen&quot;
           <span role="img" aria-label="plus icon">
-            {' '}
-            ➕{' '}
-          </span>.
+            {" "}
+            ➕{" "}
+          </span>
+          .
         </p>
       )}
     </div>
-  )
+  );
 }
- 
+
 export default function Page() {
   return (
     <div>
       <PushNotificationManager />
       <InstallPrompt />
     </div>
-  )
+  );
 }

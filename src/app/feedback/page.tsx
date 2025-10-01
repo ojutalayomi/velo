@@ -1,5 +1,5 @@
-import { Suspense } from 'react';
-import FeedbackClient from './FeedbackClient';
+import { Suspense } from "react";
+import FeedbackClient from "./FeedbackClient";
 
 export default function FeedbackPage() {
   return (

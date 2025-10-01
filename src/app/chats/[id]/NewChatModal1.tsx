@@ -1,36 +1,39 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from "react";
+import { X } from "lucide-react";
 interface User {
-    id: string | number;
-    name: string;
-    avatar?: string;
-    email?: string;
+  id: string | number;
+  name: string;
+  avatar?: string;
+  email?: string;
 }
 
 interface NewChatModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onCreateChat: (chatData: { name: string; participants: (string | number)[] }) => void;
-    availableUsers: User[];
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateChat: (chatData: { name: string; participants: (string | number)[] }) => void;
+  availableUsers: User[];
 }
 
 type UserId = string | number;
 
-const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onCreateChat, availableUsers }) => {
-  const [chatName, setChatName] = useState('');
+const NewChatModal: React.FC<NewChatModalProps> = ({
+  isOpen,
+  onClose,
+  onCreateChat,
+  availableUsers,
+}) => {
+  const [chatName, setChatName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<UserId[]>([]);
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     onCreateChat({ name: chatName, participants: selectedUsers });
     onClose();
   };
 
   const toggleUser = (userId: UserId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId)
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
+    setSelectedUsers((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
@@ -64,9 +67,9 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onCreateCh
               Select Participants
             </label>
             <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md">
-              {availableUsers.map(user => (
-                <div 
-                  key={user.id} 
+              {availableUsers.map((user) => (
+                <div
+                  key={user.id}
                   className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => toggleUser(user.id as UserId)}
                 >

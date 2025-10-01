@@ -1,13 +1,13 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { RootState } from './store';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "./store";
 
 // Enums for better type safety
 export enum RTCConnectionStatus {
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  DISCONNECTED = 'disconnected',
-  FAILED = 'failed',
-  CLOSED = 'closed'
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  DISCONNECTED = "disconnected",
+  FAILED = "failed",
+  CLOSED = "closed",
 }
 
 // Extended interface for error tracking
@@ -36,10 +36,10 @@ interface RTCState {
 
 const initialState: RTCState = {
   peerConnection: null,
-  connectionState: 'new',
-  iceConnectionState: 'new',
-  iceGatheringState: 'new',
-  signalingState: 'stable',
+  connectionState: "new",
+  iceConnectionState: "new",
+  iceGatheringState: "new",
+  signalingState: "stable",
   iceCandidates: [],
   remoteDescription: null,
   localDescription: null,
@@ -51,17 +51,17 @@ const initialState: RTCState = {
 };
 
 const rtcSlice = createSlice({
-  name: 'rtc',
+  name: "rtc",
   initialState,
   reducers: {
     setPeerConnection: (state, action: PayloadAction<RTCPeerConnection | null>) => {
       state.peerConnection = action.payload;
       if (action.payload === null) {
         // Reset related states when connection is cleared
-        state.connectionState = 'new';
-        state.iceConnectionState = 'new';
-        state.iceGatheringState = 'new';
-        state.signalingState = 'stable';
+        state.connectionState = "new";
+        state.iceConnectionState = "new";
+        state.iceGatheringState = "new";
+        state.signalingState = "stable";
         state.localDescription = null;
         state.remoteDescription = null;
         state.connectedAt = null;
@@ -70,13 +70,13 @@ const rtcSlice = createSlice({
     },
     setConnectionState: (state, action: PayloadAction<RTCPeerConnectionState>) => {
       state.connectionState = action.payload;
-      
-      if (action.payload === 'connected') {
+
+      if (action.payload === "connected") {
         state.connectedAt = Date.now();
         state.connectionAttempts = 0;
         state.reconnecting = false;
         state.lastError = null;
-      } else if (action.payload === 'failed' || action.payload === 'disconnected') {
+      } else if (action.payload === "failed" || action.payload === "disconnected") {
         state.connectionAttempts += 1;
         state.reconnecting = true;
       }
@@ -163,12 +163,12 @@ export const selectConnectionDuration = (state: RootState) => {
 export const selectConnectionStatus = (state: RootState): RTCConnectionStatus => {
   const connectionState = state.rtc.connectionState;
   const iceConnectionState = state.rtc.iceConnectionState;
-  
-  if (connectionState === 'connected' && iceConnectionState === 'connected') {
+
+  if (connectionState === "connected" && iceConnectionState === "connected") {
     return RTCConnectionStatus.CONNECTED;
-  } else if (connectionState === 'failed' || iceConnectionState === 'failed') {
+  } else if (connectionState === "failed" || iceConnectionState === "failed") {
     return RTCConnectionStatus.FAILED;
-  } else if (connectionState === 'closed') {
+  } else if (connectionState === "closed") {
     return RTCConnectionStatus.CLOSED;
   } else if (state.rtc.reconnecting) {
     return RTCConnectionStatus.DISCONNECTED;

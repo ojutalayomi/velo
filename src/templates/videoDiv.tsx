@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import Link from 'next/link';
+import Link from "next/link";
 import { VideoProps } from "../components/ImgVidProps";
 import { VolumeX, Volume2, Play, Pause } from "lucide-react";
 
-const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
+const VideoDiv: React.FC<VideoProps> = ({ media, link = "", host }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -12,18 +12,18 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
   const [isHovering, setIsHovering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
-  const hostname = 'https://s3.amazonaws.com/post-s/';
+  const hostname = "https://s3.amazonaws.com/post-s/";
 
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
-      video.addEventListener('timeupdate', handleTimeUpdate);
-      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      video.addEventListener("timeupdate", handleTimeUpdate);
+      video.addEventListener("loadedmetadata", handleLoadedMetadata);
     }
     return () => {
       if (video) {
-        video.removeEventListener('timeupdate', handleTimeUpdate);
-        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        video.removeEventListener("timeupdate", handleTimeUpdate);
+        video.removeEventListener("loadedmetadata", handleLoadedMetadata);
       }
     };
   }, []);
@@ -66,7 +66,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -91,7 +91,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
   };
 
   return (
-    <div 
+    <div
       className="relative w-full h-full group flex items-center justify-center"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
@@ -101,7 +101,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
           <video
             ref={videoRef}
             className="w-auto h-auto max-h-[calc(100vh-200px)] object-contain cursor-pointer"
-            style={{ minWidth: '100%' }}
+            style={{ minWidth: "100%" }}
             onClick={togglePlay}
           >
             <source src={host ? hostname + media : media} />
@@ -111,7 +111,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
         <video
           ref={videoRef}
           className="w-auto h-auto max-h-[calc(100vh-200px)] object-contain cursor-pointer"
-          style={{ minWidth: '100%' }}
+          style={{ minWidth: "100%" }}
           onClick={togglePlay}
         >
           <source src={host ? hostname + media : media} />
@@ -119,31 +119,38 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
       )}
 
       {/* Centered play/pause button */}
-      <button 
+      <button
         onClick={togglePlay}
         className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
           bg-black/50 p-4 rounded-full transition-opacity duration-200
-          ${isHovering || !isPlaying ? 'opacity-100' : 'opacity-0'}`}
+          ${isHovering || !isPlaying ? "opacity-100" : "opacity-0"}`}
       >
-        {isPlaying ? <Pause size={24} className="text-white" /> : <Play size={24} className="text-white" />}
+        {isPlaying ? (
+          <Pause size={24} className="text-white" />
+        ) : (
+          <Play size={24} className="text-white" />
+        )}
       </button>
 
       {/* Controls overlay */}
-      <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent 
-        p-4 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
-        
+      <div
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent 
+        p-4 transition-opacity duration-200 ${isHovering ? "opacity-100" : "opacity-0"}`}
+      >
         {/* Progress bar */}
-        <div 
+        <div
           ref={progressRef}
           onClick={handleProgressClick}
           className="w-full h-1 bg-white/30 rounded-full mb-2 cursor-pointer"
         >
-          <div 
+          <div
             className="h-full bg-white rounded-full relative"
             style={{ width: `${(currentTime / duration) * 100}%` }}
           >
-            <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 
-              w-3 h-3 bg-white rounded-full shadow-lg" />
+            <div
+              className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 
+              w-3 h-3 bg-white rounded-full shadow-lg"
+            />
           </div>
         </div>
 
@@ -159,7 +166,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = '', host }) => {
             <button onClick={toggleMute} className="text-white hover:text-gray-300">
               {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
-            
+
             <input
               type="range"
               min="0"

@@ -1,5 +1,5 @@
 // utilsSlice.ts
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface SerializableFile extends Partial<Blob> {
   id: string;
@@ -10,23 +10,22 @@ export interface SerializableFile extends Partial<Blob> {
   lastModified: number;
 }
 
-
 interface UtilsState {
   toggleDialog: boolean;
-  toggleMediaDialog: boolean,
+  toggleMediaDialog: boolean;
   selectedMessages: string[];
-  onlineUsers: string[]
+  onlineUsers: string[];
 }
 
 const initialState: UtilsState = {
   toggleDialog: false,
   toggleMediaDialog: false,
   selectedMessages: [],
-  onlineUsers: []
+  onlineUsers: [],
 };
 
 const utilSlice = createSlice({
-  name: 'utils',
+  name: "utils",
   initialState,
   reducers: {
     setToggleDialog: (state, action: PayloadAction<boolean>) => {
@@ -45,23 +44,34 @@ const utilSlice = createSlice({
       state.selectedMessages.push(action.payload);
     },
     addOnlineUser: (state, action: PayloadAction<string>) => {
-      if (state.onlineUsers.includes(action.payload)) return
+      if (state.onlineUsers.includes(action.payload)) return;
       state.onlineUsers.push(action.payload);
     },
     removeSelectedMessage: (state, action: PayloadAction<string>) => {
-      state.selectedMessages = state.selectedMessages.filter(msg => msg !== action.payload);
+      state.selectedMessages = state.selectedMessages.filter((msg) => msg !== action.payload);
     },
     removeOnlineUser: (state, action: PayloadAction<string>) => {
-      state.onlineUsers = state.onlineUsers.filter(user => user !== action.payload);
+      state.onlineUsers = state.onlineUsers.filter((user) => user !== action.payload);
     },
     clearSelectedMessages: (state) => {
       state.selectedMessages = [];
     },
     clearOnlineUsers: (state) => {
       state.onlineUsers = [];
-    }
+    },
   },
 });
 
-export const { setToggleDialog, setOnlineUsers, setToggleMediaDialog, setSelectedMessages, addSelectedMessage, addOnlineUser, removeSelectedMessage, removeOnlineUser, clearSelectedMessages, clearOnlineUsers } = utilSlice.actions;
+export const {
+  setToggleDialog,
+  setOnlineUsers,
+  setToggleMediaDialog,
+  setSelectedMessages,
+  addSelectedMessage,
+  addOnlineUser,
+  removeSelectedMessage,
+  removeOnlineUser,
+  clearSelectedMessages,
+  clearOnlineUsers,
+} = utilSlice.actions;
 export default utilSlice.reducer;

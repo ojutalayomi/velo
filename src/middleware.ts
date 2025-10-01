@@ -1,23 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Ratelimit } from '@upstash/ratelimit';
-import { kv } from '@vercel/kv';
+import { NextRequest, NextResponse } from "next/server";
+import { Ratelimit } from "@upstash/ratelimit";
+import { kv } from "@vercel/kv";
 
 const ratelimit = new Ratelimit({
   redis: kv,
-  limiter: Ratelimit.slidingWindow(3, '30 s'),
+  limiter: Ratelimit.slidingWindow(3, "30 s"),
 });
 
 export const config = {
-  matcher: '/api/getuser'
-}
+  matcher: "/api/getuser",
+};
 
 export default async function middleware(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
-  const { success, pending, limit, reset, remaining } = await ratelimit.limit(
-    ip
-  );
-  
+  const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+  const { success, pending, limit, reset, remaining } = await ratelimit.limit(ip);
+
   return success
     ? NextResponse.next()
-    : NextResponse.json({ role: 'assistant', content: 'too many requests' }, {status: 429});
+    : NextResponse.json({ role: "assistant", content: "too many requests" }, { status: 429 });
 }

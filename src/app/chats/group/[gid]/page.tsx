@@ -1,5 +1,5 @@
 const GroupChatPage = () => {
-    return null;
+  return null;
 };
 
 export default GroupChatPage;

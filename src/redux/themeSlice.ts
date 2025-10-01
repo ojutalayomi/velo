@@ -1,7 +1,7 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { createContext } from 'react';
+import { createSlice } from "@reduxjs/toolkit";
+import { createContext } from "react";
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = "light" | "dark" | "system";
 
 // interface ThemeContextType {
 //   theme: Theme
@@ -9,17 +9,17 @@ type Theme = 'light' | 'dark' | 'system'
 // }
 
 // const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
-const mode: Theme = 'light';
+const mode: Theme = "light";
 const themeSlice = createSlice({
-    name: 'theme',
-    initialState: {
-        theme: mode,
+  name: "theme",
+  initialState: {
+    theme: mode,
+  },
+  reducers: {
+    setTheme: (state, action) => {
+      state.theme = action.payload;
     },
-    reducers: {
-        setTheme: (state, action) => {
-        state.theme = action.payload;
-      },
-    },
+  },
 });
 
 export const { setTheme } = themeSlice.actions;

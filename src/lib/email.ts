@@ -2,12 +2,12 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
@@ -15,18 +15,18 @@ export const transporter = nodemailer.createTransport({
 // Minimal HTML generator to avoid using handlebars at build time
 // Matches the structure of public/emails.hbs
 function generateEmailHtml({
-  subject = '',
-  imageAlt = '',
-  style = '',
-  imageSrc = '',
-  firstname = '',
-  lastname = '',
-  heading = '',
-  message = '',
-  message1 = '',
-  display = 'none',
-  link = '',
-  Click = '',
+  subject = "",
+  imageAlt = "",
+  style = "",
+  imageSrc = "",
+  firstname = "",
+  lastname = "",
+  heading = "",
+  message = "",
+  message1 = "",
+  display = "none",
+  link = "",
+  Click = "",
 }: {
   subject?: string;
   imageAlt?: string;
@@ -41,7 +41,7 @@ function generateEmailHtml({
   link?: string;
   Click?: string;
 }) {
-  const showActions = display && display !== 'none';
+  const showActions = display && display !== "none";
   const showMessage1 = Boolean(message);
 
   return `<!DOCTYPE html>
@@ -65,18 +65,22 @@ function generateEmailHtml({
 </head>
 <body>
   <div class="success-message">
-    ${imageSrc ? `<img alt="${escapeHtml(imageAlt)}" style="${escapeHtml(style)}" src="${escapeHtml(imageSrc)}">` : ''}
+    ${imageSrc ? `<img alt="${escapeHtml(imageAlt)}" style="${escapeHtml(style)}" src="${escapeHtml(imageSrc)}">` : ""}
     <div class="success-message-content" style="flex-direction: column;">
       <h1>Dear ${escapeHtml(firstname)} ${escapeHtml(lastname)},</h1>
-      ${heading ? `<h2>${escapeHtml(heading)}</h2>` : ''}
-      ${message ? `<h4>${escapeHtml(message)}</h4>` : ''}
-      ${showMessage1 ? `<h4>${escapeHtml(message1)}</h4>` : ''}
-      ${showActions ? `
+      ${heading ? `<h2>${escapeHtml(heading)}</h2>` : ""}
+      ${message ? `<h4>${escapeHtml(message)}</h4>` : ""}
+      ${showMessage1 ? `<h4>${escapeHtml(message1)}</h4>` : ""}
+      ${
+        showActions
+          ? `
         <a href="${escapeAttribute(link)}" style="display: ${escapeAttribute(display)};" class="button">${escapeHtml(Click)}</a>
         <p style="display: ${escapeAttribute(display)};">Or</p>
         <p style="display: ${escapeAttribute(display)};">Click the link below to continue to the next step:</p>
         <a href="${escapeAttribute(link)}" style="display: ${escapeAttribute(display)};" class="button">${escapeHtml(link)}</a>
-      ` : ''}
+      `
+          : ""
+      }
     </div>
   </div>
   <div class="attribution">
@@ -88,20 +92,20 @@ function generateEmailHtml({
 
 function escapeHtml(str: string) {
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function escapeAttribute(str: string) {
   // Attributes need quotes-escaped at minimum
-  return String(str).replace(/"/g, '&quot;');
+  return String(str).replace(/"/g, "&quot;");
 }
 
 const generateRandomToken = (length: number) => {
-  return crypto.randomBytes(length).toString('hex');
+  return crypto.randomBytes(length).toString("hex");
 };
 
 export const confirmationEmail = async (
@@ -111,26 +115,26 @@ export const confirmationEmail = async (
   confirmationLink: string
 ) => {
   const html = generateEmailHtml({
-        subject: 'Email Confirmation',
-        heading: 'Confirm Your Email Address',
-    message: 'Please confirm your email address by clicking the button below.',
+    subject: "Email Confirmation",
+    heading: "Confirm Your Email Address",
+    message: "Please confirm your email address by clicking the button below.",
     firstname,
     lastname,
-        display: 'block',
-        imageAlt: 'Confirmation Image',
-        imageSrc: 'https://velo-virid.vercel.app/velo11.png',
-        link: confirmationLink,
-    Click: 'Confirm Email',
+    display: "block",
+    imageAlt: "Confirmation Image",
+    imageSrc: "https://velo-virid.vercel.app/velo11.png",
+    link: confirmationLink,
+    Click: "Confirm Email",
   });
 
   const info = await transporter.sendMail({
-    from: 'Velo <no-reply@velo.com>',
+    from: "Velo <no-reply@velo.com>",
     to: email,
-    subject: 'Email Confirmation',
+    subject: "Email Confirmation",
     html,
   });
 
-// console.log('Message sent: %s', info.messageId);
+  // console.log('Message sent: %s', info.messageId);
 };
 
 export async function sendConfirmationEmail(
@@ -140,29 +144,29 @@ export async function sendConfirmationEmail(
   username: string
 ) {
   const html = generateEmailHtml({
-    subject: 'Account Creation Confirmation',
-    message: 'Thank you for creating an account with us.',
+    subject: "Account Creation Confirmation",
+    message: "Thank you for creating an account with us.",
     message1: `Dear ${firstname} ${lastname},\n\nThank you for creating an account with us. Your username is ${username}.\n We're excited to have you on board.`,
     firstname,
     lastname,
-    display: 'none',
-    imageAlt: 'Success Image',
-    style: 'width: 300px;',
-    imageSrc: 'https://ojutalayomi.github.io/feetbook/FeetBook/public/images/congrats.png',
+    display: "none",
+    imageAlt: "Success Image",
+    style: "width: 300px;",
+    imageSrc: "https://ojutalayomi.github.io/feetbook/FeetBook/public/images/congrats.png",
   });
 
   transporter.sendMail(
     {
       from: '"Velo <no-reply@velo.com>',
       to: email,
-      subject: 'Account Creation Confirmation',
+      subject: "Account Creation Confirmation",
       html,
     },
     function (error, info) {
       if (error) {
-      // console.log(error);
+        // console.log(error);
       } else {
-      // console.log('Email sent: ' + info.response);
+        // console.log('Email sent: ' + info.response);
       }
     }
   );

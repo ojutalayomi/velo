@@ -1,12 +1,12 @@
-import { io, Socket } from 'socket.io-client';
+import { io, Socket } from "socket.io-client";
 
 export interface CallData {
   callId: string;
   roomId: string;
   callerId: string;
   targetUserId?: string;
-  callType: 'audio' | 'video';
-  chatType: 'DMs' | 'Groups';
+  callType: "audio" | "video";
+  chatType: "DMs" | "Groups";
 }
 
 export interface WebRTCOffer {
@@ -43,28 +43,28 @@ export class WebRTCManager {
     if (!this.socket) return;
 
     // WebRTC signaling events
-    this.socket.on('webrtc:offer', this.handleOffer.bind(this));
-    this.socket.on('webrtc:answer', this.handleAnswer.bind(this));
-    this.socket.on('webrtc:candidate', this.handleCandidate.bind(this));
+    this.socket.on("webrtc:offer", this.handleOffer.bind(this));
+    this.socket.on("webrtc:answer", this.handleAnswer.bind(this));
+    this.socket.on("webrtc:candidate", this.handleCandidate.bind(this));
 
     // Call state events
-    this.socket.on('call:initiated', this.handleCallInitiated.bind(this));
-    this.socket.on('call:answered', this.handleCallAnswered.bind(this));
-    this.socket.on('call:connected', this.handleCallConnected.bind(this));
-    this.socket.on('call:ended', this.handleCallEnded.bind(this));
-    this.socket.on('call:declined', this.handleCallDeclined.bind(this));
+    this.socket.on("call:initiated", this.handleCallInitiated.bind(this));
+    this.socket.on("call:answered", this.handleCallAnswered.bind(this));
+    this.socket.on("call:connected", this.handleCallConnected.bind(this));
+    this.socket.on("call:ended", this.handleCallEnded.bind(this));
+    this.socket.on("call:declined", this.handleCallDeclined.bind(this));
   }
 
   async initiateCall(callData: CallData): Promise<string> {
-    if (!this.socket) throw new Error('Socket not connected');
+    if (!this.socket) throw new Error("Socket not connected");
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Call initiation timeout'));
+        reject(new Error("Call initiation timeout"));
       }, 30000); // 30 second timeout
 
-      this.socket!.emit('call:invite', callData);
-      
+      this.socket!.emit("call:invite", callData);
+
       // The call:initiated event will be handled by setupSocketListeners
       // We'll resolve when the currentCallId is set
       const checkInterval = setInterval(() => {
@@ -78,10 +78,10 @@ export class WebRTCManager {
   }
 
   async answerCall(callId: string, accepted: boolean): Promise<void> {
-    if (!this.socket) throw new Error('Socket not connected');
+    if (!this.socket) throw new Error("Socket not connected");
 
-    this.socket.emit('call:answer', { callId, accepted });
-    
+    this.socket.emit("call:answer", { callId, accepted });
+
     if (accepted) {
       this.currentCallId = callId;
       this.isInitiator = false;
@@ -91,7 +91,7 @@ export class WebRTCManager {
   async endCall(): Promise<void> {
     if (!this.socket || !this.currentCallId) return;
 
-    this.socket.emit('call:end', { callId: this.currentCallId });
+    this.socket.emit("call:end", { callId: this.currentCallId });
     this.cleanup();
   }
 
@@ -99,13 +99,13 @@ export class WebRTCManager {
     if (!this.socket) return;
 
     // Legacy hangup for compatibility
-    this.socket.emit('call:hangup', { roomId });
-    
+    this.socket.emit("call:hangup", { roomId });
+
     // Also end the call if we have a call ID
     if (this.currentCallId) {
-      this.socket.emit('call:end', { callId: this.currentCallId });
+      this.socket.emit("call:end", { callId: this.currentCallId });
     }
-    
+
     this.cleanup();
   }
 
@@ -117,12 +117,12 @@ export class WebRTCManager {
       const answer = await this.peerConnection.createAnswer();
       await this.peerConnection.setLocalDescription(answer);
 
-      this.socket?.emit('webrtc:answer', {
+      this.socket?.emit("webrtc:answer", {
         callId: data.callId,
-        answer: answer
+        answer: answer,
       });
     } catch (error) {
-      console.error('Error handling offer:', error);
+      console.error("Error handling offer:", error);
     }
   }
 
@@ -132,7 +132,7 @@ export class WebRTCManager {
     try {
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
     } catch (error) {
-      console.error('Error handling answer:', error);
+      console.error("Error handling answer:", error);
     }
   }
 
@@ -142,67 +142,70 @@ export class WebRTCManager {
     try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
     } catch (error) {
-      console.error('Error handling candidate:', error);
+      console.error("Error handling candidate:", error);
     }
   }
 
   private handleCallInitiated(data: { callId: string; roomId: string }) {
     this.currentCallId = data.callId;
     this.isInitiator = true;
-    
+
     // Join the call room for WebRTC signaling
     if (this.socket) {
-      this.socket.emit('join-room', data.callId);
+      this.socket.emit("join-room", data.callId);
     }
-    
-    this.onCallStateChange?.('connecting');
-    console.log('Call initiated:', data.callId);
+
+    this.onCallStateChange?.("connecting");
+    console.log("Call initiated:", data.callId);
   }
 
   private handleCallAnswered(data: { callId: string }) {
     this.currentCallId = data.callId;
     this.isInitiator = false;
-    
+
     // Join the call room for WebRTC signaling
     if (this.socket) {
-      this.socket.emit('join-room', data.callId);
+      this.socket.emit("join-room", data.callId);
     }
-    
+
     // Don't emit 'connecting' again - caller is already connecting
     // Just wait for the 'call:connected' event
-    console.log('Call answered:', data.callId);
+    console.log("Call answered:", data.callId);
   }
 
   private handleCallConnected(data: { callId: string; participants: string[] }) {
     if (data.callId !== this.currentCallId) return;
-    
-    this.onCallStateChange?.('connected');
-    console.log('Call connected with participants:', data.participants);
+
+    this.onCallStateChange?.("connected");
+    console.log("Call connected with participants:", data.participants);
   }
 
   private handleCallEnded(data: { callId: string }) {
     if (data.callId !== this.currentCallId) return;
-    
-    this.onCallStateChange?.('ended');
+
+    this.onCallStateChange?.("ended");
     this.cleanup();
   }
 
   private handleCallDeclined(data: { callId: string }) {
     if (data.callId !== this.currentCallId) return;
-    
-    this.onCallStateChange?.('declined');
+
+    this.onCallStateChange?.("declined");
     this.cleanup();
   }
 
-  async setupPeerConnection(callType: 'audio' | 'video'): Promise<void> {
+  async setupPeerConnection(callType: "audio" | "video"): Promise<void> {
     try {
       // Get user media
       const constraints: MediaStreamConstraints = {
         audio: true,
-        video: callType === 'video' ? {
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } : false
+        video:
+          callType === "video"
+            ? {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              }
+            : false,
       };
 
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -210,13 +213,13 @@ export class WebRTCManager {
       // Create peer connection
       this.peerConnection = new RTCPeerConnection({
         iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
       });
 
       // Add local stream tracks
-      this.localStream.getTracks().forEach(track => {
+      this.localStream.getTracks().forEach((track) => {
         this.peerConnection?.addTrack(track, this.localStream!);
       });
 
@@ -229,9 +232,9 @@ export class WebRTCManager {
       // Handle ICE candidates
       this.peerConnection.onicecandidate = (event) => {
         if (event.candidate && this.socket && this.currentCallId) {
-          this.socket.emit('webrtc:candidate', {
+          this.socket.emit("webrtc:candidate", {
             callId: this.currentCallId,
-            candidate: event.candidate
+            candidate: event.candidate,
           });
         }
       };
@@ -239,9 +242,9 @@ export class WebRTCManager {
       // Handle connection state changes
       this.peerConnection.onconnectionstatechange = () => {
         const state = this.peerConnection?.connectionState;
-        this.onCallStateChange?.(state || 'unknown');
-        
-        if (state === 'failed' || state === 'disconnected') {
+        this.onCallStateChange?.(state || "unknown");
+
+        if (state === "failed" || state === "disconnected") {
           this.cleanup();
         }
       };
@@ -251,13 +254,13 @@ export class WebRTCManager {
         const offer = await this.peerConnection.createOffer();
         await this.peerConnection.setLocalDescription(offer);
 
-        this.socket?.emit('webrtc:offer', {
+        this.socket?.emit("webrtc:offer", {
           callId: this.currentCallId,
-          offer: offer
+          offer: offer,
         });
       }
     } catch (error) {
-      console.error('Error setting up peer connection:', error);
+      console.error("Error setting up peer connection:", error);
       throw error;
     }
   }
@@ -289,7 +292,7 @@ export class WebRTCManager {
   private cleanup() {
     // Stop local stream
     if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
+      this.localStream.getTracks().forEach((track) => track.stop());
       this.localStream = null;
     }
 
@@ -303,8 +306,8 @@ export class WebRTCManager {
     this.currentCallId = null;
     this.isInitiator = false;
     this.remoteStream = null;
-    
-    this.onCallStateChange?.('idle');
+
+    this.onCallStateChange?.("idle");
   }
 
   destroy() {
@@ -318,6 +321,8 @@ export const createWebRTCManager = (socket: Socket): WebRTCManager => {
   return new WebRTCManager(socket);
 };
 
-export const getCallTypeFromConstraints = (constraints: MediaStreamConstraints): 'audio' | 'video' => {
-  return constraints.video ? 'video' : 'audio';
+export const getCallTypeFromConstraints = (
+  constraints: MediaStreamConstraints
+): "audio" | "video" => {
+  return constraints.video ? "video" : "audio";
 };

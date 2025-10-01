@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useCallback, useState, ReactNode, useEffect } from "react";
 
 interface FileStorageContextType {
   files: File[];
@@ -21,30 +21,30 @@ export const FileStorageProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const removeFile = useCallback((index: number) => {
-    setFiles(currentFiles => currentFiles.filter((_, i) => i !== index));
+    setFiles((currentFiles) => currentFiles.filter((_, i) => i !== index));
   }, []);
 
   const clearFiles = useCallback(() => {
     setFiles([]);
     setGroupDisplayPicture(null);
   }, []);
-  
+
   useEffect(() => {
     return () => {
       clearFiles();
-    }
+    };
   }, []);
 
   return (
-    <FileStorageContext.Provider 
-      value={{ 
-        files, 
-        setFiles, 
-        addFile, 
-        removeFile, 
+    <FileStorageContext.Provider
+      value={{
+        files,
+        setFiles,
+        addFile,
+        removeFile,
         clearFiles,
         groupDisplayPicture,
-        setGroupDisplayPicture
+        setGroupDisplayPicture,
       }}
     >
       {children}
@@ -55,7 +55,7 @@ export const FileStorageProvider = ({ children }: { children: ReactNode }) => {
 export const useGlobalFileStorage = () => {
   const context = useContext(FileStorageContext);
   if (context === undefined) {
-    throw new Error('useGlobalFileStorage must be used within a FileStorageProvider');
+    throw new Error("useGlobalFileStorage must be used within a FileStorageProvider");
   }
   return context;
 };

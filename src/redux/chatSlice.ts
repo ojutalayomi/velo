@@ -1,11 +1,17 @@
 // redux/chatSlice.ts
-import ChatRepository from '@/lib/class/ChatRepository';
-import ChatSystem from '@/lib/class/chatSystem';
-import { networkMonitor } from '@/lib/network';
-import { ChatType, ConvoType, GroupMessageAttributes, MessageAttributes, NewChatSettings, Reaction } from '@/lib/types/type';
-import { createSlice, Dispatch, PayloadAction } from '@reduxjs/toolkit';
-import moment from 'moment';
-import { UserDataPartial } from './userSlice';
+import ChatRepository from "@/lib/class/ChatRepository";
+import ChatSystem from "@/lib/class/chatSystem";
+import { networkMonitor } from "@/lib/network";
+import {
+  ChatType,
+  ConvoType,
+  MessageAttributes,
+  NewChatSettings,
+  Reaction,
+} from "@/lib/types/type";
+import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
+import moment from "moment";
+import { UserDataPartial } from "./userSlice";
 export { ConvoType };
 
 const chatRepository = new ChatRepository();
@@ -13,7 +19,7 @@ const chatRepository = new ChatRepository();
 const chatSystem = new ChatSystem(chatRepository);
 
 interface ChatSetting {
-  [x: string]: NewChatSettings 
+  [x: string]: NewChatSettings;
 }
 
 const defaultSettings = {
@@ -31,69 +37,75 @@ const defaultSettings = {
   members: [],
   adminIds: [],
   isBlocked: false,
-  lastSeen: ""
-}
+  lastSeen: "",
+};
 export { defaultSettings };
 
 const stt = {
-  '': defaultSettings
-}
-export const Time = (params: string | Date ) => {
+  "": defaultSettings,
+};
+export const Time = (params: string | Date) => {
   const dateObj = new Date(params);
-  
+
   // Define options for formatting the date
   const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: true,
   };
-  
+
   // Format the Date object to the desired format
-  const formattedDateStr = dateObj.toLocaleString('en-US', options);
-  
+  const formattedDateStr = dateObj.toLocaleString("en-US", options);
+
   // Print the result
   return formattedDateStr;
-}
+};
 export function timeFormatter(Time: string) {
   const date = moment(Time, moment.ISO_8601);
-  const formattedDate = date.format('MMM D, YYYY h:mm:ss A');
+  const formattedDate = date.format("MMM D, YYYY h:mm:ss A");
   return formattedDate;
 }
 
-export function updateLiveTime(response: "countdown" | "getlivetime" | "chat-time", Time: string): string {
-
+export function updateLiveTime(
+  response: "countdown" | "getlivetime" | "chat-time",
+  Time: string
+): string {
   const time = new Date(timeFormatter(Time)).getTime();
   const now = new Date().getTime();
   let distance: number;
 
-  if(response === "countdown"){
+  if (response === "countdown") {
     // Find the distance between now an the count down date
     distance = time - now;
-  } else if(response === "getlivetime"){
+  } else if (response === "getlivetime") {
     // Find the distance between now an the count up date
     distance = now - time;
-  } else if(response === "chat-time"){
+  } else if (response === "chat-time") {
     // Add hh:mm am/pm
     const timeObj = new Date(Time);
-    const formattedTime = timeObj.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const formattedTime = timeObj.toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
     return formattedTime;
   } else {
     throw new Error("Invalid response type. Expected 'countdown' or 'getlivetime' or 'chat-time'.");
   }
-  
+
   const days = Math.floor(distance / (1000 * 60 * 60 * 24));
   const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
   let liveTime: string;
-  
+
   if (days > 0) {
-    const [date/*,time*/] = Time.split(',');
+    const [date /*,time*/] = Time.split(",");
     liveTime = date;
   } else if (hours > 0) {
     liveTime = hours + (hours === 1 ? " hr" : " hrs");
@@ -103,68 +115,65 @@ export function updateLiveTime(response: "countdown" | "getlivetime" | "chat-tim
     liveTime = seconds + (seconds === 1 ? " sec" : " secs");
   }
 
-  
   return liveTime;
 }
 
-
 const chatSlice = createSlice({
-  name: 'chat',
+  name: "chat",
   initialState: {
     conversations: [] as unknown as ConvoType[],
-    messages: [] as unknown as (MessageAttributes & GroupMessageAttributes)[],
+    messages: [] as unknown as MessageAttributes[],
     deletedConversations: [] as unknown as ConvoType[],
     newGroupMembers: [] as unknown as UserDataPartial[],
     groupDisplayPicture: null as File | null,
     settings: stt as unknown as ChatSetting,
     loading: true,
-    error: '',
-    userId: '',
+    error: "",
+    userId: "",
     newChat: {
-      type: '' as ChatType,
-      name: '',
-      description: '',
+      type: "" as ChatType,
+      name: "",
+      description: "",
       participants: [],
-      displayPicture: '',
-      lastMessage: '',
-      timestamp: '',
-    }
+      displayPicture: "",
+      lastMessage: "",
+      timestamp: "",
+    },
   },
   reducers: {
     setConversations: (state, action: PayloadAction<ConvoType[]>) => {
       state.conversations = action.payload;
     },
     addConversation: (state, action: PayloadAction<ConvoType>) => {
-      if (!state.conversations.some(convo => convo.id === action.payload.id)) {
+      if (!state.conversations.some((convo) => convo.id === action.payload.id)) {
         state.conversations.push(action.payload);
       }
     },
-    updateConversation: (state, action: PayloadAction<{id: string, updates: Partial<ConvoType>}>) => {
+    updateConversation: (
+      state,
+      action: PayloadAction<{ id: string; updates: Partial<ConvoType> }>
+    ) => {
       const { id, updates } = action.payload;
-      state.conversations = state.conversations.map(convo => 
+      state.conversations = state.conversations.map((convo) =>
         convo.id === id
-          ? { 
-              ...convo, 
-              ...Object.fromEntries(
-                Object.entries(updates).map(([key, value]) => 
-                  [key, value]
-                )
-              )
+          ? {
+              ...convo,
+              ...Object.fromEntries(Object.entries(updates).map(([key, value]) => [key, value])),
             }
           : convo
       );
     },
-    updateMessageReactions: (state, action: PayloadAction<{id: string, updates: Reaction}>) => {
+    updateMessageReactions: (state, action: PayloadAction<{ id: string; updates: Reaction }>) => {
       const { id, updates } = action.payload;
-      state.messages = state.messages.map(msg => {
+      state.messages = state.messages.map((msg) => {
         if (msg._id === id) {
           // Check if user already reacted
-          const existingReactionIndex = msg.reactions.findIndex(r => r.userId === updates.userId);
+          const existingReactionIndex = msg.reactions.findIndex((r) => r.userId === updates.userId);
 
           if (existingReactionIndex !== -1) {
             // If same reaction, remove it
             if (msg.reactions[existingReactionIndex].reaction === updates.reaction) {
-              msg.reactions = msg.reactions.filter(r => r.userId !== updates.userId);
+              msg.reactions = msg.reactions.filter((r) => r.userId !== updates.userId);
             } else {
               // If different reaction, update it
               msg.reactions[existingReactionIndex] = updates;
@@ -179,44 +188,45 @@ const chatSlice = createSlice({
       });
     },
     deleteConversation: (state, action: PayloadAction<string>) => {
-      const deletedConvo = state.conversations.find(convo => convo.id === action.payload);
+      const deletedConvo = state.conversations.find((convo) => convo.id === action.payload);
       if (deletedConvo) {
         // Add to deletedConversations array
         state.deletedConversations = [...state.deletedConversations, deletedConvo];
         // Remove from active conversations
-        state.conversations = state.conversations.filter(convo => convo.id !== action.payload);
+        state.conversations = state.conversations.filter((convo) => convo.id !== action.payload);
       }
     },
-    setMessages: (state, action: PayloadAction<(MessageAttributes & GroupMessageAttributes)[]>) => {
+    setMessages: (state, action: PayloadAction<MessageAttributes[]>) => {
       state.messages = action.payload;
     },
-    addMessage: (state, action: PayloadAction<(MessageAttributes & GroupMessageAttributes)>) => {
-      if (!state.messages.some(msg => msg._id === action.payload._id)) {
+    addMessage: (state, action: PayloadAction<MessageAttributes>) => {
+      if (!state.messages.some((msg) => msg._id === action.payload._id)) {
         state.messages.push(action.payload);
       }
     },
-    editMessage: (state, action: PayloadAction<{ id: string, content: string }>) => {
-      state.messages = state.messages?.map(msg => 
-        msg._id === action.payload.id 
-          ? { ...msg, content: action.payload.content } 
-          : msg
+    editMessage: (state, action: PayloadAction<{ id: string; content: string }>) => {
+      state.messages = state.messages?.map((msg) =>
+        msg._id === action.payload.id ? { ...msg, content: action.payload.content } : msg
       );
     },
-    updateMessage: (state, action: PayloadAction<{id?: string, updates: Partial<MessageAttributes>}>) => {
+    updateMessage: (
+      state,
+      action: PayloadAction<{ id?: string; updates: Partial<MessageAttributes> }>
+    ) => {
       const { id, updates } = action.payload;
-      
+
       let targetId = id;
-      
+
       // If id is undefined, find the last message with matching senderId
       if (targetId === undefined) {
         const lastMatchingMessage = state.messages
           .slice()
           .reverse()
-          .find(msg => {
-            const senderId = msg.messageType === 'Groups' ? msg?.sender?.id : msg.senderId;
-            senderId === state.userId
+          .find((msg) => {
+            const senderId = msg.messageType === "Groups" ? msg?.sender?.id : msg.sender.id;
+            senderId === state.userId;
           });
-        
+
         if (lastMatchingMessage) {
           targetId = lastMatchingMessage._id as string;
         } else {
@@ -225,26 +235,22 @@ const chatSlice = createSlice({
         }
       }
 
-      state.messages = state.messages.map(msg => 
+      state.messages = state.messages.map((msg) =>
         msg._id === targetId
-          ? { 
-              ...msg, 
-              ...Object.fromEntries(
-                Object.entries(updates).map(([key, value]) => 
-                  [key, value]
-                )
-              )
+          ? {
+              ...msg,
+              ...Object.fromEntries(Object.entries(updates).map(([key, value]) => [key, value])),
             }
           : msg
       );
     },
     deleteMessage: (state, action: PayloadAction<string>) => {
-      state.messages = state.messages?.filter(msg => msg._id !== action.payload);
+      state.messages = state.messages?.filter((msg) => msg._id !== action.payload);
     },
     setSettings: (state, action: PayloadAction<ChatSetting>) => {
       state.settings = action.payload;
     },
-    addSetting: (state, action: PayloadAction<{[key: string]: NewChatSettings}>) => {
+    addSetting: (state, action: PayloadAction<{ [key: string]: NewChatSettings }>) => {
       state.settings = { ...state.settings, ...action.payload };
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -261,28 +267,28 @@ const chatSlice = createSlice({
     },
     setGroupDisplayPicture: (state, action: PayloadAction<File | null>) => {
       state.groupDisplayPicture = action.payload;
-    }
+    },
   },
 });
 
-export const { 
-  setConversations, 
-  addConversation, 
-  updateConversation, 
-  updateMessageReactions, 
-  deleteConversation, 
-  setMessages, 
-  addMessage, 
-  editMessage, 
-  updateMessage, 
-  deleteMessage, 
-  setSettings, 
-  addSetting, 
-  setLoading, 
-  setError, 
-  setUserId, 
+export const {
+  setConversations,
+  addConversation,
+  updateConversation,
+  updateMessageReactions,
+  deleteConversation,
+  setMessages,
+  addMessage,
+  editMessage,
+  updateMessage,
+  deleteMessage,
+  setSettings,
+  addSetting,
+  setLoading,
+  setError,
+  setUserId,
   setNewGroupMembers,
-  setGroupDisplayPicture 
+  setGroupDisplayPicture,
 } = chatSlice.actions;
 export default chatSlice.reducer;
 
@@ -291,57 +297,75 @@ export const fetchChats = async (dispatch: Dispatch) => {
   try {
     const networkStatus = networkMonitor.getNetworkStatus();
 
-    if(!networkStatus.online) return;
-    
+    if (!networkStatus.online) return;
+
     dispatch(setLoading(true));
     const chats = await chatSystem.getAllChats();
 
     function filter(param: string) {
       if (!chats.messages) return;
-      const filteredResults = chats.messages.filter((msg: MessageAttributes & GroupMessageAttributes) => msg._id === param);
+      const filteredResults = chats.messages.filter((msg: MessageAttributes) => msg._id === param);
       const result = filteredResults[0];
-      return filteredResults.length > 0 ?  `${result.attachments.length > 0 ? '📷 ' : ''}${result.content}` : null;
+      return filteredResults.length > 0
+        ? `${result.attachments.length > 0 ? "📷 " : ""}${result.content}`
+        : null;
     }
 
     const uid = chats.requestId;
     dispatch(setUserId(uid));
-    const conversations = chats.chats?.map(convo => {
-      const participant = convo.participants.find(p => p.userId === uid);
+    const conversations = chats.chats?.map((convo) => {
+      const participant = convo.participants.find((p) => p.userId === uid);
       // const otherParticipant = convo.participants.find(p => p.id !== uid);
       const displayPicture = convo.participants
-        ? (convo.participants.length > 1
-            ? convo.participants.find(p => p.userId !== uid)?.displayPicture
-            : convo.participants.find(p => p.userId === uid)?.displayPicture)
+        ? convo.participants.length > 1
+          ? convo.participants.find((p) => p.userId !== uid)?.displayPicture
+          : convo.participants.find((p) => p.userId === uid)?.displayPicture
         : undefined;
-      
-      const getName = () => convo.participants.length === 1 ? convo.name[uid] : convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || 'Unknown Participant']
+
+      const getName = () =>
+        convo.participants.length === 1
+          ? convo.name[uid]
+          : convo.name[
+              Object.keys(convo.name).find((e) => !e.includes(uid)) || "Unknown Participant"
+            ];
       return {
         id: convo._id.toString(),
         type: convo.chatType,
-        name: convo.chatType === 'DMs' ? getName() : convo.chatType === 'Personal' ? convo.name[uid] : convo.name.group,
-        lastMessage: convo.lastMessageId ? filter(convo?.lastMessageId) || '🚫 Message not found' : "📝 Be the first to send a message",
+        name:
+          convo.chatType === "DMs"
+            ? getName()
+            : convo.chatType === "Personal"
+              ? convo.name[uid]
+              : convo.name.group,
+        lastMessage: convo.lastMessageId
+          ? filter(convo?.lastMessageId) || "🚫 Message not found"
+          : "📝 Be the first to send a message",
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,
-        displayPicture: convo.chatType === 'DMs' || convo.chatType === 'Personal' ? displayPicture as string : convo.groupDisplayPicture,
-        description: convo.chatType === 'DMs' || convo.chatType === 'Personal' ? '' : convo.groupDescription,
+        displayPicture:
+          convo.chatType === "DMs" || convo.chatType === "Personal"
+            ? (displayPicture as string)
+            : convo.groupDisplayPicture,
+        description:
+          convo.chatType === "DMs" || convo.chatType === "Personal" ? "" : convo.groupDescription,
         verified: convo.verified || false,
         favorite: participant?.favorite || false,
         pinned: participant?.pinned || false,
         deleted: participant?.deleted || false,
         archived: participant?.archived || false,
         lastUpdated: Time(convo.lastUpdated),
-        participants: convo.participants.map(p => p.userId),
+        participants: convo.participants.map((p) => p.userId),
         online: false,
-        isTypingList: []
+        isTypingList: [],
       };
     });
 
     dispatch(setConversations(conversations));
-    dispatch(setMessages(chats.messages as (MessageAttributes & GroupMessageAttributes)[]));
+    dispatch(setMessages(chats.messages as MessageAttributes[]));
     dispatch(setSettings(chats.chatSettings));
     return conversations;
   } catch (error) {
-    dispatch(setError('Failed to fetch chats'));
+    dispatch(setError("Failed to fetch chats"));
     throw error;
   } finally {
     dispatch(setLoading(false));

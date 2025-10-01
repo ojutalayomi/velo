@@ -1,12 +1,12 @@
 // redux/navigationSlice.ts
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const navigationSlice = createSlice({
-  name: 'navigation',
+  name: "navigation",
   initialState: {
-    activeRoute: typeof window !== 'undefined' ? window.location.pathname.replace('/','') : 'home',
+    activeRoute: typeof window !== "undefined" ? window.location.pathname.replace("/", "") : "home",
     isMoreShown: false,
-    chaT: 'hidden',
+    chaT: "hidden",
   },
   reducers: {
     setActiveRoute: (state, action) => {
@@ -17,7 +17,7 @@ const navigationSlice = createSlice({
     },
     showChat: (state, action) => {
       state.chaT = action.payload;
-    }
+    },
   },
 });
 

@@ -1,4 +1,4 @@
-import type { Metadata,Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
@@ -8,10 +8,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   width: "device-width",
-  initialScale: 1.0
-}
+  initialScale: 1.0,
+};
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode;}>) {
-
-    return children;
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return children;
 }

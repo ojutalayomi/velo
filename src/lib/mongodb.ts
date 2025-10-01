@@ -1,30 +1,42 @@
-import { Db, MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-import { ChatDataServer, ChatParticipant, ChatSettings, MessageAttributes, PostSchema, Reaction, ReadReceipt, UserData, UserSettings } from './types/type';
-import { IResult } from 'ua-parser-js';
+import { Db, MongoClient, ObjectId, ServerApiVersion } from "mongodb";
+import {
+  Attachment,
+  AttachmentSchema,
+  ChatDataServer,
+  ChatParticipant,
+  ChatSettings,
+  MessageSchema,
+  PostSchema,
+  Reaction,
+  ReadReceipt,
+  UserData,
+  UserSettings,
+} from "./types/type";
+import { IResult } from "ua-parser-js";
 
 export interface FollowersSchema {
-  followerId: string,
-  followedId: string,
-  time: string,
-  follow?: true,
+  followerId: string;
+  followedId: string;
+  time: string;
+  follow?: true;
 }
 
 export interface TokensSchema {
-  _id: ObjectId,
-  userId: string,
-  token: string,
-  deviceInfo: IResult,
-  createdAt: string,
-  expiresAt: string,
+  _id: ObjectId;
+  userId: string;
+  token: string;
+  deviceInfo: IResult;
+  createdAt: string;
+  expiresAt: string;
 }
 
 export interface VideoSchema {
-  _id: ObjectId,
-  userId: string,
-  video: string,
+  _id: ObjectId;
+  userId: string;
+  video: string;
 }
 
-const uri = process.env.MONGOLINK || '';
+const uri = process.env.MONGOLINK || "";
 
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
@@ -45,11 +57,11 @@ const options = {
 function ensureClientPromise(): Promise<MongoClient> {
   if (!clientPromise) {
     if (!uri) {
-      throw new Error('Please add your MongoDB URI to .env');
+      throw new Error("Please add your MongoDB URI to .env");
     }
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       const globalWithMongo = global as typeof globalThis & {
-        _mongoClientPromise?: Promise<MongoClient>
+        _mongoClientPromise?: Promise<MongoClient>;
       };
       if (!globalWithMongo._mongoClientPromise) {
         client = new MongoClient(uri, options);
@@ -82,7 +94,7 @@ export class MongoDBClient {
    * Creates a new MongoDB client instance
    * @param dbName Database name from env vars or empty string
    */
-  constructor(private dbName: string = process.env.MONGODB_DATABASE || '') {}
+  constructor(private dbName: string = process.env.MONGODB_DATABASE || "") {}
 
   /**
    * Initializes the MongoDB connection
@@ -107,7 +119,7 @@ export class MongoDBClient {
    * @returns Collection for storing follower relationships
    */
   followers() {
-    return this.db.collection<FollowersSchema>('Followers');
+    return this.db.collection<FollowersSchema>("Followers");
   }
 
   /**
@@ -115,7 +127,7 @@ export class MongoDBClient {
    * @returns Collection for storing user posts
    */
   posts() {
-    return this.db.collection<PostSchema>('Posts');
+    return this.db.collection<PostSchema>("Posts");
   }
 
   /**
@@ -123,7 +135,7 @@ export class MongoDBClient {
    * @returns Collection for storing bookmarked posts
    */
   postsBookmarks() {
-    return this.db.collection<PostSchema>('Posts_Bookmarks');
+    return this.db.collection<PostSchema>("Posts_Bookmarks");
   }
 
   /**
@@ -131,7 +143,7 @@ export class MongoDBClient {
    * @returns Collection for storing post comments
    */
   postsComments() {
-    return this.db.collection<PostSchema>('Posts_Comments');
+    return this.db.collection<PostSchema>("Posts_Comments");
   }
 
   /**
@@ -139,7 +151,7 @@ export class MongoDBClient {
    * @returns Collection for storing post likes
    */
   postsLikes() {
-    return this.db.collection<PostSchema>('Posts_Likes');
+    return this.db.collection<PostSchema>("Posts_Likes");
   }
 
   /**
@@ -147,7 +159,7 @@ export class MongoDBClient {
    * @returns Collection for storing shared posts
    */
   postsShares() {
-    return this.db.collection<PostSchema>('Posts_Shares');
+    return this.db.collection<PostSchema>("Posts_Shares");
   }
 
   /**
@@ -155,7 +167,7 @@ export class MongoDBClient {
    * @returns Collection for storing authentication tokens
    */
   tokens() {
-    return this.db.collection<TokensSchema>('Tokens');
+    return this.db.collection<TokensSchema>("Tokens");
   }
 
   /**
@@ -163,7 +175,7 @@ export class MongoDBClient {
    * @returns Collection for storing user feedback
    */
   userFeedback() {
-    return this.db.collection('User_Feedback');
+    return this.db.collection("User_Feedback");
   }
 
   /**
@@ -171,7 +183,7 @@ export class MongoDBClient {
    * @returns Collection for storing user profiles
    */
   users() {
-    return this.db.collection<UserData>('Users');
+    return this.db.collection<UserData>("Users");
   }
 
   /**
@@ -179,7 +191,7 @@ export class MongoDBClient {
    * @returns Collection for storing video content
    */
   videos() {
-    return this.db.collection<VideoSchema>('Videos');
+    return this.db.collection<VideoSchema>("Videos");
   }
 
   /**
@@ -187,7 +199,7 @@ export class MongoDBClient {
    * @returns Collection for storing chat messages
    */
   chatMessages() {
-    return this.db.collection<MessageAttributes>('Chat_Messages');
+    return this.db.collection<MessageSchema>("Chat_Messages");
   }
 
   /**
@@ -195,7 +207,7 @@ export class MongoDBClient {
    * @returns Collection for storing chat configuration
    */
   chatSettings() {
-    return this.db.collection<ChatSettings>('Chat_Settings');
+    return this.db.collection<ChatSettings>("Chat_Settings");
   }
 
   /**
@@ -203,7 +215,7 @@ export class MongoDBClient {
    * @returns Collection for storing chat member info
    */
   chatParticipants() {
-    return this.db.collection<ChatParticipant>('Chat_Participants');
+    return this.db.collection<ChatParticipant>("Chat_Participants");
   }
 
   /**
@@ -211,7 +223,7 @@ export class MongoDBClient {
    * @returns Collection for storing chat metadata
    */
   chats() {
-    return this.db.collection<ChatDataServer>('Chats');
+    return this.db.collection<ChatDataServer>("Chats");
   }
 
   /**
@@ -219,7 +231,7 @@ export class MongoDBClient {
    * @returns Collection for storing message reactions
    */
   chatReactions() {
-    return this.db.collection<Reaction>('Chat_Reactions');
+    return this.db.collection<Reaction>("Chat_Reactions");
   }
 
   /**
@@ -227,7 +239,7 @@ export class MongoDBClient {
    * @returns Collection for storing message read status
    */
   readReceipts() {
-    return this.db.collection<ReadReceipt>('Chat_Read_Receipts');
+    return this.db.collection<ReadReceipt>("Chat_Read_Receipts");
   }
 
   /**
@@ -235,7 +247,7 @@ export class MongoDBClient {
    * @returns Collection for storing user preferences
    */
   userSettings() {
-    return this.db.collection<UserSettings>('User_Settings');
+    return this.db.collection<UserSettings>("User_Settings");
   }
 
   /**
@@ -243,7 +255,15 @@ export class MongoDBClient {
    * @returns Collection for storing subscription data
    */
   subscriptions() {
-    return this.db.collection('Subscriptions')
+    return this.db.collection("Subscriptions");
+  }
+
+  /**
+   * Gets the files collection
+   * @returns Collection for storing files
+   */
+  files() {
+    return this.db.collection<AttachmentSchema>("Files");
   }
 }
 

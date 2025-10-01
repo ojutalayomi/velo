@@ -1,10 +1,10 @@
-import { Suspense } from 'react'
-import Comps from './clientComps'
+import { Suspense } from "react";
+import Comps from "./clientComps";
 
 export default function SignupPage() {
-    return (
-        <Suspense fallback={<></>}>
-            <Comps/>
-        </Suspense>
-    )
+  return (
+    <Suspense fallback={<></>}>
+      <Comps />
+    </Suspense>
+  );
 }

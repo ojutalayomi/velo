@@ -1,5 +1,5 @@
 const DirectChatPage = () => {
-  return null
-}
+  return null;
+};
 
 export default DirectChatPage;

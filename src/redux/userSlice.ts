@@ -1,22 +1,22 @@
-import { UserData, UserSettings } from '@/lib/types/type';
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { UserData, UserSettings } from "@/lib/types/type";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 const userdata: UserData = {
-  firstname: '',
-  lastname: '',
-  email: '',
-  username: '',
-  displayPicture: '',
+  firstname: "",
+  lastname: "",
+  email: "",
+  username: "",
+  displayPicture: "",
   verified: false,
-  _id: '',
-  name: '',
-  time: '',
-  userId: '',
-  providers: {}
-}
+  _id: "",
+  name: "",
+  time: "",
+  userId: "",
+  providers: {},
+};
 
 const userSlice = createSlice({
-  name: 'user',
+  name: "user",
   initialState: {
     userdata: userdata,
     settings: {
@@ -26,7 +26,7 @@ const userSlice = createSlice({
       showLastSeen: true,
       showReadReceipts: true,
       showTypingStatus: true,
-    }
+    },
   },
   reducers: {
     setUserData: (state, action: PayloadAction<UserData>) => {

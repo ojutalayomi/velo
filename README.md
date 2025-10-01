@@ -63,6 +63,7 @@ Create a `.env.local` in `velo/`:
   - `NEXT_PUBLIC_SOCKET_URL` (Socket server URL)
 
 Optional (if used by deploy):
+
 - `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` (for @vercel/kv if configured)
 
 ## Scripts

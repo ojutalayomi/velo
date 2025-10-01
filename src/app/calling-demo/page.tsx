@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  CallButton, 
-  CallInterface, 
-  IncomingCall, 
+import React, { useState, useEffect } from "react";
+import {
+  CallButton,
+  CallInterface,
+  IncomingCall,
   CallStatus,
-  useCallManager 
-} from '@/components/call';
-import { useSocket } from '@/app/providers/SocketProvider';
+  useCallManager,
+} from "@/components/call";
+import { useSocket } from "@/app/providers/SocketProvider";
 
 export default function CallingDemo() {
   const socket = useSocket();
   const [isConnected, setIsConnected] = useState(false);
-  const [userId, setUserId] = useState('');
-  const [roomId, setRoomId] = useState('demo-room-1');
-  const [chatType, setChatType] = useState<'DMs' | 'Groups'>('DMs');
-  const [targetUserId, setTargetUserId] = useState('user-2');
+  const [userId, setUserId] = useState("");
+  const [roomId, setRoomId] = useState("demo-room-1");
+  const [chatType, setChatType] = useState<"DMs" | "Groups">("DMs");
+  const [targetUserId, setTargetUserId] = useState("user-2");
 
   const callHooks = useCallManager(socket!);
   const callState = callHooks?.callState || {
@@ -27,15 +27,15 @@ export default function CallingDemo() {
     chatType: null,
     isConnecting: false,
     isConnected: false,
-    error: null
+    error: null,
   };
 
   useEffect(() => {
-    socket?.on('connect', () => {
+    socket?.on("connect", () => {
       setIsConnected(true);
     });
 
-    socket?.on('disconnect', () => {
+    socket?.on("disconnect", () => {
       setIsConnected(false);
     });
   }, [socket]);
@@ -80,9 +80,11 @@ export default function CallingDemo() {
           <div className="flex justify-between items-center py-4">
             <h1 className="text-2xl font-bold text-gray-900">Velo Calling Demo</h1>
             <div className="flex items-center space-x-4">
-              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <div
+                className={`w-3 h-3 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
+              ></div>
               <span className="text-sm text-gray-600">
-                {isConnected ? 'Connected' : 'Disconnected'}
+                {isConnected ? "Connected" : "Disconnected"}
               </span>
             </div>
           </div>
@@ -94,12 +96,10 @@ export default function CallingDemo() {
           {/* Connection Panel */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Connection Setup</h2>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  User ID
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
                 <input
                   type="text"
                   value={userId}
@@ -110,9 +110,7 @@ export default function CallingDemo() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Room ID
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Room ID</label>
                 <input
                   type="text"
                   value={roomId}
@@ -123,12 +121,10 @@ export default function CallingDemo() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Chat Type
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Chat Type</label>
                 <select
                   value={chatType}
-                  onChange={(e) => setChatType(e.target.value as 'DMs' | 'Groups')}
+                  onChange={(e) => setChatType(e.target.value as "DMs" | "Groups")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="DMs">Direct Messages</option>
@@ -136,7 +132,7 @@ export default function CallingDemo() {
                 </select>
               </div>
 
-              {chatType === 'DMs' && (
+              {chatType === "DMs" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Target User ID
@@ -173,19 +169,19 @@ export default function CallingDemo() {
           {/* Call Controls Panel */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Call Controls</h2>
-            
+
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <CallButton
                   roomId={roomId}
-                  targetUserId={chatType === 'DMs' ? targetUserId : undefined}
+                  targetUserId={chatType === "DMs" ? targetUserId : undefined}
                   chatType={chatType}
                   onInitiateCall={callHooks?.initiateCall || (async () => {})}
                   disabled={!isConnected || callState.isInCall}
                   className="flex-1"
                 />
                 <span className="text-sm text-gray-500">
-                  {callState.isInCall ? 'In Call' : 'Start Call'}
+                  {callState.isInCall ? "In Call" : "Start Call"}
                 </span>
               </div>
 
@@ -193,13 +189,14 @@ export default function CallingDemo() {
                 <div className="space-y-3">
                   <div className="p-3 bg-blue-50 rounded-md">
                     <p className="text-sm text-blue-800">
-                      <strong>Call ID:</strong> {callState.callId || 'Connecting...'}
+                      <strong>Call ID:</strong> {callState.callId || "Connecting..."}
                     </p>
                     <p className="text-sm text-blue-800">
-                      <strong>Type:</strong> {callState.callType || 'Unknown'}
+                      <strong>Type:</strong> {callState.callType || "Unknown"}
                     </p>
                     <p className="text-sm text-blue-800">
-                      <strong>Status:</strong> {callState.isConnecting ? 'Connecting...' : 'Connected'}
+                      <strong>Status:</strong>{" "}
+                      {callState.isConnecting ? "Connecting..." : "Connected"}
                     </p>
                   </div>
 
@@ -213,7 +210,10 @@ export default function CallingDemo() {
               )}
 
               <div className="text-sm text-gray-600">
-                <p><strong>Note:</strong> Open this demo in multiple browser tabs to test calling between users.</p>
+                <p>
+                  <strong>Note:</strong> Open this demo in multiple browser tabs to test calling
+                  between users.
+                </p>
                 <p>Make sure to use different User IDs for each tab.</p>
               </div>
             </div>
@@ -224,8 +224,10 @@ export default function CallingDemo() {
         {callState.isInCall && (
           <div className="mt-8">
             <CallStatus
-              state={callState.isConnecting ? 'connecting' : callState.isConnected ? 'connected' : 'idle'}
-              callType={callState.callType || 'audio'}
+              state={
+                callState.isConnecting ? "connecting" : callState.isConnected ? "connected" : "idle"
+              }
+              callType={callState.callType || "audio"}
               roomId={roomId}
             />
           </div>
@@ -237,7 +239,7 @@ export default function CallingDemo() {
             <CallInterface
               socket={socket}
               roomId={roomId}
-              targetUserId={chatType === 'DMs' ? targetUserId : undefined}
+              targetUserId={chatType === "DMs" ? targetUserId : undefined}
               chatType={chatType}
               onCallEnd={handleCallEnd}
             />

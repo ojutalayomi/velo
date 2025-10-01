@@ -1,9 +1,9 @@
-import React from 'react';
-import { Mic, MicOff, Video, VideoOff, Phone } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
+import React from "react";
+import { Mic, MicOff, Video, VideoOff, Phone } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,50 +13,58 @@ import {
 } from "@/components/ui/select";
 
 type Devices = {
-  videoDevices: MediaDeviceInfo[],
-  audioInputDevices: MediaDeviceInfo[],
-}
+  videoDevices: MediaDeviceInfo[];
+  audioInputDevices: MediaDeviceInfo[];
+};
 
 type SelectedDevices = {
-  videoDeviceId: string,
-  audioInputDeviceId: string,
-}
+  videoDeviceId: string;
+  audioInputDeviceId: string;
+};
 
 interface CallConfirmationProps {
-    name: string,
-    error: string,
-    isLoading: boolean,
-    isVideoOn: boolean,
-    isMicOn: boolean,
-    devices: Devices,
-    selectedDevices: SelectedDevices,
-    streamRef: React.MutableRefObject<MediaStream | null>,
-    videoRef: React.MutableRefObject<HTMLVideoElement | null>,
-    setSelectedDevices: React.Dispatch<React.SetStateAction<SelectedDevices>>,
-    setName: React.Dispatch<React.SetStateAction<string>>,
-    loadDevices: () => void,
-    startCamera: (videoDeviceId: string, audioDeviceId: string) => void,
-    toggleVideo: () => void,
-    toggleMic: () => void,
-    handleJoinCall: () => void,
+  name: string;
+  error: string;
+  isLoading: boolean;
+  isVideoOn: boolean;
+  isMicOn: boolean;
+  devices: Devices;
+  selectedDevices: SelectedDevices;
+  streamRef: React.MutableRefObject<MediaStream | null>;
+  videoRef: React.MutableRefObject<HTMLVideoElement | null>;
+  setSelectedDevices: React.Dispatch<React.SetStateAction<SelectedDevices>>;
+  setName: React.Dispatch<React.SetStateAction<string>>;
+  loadDevices: () => void;
+  startCamera: (videoDeviceId: string, audioDeviceId: string) => void;
+  toggleVideo: () => void;
+  toggleMic: () => void;
+  handleJoinCall: () => void;
 }
 
-export default function CallConfirmation(
-{ 
-    name, error, isLoading, isVideoOn, isMicOn, devices, selectedDevices, streamRef, videoRef, setName,
-    setSelectedDevices, loadDevices, startCamera, toggleVideo, toggleMic, handleJoinCall
-}: CallConfirmationProps ) {
-   
-
-
+export default function CallConfirmation({
+  name,
+  error,
+  isLoading,
+  isVideoOn,
+  isMicOn,
+  devices,
+  selectedDevices,
+  streamRef,
+  videoRef,
+  setName,
+  setSelectedDevices,
+  loadDevices,
+  startCamera,
+  toggleVideo,
+  toggleMic,
+  handleJoinCall,
+}: CallConfirmationProps) {
   return (
     <div className="fixed inset-0 z-10 min-h-screen h-[100dvh] overflow-auto bg-gray-50 dark:bg-gray-900 p-4 transition-colors duration-200">
       <div className="max-w-2xl mx-auto space-y-6">
         <Card className="p-6 dark:bg-gray-800">
-          <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-            Join Video Call
-          </h1>
-          
+          <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Join Video Call</h1>
+
           {error && (
             <Alert variant="destructive" className="mb-6">
               <AlertDescription>{error}</AlertDescription>
@@ -89,7 +97,7 @@ export default function CallConfirmation(
                   autoPlay
                   playsInline
                   muted
-                  className={`w-full h-full object-cover ${!isVideoOn ? 'hidden' : ''}`}
+                  className={`w-full h-full object-cover ${!isVideoOn ? "hidden" : ""}`}
                 />
                 {!isVideoOn && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white">
@@ -108,7 +116,7 @@ export default function CallConfirmation(
                 <Select
                   value={selectedDevices.videoDeviceId}
                   onValueChange={(value) => {
-                    setSelectedDevices(prev => ({ ...prev, videoDeviceId: value }));
+                    setSelectedDevices((prev) => ({ ...prev, videoDeviceId: value }));
                     startCamera(value, selectedDevices.audioInputDeviceId);
                   }}
                 >
@@ -132,7 +140,7 @@ export default function CallConfirmation(
                 <Select
                   value={selectedDevices.audioInputDeviceId}
                   onValueChange={(value) => {
-                    setSelectedDevices(prev => ({ ...prev, audioInputDeviceId: value }));
+                    setSelectedDevices((prev) => ({ ...prev, audioInputDeviceId: value }));
                     startCamera(selectedDevices.videoDeviceId, value);
                   }}
                 >

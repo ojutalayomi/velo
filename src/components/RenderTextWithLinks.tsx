@@ -1,11 +1,11 @@
-'use client';
-import React from 'react';
-import Link from 'next/link';
+"use client";
+import React from "react";
+import Link from "next/link";
 
 const hashtagMentionTokenOrUrlRegex = /([#@\$]\w+|https?:\/\/[^\s]+|www\.[^\s]+)/g;
 
 export const renderTextWithLinks = (text: string) => {
-  const safeText = text || '';
+  const safeText = text || "";
 
   const parts = safeText.split(hashtagMentionTokenOrUrlRegex);
 
@@ -48,7 +48,7 @@ export const renderTextWithLinks = (text: string) => {
       );
     } else if (/^(https?:\/\/|www\.)/.test(part)) {
       // URL link
-      const url = part.startsWith('www.') ? `https://${part}` : part;
+      const url = part.startsWith("www.") ? `https://${part}` : part;
       return (
         <Link
           key={`url-${i}`}

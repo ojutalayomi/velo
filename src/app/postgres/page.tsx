@@ -13,11 +13,7 @@ import { sql } from "@vercel/postgres";
 //   };
 // }
 
-export default async function Cart({
-  params
-}: {
-  params: Promise<{ user: string }>
-}) {
+export default async function Cart({ params }: { params: Promise<{ user: string }> }) {
   try {
     // Create the table if it doesn't exist
     // await sql`
@@ -58,7 +54,7 @@ export default async function Cart({
       <></>
     );
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     return <div>Error loading users. Please try again later.</div>;
   }
 }

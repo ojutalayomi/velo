@@ -1,5 +1,5 @@
-import { PostSchema } from '@/lib/types/type';
-import moment from 'moment';
+import { PostSchema } from "@/lib/types/type";
+import moment from "moment";
 
 export interface Post {
   post: PostSchema;
@@ -17,9 +17,9 @@ export interface PostProps {
 
 export function formatNo(no: number) {
   if (no >= 1000000) {
-    return (no / 1000000).toFixed(1) + 'M';
+    return (no / 1000000).toFixed(1) + "M";
   } else if (no >= 1000) {
-    return (no / 1000).toFixed(1) + 'K';
+    return (no / 1000).toFixed(1) + "K";
   } else {
     return no;
   }
@@ -27,7 +27,9 @@ export function formatNo(no: number) {
 
 export function timeFormatter(Time: string, year = true, hour = true) {
   const date = moment(Time, moment.ISO_8601);
-  const formattedDate = date.format('MMM D' + (year ? ', YYYY' : '') + (hour ? ',  h:mm:ss A' : ''));
+  const formattedDate = date.format(
+    "MMM D" + (year ? ", YYYY" : "") + (hour ? ",  h:mm:ss A" : "")
+  );
   return formattedDate;
 }
 
@@ -39,16 +41,16 @@ export function updateLiveTime(response: "countdown" | "getlivetime", Time: stri
   const now = new Date().getTime();
   let distance: number;
 
-  if(response === "countdown"){
+  if (response === "countdown") {
     // Find the distance between now an the count down date
     distance = time - now;
-  } else if(response === "getlivetime"){
+  } else if (response === "getlivetime") {
     // Find the distance between now an the count up date
     distance = now - time;
   } else {
     throw new Error("Invalid response type. Expected 'countdown' or 'getlivetime'.");
   }
-  
+
   const days = Math.floor(distance / (1000 * 60 * 60 * 24));
   const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -72,7 +74,7 @@ export function updateLiveTime(response: "countdown" | "getlivetime", Time: stri
     liveTime = seconds + (seconds === 1 ? " sec" : " secs");
   }*/
   if (days > 0) {
-  const [date/*,time*/] = formattedDate.split(',');
+    const [date /*,time*/] = formattedDate.split(",");
     liveTime = date;
   } else if (hours > 0) {
     liveTime = hours + (hours === 1 ? " hr" : " hrs");
@@ -82,4 +84,4 @@ export function updateLiveTime(response: "countdown" | "getlivetime", Time: stri
     liveTime = seconds + (seconds === 1 ? " sec" : " secs");
   }
   return liveTime;
-} 
+}

@@ -1,56 +1,51 @@
-'use client'
-import { useEffect, useState } from 'react'
-import { networkMonitor, NetworkStatus } from '@/lib/network'
-import { Wifi, WifiOff } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+"use client";
+import { useEffect, useState } from "react";
+import { networkMonitor, NetworkStatus } from "@/lib/network";
+import { Wifi, WifiOff } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const qualityConfig = {
   excellent: {
     icon: Wifi,
-    color: 'text-green-500',
-    label: 'Excellent Connection'
+    color: "text-green-500",
+    label: "Excellent Connection",
   },
   good: {
     icon: Wifi,
-    color: 'text-blue-500',
-    label: 'Good Connection'
+    color: "text-blue-500",
+    label: "Good Connection",
   },
   fair: {
     icon: Wifi,
-    color: 'text-yellow-500',
-    label: 'Fair Connection'
+    color: "text-yellow-500",
+    label: "Fair Connection",
   },
   poor: {
     icon: Wifi,
-    color: 'text-red-500',
-    label: 'Poor Connection'
+    color: "text-red-500",
+    label: "Poor Connection",
   },
   offline: {
     icon: WifiOff,
-    color: 'text-gray-500',
-    label: 'Offline'
-  }
-}
+    color: "text-gray-500",
+    label: "Offline",
+  },
+};
 
 export function NetworkIndicator() {
-  const [status, setStatus] = useState<NetworkStatus>()
-  const quality = networkMonitor.getQuality()
-  const config = qualityConfig[quality]
+  const [status, setStatus] = useState<NetworkStatus>();
+  const quality = networkMonitor.getQuality();
+  const config = qualityConfig[quality];
 
   useEffect(() => {
-    setStatus(networkMonitor.getNetworkStatus())
-  }, [])
+    setStatus(networkMonitor.getNetworkStatus());
+  }, []);
 
   useEffect(() => {
-    networkMonitor.subscribe(setStatus)
-    return 
-  }, [])
+    networkMonitor.subscribe(setStatus);
+    return;
+  }, []);
 
   return (
     <TooltipProvider>
@@ -74,5 +69,5 @@ export function NetworkIndicator() {
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }

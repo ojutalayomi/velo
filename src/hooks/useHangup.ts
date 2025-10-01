@@ -1,11 +1,7 @@
-import { useCallback, useEffect } from 'react';
-import { 
-  setPeerConnection, 
-  resetConnection,
-  setError,
-} from '@/redux/rtcSlice';
-import { Socket } from 'socket.io-client';
-import { useAppDispatch } from '@/redux/hooks';
+import { useCallback, useEffect } from "react";
+import { setPeerConnection, resetConnection, setError } from "@/redux/rtcSlice";
+import { Socket } from "socket.io-client";
+import { useAppDispatch } from "@/redux/hooks";
 
 interface VideoRefs {
   localVideo: React.RefObject<HTMLVideoElement>;
@@ -31,27 +27,30 @@ export const useHangup = ({
 
   const stopAllTracks = useCallback((stream: MediaStream | null) => {
     if (!stream) return;
-    stream.getTracks().forEach(track => {
+    stream.getTracks().forEach((track) => {
       track.stop();
       stream.removeTrack(track);
     });
   }, []);
 
-  const cleanupVideoElement = useCallback((videoElement: HTMLVideoElement | null) => {
-    if (!videoElement) return;
-    
-    // Stop all tracks from the current stream
-    const currentStream = videoElement.srcObject as MediaStream;
-    stopAllTracks(currentStream);
-    
-    // Clear the srcObject
-    videoElement.srcObject = null;
-    
-    // Remove any event listeners
-    videoElement.onloadedmetadata = null;
-    videoElement.onplay = null;
-    videoElement.onpause = null;
-  }, [stopAllTracks]);
+  const cleanupVideoElement = useCallback(
+    (videoElement: HTMLVideoElement | null) => {
+      if (!videoElement) return;
+
+      // Stop all tracks from the current stream
+      const currentStream = videoElement.srcObject as MediaStream;
+      stopAllTracks(currentStream);
+
+      // Clear the srcObject
+      videoElement.srcObject = null;
+
+      // Remove any event listeners
+      videoElement.onloadedmetadata = null;
+      videoElement.onplay = null;
+      videoElement.onpause = null;
+    },
+    [stopAllTracks]
+  );
 
   const hangUp = useCallback(async () => {
     try {
@@ -61,7 +60,7 @@ export const useHangup = ({
 
         // Close all transceivers
         const transceivers = peerConnection.getTransceivers();
-        transceivers.forEach(transceiver => {
+        transceivers.forEach((transceiver) => {
           if (transceiver.stop) {
             transceiver.stop();
           }
@@ -69,27 +68,27 @@ export const useHangup = ({
 
         // Remove all tracks
         const senders = peerConnection.getSenders();
-        senders.forEach(sender => {
+        senders.forEach((sender) => {
           if (sender.track) {
             sender.track.stop();
           }
           try {
             peerConnection.removeTrack(sender);
           } catch (err) {
-            console.warn('Error removing track:', err);
+            console.warn("Error removing track:", err);
           }
         });
 
         // Close the peer connection
         peerConnection.close();
-        
+
         // Cleanup video elements
         cleanupVideoElement(videoRefs.localVideo.current);
         cleanupVideoElement(videoRefs.remoteVideo.current);
 
         // Notify the server
         if (socket) {
-          socket.emit('hangup', { room });
+          socket.emit("hangup", { room });
         }
 
         // Reset Redux state
@@ -100,22 +99,16 @@ export const useHangup = ({
         onHangup?.();
       }
     } catch (error) {
-      console.error('Error during hangup:', error);
-      dispatch(setError({
-        message: 'Error during connection cleanup',
-        timestamp: Date.now(),
-        code: 'HANGUP_ERROR'
-      }));
+      console.error("Error during hangup:", error);
+      dispatch(
+        setError({
+          message: "Error during connection cleanup",
+          timestamp: Date.now(),
+          code: "HANGUP_ERROR",
+        })
+      );
     }
-  }, [
-    peerConnection,
-    socket,
-    room,
-    videoRefs,
-    cleanupVideoElement,
-    dispatch,
-    onHangup
-  ]);
+  }, [peerConnection, socket, room, videoRefs, cleanupVideoElement, dispatch, onHangup]);
 
   // Handle incoming hangup signal
   useEffect(() => {
@@ -125,10 +118,10 @@ export const useHangup = ({
       hangUp();
     };
 
-    socket.on('remote-hangup', handleRemoteHangup);
+    socket.on("remote-hangup", handleRemoteHangup);
 
     return () => {
-      socket.off('remote-hangup');
+      socket.off("remote-hangup");
     };
   }, [socket, hangUp]);
 

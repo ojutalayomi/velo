@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface RouteState {
   history: string[];
@@ -9,7 +9,7 @@ const initialState: RouteState = {
 };
 
 const routeSlice = createSlice({
-  name: 'route',
+  name: "route",
   initialState,
   reducers: {
     addRoute: (state, action: PayloadAction<string>) => {

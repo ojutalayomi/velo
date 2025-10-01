@@ -1,13 +1,13 @@
-import { configureStore } from '@reduxjs/toolkit';
-import navigationReducer from './navigationSlice';
-import signupsReducer from './signupSlice';
-import userReducer from './userSlice';
-import chatReducer from './chatSlice';
-import rtcReducer from './rtcSlice';
-import postsReducer from './postsSlice';
-import utilReducer from './utilsSlice';
-import routeReducer from './routeSlice';
-import { useDispatch as useReduxDispatch } from 'react-redux';
+import { configureStore } from "@reduxjs/toolkit";
+import navigationReducer from "./navigationSlice";
+import signupsReducer from "./signupSlice";
+import userReducer from "./userSlice";
+import chatReducer from "./chatSlice";
+import rtcReducer from "./rtcSlice";
+import postsReducer from "./postsSlice";
+import utilReducer from "./utilsSlice";
+import routeReducer from "./routeSlice";
+import { useDispatch as useReduxDispatch } from "react-redux";
 
 // Define RootState and AppDispatch types
 export type RootState = ReturnType<typeof store.getState>;

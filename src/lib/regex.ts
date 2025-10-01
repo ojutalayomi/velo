@@ -1,6 +1,6 @@
 /**
  * Regex for matching URLs
- * 
+ *
  * @description Matches strings that start with "http://" or "https://", followed by any non-whitespace characters.
  * @example "https://www.google.com"
  * @example "http://www.google.com"
@@ -15,7 +15,7 @@ export const urlRegex = /(https?:\/\/[^\s]+)/g;
 
 /**
  * Regex for matching hashtags
- * 
+ *
  * @description Matches strings that start with "#" followed by alphanumeric characters or underscores.
  * @example "#hello"
  * @example "#hello_world"
@@ -29,7 +29,7 @@ export const hashTagRegex = /#[a-zA-Z0-9_]+/g;
 
 /**
  * Regex for matching emojis
- * 
+ *
  * @description Matches strings that are enclosed in colons (e.g., ":smile:").
  * @example ":smile:"
  * @example ":heart:"
@@ -44,7 +44,7 @@ export const emojiRegex = /:[a-zA-Z0-9_]+:/g;
 
 /**
  * Regex for matching emojis with custom names
- * 
+ *
  * @description Matches strings that are enclosed in colons (e.g., ":smile:").
  * @example ":smile:"
  * @example ":heart:"
@@ -54,7 +54,7 @@ export const customEmojiRegex = /:[a-zA-Z0-9_]+:/g;
 
 /**
  * Regex for matching custom emojis
- * 
+ *
  * @description Matches Discord-style custom emoji syntax (e.g., `<:emoji_name:123456789>` or `<a:emoji_name:123456789>`).
  * @example "<:emoji_name:123456789>"
  * @example "<a:emoji_name:123456789>"
@@ -68,7 +68,7 @@ export const customEmojiRegex2 = /<a?:(\w+):(\d+)>/g;
 
 /**
  * Regex for matching custom emojis with IDs
- * 
+ *
  * @description Matches Discord-style custom emoji syntax (e.g., `<:emoji_name:123456789>` or `<a:emoji_name:123456789>`).
  * @example "<:emoji_name:123456789>"
  * @example "<a:emoji_name:123456789>"
@@ -78,7 +78,7 @@ export const customEmojiRegex3 = /<a?:(\w+):(\d+)>/g;
 
 /**
  * Regex for matching mentions
- * 
+ *
  * @description Matches strings that start with "@" followed by alphanumeric characters or underscores.
  * @example "@hello"
  * @example "@hello_world"

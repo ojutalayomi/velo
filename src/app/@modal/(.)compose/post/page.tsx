@@ -1,3 +1,3 @@
-export default function post () {
-    return null;
+export default function post() {
+  return null;
 }

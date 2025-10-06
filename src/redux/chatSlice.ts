@@ -3,7 +3,7 @@ import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
 import moment from "moment";
 
 import ChatRepository from "@/lib/class/ChatRepository";
-import ChatSystem from "@/lib/class/ChatSystem";
+import ChatSystem from "@/lib/class/chatSystem";
 import { networkMonitor } from "@/lib/network";
 import {
   ChatType,

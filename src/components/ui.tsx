@@ -1,5 +1,4 @@
-import ChatSystem from "@/lib/class/ChatSystem";
-import React, { useState } from "react";
+import React from "react";
 
 interface SwitchProps {
   id: string;
@@ -15,23 +14,19 @@ interface SliderProps {
   onChange: (value: number) => void;
 }
 
-interface ChatSettingsPageProps {
-  chatSystem: ChatSystem;
-}
-
 export const Switch: React.FC<SwitchProps> = ({ id, checked, onChange }) => {
   return (
-    <div className="relative inline-block w-10 align-middle select-none">
+    <div className="relative inline-block w-10 select-none align-middle">
       <input
         type="checkbox"
         id={id}
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="checked:bg-brand outline-none focus:outline-none right-4 checked:right-0 duration-200 ease-in absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+        className="absolute right-4 block size-6 cursor-pointer appearance-none rounded-full border-4 bg-white outline-none duration-200 ease-in checked:right-0 checked:bg-brand focus:outline-none"
       />
       <label
         htmlFor={id}
-        className={`block ${checked ? "bg-brand" : " bg-gray-300"} overflow-hidden h-6 rounded-full cursor-pointer`}
+        className={`block ${checked ? "bg-brand" : " bg-gray-300"} h-6 cursor-pointer overflow-hidden rounded-full`}
       />
     </div>
   );
@@ -47,7 +42,7 @@ export const Slider: React.FC<SliderProps> = ({ id, min, max, value, onChange })
         max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
       />
     </div>
   );

@@ -18,7 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import ChatRepository from "@/lib/class/ChatRepository";
-import ChatSystem from "@/lib/class/ChatSystem";
+import ChatSystem from "@/lib/class/chatSystem";
 import { Attachment, ChatType, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { timeFormatter as timeFormatterUtils } from "@/lib/utils";

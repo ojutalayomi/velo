@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { Switch, Slider } from "@/components/ui";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import ChatRepository from "@/lib/class/ChatRepository";
-import ChatSystem from "@/lib/class/ChatSystem";
+import ChatSystem from "@/lib/class/chatSystem";
 import { ChatDataClient, ChatSettings, MessageAttributes, NewChatSettings } from "@/lib/types/type";
 import { ConvoType } from "@/redux/chatSlice";
 import { RootState } from "@/redux/store";

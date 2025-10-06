@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import io, { Socket } from "socket.io-client";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { useUser } from "@/app/providers/UserProvider";
 import { useSelector } from "react-redux";
-import { addOnlineUser, removeOnlineUser } from "@/redux/utilsSlice";
+import io, { Socket } from "socket.io-client";
+
+import { useUser } from "@/app/providers/UserProvider";
 import { networkMonitor, NetworkStatus } from "@/lib/network";
+import { useAppDispatch } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
+import { addOnlineUser, removeOnlineUser } from "@/redux/utilsSlice";
 
 interface ThrottleFunction {
   (...args: any[]): void;
@@ -86,18 +87,24 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       };
     }
 
+    const emitActivityFunction = () => {
+      if (settings.showOnlineStatus) {
+        socketIo.emit("activity");
+      }
+    }
+
     const emitActivity = throttle(() => {
-      socketIo.emit("activity");
+      emitActivityFunction();
     }, 5000);
 
     const emitActivity1 = () => {
       if (document.visibilityState === "visible") {
-        socketIo.emit("activity");
+        emitActivityFunction();
       }
     };
 
     window.onbeforeunload = () => {
-      socketIo.emit("activity");
+      emitActivityFunction();
     };
 
     document.addEventListener("mousemove", emitActivity);
@@ -112,7 +119,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       document.removeEventListener("visibilitychange", emitActivity1);
       socketIo.disconnect(); // Ensure the socket is disconnected on cleanup
     };
-  }, [loading, userdata]); // Add loading and userdata as dependencies
+  }, [dispatch, loading, onlineUsers, settings.showOnlineStatus, status?.online, userdata]); // Add loading and userdata as dependencies
 
   return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
 };

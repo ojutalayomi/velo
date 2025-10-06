@@ -4,7 +4,6 @@
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import axios from "axios";
 import { ChevronDown, EllipsisVertical } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
@@ -21,6 +20,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "@/hooks/use-toast";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { api } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import { Attachment, ChatType, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
@@ -41,6 +41,7 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 import ChatTextarea from "../ChatTextarea";
 import MessageTab from "../MessageTab";
 import { MultiSelect } from "../MultiSelect";
+
 
 type Message = {
   _id: string;
@@ -292,7 +293,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         try {
           socket.emit("chatMessage", msg);
           if (otherPerson.accountType === "bot") {
-            const response = await axios.post("/api/chat", {
+            const response = await api.post("/api/chat", {
               messages: Messages,
             });
             if (response.status !== 200) {

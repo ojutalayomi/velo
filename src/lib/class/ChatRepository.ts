@@ -7,8 +7,6 @@ import {
   MessageAttributes,
   NewChat,
   NewChat_,
-  NewChatResponse,
-  NewChatSettings,
 } from "../types/type";
 
 class ChatRepository {

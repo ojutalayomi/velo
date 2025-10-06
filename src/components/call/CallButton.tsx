@@ -6,12 +6,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 interface CallButtonProps {
   roomId: string;
   targetUserId?: string;
-  chatType: "DMs" | "Groups";
+  chatType: "DM" | "Group";
   onInitiateCall: (callData: {
     roomId: string;
     targetUserId?: string;
     callType: "audio" | "video";
-    chatType: "DMs" | "Groups";
+    chatType: "DM" | "Group";
   }) => void;
   disabled?: boolean;
   className?: string;
@@ -93,8 +93,8 @@ export default function CallButton({
             </div>
           </button>
 
-          {/* Video Call Option - Only for DMs */}
-          {chatType === "DMs" && (
+          {/* Video Call Option - Only for DM */}
+          {chatType === "DM" && (
             <button
               onClick={() => handleCallInitiation("video")}
               className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3"

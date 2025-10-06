@@ -1,11 +1,14 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import { ObjectId } from "mongodb";
+import { NextApiRequest, NextApiResponse } from "next";
+
+import { verifyToken } from "@/lib/auth";
+import { UserSchema } from "@/lib/class/User";
+import { MongoDBClient } from "@/lib/mongodb";
+import { getSocketInstance } from "@/lib/socket";
 import {
   AllChatsServer,
-  ChatAttributes,
   ChatDataClient,
   ChatParticipant,
-  ChatSettings,
   ChatType,
   Err,
   MessageAttributes,
@@ -13,12 +16,7 @@ import {
   NewChat,
   NewChat_,
   NewChatSettings,
-  Participant,
-  UserSchema,
 } from "@/lib/types/type";
-import { verifyToken } from "@/lib/auth";
-import { MongoDBClient } from "@/lib/mongodb";
-import { getSocketInstance } from "@/lib/socket";
 
 function generateRandom16DigitNumber(): string {
   let randomNumber = "";
@@ -119,7 +117,7 @@ export const chatRepository = {
         ) {
           chatId = (message.chatId as any).toString();
         }
-        const chatType = chatTypeMap.get(chatId) || "DMs"; // fallback to DMs if not found
+        const chatType = chatTypeMap.get(chatId) || "DM"; // fallback to DM if not found
         const participants = chatParticipantsMap.get(chatId) || [];
 
         if (chatType === "Personal") {
@@ -148,6 +146,7 @@ export const chatRepository = {
 
       const newMessages = messages.map((message) => ({
         ...message,
+        _id: message._id.toString(),
         isRead: message.isRead || {},
         attachments: attachments.filter((attachment) =>
           message.attachments.includes(attachment.key)
@@ -166,15 +165,15 @@ export const chatRepository = {
               .map(async (participant) => {
                 try {
                   let user = null;
-                  if (a.chatType === "DMs" || a.chatType === "Personal") {
+                  if (a.chatType === "DM" || a.chatType === "Personal") {
                     user = await func(participant.userId);
-                    if (a.chatType === "DMs") {
+                    if (a.chatType === "DM") {
                       // Set the name for the other participant
                       if (participant.userId !== payload._id) {
                         a.name[participant.userId] = user?.name ?? "";
                       }
                     }
-                  } else if (a.chatType === "Groups") {
+                  } else if (a.chatType === "Group") {
                     user = await func(participant.userId); // Optional: fetch user info for group participants
                   }
                   return {
@@ -225,7 +224,7 @@ export const chatRepository = {
 
       const newObj = {
         chats: newChats,
-        chatSettings: chatSettings,
+        chatSettings,
         messages: newMessages,
         requestId: payload._id,
       };
@@ -319,7 +318,7 @@ export const chatRepository = {
         verified: false,
         adminIds: chatData.participants, // List of admin user IDs
         isPrivate: false,
-        inviteLink: chatData.chatType === "Groups" ? `/invite/${newID.toString()}` : "",
+        inviteLink: chatData.chatType === "Group" ? `/invite/${newID.toString()}` : "",
         timestamp: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         lastMessageId: "",
@@ -332,7 +331,7 @@ export const chatRepository = {
         pinned: Boolean(chatData.pinned),
         deleted: Boolean(chatData.deleted),
         archived: Boolean(chatData.archived),
-        chatSettings: chatSettings,
+        chatSettings,
         displayPicture: chatData.participantsImg?.[participantId] || "",
         userId: participantId,
         chatId: chat._id.toString(),
@@ -345,10 +344,10 @@ export const chatRepository = {
 
       const newObj = {
         chat: await (async () => {
-          const chatCopy: ChatDataClient = { ...chat, _id: chat._id, participants: participants };
+          const chatCopy: ChatDataClient = { ...chat, _id: chat._id, participants };
           // delete (chatCopy as any)._id;
 
-          if (chatCopy.chatType === "DMs" && chatCopy.participants.length === 2) {
+          if (chatCopy.chatType === "DM" && chatCopy.participants.length === 2) {
             delete chatCopy.name[
               chatCopy.participants.find((p) => p.userId === payload._id)?.userId ?? ""
             ];
@@ -356,7 +355,7 @@ export const chatRepository = {
 
           await Promise.all(
             chatCopy.participants.map(async (participant, index) => {
-              if (chatCopy.chatType === "DMs" && participant.userId !== payload._id) {
+              if (chatCopy.chatType === "DM" && participant.userId !== payload._id) {
                 const user = await func(participant.userId);
                 chatCopy.name[participant.userId] = user?.name ?? "";
                 chatCopy.participants[index].displayPicture = user?.displayPicture ?? "";
@@ -373,7 +372,7 @@ export const chatRepository = {
       const socket = getSocketInstance(payload._id);
       if (socket) {
         try {
-          socket.emit("chatMessage", { ...chatData.msg, participants: participants });
+          socket.emit("chatMessage", { ...chatData.msg, participants });
           socket.emit("addChat", newObj);
           // console.log('Message emitted:', msg);
         } catch (error) {
@@ -401,9 +400,9 @@ export const chatRepository = {
     }
   },
 
-  updateChatSettings: async (req: NextApiRequest, res: NextApiResponse, payload: Payload) => {
+  updateChatSettings: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
-      const { id } = req.query;
+      // const { id } = req.query;
       // const updatedSettings: Partial<ChatSettings> = req.body;
       // const updateObject: { [key: string]: any } = {};
 
@@ -453,17 +452,21 @@ export const chatRepository = {
       const chatData: MessageAttributes = req.body;
       const chats = await db.chats().findOne({ _id: new ObjectId(chatId as string) });
 
-      const newID = new ObjectId(generateRandom16DigitNumber());
+      if (!chats) {
+        return res.status(404).json({ error: "Chat not found" });
+      }
+
       // Messages Collection
       const message = {
         _id: new ObjectId(chatData._id as string),
-        chatId: chatId as string, // Reference to the chat in DMs collection
+        chatId: chatId as string, // Reference to the chat in DM collection
         sender: chatData.sender,
         receiverId: chatData.receiverId,
         content: chatData.content,
         timestamp: chatData.timestamp
           ? new Date(chatData.timestamp).toISOString()
           : new Date().toISOString(),
+        chatType: chatData.chatType,
         messageType: chatData.messageType,
         isRead: {
           [chatData.sender.id]: true,
@@ -506,7 +509,7 @@ export const chatRepository = {
         ...message,
         attachments: chatData.attachments.map((attachment) => attachment.key),
       });
-      res.status(201).json(message);
+      res.status(201).json({ ...message, _id: message._id.toString() });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Failed to add message" });
@@ -515,7 +518,7 @@ export const chatRepository = {
 
   deleteMyMessage: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
-      const { chatId, messageId, userId, option } = req.query;
+      const { chatId, messageId, userId } = req.query;
       await db.chatMessages().deleteOne({
         _id: new ObjectId(messageId as string),
         chatId: chatId as string,
@@ -530,7 +533,7 @@ export const chatRepository = {
 
   deleteMessageForMe: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
-      const { chatId, messageId, userId, option } = req.query;
+      const { chatId, messageId, userId } = req.query;
       await db.chatMessages().updateOne(
         { _id: new ObjectId(messageId as string), chatId: chatId as string },
         { $set: { deletedFor: { $push: userId } } } // Assuming you have user authentication

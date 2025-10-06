@@ -14,7 +14,7 @@ interface IncomingCallData {
   roomId: string;
   callerId: string;
   callType: "audio" | "video";
-  chatType: "DMs" | "Groups";
+  chatType: "DM" | "Group";
   callerName?: string;
 }
 
@@ -97,7 +97,7 @@ export default function IncomingCall({ socket, onAccept, onDecline }: IncomingCa
           </p>
 
           <p className="text-sm text-gray-500 mt-1">
-            {incomingCall.chatType === "DMs" ? "Direct Message" : "Group Chat"}
+            {incomingCall.chatType === "DM" ? "Direct Message" : "Group Chat"}
           </p>
         </div>
 

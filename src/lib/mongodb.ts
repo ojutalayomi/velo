@@ -1,6 +1,8 @@
 import { Db, MongoClient, ObjectId, ServerApiVersion } from "mongodb";
+import { IResult } from "ua-parser-js";
+
+import { UserSchema } from "./class/User";
 import {
-  Attachment,
   AttachmentSchema,
   ChatDataServer,
   ChatParticipant,
@@ -9,10 +11,8 @@ import {
   PostSchema,
   Reaction,
   ReadReceipt,
-  UserData,
   UserSettings,
 } from "./types/type";
-import { IResult } from "ua-parser-js";
 
 export interface FollowersSchema {
   followerId: string;
@@ -94,7 +94,9 @@ export class MongoDBClient {
    * Creates a new MongoDB client instance
    * @param dbName Database name from env vars or empty string
    */
-  constructor(private dbName: string = process.env.MONGODB_DATABASE || "") {}
+  constructor(private dbName: string = process.env.MONGODB_DATABASE || "") {
+    this.dbName = dbName;
+  }
 
   /**
    * Initializes the MongoDB connection
@@ -183,7 +185,7 @@ export class MongoDBClient {
    * @returns Collection for storing user profiles
    */
   users() {
-    return this.db.collection<UserData>("Users");
+    return this.db.collection<UserSchema>("Users");
   }
 
   /**

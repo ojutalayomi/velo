@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Switch, Slider } from "@/components/ui";
-import ChatSystem from "@/lib/class/chatSystem";
+import ChatSystem from "@/lib/class/ChatSystem";
 import { ChatDataClient, ChatSettings, MessageAttributes, NewChatSettings } from "@/lib/types/type";
 import ChatRepository from "@/lib/class/ChatRepository";
 import Chat from "@/lib/class/chatAttr";

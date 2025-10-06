@@ -1,21 +1,24 @@
+/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
+import { Users, Plus, X, ArrowLeft, Ellipsis, Camera } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { Dispatch, SetStateAction, Suspense, useEffect, useState, useRef } from "react";
-import { Users, Plus, X, ArrowLeft, Ellipsis, Camera } from "lucide-react";
-import { useUser } from "@/app/providers/UserProvider";
 import { useSelector } from "react-redux";
-import { showChat } from "@/redux/navigationSlice";
-import { ConvoType, setNewGroupMembers } from "@/redux/chatSlice";
+
+import { useUser } from "@/app/providers/UserProvider";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
-import { UserDataPartial } from "@/redux/userSlice";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent } from "./ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { UserData } from "@/lib/types/type";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { UserData } from "@/lib/types/user";
+import { ConvoType, setNewGroupMembers } from "@/redux/chatSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import { showChat } from "@/redux/navigationSlice";
+import { RootState } from "@/redux/store";
+import { UserDataPartial } from "@/redux/userSlice";
+
+import { Dialog, DialogContent } from "./ui/dialog";
 
 interface Props {
   [x: string]: any;
@@ -41,9 +44,8 @@ const setSearch = async (
         throw new Error("Failed to fetch");
       }
       const data = await response.json();
-      data.length < 1 ? setNoUser(true) : setNoUser(false);
+      setNoUser(data.length < 1);
       // Get all participant IDs from existing conversations
-      const existingParticipantIds = conversations.flatMap((convo) => convo.participants);
 
       const newData = data.filter((user: UserData) => user.username !== userdata.username);
       setResults(newData);
@@ -86,7 +88,6 @@ const DirectChatMenu = () => {
       router.replace(`/chats/new?otherId=${_id}`);
     }
     dispatch(showChat(""));
-    return;
   };
 
   useEffect(() => {
@@ -97,29 +98,24 @@ const DirectChatMenu = () => {
     {
       tag: "Create New Group",
       icon: (
-        <Users size={28} className="border-gray-400 border-2 rounded-full mr-3 text-gray-400" />
+        <Users size={28} className="mr-3 rounded-full border-2 border-gray-400 text-gray-400" />
       ),
       icon2: <Plus size={28} className="text-brand" />,
-    } /*,
-    {
-      tag: 'New Channel',
-      icon: <Hash size={28} className="border-gray-400 border-2 rounded-full mr-3 text-gray-400" />,
-      icon2: <Plus size={28} className='text-brand' />
-    }*/,
+    },
   ];
   return (
     <>
       <div
-        className={`bg-white dark:bg-zinc-900 sm:!bg-transparent flex top-0 sticky gap-4 items-center justify-between w-full px-3 py-2`}
+        className={`sticky top-0 flex w-full items-center justify-between gap-4 bg-white px-3 py-2 sm:!bg-transparent dark:bg-zinc-900`}
       >
         <ArrowLeft
           onClick={() => {
             dispatch(showChat(""));
             navigate();
           }}
-          className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+          className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
         />
-        <div className="dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark">
+        <div className="flex flex-grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -136,7 +132,7 @@ const DirectChatMenu = () => {
             ></path>
           </svg>
           <input
-            className="bg-transparent border-0 dark:text-slate-200 outline-0 w-full"
+            className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
             value={searchQuery}
             onChange={(e) =>
               setSearch(
@@ -153,12 +149,12 @@ const DirectChatMenu = () => {
             placeholder="Search for people..."
           />
         </div>
-        <Ellipsis className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]" />
+        <Ellipsis className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
       </div>
       {keyHolder.map((attr, key) => (
         <div
           key={key}
-          className="cursor-pointer flex justify-between items-center my-3 px-3"
+          className="my-3 flex cursor-pointer items-center justify-between px-3"
           onClick={() => {
             if (attr.tag === "Create New Group") {
               router.push(`/chats/compose?type=group`);
@@ -168,15 +164,15 @@ const DirectChatMenu = () => {
           <div className="flex items-center">
             {attr.icon}
             <div>
-              <p className="font-semibold text-gray-500 dark:text-slate-200 text-sm">{attr.tag}</p>
+              <p className="text-sm font-semibold text-gray-500 dark:text-slate-200">{attr.tag}</p>
             </div>
           </div>
-          <button className="flex flex-col items-center text-brand font-semibold">
+          <button className="flex flex-col items-center font-semibold text-brand">
             {attr.icon2}
           </button>
         </div>
       ))}
-      <div className="flex flex-col gap-2 items-start my-3 px-3">
+      <div className="my-3 flex flex-col items-start gap-2 px-3">
         <div className="text-sm dark:text-slate-200">You</div>
         {loading ? (
           <UserProfileLazyLoader />
@@ -194,7 +190,7 @@ const DirectChatMenu = () => {
           ""
         )}
         <div
-          className={`overflow-y-auto ${isDisabled ? "pointer-events-none opacity-50 cursor-not-allowed" : ""}`}
+          className={`overflow-y-auto ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-50" : ""}`}
         >
           {isLoading ? (
             <div className="flex flex-col gap-2">
@@ -311,41 +307,41 @@ const GroupChatMenu = () => {
   return (
     <>
       <div
-        className={`bg-white dark:bg-zinc-900 sm:!bg-transparent sm:backdrop-blur-sm flex top-0 sticky gap-4 items-center justify-between w-full px-3 py-2 z-10`}
+        className={`sticky top-0 z-10 flex w-full items-center justify-between gap-4 bg-white px-3 py-2 sm:!bg-transparent sm:backdrop-blur-sm dark:bg-zinc-900`}
       >
         <ArrowLeft
           onClick={() => {
             dispatch(showChat(""));
             navigate();
           }}
-          className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+          className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
         />
-        <h2 className="text-sm dark:text-slate-200 font-semibold text-center">Create New Group</h2>
+        <h2 className="text-center text-sm font-semibold dark:text-slate-200">Create New Group</h2>
         <button
           disabled={groupName.trim() === ""}
           onClick={createGroup}
-          className="px-4 py-1 disabled:bg-gray-400 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors duration-300 ease-in-out text-sm font-medium"
+          className="hover:bg-brand-dark rounded-md bg-brand px-4 py-1 text-sm font-medium text-white transition-colors duration-300 ease-in-out disabled:bg-gray-400"
         >
           Create
         </button>
       </div>
-      <div className="flex flex-col gap-2 my-3 px-3">
-        <div className="flex justify-center mb-4">
+      <div className="my-3 flex flex-col gap-2 px-3">
+        <div className="mb-4 flex justify-center">
           <div
             onClick={handleImageClick}
-            className="relative w-24 h-24 rounded-full cursor-pointer overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-brand transition-colors duration-300"
+            className="relative size-24 cursor-pointer overflow-hidden rounded-full border-2 border-gray-200 transition-colors duration-300 hover:border-brand dark:border-gray-700"
           >
             {previewUrl ? (
-              <img src={previewUrl} alt="Group preview" className="w-full h-full object-cover" />
+              <img src={previewUrl} alt="Group preview" className="size-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+              <div className="flex size-full items-center justify-center bg-gray-100 dark:bg-gray-800">
                 <Users size={32} className="text-gray-400" />
               </div>
             )}
-            <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-opacity duration-300 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-opacity duration-300 hover:bg-opacity-30">
               <Camera
                 size={24}
-                className="text-white opacity-0 hover:opacity-100 transition-opacity duration-300"
+                className="text-white opacity-0 transition-opacity duration-300 hover:opacity-100"
               />
             </div>
           </div>
@@ -357,7 +353,7 @@ const GroupChatMenu = () => {
             className="hidden"
           />
         </div>
-        <div className="dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark">
+        <div className="flex flex-grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -374,7 +370,7 @@ const GroupChatMenu = () => {
             ></path>
           </svg>
           <input
-            className="bg-transparent border-0 dark:text-slate-200 outline-0 w-full"
+            className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
             value={searchQuery}
             onChange={(e) =>
               setSearch(
@@ -391,25 +387,25 @@ const GroupChatMenu = () => {
             placeholder="Search for people..."
           />
         </div>
-        <div className="dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark mt-2">
+        <div className="mt-2 flex flex-grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <Users size={18} className="text-gray-500 dark:text-gray-400" />
           <input
-            className="bg-transparent border-0 dark:text-slate-200 outline-0 w-full"
+            className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
             type="text"
             placeholder="Enter group name..."
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
           />
         </div>
-        <div className="dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-lg shadow-bar dark:shadow-bar-dark mt-2">
+        <div className="mt-2 flex flex-grow items-center gap-3 rounded-lg px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <textarea
-            className="bg-transparent border-0 dark:text-slate-200 outline-0 w-full"
+            className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
             placeholder="Enter group description..."
             value={groupDescription}
             onChange={(e) => setGroupDescription(e.target.value)}
           />
         </div>
-        <div className="text-sm text-center dark:text-slate-200">Add people to your group</div>
+        <div className="text-center text-sm dark:text-slate-200">Add people to your group</div>
         {noUser && (
           <div className="text-sm dark:text-slate-200">
             <p>Oops! No user found</p>
@@ -418,11 +414,11 @@ const GroupChatMenu = () => {
         )}
         {selectedUsers.length > 0 && (
           <div className="mb-4">
-            <div className="flex flex-wrap gap-2 pb-4 border-b dark:border-gray-700">
+            <div className="flex flex-wrap gap-2 border-b pb-4 dark:border-gray-700">
               {selectedUsers.map((user) => (
                 <div
                   key={String(user._id)}
-                  className="flex items-center gap-2 shadow bg-gray-100 dark:bg-zinc-900 rounded-full px-2 py-1"
+                  className="flex items-center gap-2 rounded-full bg-gray-100 px-2 py-1 shadow dark:bg-zinc-900"
                 >
                   <Avatar>
                     <AvatarFallback className="shadow-inner">
@@ -431,7 +427,7 @@ const GroupChatMenu = () => {
                     </AvatarFallback>
                     <AvatarImage
                       src={user.displayPicture || ""}
-                      className="rounded-full mr-2 shadow-inner"
+                      className="mr-2 rounded-full shadow-inner"
                       alt={user.name || `${user.firstname} ${user.lastname}`}
                     />
                   </Avatar>
@@ -452,7 +448,7 @@ const GroupChatMenu = () => {
           </div>
         )}
         <div className="overflow-y-auto">
-          <div className="flex flex-col gap-2 items-start my-3">
+          <div className="my-3 flex flex-col items-start gap-2">
             {isLoading ? (
               <div className="flex flex-col gap-2">
                 {Array.from({ length: 5 }).map((_, index) => (
@@ -486,7 +482,7 @@ const NewChatMenuClient = () => {
   return (
     <Dialog open={pathname?.includes("chats/compose")} onOpenChange={() => {}}>
       <DialogContent
-        className="h-screen w-screen p-0 block sm:grid sm:p-4 sm:!max-h-[90vh] sm:!h-min sm:!max-w-lg sm:w-full overflow-auto"
+        className="block h-screen w-screen overflow-auto p-0 sm:grid sm:!h-min sm:!max-h-[90vh] sm:w-full sm:!max-w-lg sm:p-4"
         closeBtn={false}
       >
         {type === "direct" ? <DirectChatMenu /> : <GroupChatMenu />}

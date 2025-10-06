@@ -11,7 +11,7 @@ interface CallInterfaceProps {
   socket: Socket;
   roomId: string;
   targetUserId?: string;
-  chatType: "DMs" | "Groups";
+  chatType: "DM" | "Group";
   onCallEnd?: () => void;
 }
 
@@ -233,7 +233,7 @@ export default function CallInterface({
               <span>Audio Call</span>
             </button>
 
-            {chatType === "DMs" && (
+            {chatType === "DM" && (
               <button
                 onClick={() => initiateCall("video")}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"

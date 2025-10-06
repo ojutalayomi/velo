@@ -117,7 +117,7 @@ export default function CallPage() {
                     <CallButton
                       roomId={user.id}
                       targetUserId={user.id}
-                      chatType={"DMs"}
+                      chatType={"DM"}
                       onInitiateCall={() => {}}
                       disabled={false}
                       className=""
@@ -281,7 +281,7 @@ export default function CallPage() {
         <CallInterface
           socket={socket!}
           roomId={incomingCall?.callId || ""}
-          chatType={"DMs"}
+          chatType={"DM"}
           onCallEnd={() => {}}
         />
 

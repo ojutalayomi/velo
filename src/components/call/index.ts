@@ -17,7 +17,7 @@ export interface CallData {
   roomId: string;
   callerId: string;
   callType: "audio" | "video";
-  chatType: "DMs" | "Groups";
+  chatType: "DM" | "Group";
 }
 
 export interface IncomingCallData {
@@ -25,6 +25,6 @@ export interface IncomingCallData {
   roomId: string;
   callerId: string;
   callType: "audio" | "video";
-  chatType: "DMs" | "Groups";
+  chatType: "DM" | "Group";
   callerName?: string;
 }

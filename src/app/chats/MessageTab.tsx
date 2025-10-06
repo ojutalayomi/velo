@@ -72,7 +72,7 @@ type Option = {
   onClick: () => void; // Click handler function
 };
 
-const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
+const MessageTab = ({ message, setQuote, chat = "DM" }: Props) => {
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
   const [open, setOpen] = useState(false);
@@ -270,7 +270,7 @@ const MessageTab = ({ message, setQuote, chat = "DMs" }: Props) => {
     if (selectedMessages.length) dispatch(addSelectedMessage(message._id as string));
   };
 
-  if (chat === "Groups") {
+  if (chat === "Group") {
     return (
       <>
         <div

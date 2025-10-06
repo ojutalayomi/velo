@@ -8,7 +8,7 @@ interface CallState {
   callId: string | null;
   roomId: string | null;
   callType: "audio" | "video" | null;
-  chatType: "DMs" | "Groups" | null;
+  chatType: "DM" | "Group" | null;
   isConnecting: boolean;
   isConnected: boolean;
   error: string | null;
@@ -20,7 +20,7 @@ interface UseCallManagerReturn {
     roomId: string;
     targetUserId?: string;
     callType: "audio" | "video";
-    chatType: "DMs" | "Groups";
+    chatType: "DM" | "Group";
   }) => Promise<void>;
   answerCall: (
     callId: string,
@@ -28,7 +28,7 @@ interface UseCallManagerReturn {
     callData?: {
       roomId: string;
       callType: "audio" | "video";
-      chatType: "DMs" | "Groups";
+      chatType: "DM" | "Group";
     }
   ) => Promise<void>;
   endCall: () => Promise<void>;
@@ -76,7 +76,7 @@ export function useCallManager(socket: Socket): UseCallManagerReturn {
       roomId: string;
       targetUserId?: string;
       callType: "audio" | "video";
-      chatType: "DMs" | "Groups";
+      chatType: "DM" | "Group";
     }) => {
       try {
         // Initialize WebRTC manager
@@ -156,7 +156,7 @@ export function useCallManager(socket: Socket): UseCallManagerReturn {
       callData?: {
         roomId: string;
         callType: "audio" | "video";
-        chatType: "DMs" | "Groups";
+        chatType: "DM" | "Group";
       }
     ) => {
       if (!webrtcManager) return;
@@ -174,7 +174,7 @@ export function useCallManager(socket: Socket): UseCallManagerReturn {
             callId,
             roomId: callData?.roomId || null,
             callType: callData?.callType || "audio",
-            chatType: callData?.chatType || "DMs",
+            chatType: callData?.chatType || "DM",
             isConnecting: true,
             isConnected: false,
             error: null,

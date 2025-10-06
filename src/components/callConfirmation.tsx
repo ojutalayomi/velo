@@ -61,7 +61,7 @@ export function ConfirmCall({
             </Avatar>
             <h3 className="text-lg font-semibold">{displayName}</h3>
             <p className="text-sm text-muted-foreground">
-              {conversation?.type === "Groups" ? "Group Call" : "Voice Call"}
+              {conversation?.type === "Group" ? "Group Call" : "Voice Call"}
             </p>
           </div>
 

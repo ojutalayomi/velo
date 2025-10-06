@@ -1,6 +1,9 @@
 // redux/chatSlice.ts
+import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
+import moment from "moment";
+
 import ChatRepository from "@/lib/class/ChatRepository";
-import ChatSystem from "@/lib/class/chatSystem";
+import ChatSystem from "@/lib/class/ChatSystem";
 import { networkMonitor } from "@/lib/network";
 import {
   ChatType,
@@ -9,10 +12,9 @@ import {
   NewChatSettings,
   Reaction,
 } from "@/lib/types/type";
-import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
-import moment from "moment";
+
 import { UserDataPartial } from "./userSlice";
-export { ConvoType };
+export type { ConvoType };
 
 const chatRepository = new ChatRepository();
 
@@ -105,7 +107,7 @@ export function updateLiveTime(
   let liveTime: string;
 
   if (days > 0) {
-    const [date /*,time*/] = Time.split(",");
+    const [date] = Time.split(",");
     liveTime = date;
   } else if (hours > 0) {
     liveTime = hours + (hours === 1 ? " hr" : " hrs");
@@ -223,8 +225,7 @@ const chatSlice = createSlice({
           .slice()
           .reverse()
           .find((msg) => {
-            const senderId = msg.messageType === "Groups" ? msg?.sender?.id : msg.sender.id;
-            senderId === state.userId;
+            return msg?.sender?.id === state.userId;
           });
 
         if (lastMatchingMessage) {
@@ -332,7 +333,7 @@ export const fetchChats = async (dispatch: Dispatch) => {
         id: convo._id.toString(),
         type: convo.chatType,
         name:
-          convo.chatType === "DMs"
+          convo.chatType === "DM"
             ? getName()
             : convo.chatType === "Personal"
               ? convo.name[uid]
@@ -343,11 +344,11 @@ export const fetchChats = async (dispatch: Dispatch) => {
         timestamp: convo.timestamp,
         unread: participant?.unreadCount || 0,
         displayPicture:
-          convo.chatType === "DMs" || convo.chatType === "Personal"
+          convo.chatType === "DM" || convo.chatType === "Personal"
             ? (displayPicture as string)
             : convo.groupDisplayPicture,
         description:
-          convo.chatType === "DMs" || convo.chatType === "Personal" ? "" : convo.groupDescription,
+          convo.chatType === "DM" || convo.chatType === "Personal" ? "" : convo.groupDescription,
         verified: convo.verified || false,
         favorite: participant?.favorite || false,
         pinned: participant?.pinned || false,

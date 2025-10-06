@@ -9,7 +9,7 @@ interface CallState {
   callId: string | null;
   roomId: string | null;
   callType: "audio" | "video" | null;
-  chatType: "DMs" | "Groups" | null;
+  chatType: "DM" | "Group" | null;
   isConnecting: boolean;
   isConnected: boolean;
   error: string | null;
@@ -21,7 +21,7 @@ interface CallContextType {
     roomId: string;
     targetUserId?: string;
     callType: "audio" | "video";
-    chatType: "DMs" | "Groups";
+    chatType: "DM" | "Group";
   }) => Promise<void>;
   answerCall: (callId: string, accepted: boolean) => Promise<void>;
   endCall: () => Promise<void>;
@@ -76,7 +76,7 @@ export function CallProvider({ children, socket }: CallProviderProps) {
       roomId: string;
       targetUserId?: string;
       callType: "audio" | "video";
-      chatType: "DMs" | "Groups";
+      chatType: "DM" | "Group";
     }) => {
       try {
         const manager = createWebRTCManager(socket);

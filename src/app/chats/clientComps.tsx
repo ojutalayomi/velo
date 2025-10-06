@@ -82,7 +82,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
     openCreatePage(true);
   };
 
-  const tabs = ["All", "DMs", "Groups", "Archived"];
+  const tabs = ["All", "DM", "Group", "Archived"];
 
   const onSlideChange = () => {
     if (swiper) {
@@ -219,8 +219,8 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
             style={{ height: "auto" }}
           >
             {!ayo ||
-            filterConversations("DMs")?.length === undefined ||
-            filterConversations("DMs")?.length === 0 ? (
+            filterConversations("DM")?.length === undefined ||
+            filterConversations("DM")?.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
@@ -238,7 +238,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
                 </div>
               </div>
             ) : (
-              <ChatListPage filteredChats={() => filterConversations("DMs")} />
+              <ChatListPage filteredChats={() => filterConversations("DM")} />
             )}
           </SwiperSlide>
           <SwiperSlide
@@ -246,8 +246,8 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
             style={{ height: "auto" }}
           >
             {!ayo ||
-            filterConversations("Groups")?.length === undefined ||
-            filterConversations("Groups")?.length === 0 ? (
+            filterConversations("Group")?.length === undefined ||
+            filterConversations("Group")?.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center">
                 <Users className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
@@ -267,7 +267,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
                 </div>
               </div>
             ) : (
-              <ChatListPage filteredChats={() => filterConversations("Groups")} />
+              <ChatListPage filteredChats={() => filterConversations("Group")} />
             )}
           </SwiperSlide>
           <SwiperSlide

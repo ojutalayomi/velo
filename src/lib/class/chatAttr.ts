@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+
 import { ChatAttributes, ChatSettings, ChatType, NewChatResponse, User } from "../types/type";
 
 export class Newchat {
@@ -23,6 +24,7 @@ export class Newchat {
     this.chatSettings = chatSettings;
     this.lastUpdated = lastUpdated;
   }
+
   _id: ObjectId | string | undefined;
   name: string;
   lastMessageId: string; // Assuming ObjectId is converted to string
@@ -80,6 +82,7 @@ export default class Chat {
     this.archived = archived;
     this.lastUpdated = lastUpdated;
   }
+
   _id: ObjectId | undefined;
   name: string;
   lastMessage: string;

@@ -1,4 +1,4 @@
-import ChatSystem from "@/lib/class/chatSystem";
+import ChatSystem from "@/lib/class/ChatSystem";
 import React, { useState } from "react";
 
 interface SwitchProps {

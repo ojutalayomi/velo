@@ -1,21 +1,14 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { SignJWT } from "jose";
-import { serialize } from "cookie";
-import { UAParser } from "ua-parser-js";
 import { promises as fs } from "fs";
-import { fileURLToPath } from "url";
-import path, { dirname } from "path";
-import bcrypt from "bcrypt";
-import crypto from "crypto";
-import handlebars from "handlebars";
-import nodemailer from "nodemailer";
-import { timeFormatter } from "@/templates/PostProps";
-import { UserData } from "@/lib/types/type";
-import { MongoDBClient } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import path from "path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import bcrypt from "bcrypt";
+import handlebars from "handlebars";
+import type { NextApiRequest, NextApiResponse } from "next";
+import nodemailer from "nodemailer";
+
+import { SocialMediaUser } from "@/lib/class/User";
+import { MongoDBClient } from "@/lib/mongodb";
+import { timeFormatter } from "@/templates/PostProps";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -50,12 +43,13 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const db = await new MongoDBClient().init();
 
     const collection = db.users();
-    const tokenCollection = db.tokens();
-    const user = await collection.findOne({
-      $or: [{ username: UsernameOrEmail }, { email: UsernameOrEmail }],
-    });
+    const user = new SocialMediaUser(
+      (await collection.findOne({
+        $or: [{ username: UsernameOrEmail }, { email: UsernameOrEmail }],
+      })) as SocialMediaUser
+    );
 
-    if (!user) {
+    if (!user.isUserNull()) {
       return res.status(401).json({ error: "Invalid username or email" });
     }
 
@@ -70,72 +64,16 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     // const following = (await db.followers().find({ followerId: user._id.toString() }).toArray()).length;
 
-    const {
-      name,
-      firstname,
-      lastname,
-      email,
-      username,
-      displayPicture,
-      verified,
-      userId,
-      followers,
-      following,
-    } = user;
-
     const time = new Date().toLocaleString();
     const formattedDate = timeFormatter(time);
 
-    await collection.updateOne({ email }, { $set: { lastLogin: formattedDate } });
+    await collection.updateOne({ email: user.email }, { $set: { lastLogin: formattedDate } });
 
-    const newUserdata = {
-      _id: user._id,
-      name,
-      firstname,
-      lastname,
-      email,
-      username,
-      dp: displayPicture,
-      verified,
-      userId,
-      followers,
-      following,
-    } as unknown as UserData;
+    await user.setSession(db, req.headers["user-agent"], "page", res);
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ _id: user._id })
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("15d")
-      .sign(secret);
+    await sendSignInEmail(user.email, user.firstname, user.lastname, time);
 
-    // Extract device information
-    const parser = new UAParser(req.headers["user-agent"]);
-    const deviceInfo = parser.getResult();
-
-    await tokenCollection.insertOne({
-      _id: new ObjectId(),
-      userId: user._id.toString(),
-      token,
-      deviceInfo,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-    });
-
-    res.setHeader(
-      "Set-Cookie",
-      serialize("velo_12", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: process.env.NODE_ENV !== "development" ? "strict" : "none",
-        maxAge: 3600 * 24 * 15,
-        path: "/",
-        // domain: process.env.NODE_ENV !== 'development' ? 'example.com' : undefined,
-      })
-    );
-
-    await sendSignInEmail(email, firstname, lastname, time);
-
-    res.status(200).json(newUserdata);
+    res.status(200).json(user.getClientSafeData());
   } catch (error) {
     console.error("An error occurred:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -149,7 +87,7 @@ const sendSignInEmail = async (
   time: string
 ) => {
   // send mail with defined transport object
-  let info = await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: '"Noow App" noreply@ayocodex.site', // sender address
     to: email, // list of receivers
     subject: "Sign-in Successful", // Subject line
@@ -157,13 +95,13 @@ const sendSignInEmail = async (
       subject: "Sign-in Successful",
       heading: "You have successfully signed in to Noow App!",
       message: `I hope you enjoy your time on our app. You signed in at ${time}.`,
-      firstname: firstname,
-      lastname: lastname,
+      firstname,
+      lastname,
       display: "none",
       imageAlt: "Success Image",
       imageSrc: "https://ojutalayomi.github.io/feetbook/FeetBook/public/images/icon-success.png",
     }),
   });
 
-  // console.log('Message sent: %s', info.messageId);
+  console.log("Message sent: %s", info.messageId);
 };

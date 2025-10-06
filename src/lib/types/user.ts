@@ -20,8 +20,8 @@ export enum AccountType {
 
 export type Theme = "system" | "light" | "dark";
 
-export interface UserData {
-  _id?: ObjectId | string | undefined;
+export interface User {
+  _id: ObjectId | string;
   bio?: string;
   confirmationToken?: string;
   coverPhoto?: string;
@@ -58,6 +58,10 @@ export interface UserData {
   verified: boolean;
   website?: string;
   accountType: AccountType;
+}
+
+export interface UserData extends User {
+  _id: string;
 }
 
 export interface UserDataPartial extends Partial<UserData> {

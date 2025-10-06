@@ -7,10 +7,10 @@ import { UAParser } from "ua-parser-js";
 
 import { MongoDBClient } from "../mongodb";
 import { ChatParticipant, ChatType, NewChatSettings } from "../types/type";
-import { UserData, Theme, AccountType } from "../types/user";
+import { User, Theme, AccountType } from "../types/user";
 
-export interface UserSchema extends UserData {
-  _id?: ObjectId;
+export interface UserSchema extends User {
+  _id: ObjectId;
   password: string;
   password_reset_time?: string;
   signUpCount?: number;
@@ -151,21 +151,22 @@ export class SocialMediaUser implements UserSchema {
    */
   public getClientSafeData() {
     return {
-      userId: this.userId,
-      username: this.username,
-      name: this.name,
-      bio: this.bio,
-      displayPicture: this.displayPicture,
-      coverPhoto: this.coverPhoto,
-      website: this.website,
-      location: this.location,
-      followers: this.followers,
-      following: this.following,
-      noOfUpdates: this.noOfUpdates,
-      isPrivate: this.isPrivate,
-      verified: this.verified,
-      isFollowing: this.isFollowing,
-      accountType: this.accountType,
+        _id: this._id,
+        userId: this.userId,
+        username: this.username,
+        name: this.name,
+        bio: this.bio,
+        displayPicture: this.displayPicture,
+        coverPhoto: this.coverPhoto,
+        website: this.website,
+        location: this.location,
+        followers: this.followers,
+        following: this.following,
+        noOfUpdates: this.noOfUpdates,
+        isPrivate: this.isPrivate,
+        verified: this.verified,
+        isFollowing: this.isFollowing,
+        accountType: this.accountType,
     };
   }
 
@@ -175,41 +176,41 @@ export class SocialMediaUser implements UserSchema {
    */
   private getAllData(): UserSchema {
     return {
-      _id: this._id,
-      userId: this.userId,
-      username: this.username,
-      email: this.email,
-      password: this.password,
-      time: this.time,
-      lastLogin: this.lastLogin,
-      confirmationToken: this.confirmationToken || "",
-      isEmailConfirmed: this.isEmailConfirmed,
-      loginToken: this.loginToken || "",
-      resetToken: this.resetToken || "",
-      resetTokenExpiry: this.resetTokenExpiry || undefined,
-      lastResetAttempt: this.lastResetAttempt || undefined,
-      password_reset_time: this.password_reset_time || "",
-      resetAttempts: this.resetAttempts,
-      providers: this.providers,
-      signUpCount: this.signUpCount,
-      theme: this.theme,
-      isFollowing: this.isFollowing,
-      accountType: this.accountType,
-      name: this.name,
-      firstname: this.firstname,
-      lastname: this.lastname,
-      bio: this.bio,
-      displayPicture: this.displayPicture,
-      coverPhoto: this.coverPhoto,
-      website: this.website,
-      location: this.location,
-      dob: this.dob,
-      followers: this.followers,
-      following: this.following,
-      noOfUpdates: this.noOfUpdates,
-      lastUpdate: this.lastUpdate,
-      isPrivate: this.isPrivate,
-      verified: this.verified,
+        _id: this._id,
+        userId: this.userId,
+        username: this.username,
+        email: this.email,
+        password: this.password,
+        time: this.time,
+        lastLogin: this.lastLogin,
+        confirmationToken: this.confirmationToken || "",
+        isEmailConfirmed: this.isEmailConfirmed,
+        loginToken: this.loginToken || "",
+        resetToken: this.resetToken || "",
+        resetTokenExpiry: this.resetTokenExpiry || undefined,
+        lastResetAttempt: this.lastResetAttempt || undefined,
+        password_reset_time: this.password_reset_time || "",
+        resetAttempts: this.resetAttempts,
+        providers: this.providers,
+        signUpCount: this.signUpCount,
+        theme: this.theme,
+        isFollowing: this.isFollowing,
+        accountType: this.accountType,
+        name: this.name,
+        firstname: this.firstname,
+        lastname: this.lastname,
+        bio: this.bio,
+        displayPicture: this.displayPicture,
+        coverPhoto: this.coverPhoto,
+        website: this.website,
+        location: this.location,
+        dob: this.dob,
+        followers: this.followers,
+        following: this.following,
+        noOfUpdates: this.noOfUpdates,
+        lastUpdate: this.lastUpdate,
+        isPrivate: this.isPrivate,
+        verified: this.verified,
     };
   }
 

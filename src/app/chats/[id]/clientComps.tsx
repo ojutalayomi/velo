@@ -294,7 +294,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           socket.emit("chatMessage", msg);
           if (otherPerson.accountType === "bot") {
             const response = await api.post("/api/chat", {
-              messages: Messages,
+              messages: [...Messages, msg],
             });
             if (response.status !== 200) {
               throw new Error("Failed to get bot response");

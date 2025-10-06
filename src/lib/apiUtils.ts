@@ -1,4 +1,5 @@
 import { WithId } from "mongodb";
+
 import { MongoDBClient } from "./mongodb";
 import { PostSchema } from "./types/type";
 
@@ -38,7 +39,7 @@ export async function addInteractionFlags(
             if (collectionName === "Shares") {
               return collection.findOne({ OriginalPostId: post.PostID, UserId: userId });
             }
-            return collection.findOne({ postId: post.PostID, userId: userId });
+            return collection.findOne({ postId: post.PostID, userId });
           };
 
           if (await result()) {

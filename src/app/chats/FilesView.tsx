@@ -1,6 +1,21 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable tailwindcss/no-custom-classname */
+/* eslint-disable @next/next/no-img-element */
+import { saveAs } from "file-saver";
 import { ChevronDown, ChevronUp, Download, File, Share } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
-import { Attachment } from "@/lib/types/type";
+import React, { useEffect, useState } from "react";
+
+import { DocCard } from "@/components/DocCard";
+import ImageDiv from "@/components/imageDiv";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+  CarouselApi,
+} from "@/components/ui/carousel";
 import {
   Dialog,
   DialogTrigger,
@@ -11,22 +26,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-  CarouselApi,
-} from "@/components/ui/carousel";
-import ImageDiv from "@/components/imageDiv";
-import VideoDiv from "@/templates/videoDiv";
-import { DocCard } from "@/components/DocCard";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { saveAs } from "file-saver";
+import { Attachment } from "@/lib/types/type";
+import VideoDiv from "@/templates/videoDiv";
 
 const downloadFile = (url: string, filename: string) => {
   saveAs(url, filename);
@@ -47,7 +52,7 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
   const excess = mediaLength - 4;
   const mediaType = media.map((m) => m.type.split("/")[0])[0];
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
+
   const fileColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "pdf":
@@ -81,7 +86,7 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
 
   return (
     <div
-      className={`w-full ${mediaType === "image" ? "bg-gray-100" : "bg-transparent"} dark:bg-zinc-800 rounded-lg overflow-hidden`}
+      className={`w-full ${mediaType === "image" ? "bg-gray-100" : "bg-transparent"} overflow-hidden rounded-lg dark:bg-zinc-800`}
     >
       {/* <div className="p-4 text-xs border-b border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -101,32 +106,28 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
               <div
                 key={m.name}
                 onClick={() => toggleMediaDialog({ open: true, index: key })}
-                className={`${key === 2 && mediaLength === 3 ? "col-span-2 row-span-1 aspect-video" : "aspect-square"} ${mediaLength === 1 && "col-span-2"} relative cursor-pointer bg-white rounded-lg overflow-hidden group hover:ring-2 hover:ring-gray-300 transition`}
+                className={`${key === 2 && mediaLength === 3 ? "col-span-2 row-span-1 aspect-video" : "aspect-square"} ${mediaLength === 1 && "col-span-2"} group relative cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300`}
               >
-                <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
+                <img src={m.url} alt={m.name} className="size-full object-cover" />
                 {/* <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white">8:21 PM</div> */}
               </div>
             );
           })}
           {moreThanFour && (
             <div onClick={() => toggleMediaDialog({ open: true, index: 3 })} className="relative">
-              <div className="relative aspect-square cursor-pointer bg-white rounded-lg overflow-hidden group hover:ring-2 hover:ring-gray-300 transition">
-                <img
-                  src={media[3].url}
-                  alt={media[3].name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300">
+                <img src={media[3].url} alt={media[3].name} className="size-full object-cover" />
                 {/* <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white text-sm">8:21 PM</div> */}
               </div>
-              <div className="absolute inset-0 backdrop-blur-sm aspect-square rounded-lg flex items-center justify-center text-gray-400 text-2xl font-light group hover:bg-gray-700 transition">
+              <div className="group absolute inset-0 flex aspect-square items-center justify-center rounded-lg text-2xl font-light text-gray-400 backdrop-blur-sm transition hover:bg-gray-700">
                 +{excess}
               </div>
             </div>
           )}
         </div>
       ) : (
-        <div className="flex flex-col p-1 gap-2">
-          {media.map(m => {
+        <div className="flex flex-col gap-2 p-1">
+          {media.map((m) => {
             const type = m.type.split("/")[1];
             const type1 = () => {
               if (type === "vnd.openxmlformats-officedocument.wordprocessingml.document") {
@@ -141,14 +142,14 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
               <div
                 key={m.name}
                 // onClick={() => toggleMediaDialog({open: true, index: key})}
-                className={`flex items-center gap-2 p-2 shadow-lg text-xs bg-gray-100 dark:bg-neutral-950 rounded-lg overflow-hidden group hover:ring-1 hover:ring-gray-300 transition`}
+                className={`group flex items-center gap-2 overflow-hidden rounded-lg bg-gray-100 p-2 text-xs shadow-lg transition hover:ring-1 hover:ring-gray-300 dark:bg-neutral-950`}
               >
                 <div
                   aria-label={m.name}
-                  className="dark:bg-zinc-800 shadow-md p-2 aspect-square rounded-lg flex items-center justify-center relative"
+                  className="relative flex aspect-square items-center justify-center rounded-lg p-2 shadow-md dark:bg-zinc-800"
                 >
                   <div
-                    className={`absolute bg-gray-100 text-${clr} border dark:bg-neutral-950 -right-1.5 p-1 top-0 text-xs rounded-lg`}
+                    className={`text- absolute bg-gray-100${clr} -right-1.5 top-0 rounded-lg border p-1 text-xs dark:bg-neutral-950`}
                   >
                     {type1()?.toUpperCase()}
                   </div>
@@ -157,18 +158,22 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
                 <div className="flex flex-col">
                   <span className="text-gray-400">{m.name}</span>
                   {m.size && (
-                    <span className="text-gray-500 text-xs">{formatFileSize(m.size)}</span>
+                    <span className="text-xs text-gray-500">{formatFileSize(m.size)}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                     <DropdownMenuTrigger asChild>
-                      {isDropdownOpen ? <ChevronDown className="text-gray-400" /> : <ChevronUp className="text-gray-400" />}
+                      {isDropdownOpen ? (
+                        <ChevronDown className="text-gray-400" />
+                      ) : (
+                        <ChevronUp className="text-gray-400" />
+                      )}
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="mr-2 w-auto p-2">
                       <button
                         type="button"
-                        className="flex w-full items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded"
+                        className="flex w-full items-center gap-3 rounded p-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
                         onClick={(e) => {
                           e.preventDefault();
                           downloadFile(m.url || "", m.name);
@@ -211,7 +216,7 @@ const MediaDialog = ({
   useEffect(() => {
     if (!api) return;
     api.scrollTo(mediaDialog.index, true);
-  }, [api]);
+  }, [api, mediaDialog.index]);
 
   useEffect(() => {
     if (!api) {
@@ -245,17 +250,17 @@ const MediaDialog = ({
       }}
     >
       <DialogTrigger className="hidden"></DialogTrigger>
-      <DialogContent className="backdrop-blur-xl bg-transparent border-none flex flex-col gap-0 justify-evenly w-screen h-screen max-w-none">
+      <DialogContent className="flex h-screen w-screen max-w-none flex-col justify-evenly gap-0 border-none bg-transparent backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="text-white">Preview</DialogTitle>
           <DialogDescription className="text-sm font-medium text-white">
             Files ({current}/{count})
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 flex rounded-md max-h-[85%] backdrop-blur-xl shadow-xl h-full">
+        <div className="flex h-full max-h-[85%] flex-1 rounded-md shadow-xl backdrop-blur-xl">
           {files && (
-            <Carousel setApi={setApi} className="w-full flex flex-1 items-center max-h-full">
-              <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto">
+            <Carousel setApi={setApi} className="flex max-h-full w-full flex-1 items-center">
+              <CarouselContent className="flex h-full max-h-full gap-2 sm:aspect-auto">
                 {files.map((file, key) => {
                   const objectURL = file.url as string;
                   const [_, fileType] = file.type.split("/");
@@ -266,7 +271,7 @@ const MediaDialog = ({
                   return (
                     <CarouselItem
                       key={key + file.name}
-                      className="flex items-center justify-center h-full w-full"
+                      className="flex size-full items-center justify-center"
                     >
                       {
                         isImage ? (
@@ -284,8 +289,8 @@ const MediaDialog = ({
               </CarouselContent>
               {showControls && (
                 <>
-                  <CarouselPrevious className="hidden sm:flex left-2" />
-                  <CarouselNext className="hidden sm:flex right-2" />
+                  <CarouselPrevious className="left-2 hidden sm:flex" />
+                  <CarouselNext className="right-2 hidden sm:flex" />
                 </>
               )}
             </Carousel>
@@ -296,10 +301,10 @@ const MediaDialog = ({
           <div className="text-sm text-white dark:text-gray-600">
             {/* Total Size: {formatFileSize(files.reduce((acc, file) => acc + file.size, 0))} */}
           </div>
-          <div className="flex flex-1 items-center justify-between gap-2 w-full sm:max-w-96">
+          <div className="flex w-full flex-1 items-center justify-between gap-2 sm:max-w-96">
             <button
               type="button"
-              className="flex items-center gap-3 py-3 group rounded px-2"
+              className="group flex items-center gap-3 rounded px-2 py-3"
               onClick={(e) => {
                 e.preventDefault();
                 downloadFile(files[current].url || "", files[current].name);
@@ -310,7 +315,7 @@ const MediaDialog = ({
             </button>
             <button
               type="button"
-              className="flex items-center gap-3 py-3 group rounded px-2"
+              className="group flex items-center gap-3 rounded px-2 py-3"
               onClick={(e) => {
                 e.preventDefault();
               }}

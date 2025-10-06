@@ -1,15 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { SignJWT } from "jose";
-import { cookies, headers } from "next/headers";
-import { UAParser } from "ua-parser-js";
+/* eslint-disable import/order */
 import bcrypt from "bcrypt";
-import validator from "validator";
+import { SignJWT } from "jose";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import { MongoDBClient } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import validator from "validator";
+
 import { confirmationEmail } from "@/lib/email";
-import { UserSchema } from "@/lib/types/type";
-import { createPersonalChatForUser } from "@/lib/chat/createPersonalChat";
+import { MongoDBClient } from "@/lib/mongodb";
+
+import { ObjectId } from "mongodb";
+
+import { SocialMediaUser } from "@/lib/class/User";
+import { AccountType } from "@/lib/types/user";
+import { setCookie } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +23,7 @@ export async function POST(request: NextRequest) {
     const BaseUrl = `${protocol}://${host}/`;
 
     const body = await request.json();
+    const userAgent = (await headers()).get("user-agent") || "";
     const time = new Date().toISOString();
     const { firstname, lastname, email, username, password, displayPicture } = body;
     const userId = uuidv4();
@@ -44,7 +49,7 @@ export async function POST(request: NextRequest) {
       .sign(secret);
 
     // Check if the username or email already exists in the collection
-    const result = await db.users().findOne({ $or: [{ username: username }, { email: email }] });
+    const result = await db.users().findOne({ $or: [{ username }, { email }] });
 
     // If a matching document is found
     if (result) {
@@ -72,18 +77,18 @@ export async function POST(request: NextRequest) {
 
       if (!result.isEmailConfirmed) {
         const updateFields = {
-          firstname: firstname,
-          lastname: lastname,
+          firstname,
+          lastname,
           name: `${firstname} ${lastname}`,
           password: hashedPassword,
-          displayPicture: displayPicture,
+          displayPicture,
           isEmailConfirmed: false, // Set to false to trigger email confirmation
-          confirmationToken: confirmationToken,
+          confirmationToken,
         };
 
         // Only update the fields that need to be changed
         await db.users().updateOne(
-          { email: email }, // Filter to find the existing document
+          { email }, // Filter to find the existing document
           { $set: updateFields, $inc: { signUpCount: 1 } }, // Increment signUpCount
           { upsert: false }
         );
@@ -105,22 +110,22 @@ export async function POST(request: NextRequest) {
           error = "Both Email and Username are in use";
         // console.log(error);
 
-        return NextResponse.json({ error: error }, { status: 409 });
+        return NextResponse.json({ error }, { status: 409 });
       }
     } else {
-      const user: UserSchema = {
+      const user = new SocialMediaUser({
         _id: new ObjectId(),
-        time: time,
-        userId: userId,
-        firstname: firstname,
-        lastname: lastname,
+        time,
+        userId,
+        firstname,
+        lastname,
         name: `${firstname} ${lastname}`,
-        email: email,
-        username: username,
+        email,
+        username,
         password: hashedPassword,
-        displayPicture: displayPicture,
+        displayPicture,
         isEmailConfirmed: false,
-        confirmationToken: confirmationToken,
+        confirmationToken,
         signUpCount: 1,
         verified: false,
         followers: 0,
@@ -133,42 +138,13 @@ export async function POST(request: NextRequest) {
         noOfUpdates: 0,
         website: "",
         providers: {},
-      };
+        accountType: AccountType.HUMAN,
+      });
       // Insert the new user data into the collection
-      await db.users().insertOne(user as UserSchema);
+      await user.storeInDB(db);
 
-      await createPersonalChatForUser(user, db);
-      const token = await new SignJWT({ _id: user._id })
-        .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("15d")
-        .sign(secret);
-
-      // Extract device information
-      const userAgent = (await headers()).get("user-agent") || "";
-      const parser = new UAParser(userAgent);
-      const deviceInfo = parser.getResult();
-
-      await db.tokens().insertOne({
-        _id: new ObjectId(),
-        userId: user._id?.toString() as string,
-        token,
-        deviceInfo,
-        createdAt: new Date().toISOString(),
-        // Set token expiration to 15 days from now
-        // 15 days * 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
-        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-      });
-
-      (await cookies()).set("velo_12", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV !== "development",
-        sameSite: process.env.NODE_ENV !== "development" ? "strict" : "none",
-        maxAge: 3600 * 24 * 15,
-        path: "/",
-      });
-
-      delete (user as any).password;
-      delete (user as any).confirmationToken;
+      await user.createPersonalChatForUser(db);
+      await user.setSession(db, userAgent, "app", undefined, setCookie);
 
       await confirmationEmail(
         email,
@@ -176,7 +152,7 @@ export async function POST(request: NextRequest) {
         lastname,
         BaseUrl + "accounts/confirm-email/" + confirmationToken
       );
-      return NextResponse.json(user, { status: 200 });
+      return NextResponse.json(user.getClientSafeData(), { status: 200 });
     }
   } catch (error) {
     console.error("An error occurred:", error);

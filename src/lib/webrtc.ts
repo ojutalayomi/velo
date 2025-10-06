@@ -6,7 +6,7 @@ export interface CallData {
   callerId: string;
   targetUserId?: string;
   callType: "audio" | "video";
-  chatType: "DMs" | "Groups";
+  chatType: "DM" | "Group";
 }
 
 export interface WebRTCOffer {

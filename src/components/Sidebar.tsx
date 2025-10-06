@@ -1,30 +1,28 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { useRouter, usePathname, useParams } from "next/navigation";
-import Image from "next/image";
-import { useUser } from "@/app/providers/UserProvider";
-import { SidebarItem, UserSection, sidebarItems } from "./SidebarComps";
-import { UserData } from "@/lib/types/type";
+/* eslint-disable tailwindcss/no-custom-classname */
 import { Moon, Sun, ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+
 import { useTheme } from "@/app/providers/ThemeProvider";
+import { useUser } from "@/app/providers/UserProvider";
+import { UserData } from "@/lib/types/user";
+
+import { SidebarItem, UserSection, sidebarItems } from "./SidebarComps";
 import { handleThemeChange1 } from "./ThemeToggle";
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface SidebarProps {
   activeRoute: string;
-  isMoreShown: boolean;
   setActiveRoute: (status: string) => void;
   setLoad: (status: boolean) => void;
-  setMoreStatus: (status: boolean) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   setLoad,
   activeRoute,
-  isMoreShown,
   setActiveRoute,
-  setMoreStatus,
 }) => {
-  const params = useParams<{ chat: string }>();
   const { userdata, loading, error, refetchUser } = useUser();
   const [isPopUp, setPopUp] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -33,15 +31,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { theme, setTheme } = useTheme();
   const [isOpen, setOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const routes = [
-    "accounts/login",
-    "accounts/signup",
-    "accounts/signup/1",
-    "accounts/signup/2",
-    "accounts/forgot-password",
-    "accounts/reset-password",
-    "accounts/logout",
-  ];
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,7 +60,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [pathname]);
 
   useEffect(() => {
-    pathname === "/" ? router.push("/home") : null;
+    if (pathname === "/") {
+      router.push("/home");
+    }
     setActiveRoute(pathname?.slice(1) || "");
   }, [router, pathname, setActiveRoute]);
 
@@ -142,37 +133,37 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div
       id="sidebar"
-      className={`${pathname?.includes("/accounts") ? "!hidden" : ""} hidden tablets:flex flex-col overflow-auto max-w-min relative transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`}
+      className={`${pathname?.includes("/accounts") ? "!hidden" : ""} relative hidden max-w-min flex-col overflow-auto transition-all duration-300 tablets:flex ${isCollapsed ? "w-16" : "w-64"}`}
     >
       <button
         onClick={toggleSidebar}
-        className="absolute -right-3 top-20 bg-white dark:bg-zinc-800 p-1 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors z-10"
+        className="absolute -right-3 top-20 z-10 rounded-full bg-white p-1 shadow-md transition-colors hover:bg-gray-100 dark:bg-zinc-800 dark:hover:bg-zinc-700"
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
-      <div className="flex md:justify-start justify-center m-2">
+      <div className="m-2 flex justify-center md:justify-start">
         <Image
           src="/velo11.png"
-          className="displayPicture mt-[10px] mb-[-5px]"
+          className="displayPicture mb-[-5px] mt-[10px]"
           width={30}
           height={30}
           alt="logo"
         />
       </div>
       <div className="flex-1">{memoizedSidebarItems}</div>
-      <div className="px-2 flex justify-center md:block">
+      <div className="flex justify-center px-2 md:block">
         <div
-          className={`${isCollapsed ? "hidden" : "md:flex hidden justify-between items-center bg-gray-100 dark:bg-zinc-900 dark:text-gray-200 p-1 rounded-full shadow-bar dark:shadow-bar-dark"}`}
+          className={`${isCollapsed ? "hidden" : "hidden items-center justify-between rounded-full bg-gray-100 p-1 shadow-bar md:flex dark:bg-zinc-900 dark:text-gray-200 dark:shadow-bar-dark"}`}
         >
           <button
             onClick={() => darkMode(false)}
-            className={`flex gap-1 items-center flex-1 py-2 px-4 rounded-full ${!isDarkMode ? "bg-white dark:bg-zinc-600 shadow-bar dark:shadow-bar-dark" : ""}`}
+            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${!isDarkMode ? "bg-white shadow-bar dark:bg-zinc-600 dark:shadow-bar-dark" : ""}`}
           >
             <Sun size={20} className="inline" /> Light
           </button>
           <button
             onClick={() => darkMode(true)}
-            className={`flex gap-1 items-center flex-1 py-2 px-4 rounded-full ${isDarkMode ? "bg-white dark:bg-zinc-600 shadow-bar dark:shadow-bar-dark" : ""}`}
+            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${isDarkMode ? "bg-white shadow-bar dark:bg-zinc-600 dark:shadow-bar-dark" : ""}`}
           >
             <Moon size={20} className="inline" /> Dark
           </button>
@@ -182,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <TooltipTrigger asChild>
               <button
                 onClick={toggleDarkMode}
-                className={`${isCollapsed ? "!block mx-auto" : ""} md:hidden p-2 bg-gray-100 dark:bg-gray-700 rounded-full shadow-bar dark:shadow-bar-dark`}
+                className={`${isCollapsed ? "mx-auto !block" : ""} rounded-full bg-gray-100 p-2 shadow-bar md:hidden dark:bg-gray-700 dark:shadow-bar-dark`}
               >
                 {isDarkMode ? (
                   <Moon size={20} className="mx-auto" />

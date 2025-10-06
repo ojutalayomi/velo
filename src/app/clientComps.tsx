@@ -1,11 +1,35 @@
 "use client";
+import { WifiOff, XCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import Bottombar from "@/components/Bottombar";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import Error from "./error";
 import { useSelector } from "react-redux";
+
+import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
+import Bottombar from "@/components/Bottombar";
+import { ConfirmCall } from "@/components/callConfirmation";
+import NewChatMenu from "@/components/ComposeChat";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import PostMaker from "@/components/PostMaker";
+import PostPreview from "@/components/PostPreview";
+import Sidebar from "@/components/Sidebar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import UserPhoto from "@/components/UserPhoto";
+import { toast } from "@/hooks/use-toast";
+import { useAnnouncer } from "@/hooks/useAnnouncer";
+import { FileStorageProvider } from "@/hooks/useFileStorage";
+import {
+  ClientComponentsProps,
+  ConvoType,
+  ConvoTypeProp,
+  MessageAttributes,
+  msgStatus,
+  NewChat_,
+  Reaction,
+  ReactionType,
+  PostSchema 
+} from "@/lib/types/type";
+import { UserData } from "@/lib/types/user";
 import {
   updateConversation,
   addMessage,
@@ -16,47 +40,25 @@ import {
   updateMessage,
   updateMessageReactions,
 } from "@/redux/chatSlice";
-import { usePathname, useRouter } from "next/navigation";
-import UserPhoto from "@/components/UserPhoto";
-import PostPreview from "@/components/PostPreview";
-import { RootState } from "@/redux/store";
 import { useAppDispatch } from "@/redux/hooks";
-import {
-  ClientComponentsProps,
-  ConvoType,
-  ConvoTypeProp,
-  MessageAttributes,
-  msgStatus,
-  NewChat_,
-  Reaction,
-  ReactionType,
-  UserData,
-} from "@/lib/types/type";
-import { useSocket } from "@/app/providers/SocketProvider";
-import VideoChat from "../components/CallPage";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ConfirmCall } from "@/components/callConfirmation";
-import { FileStorageProvider } from "@/hooks/useFileStorage";
-import { useNetwork } from "./providers/NetworkProvider";
-import { WifiOff, XCircle } from "lucide-react";
-import { PostSchema } from "@/lib/types/type";
 import { addPost, deletePost, updatePost, updatePosts } from "@/redux/postsSlice";
-import { useAnnouncer } from "@/hooks/useAnnouncer";
-import PostMaker from "@/components/PostMaker";
-import { toast } from "@/hooks/use-toast";
 import { addRoute } from "@/redux/routeSlice";
-import NewChatMenu from "@/components/ComposeChat";
+import { RootState } from "@/redux/store";
+
+import Error from "./error";
+import VideoChat from "../components/CallPage";
+import { useNetwork } from "./providers/NetworkProvider";
+
+
 
 const ClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
-  const { messages, deletedConversations } = useSelector((state: RootState) => state.chat);
-  const router = useRouter();
-  const { isOnline, quality } = useNetwork();
+  const { deletedConversations } = useSelector((state: RootState) => state.chat);
+  const { isOnline } = useNetwork();
   const [isClient, setIsClient] = useState(false);
   const showProfilePicture = pathname?.endsWith("/photo");
   const showPostPreview = pathname?.includes("/photo/");
-  const showPostMaker = pathname?.includes("/compose/post");
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const callRoute = pathname?.startsWith("/call");
   const { userdata } = useUser();
@@ -65,7 +67,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
   const [activeRoute, setActiveRouteState] = useState<string>(path);
   const [isMoreShown, setMoreStatus] = useState(false);
   const [error, setError] = useState(null);
-  const [load, setLoad] = useState<boolean>(false);
+  const [, setLoad] = useState<boolean>(false);
   const { displayAnnouncement, setDisplayAnnouncement } = useAnnouncer();
   const [incomingCallId, setIncomingCallId] = useState<string | null>(null);
   const socket = useSocket();
@@ -118,12 +120,12 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       const uid = data.requestId;
       const participant = data.chat.participants.find((p) => p.userId === uid);
       const otherParticipant = data.chat.participants.find((p) => p.userId !== uid);
-      // name: convo.chatType === 'DMs' ? convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || ''] : convo.name.group,
+      // name: convo.chatType === 'DM' ? convo.name[Object.keys(convo.name).find(e => !e.includes(uid)) || ''] : convo.name.group,
       const obj = {
         id: data.chat._id.toString(),
         type: data.chat.chatType,
         name:
-          data.chat.chatType === "DMs"
+          data.chat.chatType === "DM"
             ? data.chat.name[Object.keys(data.chat.name).find((e) => !e.includes(uid)) || ""]
             : data.chat.name.group,
         displayPicture: otherParticipant?.displayPicture || "",
@@ -236,7 +238,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on("userTyping", handleTyping);
     socket.on("userStopTyping", handleStopTyping);
     socket.on("lastActive", ({ userId, lastActive }) => {
-      const convo = conversations.find((c) => c.participants.includes(userId) && c.type === "DMs");
+      const convo = conversations.find((c) => c.participants.includes(userId) && c.type === "DM");
       dispatch(updateConversation({ id: convo?.id ?? "", updates: { timestamp: lastActive } }));
     });
     socket.on(
@@ -275,7 +277,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
         roomId: string;
         callerId: string;
         callType: "audio" | "video";
-        chatType: "DMs" | "Groups";
+        chatType: "DM" | "Group";
       }) => {
         console.log("[call] invite received", { callId, roomId, callerId, callType, chatType });
         setIncomingCallId(callId);
@@ -478,10 +480,10 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
   return (
     <>
       {displayAnnouncement.status && (
-        <div id="announcement" className="w-screen p-2 text-center relative bg-brand text-white">
+        <div id="announcement" className="relative w-screen bg-brand p-2 text-center text-white">
           <h1>{displayAnnouncement.message}</h1>
           <XCircle
-            className="absolute cursor-pointer right-3 top-1/2 transform -translate-y-1/2"
+            className="absolute right-3 top-1/2 -translate-y-1/2 transform cursor-pointer"
             size={20}
             onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
           />
@@ -493,8 +495,8 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
             <PostMaker open={isPostMakerModalOpen} onOpenChange={setPostMakerModalOpen} />
             <NewChatMenu />
             {!isOnline && isClient && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-50">
-                <WifiOff className="h-12 w-12 text-muted-foreground" />
+              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80">
+                <WifiOff className="size-12 text-muted-foreground" />
                 <h3 className="mt-2 text-lg font-semibold">You&apos;re Offline</h3>
                 <p className="text-sm text-muted-foreground">
                   Please check your internet connection
@@ -512,10 +514,8 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
             {!callRoute ? (
               <Sidebar
                 setLoad={setLoad}
-                isMoreShown={isMoreShown}
                 activeRoute={activeRoute}
                 setActiveRoute={setActiveRoute}
-                setMoreStatus={setMoreStatus}
               />
             ) : null}
             {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}

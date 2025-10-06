@@ -28,7 +28,7 @@ const NewChatModal: React.FC<NewChatModalProps> = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
-  const chattype = typeof username === "string" ? "DMs" : "Groups";
+  const chattype = typeof username === "string" ? "DM" : "Group";
   const yes = () => {
     onConfirm(chattype);
     setLoading(true);

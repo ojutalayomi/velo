@@ -1,19 +1,21 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import "./fontAwesomeLibrary";
-import SignInComponent from "./SignInController";
-import { setUserData } from "@/redux/userSlice";
 import { useSelector } from "react-redux";
-import { fetchChats } from "@/redux/chatSlice";
+
 import { useSocket } from "@/app/providers/SocketProvider";
-import { RootState } from "@/redux/store";
+import { fetchChats } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+import { RootState } from "@/redux/store";
+import { setUserData } from "@/redux/userSlice";
+
 import Wrapper from "./AccountComponentWrapper";
+import SignInComponent from "./SignInController";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 interface FormData {
   UsernameOrEmail: string;
@@ -98,7 +100,7 @@ const Login: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const msg = await SignInComponent({ formData });
+      const msg = await SignInComponent(formData);
       dispatch(setUserData(msg));
       setSuccess(true);
     } catch (error: any) {
@@ -113,10 +115,10 @@ const Login: React.FC = () => {
       auth="Sign in"
       header={
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold text-center mb-2">Sign in to your account today.</h1>
+          <h1 className="mb-2 text-center text-2xl font-bold">Sign in to your account today.</h1>
           <h2>
             Don&apos;t have an account?
-            <Link className="text-brand hover:underline transition-all" href="/accounts/signup">
+            <Link className="text-brand transition-all hover:underline" href="/accounts/signup">
               {" "}
               Sign Up
             </Link>
@@ -126,9 +128,9 @@ const Login: React.FC = () => {
       body={
         <form className="space-y-2 p-2" onSubmit={handleSubmit}>
           <div className="flex flex-col justify-between gap-2">
-            <label className="font-semibold text-start">Username or Email</label>
+            <label className="text-start font-semibold">Username or Email</label>
             <Input
-              className="font-semibold input1"
+              className="input1 font-semibold"
               type="text"
               name="UsernameOrEmail"
               onInput={onInput}
@@ -141,7 +143,7 @@ const Login: React.FC = () => {
             {errors.UsernameOrEmail && <div className="warning">{errors.UsernameOrEmail}</div>}
           </div>
           <div className="flex flex-col justify-between gap-2">
-            <label className="font-semibold text-start">Password</label>
+            <label className="text-start font-semibold">Password</label>
             <div className="relative">
               <Input
                 className="font-semibold"
@@ -157,7 +159,7 @@ const Login: React.FC = () => {
               <FontAwesomeIcon
                 onClick={() => setIsEye(!isEye)}
                 icon={isEye ? "eye-slash" : "eye"}
-                className="icon-eye absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                className="icon-eye absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-400"
                 size="lg"
               />
             </div>
@@ -166,14 +168,14 @@ const Login: React.FC = () => {
           </div>
           <div className="forgot-password">
             <Link
-              className="text-brand hover:underline transition-all"
+              className="text-brand transition-all hover:underline"
               href="/accounts/forgot-password"
             >
               Forgot Password?
             </Link>
           </div>
           <Button
-            className="w-full bg-brand text-white p-2 rounded-lg shadow font-semibold"
+            className="w-full rounded-lg bg-brand p-2 font-semibold text-white shadow"
             disabled={loading}
           >
             {loading ? (

@@ -1,17 +1,14 @@
+import ChatRepository from "./ChatRepository";
 import {
   AllChats,
   ChatAttributes,
   ChatDataClient,
-  ChatSettings,
   Err,
   MessageAttributes,
   NewChat,
   NewChat_,
-  NewChatResponse,
   NewChatSettings,
 } from "../types/type";
-import Chat, { Newchat } from "./chatAttr";
-import ChatRepository from "./ChatRepository";
 
 class ChatSystem {
   private chatRepository: ChatRepository;
@@ -28,7 +25,7 @@ class ChatSystem {
 
   async getChatById(id: string): Promise<ChatDataClient | undefined> {
     const chatAttributes = await this.chatRepository.getChatById(id);
-    return chatAttributes ? chatAttributes : undefined;
+    return chatAttributes || undefined;
   }
 
   async addChat(chatAttributes: NewChat): Promise<NewChat_> {

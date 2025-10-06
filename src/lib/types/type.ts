@@ -5,6 +5,39 @@ export interface User {
   id: number;
 }
 
+export interface NewChatSettings {
+  _id: ObjectId; // Assuming ObjectId is converted to string
+  chatId: string; // Reference to the chat in Chats collection
+
+  // General settings
+  isMuted: boolean;
+  isPinned: boolean;
+  isArchived: boolean;
+  notificationSound: string; // Path to a sound file
+  notificationVolume: number; // Volume level (0-100)
+  wallpaper: string; // Path to an image file
+  theme: "light" | "dark";
+
+  // Specific to group chats
+  members: string[]; // List of user IDs
+
+  // Specific to direct messages
+  isBlocked: boolean;
+  lastSeen: string; // ISO timestamp of the last time the user was online
+}
+
+export interface Participant {
+  id: string;
+  lastMessageId: string;
+  unreadCount: number;
+  favorite: boolean;
+  pinned: boolean;
+  deleted: boolean;
+  archived: boolean;
+  chatSettings: NewChatSettings;
+  displayPicture: string;
+}
+
 export interface ReadReceipt {
   _id: ObjectId;
   messageId: string;
@@ -21,7 +54,24 @@ export interface Reaction {
   timestamp: string;
 }
 
-export type ChatType = "Personal" | "DMs" | "Groups" | "Channels";
+export type ChatType = "Personal" | "DM" | "Group" | "Channels";
+export type MessageType =
+  | "Text"
+  | "Image"
+  | "Video"
+  | "Audio"
+  | "File"
+  | "Location"
+  | "Contact"
+  | "Sticker"
+  | "Poll"
+  | "PollResponse"
+  | "PollEnd"
+  | "PollResult"
+  | "PollResult"
+  | "AnimatedGIF"
+  | "Announcement"
+  | "Link";
 
 export interface ChatData {
   _id: ObjectId;
@@ -76,7 +126,7 @@ export interface ChatAttributes {
   messageId?: string;
   senderId?: number; // Or string depending on your user ID format
   messageContent?: string;
-  messageType?: string;
+  messageType: MessageType;
   isRead?: boolean;
   reactions?: any[]; // Consider a specific type if needed
   attachments?: any[]; // Consider a specific type if needed
@@ -133,27 +183,6 @@ export interface ChatParticipant {
   chatType: ChatType;
 }
 
-export interface NewChatSettings {
-  _id: ObjectId; // Assuming ObjectId is converted to string
-  chatId: string; // Reference to the chat in Chats collection
-
-  // General settings
-  isMuted: boolean;
-  isPinned: boolean;
-  isArchived: boolean;
-  notificationSound: string; // Path to a sound file
-  notificationVolume: number; // Volume level (0-100)
-  wallpaper: string; // Path to an image file
-  theme: "light" | "dark";
-
-  // Specific to group chats
-  members: string[]; // List of user IDs
-
-  // Specific to direct messages
-  isBlocked: boolean;
-  lastSeen: string; // ISO timestamp of the last time the user was online
-}
-
 type Globals = "-moz-initial" | "inherit" | "initial" | "revert" | "revert-layer" | "unset";
 export type UserSelect =
   | "text"
@@ -187,7 +216,7 @@ export type AttachmentSchema = {
   uploadedAt: string;
 };
 
-export interface MessageAttributes {
+export interface Message {
   _id?: ObjectId | string;
   chatId: string;
   sender: {
@@ -201,92 +230,26 @@ export interface MessageAttributes {
   content: string;
   timestamp: string;
   isRead?: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
-  messageType: string;
+  chatType: ChatType;
+  messageType: MessageType;
   reactions: Reaction[];
-  attachments: Attachment[];
+  attachments: (Attachment | string)[];
   quotedMessageId: string;
   status: msgStatus;
 }
 
-export interface MessageSchema {
-  _id?: ObjectId | string;
-  chatId: string;
-  sender: {
-    id: string;
-    name: string;
-    displayPicture: string;
-    username: string;
-    verified: boolean;
-  };
-  receiverId: string;
-  content: string;
-  timestamp: string;
-  isRead?: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
-  messageType: string;
-  reactions: Reaction[];
+export interface MessageAttributes extends Message {
+  _id: string;
+  attachments: Attachment[];
+}
+
+export interface MessageSchema extends Message {
+  _id: ObjectId;
   attachments: string[];
-  quotedMessageId: string;
-  status: msgStatus;
 }
 
 export interface Err {
   [x: string]: string;
-}
-
-export interface UserData {
-  _id?: ObjectId | string | undefined;
-  bio?: string;
-  confirmationToken?: string;
-  coverPhoto?: string;
-  dob?: string;
-  displayPicture?: string;
-  email: string;
-  firstname: string;
-  followers?: number;
-  following?: number;
-  isEmailConfirmed?: boolean;
-  isFollowing?: boolean;
-  isPrivate?: boolean;
-  lastLogin?: string;
-  lastname: string;
-  lastResetAttempt?: {
-    [x: string]: string;
-  };
-  lastSeen?: string;
-  lastUpdate?: string[];
-  location?: string;
-  loginToken?: string;
-  name: string;
-  noOfUpdates?: number;
-  password?: string;
-  password_reset_time?: string;
-  providers: {
-    [x: string]: {
-      id: string | undefined;
-      lastUsed: string;
-    };
-  };
-  resetAttempts?: number;
-  resetToken?: string;
-  resetTokenExpiry?: number;
-  signUpCount?: number;
-  theme?: string;
-  time: string;
-  userId: string;
-  username: string;
-  verified?: boolean;
-  website?: string;
-}
-
-export interface UserSchema extends UserData {
-  _id?: ObjectId;
-  password: string;
-  signUpCount?: number;
-  resetToken?: string;
-  resetTokenExpiry?: number;
-  confirmationToken?: string;
-  loginToken?: string;
-  noOfUpdates?: number;
 }
 
 export interface PostSchema_ {
@@ -323,41 +286,6 @@ export interface PostSchema_ {
   ParentId: string;
 }
 
-export type AllChats = {
-  chats: ChatDataClient[];
-  chatSettings: {
-    [key: string]: NewChatSettings;
-  };
-  messages?: MessageAttributes[];
-  requestId: string;
-};
-
-export type AllChatsServer = {
-  chats: ChatDataServer[];
-  chatSettings: {
-    [key: string]: NewChatSettings;
-  };
-  messages?: MessageAttributes[];
-  requestId: string;
-};
-
-export interface Participant {
-  id: string;
-  lastMessageId: string;
-  unreadCount: number;
-  favorite: boolean;
-  pinned: boolean;
-  deleted: boolean;
-  archived: boolean;
-  chatSettings: NewChatSettings;
-  displayPicture: string;
-}
-
-export interface NewChat_ {
-  chat: ChatDataClient;
-  requestId: string;
-}
-
 export interface ChatDataServer {
   _id: ObjectId;
   name: {
@@ -377,6 +305,29 @@ export interface ChatDataServer {
 
 export interface ChatDataClient extends ChatDataServer {
   participants: ChatParticipant[];
+}
+
+export type AllChats = {
+  chats: ChatDataClient[];
+  chatSettings: {
+    [key: string]: NewChatSettings;
+  };
+  messages?: MessageAttributes[];
+  requestId: string;
+};
+
+export type AllChatsServer = {
+  chats: ChatDataServer[];
+  chatSettings: {
+    [key: string]: NewChatSettings;
+  };
+  messages?: MessageAttributes[];
+  requestId: string;
+};
+
+export interface NewChat_ {
+  chat: ChatDataClient;
+  requestId: string;
 }
 
 export interface ConvoType {
@@ -409,10 +360,6 @@ export type hook<P = any, Q = boolean, R = boolean> = {
   payload: P;
   suspense: Q;
   exit: R;
-};
-export const ConvoType: Partial<hook<Partial<ConvoType>>> = {
-  payload: {},
-  suspense: false,
 };
 
 export type GoogleAuth = {

@@ -15,7 +15,7 @@ export default function CallingDemo() {
   const [isConnected, setIsConnected] = useState(false);
   const [userId, setUserId] = useState("");
   const [roomId, setRoomId] = useState("demo-room-1");
-  const [chatType, setChatType] = useState<"DMs" | "Groups">("DMs");
+  const [chatType, setChatType] = useState<"DM" | "Group">("DM");
   const [targetUserId, setTargetUserId] = useState("user-2");
 
   const callHooks = useCallManager(socket!);
@@ -124,15 +124,15 @@ export default function CallingDemo() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Chat Type</label>
                 <select
                   value={chatType}
-                  onChange={(e) => setChatType(e.target.value as "DMs" | "Groups")}
+                  onChange={(e) => setChatType(e.target.value as "DM" | "Group")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="DMs">Direct Messages</option>
-                  <option value="Groups">Group Chat</option>
+                  <option value="DM">Direct Messages</option>
+                  <option value="Group">Group Chat</option>
                 </select>
               </div>
 
-              {chatType === "DMs" && (
+              {chatType === "DM" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Target User ID
@@ -174,7 +174,7 @@ export default function CallingDemo() {
               <div className="flex items-center space-x-3">
                 <CallButton
                   roomId={roomId}
-                  targetUserId={chatType === "DMs" ? targetUserId : undefined}
+                  targetUserId={chatType === "DM" ? targetUserId : undefined}
                   chatType={chatType}
                   onInitiateCall={callHooks?.initiateCall || (async () => {})}
                   disabled={!isConnected || callState.isInCall}
@@ -239,7 +239,7 @@ export default function CallingDemo() {
             <CallInterface
               socket={socket}
               roomId={roomId}
-              targetUserId={chatType === "DMs" ? targetUserId : undefined}
+              targetUserId={chatType === "DM" ? targetUserId : undefined}
               chatType={chatType}
               onCallEnd={handleCallEnd}
             />

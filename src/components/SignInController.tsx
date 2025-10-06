@@ -1,4 +1,4 @@
-import { UserData } from "@/lib/types/type";
+import { UserData } from "@/lib/types/user";
 
 // 'use client'
 interface FormData {
@@ -6,13 +6,7 @@ interface FormData {
   password: string;
 }
 
-interface SignInComponentProps {
-  formData: FormData;
-}
-
-export default async function SignInComponent({
-  formData,
-}: SignInComponentProps): Promise<UserData> {
+export default async function SignInComponent(formData: FormData): Promise<UserData> {
   const response = await fetch("/api/user", {
     method: "POST",
     headers: {

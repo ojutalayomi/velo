@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { CallButton , CallStatus, IncomingCall } from "@/components/call";
+import { CallButton, CallStatus, IncomingCall } from "@/components/call";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -18,7 +18,8 @@ import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "@/hooks/use-toast";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { Attachment, MessageAttributes, msgStatus } from "@/lib/types/type";
+import { ChatMessage } from "@/lib/class/ChatMessage";
+import { Attachment, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { timeFormatter } from "@/lib/utils";
 import {
   ConvoType,
@@ -35,7 +36,6 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 import ChatTextarea from "../../ChatTextarea";
 import MessageTab from "../../MessageTab";
 import { MultiSelect } from "../../MultiSelect";
-
 
 type Message = {
   _id: string;
@@ -80,12 +80,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { settings: userSettings } = useSelector((state: RootState) => state.user);
   const {
     messages,
-    settings: chatSettings,
     conversations,
     loading: convoLoading,
   } = useSelector((state: RootState) => state.chat);
   const [quote, setQuote] = useState<QuoteProp>(initialQuoteState);
   const [load, setLoading] = useState<boolean>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   const [err, setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState("");
   const gid = params?.gid as string;
@@ -93,8 +93,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const socket = useSocket();
   const callHooks = useCallManager(socket!) || null;
-  const [isPinned, setIsPinned] = useState(convo?.pinned);
-  const [isArchived, setIsArchived] = useState(convo?.archived);
+  const [isPinned] = useState(convo?.pinned);
+  const [isArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const otherIds = convo?.participants?.filter((id) => id !== userdata._id);
@@ -112,8 +112,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(clearSelectedMessages());
-  }, [router.push]);
+    return () => {
+      dispatch(clearSelectedMessages());
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     if (convo && convo.unread !== 0 && !convoLoading && socket) {
@@ -171,7 +173,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (socket && gid && userdata._id) {
       socket.on("groupAnnouncement", (data: string) => {
         // console.log('You have joined a group chat');
-        // alert('You have joined a group chat');
+        alert('You have joined a group chat: ' + data);
       });
     }
   }, [otherIds, gid, socket, userdata._id]);
@@ -189,24 +191,26 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           ])
         : { [String(userdata._id)]: true };
 
-      const msg = {
+      const msg = new ChatMessage({
         _id: generateObjectId(),
         chatId: gid,
         sender: {
           id: String(userdata._id),
-          name: userdata?.name,
-          displayPicture: userdata?.displayPicture,
-          verified: userdata?.verified,
+          name: userdata.name,
+          displayPicture: userdata.displayPicture,
+          verified: userdata.verified,
+          username: userdata.username,
         },
         receiverId: gid,
         content: newMessage,
         timestamp: new Date().toISOString(),
-        messageType: "Groups",
+        chatType: "Group",
+        messageType: "Text" as MessageType,
         reactions: [],
         attachments: [] as Attachment[],
         quotedMessageId: id,
-        status: "sending" as msgStatus,
-      };
+        status: "sending" as msgStatus
+      });
 
       // Read and process all files
       if (attachments.length) {
@@ -245,7 +249,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         };
       });
 
-      dispatch(addMessage(msgCopy as unknown as MessageAttributes));
+      dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
           id: msg._id,
@@ -408,7 +412,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               {callHooks && (
                 <CallButton
                   roomId={gid}
-                  chatType={"Groups"}
+                  chatType={"Group"}
                   onInitiateCall={callHooks.initiateCall}
                   disabled={callHooks.callState.isInCall}
                 />
@@ -575,7 +579,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
                 <MessageTab
                   key={message._id as string}
-                  chat="Groups"
+                  chat="Group"
                   message={message}
                   setQuote={setQuote}
                 />

@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
-import withPWA from "next-pwa";
+import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
+
+import withPWA from "next-pwa";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-import path from "path";
 
 const nextConfig = {
   eslint: {

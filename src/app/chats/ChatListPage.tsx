@@ -204,7 +204,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     <Link
       key={chat.id}
       href={
-        chat.type === "Groups"
+        chat.type === "Group"
           ? `/chats/group/${chat.id}`
           : chat.type === "Personal"
             ? `/chats/me`
@@ -291,7 +291,7 @@ const Card: React.FC<Props> = ({ chat }) => {
               className="w-10 h-10 min-w-10 rounded-full"
             />
           </Avatar>
-          {chat.type === "DMs" &&
+          {chat.type === "DM" &&
             onlineUsers.includes(chat.participants.find((id) => id !== userdata._id) as string) && (
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
             )}
@@ -307,7 +307,7 @@ const Card: React.FC<Props> = ({ chat }) => {
           </div>
           <p className="text-sm text-gray-600 truncate">
             {filteredIsTypingList?.length > 0
-              ? chat.type === "DMs"
+              ? chat.type === "DM"
                 ? filteredIsTypingList.map((i) => i.name).join(", ") + " " + "is" + " typing..."
                 : filteredIsTypingList.map((i) => i.name).join(", ") +
                   " " +

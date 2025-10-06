@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
 /* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import axios from "axios";
 import { ChevronDown, EllipsisVertical } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
@@ -9,7 +12,7 @@ import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { CallButton , CallStatus, IncomingCall } from "@/components/call";
+import { CallButton, CallStatus, IncomingCall } from "@/components/call";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -18,7 +21,9 @@ import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "@/hooks/use-toast";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { Attachment, MessageAttributes, msgStatus, NewChatSettings } from "@/lib/types/type";
+import { ChatMessage } from "@/lib/class/ChatMessage";
+import { Attachment, ChatType, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
+import { UserData } from "@/lib/types/user";
 import { generateObjectId, timeFormatter } from "@/lib/utils";
 import {
   ConvoType,
@@ -36,7 +41,6 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 import ChatTextarea from "../ChatTextarea";
 import MessageTab from "../MessageTab";
 import { MultiSelect } from "../MultiSelect";
-
 
 type Message = {
   _id: string;
@@ -58,17 +62,6 @@ const initialQuoteState = {
   state: false,
 };
 
-interface ChatSetting {
-  [x: string]: NewChatSettings;
-}
-
-interface CHT {
-  messages: MessageAttributes[];
-  settings: ChatSetting;
-  conversations: ConvoType[];
-  loading: boolean;
-}
-
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -76,7 +69,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { userdata } = useUser();
   const {
     messages,
-    settings: chatSettings,
     conversations,
     loading: convoLoading,
   } = useSelector((state: RootState) => state.chat);
@@ -87,7 +79,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [load, setLoading] = useState<boolean>();
   const [err, setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState("");
-  const [newPerson, setNewPerson] = useState<{ [x: string]: keyof ConvoType }>({});
+  const [otherPerson, setOtherPerson] = useState<UserData>({} as UserData);
   const pid =
     params?.id === "me"
       ? (conversations.find((c) => c.type === "Personal")?.id as string)
@@ -114,8 +106,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(clearSelectedMessages());
-  }, [router.push]);
+    return () => {
+      dispatch(clearSelectedMessages());
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     if (convo && convo.unread !== 0 && !convoLoading && socket) {
@@ -177,19 +171,19 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       if (friendId) {
         const cachedData = getCachedData(friendId);
         if (cachedData) {
-          setNewPerson(cachedData);
+          setOtherPerson(cachedData);
         } else {
           const apiData = await fetchFromAPI(friendId);
-          setNewPerson(apiData);
+          setOtherPerson(apiData);
         }
       } else {
         // If friendId is not available, try to fetch using pid
         const cachedData = getCachedData("userdata");
         if (cachedData) {
-          setNewPerson(cachedData);
+          setOtherPerson(cachedData);
         } else {
           const apiData = await fetchFromAPI(String(userdata._id));
-          setNewPerson(apiData);
+          setOtherPerson(apiData);
         }
       }
     } catch (error) {
@@ -205,7 +199,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       // console.log('Redirecting to /chats due to missing friendId and convo');
       router.push("/chats");
     }
-  }, [convo, convoLoading, friendId, router]);
+  }, [convo, convoLoading, friendId, pid, router, userdata._id]);
 
   useEffect(() => {
     fetchData();
@@ -222,24 +216,26 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         : { [String(userdata._id)]: true };
 
       // Prepare the message object
-      const msg = {
+      const msg = new ChatMessage({
         _id: generateObjectId(),
         chatId: pid,
         sender: {
           id: String(userdata._id),
-          name: userdata?.name,
-          displayPicture: userdata?.displayPicture,
-          verified: userdata?.verified,
+          name: userdata?.name || "",
+          displayPicture: userdata?.displayPicture || "",
+          verified: userdata?.verified || false,
+          username: userdata?.username || "",
         },
         receiverId: friendId,
         content: newMessage,
         timestamp: new Date().toISOString(),
-        messageType: "DMs",
+        chatType: "DM" as ChatType,
+        messageType: "Text" as MessageType,
         reactions: [],
         attachments: [] as Attachment[], // Will be populated with file data
         quotedMessageId: id,
-        status: "sending" as const,
-      };
+        status: "sending" as msgStatus,
+      });
 
       if (attachments.length) {
         // Read and process all files
@@ -270,7 +266,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
 
       // Dispatch actions to update the state
-      const msgCopy = { ...msg };
+      const msgCopy = msg.copy();
       msgCopy.attachments = msgCopy.attachments.map((m, index) => {
         const objectURL = URL.createObjectURL(attachments[index]);
         return {
@@ -279,10 +275,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         };
       });
 
-      dispatch(addMessage(msgCopy as unknown as MessageAttributes));
+      dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
-          id: msg._id,
+          id: msg._id as string,
           updates: {
             unread: isRead[String(userdata._id)] ? convo.unread : (convo.unread ?? 0) + 1,
             lastMessage: msg.content,
@@ -295,6 +291,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       if (socket) {
         try {
           socket.emit("chatMessage", msg);
+          if (otherPerson.accountType === "bot") {
+            const response = await axios.post("/api/chat", {
+              messages: Messages,
+            });
+            if (response.status !== 200) {
+              throw new Error("Failed to get bot response");
+            }
+          }
           // console.log('Message emitted:', msg);
         } catch (error) {
           console.error("Socket emission error:", error);
@@ -453,11 +457,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               ) : (
                 <div>
                   <div className="flex items-center text-left text-sm font-semibold">
-                    <div className="truncate">{newPerson?.name}</div>
-                    {newPerson?.verified && <Statuser className="ml-1 size-4" />}
+                    <div className="truncate">{otherPerson?.name}</div>
+                    {otherPerson?.verified && <Statuser className="ml-1 size-4" />}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {onlineUsers.includes(newPerson?._id) ? "Online" : `Last seen: ${time}`}
+                    {onlineUsers.includes(otherPerson?._id as string)
+                      ? "Online"
+                      : `Last seen: ${time}`}
                     {convo?.isTypingList.filter((i) => i.chatId === pid).map((i) => i.name).length >
                       0 &&
                       ` • ${convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...`}
@@ -470,7 +476,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 <CallButton
                   roomId={pid}
                   targetUserId={friendId}
-                  chatType={"DMs"}
+                  chatType={"DM"}
                   onInitiateCall={callHooks.initiateCall}
                   disabled={callHooks.callState.isInCall}
                 />
@@ -569,10 +575,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               <div className="relative">
                 <Avatar className="size-20">
                   <AvatarFallback className="capitalize">
-                    {newPerson?.name?.slice(0, 2)}
+                    {otherPerson?.name?.slice(0, 2)}
                   </AvatarFallback>
                   <AvatarImage
-                    src={newPerson?.displayPicture}
+                    src={otherPerson?.displayPicture}
                     className="displayPicture size-20 rounded-full object-cover dark:border-slate-200"
                     width={80}
                     height={80}
@@ -592,27 +598,27 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 <span className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
               ) : (
                 <>
-                  {newPerson?.name ? (
-                    newPerson.name
+                  {otherPerson?.name ? (
+                    otherPerson.name
                   ) : (
                     <span className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
                   )}
-                  {newPerson?.verified && <Statuser className="size-4" />}
+                  {otherPerson?.verified && <Statuser className="size-4" />}
                 </>
               )}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {load || !newPerson?.username ? (
+              {load || !otherPerson?.username ? (
                 <span className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
               ) : (
-                "@" + newPerson.username
+                "@" + otherPerson.username
               )}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {load || !newPerson?.bio ? (
+              {load || !otherPerson?.bio ? (
                 <span className="mb-1 h-4 w-36 animate-pulse rounded bg-gray-200" />
               ) : (
-                newPerson.bio
+                otherPerson.bio
               )}
             </p>
           </div>

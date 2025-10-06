@@ -1,8 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { MongoDBClient } from "@/lib/mongodb";
-import { verifyToken } from "@/lib/auth";
-import { Payload } from "@/lib/types/type";
 import { ObjectId } from "mongodb";
+import type { NextApiRequest, NextApiResponse } from "next";
+
+import { verifyToken } from "@/lib/auth";
+import { MongoDBClient } from "@/lib/mongodb";
+import { Payload } from "@/lib/types/type";
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "PUT") {
@@ -60,9 +61,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
           password: 0,
           confirmationToken: 0,
           signUpCount: 0,
-          lastLogin: 0,
           loginToken: 0,
-          theme: 0,
           password_reset_time: 0,
           lastResetAttempt: 0,
           resetAttempts: 0,

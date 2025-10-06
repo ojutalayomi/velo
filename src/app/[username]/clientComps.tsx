@@ -1,24 +1,22 @@
 "use client";
+import { ArrowLeft, Cake, Check, Link, Plus, Pin, Loader2 } from "lucide-react";
 import { notFound, useRouter } from "next/navigation";
-import { UserData } from "@/lib/types/type";
-import PostCard from "@/components/PostCard";
-import { timeFormatter } from "@/templates/PostProps";
-import { PostSchema } from "@/lib/types/type";
+import { useEffect, useState } from "react";
+
+import { useSocket } from "@/app/providers/SocketProvider";
+import LeftSideBar from "@/components/LeftSideBar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
-import { ArrowLeft, Cake, Check, Ellipsis, Link, Plus, Pin, Loader2 } from "lucide-react";
-import LeftSideBar from "@/components/LeftSideBar";
-import ContentSection from "./ContentTabs";
-import { useUser } from "../providers/UserProvider";
-import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { toast } from "@/hooks/use-toast";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { PostSchema } from "@/lib/types/type";
+import { UserData } from "@/lib/types/user";
+import { timeFormatter } from "@/templates/PostProps";
+
+import ContentSection from "./ContentTabs";
 import ProfileMenu from "./ProfileMenu";
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "../providers/UserProvider";
 
 export default function Profile({
   profileData: pd,
@@ -27,12 +25,10 @@ export default function Profile({
   profileData: UserData;
   profilePostCards: PostSchema[];
 }) {
-  const dispatch = useAppDispatch();
   const router = useRouter();
-  const { userdata, loading } = useUser();
+  const { userdata } = useUser();
   const socket = useSocket();
   const navigate = useNavigateWithHistory();
-  const posts = useSelector((state: RootState) => state.posts);
   const [isLoading, setIsLoading] = useState(false);
   const [profileData, setProfileData] = useState(pd);
   const [postCards, setPostCards] = useState(profilePostCards);
@@ -126,11 +122,10 @@ export default function Profile({
           followerId: userdata._id,
           followedId: profileData._id,
           time: new Date().toISOString(),
-          follow: follow,
+          follow,
         }),
       });
       if (res.ok) {
-        const data = await res.json();
         // setIsFollowing(follow);
       }
     } catch (error) {
@@ -146,14 +141,14 @@ export default function Profile({
   };
 
   return (
-    <div className="w-full flex h-screen max-h-screen dark:bg-black overflow-auto">
-      <div className="md:w-3/5 h-screen max-h-screen dark:bg-black overflow-auto">
+    <div className="flex h-screen max-h-screen w-full overflow-auto dark:bg-black">
+      <div className="h-screen max-h-screen overflow-auto md:w-3/5 dark:bg-black">
         <div
-          className={`flex backdrop-blur-lg top-0 sticky gap-4 items-center z-10 w-full px-3 py-2`}
+          className={`sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg`}
         >
           <ArrowLeft
             onClick={() => navigate()}
-            className="p-1 text-gray-600 hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out size-8"
+            className="size-8 cursor-pointer p-1 text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200"
           />
           <div>
             <p className="flex items-center gap-1">
@@ -166,14 +161,14 @@ export default function Profile({
           </div>
         </div>
         {/* Cover Photo */}
-        <div className="h-48 w-full bg-gray-200 dark:bg-gray-800 relative">
+        <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-800">
           {profileData.coverPhoto && (
-            <Avatar className="h-full w-full object-cover rounded-none">
+            <Avatar className="size-full rounded-none object-cover">
               <AvatarImage
-                className="w-full h-full rounded-none object-cover aspect-auto"
+                className="aspect-auto size-full rounded-none object-cover"
                 src={profileData.coverPhoto}
               />
-              <AvatarFallback className="w-full h-full rounded-none">
+              <AvatarFallback className="size-full rounded-none">
                 {profileData.firstname && profileData.lastname
                   ? profileData.firstname[0] + profileData.lastname[0] + " • Velo"
                   : "Velo"}
@@ -182,13 +177,13 @@ export default function Profile({
           )}
         </div>
 
-        <div className="mx-auto px-4 relative">
+        <div className="relative mx-auto px-4">
           {/* Profile Picture */}
-          <div className="absolute -top-16 left-4 w-32 h-32">
-            <div className="w-full h-full rounded-full border-4 border-white dark:border-black overflow-hidden">
-              <Avatar className="h-full w-full">
-                <AvatarImage className="w-full h-full" src={profileData.displayPicture} />
-                <AvatarFallback className="w-full h-full">
+          <div className="absolute -top-16 left-4 size-32">
+            <div className="size-full overflow-hidden rounded-full border-4 border-white dark:border-black">
+              <Avatar className="size-full">
+                <AvatarImage className="size-full" src={profileData.displayPicture} />
+                <AvatarFallback className="size-full">
                   {profileData.firstname && profileData.lastname
                     ? profileData.firstname[0] + profileData.lastname[0]
                     : ""}
@@ -202,18 +197,18 @@ export default function Profile({
               username={profileData.username}
               profileId={profileData._id as unknown as string}
             />
-            <div className="rounded-full border-2 border-white dark:border-black overflow-hidden">
+            <div className="overflow-hidden rounded-full border-2 border-white dark:border-black">
               {(profileData._id as unknown as string) === userdata._id ? (
                 <Button
                   onClick={() => router.push(`/${profileData.username}/edit`)}
-                  className="px-4 py-2 bg-brand/90 text-white rounded-full hover:bg-brand/80"
+                  className="rounded-full bg-brand/90 px-4 py-2 text-white hover:bg-brand/80"
                 >
                   Edit profile
                 </Button>
               ) : (
                 <Button
                   onClick={() => handleFollow(!profileData.isFollowing)}
-                  className="px-4 py-2 flex items-center gap-2 bg-brand text-white rounded-full hover:bg-brand/90"
+                  className="flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-white hover:bg-brand/90"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -230,8 +225,8 @@ export default function Profile({
           </div>
 
           {/* Profile Info */}
-          <div className="pt-16 pb-2">
-            <div className="flex justify-between items-start mb-2">
+          <div className="pb-2 pt-16">
+            <div className="mb-2 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-1">
                   <h1 className="text-xl font-bold dark:text-white">{profileData.name}</h1>
@@ -245,14 +240,14 @@ export default function Profile({
             {profileData.bio && (
               <p className="text-gray-800 dark:text-gray-200">{profileData.bio}</p>
             )}
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex flex-wrap gap-4">
               {profileData.location && (
-                <span className="text-gray-600 dark:text-gray-400 !ml-0 flex items-center gap-1">
+                <span className="!ml-0 flex items-center gap-1 text-gray-600 dark:text-gray-400">
                   <Pin className="size-4" /> {profileData.location}
                 </span>
               )}
               {profileData.dob && (
-                <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                   <Cake className="size-4" />
                   {timeFormatter(
                     new Date(profileData.dob).toISOString(),
@@ -262,7 +257,7 @@ export default function Profile({
                 </span>
               )}
               {profileData.website && (
-                <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                   <Link className="size-4" />
                   <a
                     href={profileData.website}

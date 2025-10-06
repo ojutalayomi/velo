@@ -1,5 +1,7 @@
-import { UserData, UserSettings } from "@/lib/types/type";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+import { UserSettings } from "@/lib/types/type";
+import { AccountType, UserData } from "@/lib/types/user";
 
 const userdata: UserData = {
   firstname: "",
@@ -13,12 +15,13 @@ const userdata: UserData = {
   time: "",
   userId: "",
   providers: {},
+  accountType: AccountType.HUMAN,
 };
 
 const userSlice = createSlice({
   name: "user",
   initialState: {
-    userdata: userdata,
+    userdata,
     settings: {
       twoFactorAuth: false,
       loginAlerts: true,

@@ -1,40 +1,36 @@
+/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Attachment,
-  ChatType,
-  MessageAttributes,
-  msgStatus,
-  NewChatSettings,
-  UserData,
-} from "@/lib/types/type";
-import { ChevronDown, EllipsisVertical, UserMinus2, UserPlus2 } from "lucide-react";
-import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { EllipsisVertical, UserMinus2, UserPlus2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { ConvoType, updateConversation, addMessage, setNewGroupMembers } from "@/redux/chatSlice";
-import { showChat } from "@/redux/navigationSlice";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { useUser } from "@/app/providers/UserProvider";
+
 import { useSocket } from "@/app/providers/SocketProvider";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import ChatTextarea from "../ChatTextarea";
-import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { toast } from "@/hooks/use-toast";
-import path from "path";
-import { timeFormatter as timeFormatterUtils } from "@/lib/utils";
-import { clearSelectedMessages } from "@/redux/utilsSlice";
-import { MultiSelect } from "../MultiSelect";
+import { useUser } from "@/app/providers/UserProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Statuser } from "@/components/VerificationComponent";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Statuser } from "@/components/VerificationComponent";
+import { toast } from "@/hooks/use-toast";
+import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { ChatMessage } from "@/lib/class/ChatMessage";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
-import { formatNo, timeFormatter } from "@/templates/PostProps";
-import { Button } from "@/components/ui/button";
+import { Attachment, ChatType, MessageType, msgStatus } from "@/lib/types/type";
+import { UserData } from "@/lib/types/user";
+import { timeFormatter as timeFormatterUtils } from "@/lib/utils";
+import { updateConversation, addMessage, setNewGroupMembers } from "@/redux/chatSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import { showChat } from "@/redux/navigationSlice";
+import { RootState } from "@/redux/store";
 import { UserDataPartial } from "@/redux/userSlice";
+import { clearSelectedMessages } from "@/redux/utilsSlice";
+import { formatNo, timeFormatter } from "@/templates/PostProps";
+
+import ChatTextarea from "../ChatTextarea";
 
 type Message = {
   _id: string;
@@ -56,17 +52,6 @@ const initialQuoteState = {
   state: false,
 };
 
-interface ChatSetting {
-  [x: string]: NewChatSettings;
-}
-
-interface CHT {
-  messages: MessageAttributes[];
-  settings: ChatSetting;
-  conversations: ConvoType[];
-  loading: boolean;
-}
-
 const chatRepository = new ChatRepository();
 
 const chatSystem = new ChatSystem(chatRepository);
@@ -86,39 +71,26 @@ const generateObjectId = () => {
   return timestamp + machineId + processId + counter;
 };
 
-interface NewPerson extends UserData {
-  dp: string;
-  displayPicture: string;
-}
-
 const ChatPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const otherId = searchParams?.get("otherId") as string;
-  const type = (searchParams?.get("type") as string) || "DMs";
+  const type = (searchParams?.get("type") as string) || "DM";
   const groupName = searchParams?.get("groupName") as string;
   const groupDescription = searchParams?.get("groupDescription") as string;
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
-  const {
-    messages,
-    newGroupMembers,
-    settings,
-    conversations,
-    loading: convoLoading,
-  } = useSelector((state: RootState) => state.chat);
+  const { newGroupMembers } = useSelector((state: RootState) => state.chat);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const { groupDisplayPicture } = useGlobalFileStorage();
   const [quote, setQuote] = useState<QuoteProp>(initialQuoteState);
   const [load, setLoading] = useState<boolean>();
-  const [err, setError] = useState<boolean>();
   const [newMessage, setNewMessage] = useState("");
-  const [newPerson, setNewPerson] = useState<NewPerson | undefined>();
+  const [newPerson, setNewPerson] = useState<UserData | undefined>();
   const socket = useSocket();
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
-  const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [allowSend, setAllowSend] = useState<boolean>(true);
 
   const [chatData, setChatData] = useState<{
@@ -156,19 +128,14 @@ const ChatPage = () => {
         isGroup: false,
       });
     }
-  }, [type, groupName, groupDescription, newGroupMembers, newPerson]);
+  }, [type, groupName, groupDescription, newGroupMembers, newPerson, groupDisplayPicture]);
 
   useEffect(() => {
     dispatch(showChat(""));
   }, [dispatch]);
 
-  useEffect(() => {
-    dispatch(clearSelectedMessages());
-  }, [router.push]);
-
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError(false);
 
     const getCachedData = (id: string) => {
       const cachedData = localStorage.getItem(id);
@@ -211,12 +178,11 @@ const ChatPage = () => {
         }
       }
     } catch (error) {
-      setError(true);
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
-  }, [otherId, userdata]);
+  }, [otherId]);
 
   useEffect(() => {
     fetchData();
@@ -232,19 +198,26 @@ const ChatPage = () => {
       setAllowSend(false);
 
       // Prepare the message object
-      const msg = {
+      const msg = new ChatMessage({
         _id: generateObjectId(),
         chatId: generateObjectId(),
-        senderId: String(userdata._id),
+        sender: {
+          id: String(userdata._id),
+          name: userdata.name,
+          displayPicture: userdata.displayPicture,
+          verified: userdata.verified,
+          username: userdata.username,
+        },
         receiverId: otherId,
         content: newMessage,
         timestamp: new Date().toISOString(),
-        messageType: type === "group" ? "Groups" : "DMs",
+        chatType: type === "group" ? "Group" : "DM",
+        messageType: "Text" as MessageType,
         reactions: [],
         attachments: [] as Attachment[],
         quotedMessageId: id,
-        status: "sending" as const,
-      };
+        status: "sending" as msgStatus,
+      });
       msg.receiverId = type === "group" ? msg.chatId : String(userdata._id);
 
       let displayPictureUrl = "";
@@ -316,7 +289,7 @@ const ChatPage = () => {
       }
 
       // Dispatch actions to update the state
-      const msgCopy = { ...msg };
+      const msgCopy = msg.copy();
       msgCopy.attachments = msgCopy.attachments.map((m, index) => {
         const objectURL = URL.createObjectURL(attachments[index]);
         return {
@@ -336,7 +309,7 @@ const ChatPage = () => {
       };
 
       const createParticipants = () => {
-        if (type === "DMs") {
+        if (type === "DM") {
           return [userdata._id as string, `${newPerson?._id}`];
         }
         if (type === "group") {
@@ -346,7 +319,7 @@ const ChatPage = () => {
       };
 
       const createParticipantsImg = () => {
-        if (type === "DMs") {
+        if (type === "DM") {
           return {
             [String(userdata._id)]: userdata.displayPicture,
             [`${newPerson?._id}`]: newPerson?.displayPicture,
@@ -369,7 +342,7 @@ const ChatPage = () => {
       };
 
       const createUnreadCounts = () => {
-        if (type === "DMs") {
+        if (type === "DM") {
           return { [String(userdata._id)]: 0, [`${newPerson?._id}`]: 1 };
         }
         if (type === "group") {
@@ -390,7 +363,7 @@ const ChatPage = () => {
       const newChatAttributes = {
         _id: msg.chatId,
         name: createNameAttribute(),
-        chatType: type === "group" ? ("Groups" as ChatType) : ("DMs" as ChatType),
+        chatType: type === "group" ? ("Group" as ChatType) : ("DM" as ChatType),
         participants: createParticipants(),
         groupDescription: groupDescription || "",
         groupDisplayPicture: displayPictureUrl || "",
@@ -404,7 +377,7 @@ const ChatPage = () => {
         pinned: false,
         deleted: false,
         archived: false,
-        msg: msg,
+        msg,
       };
 
       const result = await chatSystem.addChat(newChatAttributes);
@@ -417,7 +390,7 @@ const ChatPage = () => {
         return;
       }
 
-      dispatch(addMessage(msgCopy as unknown as MessageAttributes));
+      dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
           id: msg.chatId,
@@ -437,7 +410,7 @@ const ChatPage = () => {
       if (txt) txt.style.height = "38px";
 
       dispatch(setNewGroupMembers([]));
-      router.push(`/chats/${result.chat.chatType === "Groups" ? "group/" : ""}${result.chat._id}`);
+      router.push(`/chats/${result.chat.chatType === "Group" ? "group/" : ""}${result.chat._id}`);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -464,23 +437,23 @@ const ChatPage = () => {
 
   return (
     <div
-      className={`bg-bgLight tablets1:flex ${chaT} dark:bg-bgDark shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden mobile:absolute tablets1:w-auto h-full w-full z-10 tablets1:z-[unset]`}
+      className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between px-3 py-2 sticky top-0 z-10">
-        <div className="flex gap-4 items-center justify-start">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+        <div className="flex items-center justify-start gap-4">
           <FontAwesomeIcon
             onClick={handleClick}
             icon={"arrow-left"}
-            className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+            className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             size="lg"
           />
           {load ? (
-            <Skeleton className="w-24 h-4 bg-gray-200 rounded mb-1" />
+            <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
           ) : (
             <div>
-              <div className="flex items-center text-sm font-semibold text-left">
+              <div className="flex items-center text-left text-sm font-semibold">
                 <div className="truncate">{chatData.name}</div>
-                {chatData.verified && <Statuser className="size-4 ml-1" />}
+                {chatData.verified && <Statuser className="ml-1 size-4" />}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {chatData.isGroup
@@ -495,14 +468,14 @@ const ChatPage = () => {
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger>
-              <EllipsisVertical className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]" />
+              <EllipsisVertical className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
             </PopoverTrigger>
-            <PopoverContent className="bg-white dark:bg-zinc-800 max-w-52 mt-2 mr-2 p-0 rounded-md shadow-lg z-10">
+            <PopoverContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
               <ul className="py-1">
                 {options.map((option) => (
                   <li
                     key={option.id}
-                    className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer"
+                    className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (socket) {
@@ -521,11 +494,11 @@ const ChatPage = () => {
 
       <div
         ref={messageBoxRef}
-        className="backdrop-blur-sm pb-12 overflow-y-auto pt-4 px-2 flex flex-col flex-1 scroll-pt-20"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-sm"
       >
-        <div className="cursor-pointer flex flex-col gap-2 items-center relative">
+        <div className="relative flex cursor-pointer flex-col items-center gap-2">
           {load ? (
-            <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
+            <div className="size-20 animate-pulse rounded-full bg-gray-200" />
           ) : (
             <>
               <div className="relative">
@@ -536,7 +509,7 @@ const ChatPage = () => {
                   <AvatarImage
                     data-src={chatData.displayPicture}
                     src={chatData.displayPicture || "/default.jpeg"}
-                    className="displayPicture dark:border-slate-200 w-20 h-20 rounded-full object-cover"
+                    className="displayPicture size-20 rounded-full object-cover dark:border-slate-200"
                     width={80}
                     height={80}
                     alt="Display Picture"
@@ -546,15 +519,15 @@ const ChatPage = () => {
             </>
           )}
 
-          <div className="text-center space-y-2 max-w-full">
+          <div className="max-w-full space-y-2 text-center">
             <div className="flex items-center justify-center gap-1">
               {load ? (
-                <span className="w-24 h-5 bg-gray-200 rounded animate-pulse" />
+                <span className="h-5 w-24 animate-pulse rounded bg-gray-200" />
               ) : (
                 <>
-                  <h2 className="font-bold dark:text-slate-200 text-base">
+                  <h2 className="text-base font-bold dark:text-slate-200">
                     {chatData.name || (
-                      <span className="w-24 h-5 bg-gray-200 rounded animate-pulse" />
+                      <span className="h-5 w-24 animate-pulse rounded bg-gray-200" />
                     )}
                   </h2>
                   {chatData.verified && <Statuser className="size-4" />}
@@ -565,7 +538,7 @@ const ChatPage = () => {
             <div className="space-y-1">
               {!chatData.isGroup &&
                 (load || !newPerson?.username ? (
-                  <Skeleton className="w-24 h-4 mx-auto" />
+                  <Skeleton className="mx-auto h-4 w-24" />
                 ) : (
                   <Link
                     href={`/${newPerson.username}`}
@@ -576,9 +549,9 @@ const ChatPage = () => {
                 ))}
 
               {load || chatData.description === undefined ? (
-                <Skeleton className="block w-36 h-4 mx-auto" />
+                <Skeleton className="mx-auto block h-4 w-36" />
               ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400 max-w-full break-words">
+                <p className="max-w-full break-words text-sm text-gray-600 dark:text-gray-400">
                   {chatData.description}
                 </p>
               )}
@@ -589,7 +562,7 @@ const ChatPage = () => {
                 <div className="flex items-center justify-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                   <div>
                     {load || newPerson?.followers === undefined ? (
-                      <Skeleton className="block w-16 h-4" />
+                      <Skeleton className="block h-4 w-16" />
                     ) : (
                       <p>{formatNo(newPerson?.followers || 0)} followers</p>
                     )}
@@ -597,7 +570,7 @@ const ChatPage = () => {
 
                   <div>
                     {load || newPerson?.following === undefined ? (
-                      <Skeleton className="block w-16 h-4" />
+                      <Skeleton className="block h-4 w-16" />
                     ) : (
                       <p>{formatNo(newPerson?.following || 0)} following</p>
                     )}
@@ -607,10 +580,10 @@ const ChatPage = () => {
                   {newPerson?.time && <p>Joined {timeFormatter(newPerson?.time, false)}</p>}
                 </div>
                 {load || newPerson?.isFollowing === undefined ? (
-                  <Skeleton className="block w-36 h-4" />
+                  <Skeleton className="block h-4 w-36" />
                 ) : (
                   <div className="flex items-center justify-center gap-2">
-                    <Button className="bg-brand hover:bg-brand/95 text-white">
+                    <Button className="bg-brand text-white hover:bg-brand/95">
                       {newPerson?.isFollowing ? (
                         <>
                           <UserPlus2 className="size-4" />
@@ -629,20 +602,16 @@ const ChatPage = () => {
             )}
           </div>
         </div>
-        <div className="mb-4 mt-4 flex-1"></div>
+        <div className="my-4 flex-1"></div>
       </div>
 
-      {selectedMessages.length ? (
-        <MultiSelect />
-      ) : (
-        <ChatTextarea
-          quote={quote}
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          handleSendMessage={handleSendMessage}
-          closeQuote={closeQuote}
-        />
-      )}
+      <ChatTextarea
+        quote={quote}
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        handleSendMessage={handleSendMessage}
+        closeQuote={closeQuote}
+      />
     </div>
   );
 };

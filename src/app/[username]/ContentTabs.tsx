@@ -1,23 +1,17 @@
-import { JSX, SetStateAction, useEffect, useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import {
-  Carousel,
-  CarouselApi,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import MediaSlide from "@/templates/mediaSlides";
-import PostCard from "@/components/PostCard";
-import { PostSchema } from "@/lib/types/type";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Share2, BookmarkPlus, Image, FileText } from "lucide-react";
-import { RootState } from "@/redux/store";
-import { useSelector } from "react-redux";
-import { UserData } from "@/lib/types/type";
 import { useRouter } from "next/navigation";
+import { JSX, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+
+import PostCard from "@/components/PostCard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Carousel, CarouselApi, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PostSchema } from "@/lib/types/type";
+import { UserData } from "@/lib/types/user";
+import { RootState } from "@/redux/store";
+import MediaSlide from "@/templates/mediaSlides";
 
 type ID = "comment" | "post" | "share" | "media" | "bookmark";
 // Tab sections
@@ -105,7 +99,7 @@ export default function ContentSection({
           })}
         </TabsList>
 
-        <Carousel setApi={setApi} className="w-full min-h-screen border-t">
+        <Carousel setApi={setApi} className="min-h-screen w-full border-t">
           <CarouselContent>
             {tabs.map((tab, index) => {
               if (shouldHideTab(tab)) {
@@ -119,7 +113,7 @@ export default function ContentSection({
                     return (
                       <TabsContent
                         value={tab.id}
-                        className={`${tab.id === "media" && filteredPosts.length > 0 ? "!grid grid-cols-3 lg:grid-cols-4 gap-1" : ""} mt-0 data-[state=active]:block`}
+                        className={`${tab.id === "media" && filteredPosts.length > 0 ? "!grid grid-cols-3 gap-1 lg:grid-cols-4" : ""} mt-0 data-[state=active]:block`}
                       >
                         {filteredPosts.length === 0 && (
                           <EmptyStateCard
@@ -163,17 +157,17 @@ type EmptyStateProps = {
 
 export const EmptyStateCard = ({ postType, onAction }: EmptyStateProps) => {
   const icons: Record<string, JSX.Element> = {
-    comment: <MessageSquare className="w-8 h-8 text-muted-foreground" />,
-    post: <FileText className="w-8 h-8 text-muted-foreground" />,
-    share: <Share2 className="w-8 h-8 text-muted-foreground" />,
-    bookmark: <BookmarkPlus className="w-8 h-8 text-muted-foreground" />,
-    media: <Image className="w-8 h-8 text-muted-foreground" />,
+    comment: <MessageSquare className="size-8 text-muted-foreground" />,
+    post: <FileText className="size-8 text-muted-foreground" />,
+    share: <Share2 className="size-8 text-muted-foreground" />,
+    bookmark: <BookmarkPlus className="size-8 text-muted-foreground" />,
+    media: <Image className="size-8 text-muted-foreground" />,
   };
 
   return (
-    <Card className="flex flex-col items-center justify-center bg-transparent border-0 rounded-none p-6 text-center">
+    <Card className="flex flex-col items-center justify-center rounded-none border-0 bg-transparent p-6 text-center">
       <CardHeader className="items-center">
-        {icons[postType] || <FileText className="w-8 h-8 text-muted-foreground" />}
+        {icons[postType] || <FileText className="size-8 text-muted-foreground" />}
         <CardTitle className="mt-4 text-lg font-semibold">
           No{" "}
           {postType === "share"

@@ -1,3 +1,6 @@
+import { debounce } from "lodash";
+import { User } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   useState,
   useEffect,
@@ -7,18 +10,16 @@ import {
   ReactNode,
   useContext,
 } from "react";
-import { setUserData } from "@/redux/userSlice";
 import { useSelector } from "react-redux";
-import { debounce } from "lodash";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { networkMonitor, NetworkStatus } from "@/lib/network";
-import { toast } from "@/hooks/use-toast";
+
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { User } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { networkMonitor, NetworkStatus } from "@/lib/network";
+import { UserData } from "@/lib/types/user";
 import { delay } from "@/lib/utils";
-import { UserData } from "@/lib/types/type";
+import { useAppDispatch } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
+import { setUserData } from "@/redux/userSlice";
 
 interface UseUserReturn {
   userdata: UserData;

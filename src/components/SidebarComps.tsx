@@ -1,6 +1,4 @@
-import React, { ComponentPropsWithoutRef, forwardRef } from "react";
-import Link from "next/link";
-import Image from "next/image";
+/* eslint-disable tailwindcss/no-custom-classname */
 import {
   BadgePlus,
   RefreshCw,
@@ -16,12 +14,17 @@ import {
   Search,
   User2,
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { UserData } from "@/lib/types/type";
-import { Statuser } from "./VerificationComponent";
+import Image from "next/image";
+import Link from "next/link";
+import React, { ComponentPropsWithoutRef, forwardRef } from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { UserData } from "@/lib/types/user";
 import { cn } from "@/lib/utils";
+import { RootState } from "@/redux/store";
+
+import { Statuser } from "./VerificationComponent";
 
 export const sidebarItems = [
   {
@@ -83,10 +86,7 @@ export const SidebarItem = forwardRef<
   }
 >(({ item, activeRoute, handleClick, userdata, isCollapsed = false, ...props }, ref) => {
   const { conversations } = useSelector((state: RootState) => state.chat);
-  let i = 0;
-  conversations?.map((convo) => {
-    i = i + convo.unread;
-  });
+  const i = conversations?.reduce((acc, convo) => acc + convo.unread, 0) ?? 0;
   const isProfile = item.route === "profile";
   const route = isProfile ? userdata.username : item.route;
   const label = isProfile ? (userdata.username ? userdata.username : "Profile") : item.label;
@@ -99,12 +99,12 @@ export const SidebarItem = forwardRef<
           <div
             id={item.label.toLowerCase()}
             ref={ref}
-            className={`sidebar ft dark:text-slate-200 rout`}
+            className={`sidebar ft rout dark:text-slate-200`}
             data-route={route}
             {...props}
           >
             <div
-              className="flex items-center gap-2 my-1.5 cursor-pointer justify-center md:justify-start relative"
+              className="relative my-1.5 flex cursor-pointer items-center justify-center gap-2 md:justify-start"
               onClick={() => handleClick(route)}
             >
               <item.icon />
@@ -115,7 +115,7 @@ export const SidebarItem = forwardRef<
         <PopoverContent
           side="right"
           aria-label="morePopOver"
-          className="flex flex-col gap-4 bg-white dark:bg-neutral-950 dark:text-slate-200 w-auto p-4 rounded-md shadow-lg"
+          className="flex w-auto flex-col gap-4 rounded-md bg-white p-4 shadow-lg dark:bg-neutral-950 dark:text-slate-200"
         >
           {sidebarItems.slice(3, 8).map((item, key) => (
             <Link
@@ -125,13 +125,13 @@ export const SidebarItem = forwardRef<
               href={`/${item.route}`}
             >
               <div
-                className="flex items-center gap-2 relative group"
+                className="group relative flex items-center gap-2"
                 onClick={() => handleClick(route)}
               >
                 <item.icon size={25} className="group-hover:text-brand" />
                 <div className="group-hover:text-brand">{item.label}</div>
                 {item.label === "Chats" && i > 0 && (
-                  <div className="bg-brand text-white text-xs absolute right-0 transform translate-y-[-50%] md:translate-y-0 md:relative font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  <div className="absolute right-0 flex size-5 translate-y-[-50%] items-center justify-center rounded-full bg-brand text-xs font-bold text-white md:relative md:translate-y-0">
                     {i}
                   </div>
                 )}
@@ -157,14 +157,14 @@ export const SidebarItem = forwardRef<
         aria-label={item.route}
       >
         <div
-          className="flex items-center gap-2 my-1.5 cursor-pointer justify-center md:justify-start relative"
+          className="relative my-1.5 flex cursor-pointer items-center justify-center gap-2 md:justify-start"
           onClick={() => handleClick(route)}
         >
           <item.icon size={25} />
-          <div className={`${!isCollapsed && "md:block"} transition  hidden`}>{label}</div>
+          <div className={`${!isCollapsed && "md:block"} hidden  transition`}>{label}</div>
           {item.label === "Chats" && i > 0 && (
             <div
-              className={`bg-brand text-white text-xs absolute transform translate-x-[50%] translate-y-[-50%] ${!isCollapsed && "md:translate-y-0 md:relative"} font-bold rounded-full w-5 h-5 flex items-center justify-center`}
+              className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
             >
               {i}
             </div>
@@ -204,7 +204,7 @@ export const UserSection = forwardRef<
             refetchUser={refetchUser}
           />
         ) : (
-          <div className="dark:text-slate-200 flex flex-col gap-4 px-1 py-2">
+          <div className="flex flex-col gap-4 px-1 py-2 dark:text-slate-200">
             <Link
               href={`${pathname !== "" ? "/accounts/login?backto=" + pathname : "/accounts/login"}`}
               className="flex items-center hover:text-brand"
@@ -227,12 +227,12 @@ export const UserSection = forwardRef<
           </PopoverTrigger>
           <PopoverContent
             align="start"
-            className="bg-white dark:bg-neutral-950 dark:text-slate-200 w-auto p-2 rounded-md shadow-lg"
+            className="w-auto rounded-md bg-white p-2 shadow-lg dark:bg-neutral-950 dark:text-slate-200"
           >
             <div className="flex flex-col">
               <Link
                 href="/accounts/logout"
-                className="hover:bg-slate-200 dark:hover:bg-slate-900 p-2 rounded"
+                className="rounded p-2 hover:bg-slate-200 dark:hover:bg-slate-900"
               >
                 Log out{" "}
                 <b className="username">
@@ -241,7 +241,7 @@ export const UserSection = forwardRef<
               </Link>
               <Link
                 href="/accounts/login"
-                className="hover:bg-slate-200 dark:hover:bg-slate-900 p-2 rounded"
+                className="rounded p-2 hover:bg-slate-200 dark:hover:bg-slate-900"
               >
                 Add another account?
               </Link>
@@ -267,11 +267,11 @@ const UserComponentLoading = ({
   refetchUser: () => void;
 }) => {
   return (
-    <div className="user md:items-center hover:bg-slate-200 dark:hover:bg-neutral-900 !justify-center md:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 md:shadow-bar md:dark:shadow-bar-dark w-full">
+    <div className="user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between md:shadow-bar dark:hover:bg-neutral-900 md:dark:shadow-bar-dark">
       <div className="img">
         {loading ? (
-          <div className={`flex items-center justify-center w-full h-[90%]`}>
-            <div className="loader show h-6 w-6" />
+          <div className={`flex h-[90%] w-full items-center justify-center`}>
+            <div className="loader show size-6" />
           </div>
         ) : (
           error && <RefreshCw className="cursor-pointer" size={25} onClick={refetchUser} />
@@ -279,18 +279,18 @@ const UserComponentLoading = ({
       </div>
 
       <div
-        className={`flex-1 items-center max-w-[50%] names flex-col hidden ${isCollapsed ? "hidden" : "md:!flex"}`}
+        className={`names hidden max-w-[50%] flex-1 flex-col items-center ${isCollapsed ? "hidden" : "md:!flex"}`}
       >
         <div className="flex max-w-full dark:text-slate-200">
-          <div className="animate-pulse w-14 h-4 bg-[#9E9E9E] rounded mb-1" />
+          <div className="mb-1 h-4 w-14 animate-pulse rounded bg-[#9E9E9E]" />
         </div>
 
-        <div className="animate-pulse w-14 h-4 bg-[#9E9E9E] rounded" />
+        <div className="h-4 w-14 animate-pulse rounded bg-[#9E9E9E]" />
       </div>
 
       <Ellipsis
         size={25}
-        className={`cursor-pointer hidden ${isCollapsed ? "hidden" : "md:!block"} dark:text-gray-400`}
+        className={`hidden cursor-pointer ${isCollapsed ? "hidden" : "md:!block"} dark:text-gray-400`}
       />
     </div>
   );
@@ -305,15 +305,15 @@ const UserComponent = ({
 }) => {
   return (
     <div
-      className={`${isCollapsed ? "!shadow-none" : ""} user md:items-center hover:bg-slate-200 dark:hover:bg-neutral-900 !justify-center md:!justify-between !my-[.5em] !mx-0 !px-2 !py-1 md:shadow-bar md:dark:shadow-bar-dark w-full`}
+      className={`${isCollapsed ? "!shadow-none" : ""} user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between md:shadow-bar dark:hover:bg-neutral-900 md:dark:shadow-bar-dark`}
     >
-      <div className="img size-10 max-w-10 max-h-10">
+      <div className="img size-10 max-h-10 max-w-10">
         <Image
           src={userdata.displayPicture ? userdata.displayPicture : "/default.jpeg"}
           onError={() => {
             userdata.displayPicture = "/default.jpeg";
           }}
-          className="displayPicture dark:border-slate-200 h-full w-full"
+          className="displayPicture size-full dark:border-slate-200"
           width={30}
           height={30}
           alt="Display Picture"
@@ -321,7 +321,7 @@ const UserComponent = ({
       </div>
 
       <div
-        className={`flex-1 items-center max-w-[50%] names hidden flex-col ${isCollapsed ? "hidden" : "md:flex"}`}
+        className={`names hidden max-w-[50%] flex-1 flex-col items-center ${isCollapsed ? "hidden" : "md:flex"}`}
       >
         <div className="flex max-w-full dark:text-slate-200">
           <p className="truncate">{userdata.name}</p>
@@ -332,7 +332,7 @@ const UserComponent = ({
 
       <Ellipsis
         size={25}
-        className={`cursor-pointer hidden ${isCollapsed ? "hidden" : "md:!block"} dark:text-gray-400`}
+        className={`hidden cursor-pointer ${isCollapsed ? "hidden" : "md:!block"} dark:text-gray-400`}
       />
     </div>
   );

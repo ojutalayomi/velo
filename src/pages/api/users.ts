@@ -1,8 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import { ObjectId } from "mongodb";
+import type { NextApiRequest, NextApiResponse } from "next";
+
+import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 import { Payload } from "@/lib/types/type";
-import { verifyToken } from "@/lib/auth";
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -32,7 +33,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
             should: [
               {
                 autocomplete: {
-                  query: query,
+                  query,
                   path: "name",
                   fuzzy: {
                     maxEdits: 1,
@@ -42,7 +43,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
               },
               {
                 autocomplete: {
-                  query: query,
+                  query,
                   path: "username",
                   fuzzy: {
                     maxEdits: 1,
@@ -80,7 +81,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       }
       const data = await db.users().findOne(
         {
-          _id: new ObjectId(query as string),
+          $or: [{ _id: new ObjectId(query as string) }, { username: query as string }],
         },
         {
           projection: {
@@ -109,11 +110,11 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     const newUsers = users.map(async (obj: any) => {
-      let newObj = { ...obj };
+      const newObj = { ...obj };
       const isFollowing = payload
         ? await db.followers().findOne({ followerId: payload._id, followedId: obj._id.toString() })
         : false;
-      newObj.isFollowing = isFollowing ? true : false;
+      newObj.isFollowing = !!isFollowing;
       return newObj;
     });
 

@@ -155,6 +155,8 @@ export class SocialMediaUser implements UserSchema {
         userId: this.userId,
         username: this.username,
         name: this.name,
+        firstname: this.firstname,
+        lastname: this.lastname,
         bio: this.bio,
         displayPicture: this.displayPicture,
         coverPhoto: this.coverPhoto,

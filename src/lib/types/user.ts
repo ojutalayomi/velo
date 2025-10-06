@@ -10,8 +10,11 @@ import { ObjectId } from "bson";
  */
 
 export enum AccountType {
+  // eslint-disable-next-line no-unused-vars
   HUMAN = "human",
+  // eslint-disable-next-line no-unused-vars
   ORGANIZATION = "organization",
+  // eslint-disable-next-line no-unused-vars
   BOT = "bot",
 }
 

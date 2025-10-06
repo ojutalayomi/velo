@@ -1,21 +1,19 @@
+/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
-import React, { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Loader2, Trash2 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+
 import { Switch, Slider } from "@/components/ui";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/ChatSystem";
 import { ChatDataClient, ChatSettings, MessageAttributes, NewChatSettings } from "@/lib/types/type";
-import ChatRepository from "@/lib/class/ChatRepository";
-import Chat from "@/lib/class/chatAttr";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Copy, Ellipsis, Loader2, Reply, Send, Settings, TextQuote, Trash2, X } from "lucide-react";
-import { useSelector } from "react-redux";
+import { ConvoType } from "@/redux/chatSlice";
 import { RootState } from "@/redux/store";
-import { ConvoType, defaultSettings } from "@/redux/chatSlice";
-import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 
-interface ChatSettingsPageProps {
-  chatSystem: ChatSystem;
-}
 interface Params {
   gid?: string;
 }
@@ -35,15 +33,13 @@ const chatRepository = new ChatRepository();
 
 const chatSystem = new ChatSystem(chatRepository);
 
-const ChatSettingsPage: React.FC = ({}) => {
+const ChatSettingsPage: React.FC = () => {
   const router = useRouter();
   const navigate = useNavigateWithHistory();
   const params = useParams() as Params;
   const { gid } = params;
   const {
-    messages,
     settings,
-    conversations,
     loading: convoLoading,
   } = useSelector<RootState, CHT>((state) => state.chat);
   const [chat, setChat] = useState<ChatDataClient | "i">("i");
@@ -85,25 +81,25 @@ const ChatSettingsPage: React.FC = ({}) => {
   if (!chat || !chatSettings) {
     return (
       <div
-        className={`absolute bg-white dark:bg-black dark:text-slate-200 flex flex-col items-center justify-center h-full w-full z-10 tablets1:w-1/2 tablets1:z-[unset]`}
+        className={`absolute z-10 flex size-full flex-col items-center justify-center bg-white tablets1:z-[unset] tablets1:w-1/2 dark:bg-black dark:text-slate-200`}
       >
-        <div className="absolute top-0 w-full bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 border-b">
-          <div className="flex gap-4 items-center justify-start">
+        <div className="absolute top-0 flex w-full items-center justify-between gap-4 border-b bg-gray-100 p-2 dark:bg-zinc-900 dark:text-slate-200">
+          <div className="flex items-center justify-start gap-4">
             <FontAwesomeIcon
               onClick={() => navigate()}
               icon={"arrow-left"}
-              className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+              className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
               size="lg"
             />
             <h2 className="font-bold">Chat Settings</h2>
           </div>
           <Trash2
-            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+            className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             onClick={() => router.push(`/chats/group/${params?.gid}/settings`)}
           />
         </div>
         <Loader2
-          className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px] animate-spin"
+          className="max-h-[21px] animate-spin cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
           size={21}
         />
       </div>
@@ -112,26 +108,26 @@ const ChatSettingsPage: React.FC = ({}) => {
 
   return (
     <div
-      className={`bg-white tablets1:bg-white tablets1:w-1/2 dark:bg-black shadow-md flex flex-col min-h-screen max-h-screen flex-1 rounded-lg overflow-hidden absolute h-full w-full z-10 tablets1:z-[unset]`}
+      className={`absolute z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-md tablets1:z-[unset] tablets1:w-1/2 tablets1:bg-white dark:bg-black`}
     >
-      <div className="bg-gray-100 dark:bg-zinc-900 dark:text-slate-200 flex gap-4 items-center justify-between p-2 border-b">
-        <div className="flex gap-4 items-center justify-start">
+      <div className="flex items-center justify-between gap-4 border-b bg-gray-100 p-2 dark:bg-zinc-900 dark:text-slate-200">
+        <div className="flex items-center justify-start gap-4">
           <FontAwesomeIcon
             onClick={() => navigate()}
             icon={"arrow-left"}
-            className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+            className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             size="lg"
           />
           <h2 className="font-bold">Chat Settings</h2>
         </div>
         <Trash2
-          className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
+          className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
           onClick={() => router.push(`/chats/group/${params?.gid}/settings`)}
         />
       </div>
-      <div className="space-y-4 m-2">
+      <div className="m-2 space-y-4">
         <div className="flex items-center justify-between">
-          <label htmlFor="mute" className="dark:text-slate-200 text-gray-700">
+          <label htmlFor="mute" className="text-gray-700 dark:text-slate-200">
             Mute
           </label>
           <Switch
@@ -141,7 +137,7 @@ const ChatSettingsPage: React.FC = ({}) => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="pin" className="dark:text-slate-200 text-gray-700">
+          <label htmlFor="pin" className="text-gray-700 dark:text-slate-200">
             Pin
           </label>
           <Switch
@@ -151,7 +147,7 @@ const ChatSettingsPage: React.FC = ({}) => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="archive" className="dark:text-slate-200 text-gray-700">
+          <label htmlFor="archive" className="text-gray-700 dark:text-slate-200">
             Archive
           </label>
           <Switch
@@ -161,7 +157,7 @@ const ChatSettingsPage: React.FC = ({}) => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="notification-sound" className="dark:text-slate-200 text-gray-700">
+          <label htmlFor="notification-sound" className="text-gray-700 dark:text-slate-200">
             Notification Sound
           </label>
           <input
@@ -179,11 +175,11 @@ const ChatSettingsPage: React.FC = ({}) => {
                 e.target.value = "";
               }
             }}
-            className="border rounded-md px-2 py-1"
+            className="rounded-md border px-2 py-1"
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="wallpaper" className="dark:text-slate-200 text-gray-700">
+          <label htmlFor="wallpaper" className="text-gray-700 dark:text-slate-200">
             Wallpaper
           </label>
           <input
@@ -207,11 +203,11 @@ const ChatSettingsPage: React.FC = ({}) => {
                 e.target.value = "";
               }
             }}
-            className="border rounded-md px-2 py-1"
+            className="rounded-md border px-2 py-1"
           />
         </div>
-        <div className="items-center justify-between hidden">
-          <label htmlFor="notification-volume" className="dark:text-slate-200 text-gray-700">
+        <div className="hidden items-center justify-between">
+          <label htmlFor="notification-volume" className="text-gray-700 dark:text-slate-200">
             Notification Volume
           </label>
           <Slider
@@ -223,14 +219,14 @@ const ChatSettingsPage: React.FC = ({}) => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="theme" className="dark:text-slate-200 text-gray-700">
+          <label htmlFor="theme" className="text-gray-700 dark:text-slate-200">
             Theme
           </label>
           <select
             id="theme"
             value={chatSettings.theme}
             onChange={(e) => handleSettingsChange("theme", e.target.value as "light" | "dark")}
-            className="border rounded-md px-2 py-1"
+            className="rounded-md border px-2 py-1"
           >
             <option value="light">Light</option>
             <option value="dark">Dark</option>

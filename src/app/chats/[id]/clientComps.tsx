@@ -102,7 +102,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
-  const [isTextareaDisabled, setIsTextareaDisabled] = useState(true);
+  const [isTextareaDisabled, setIsTextareaDisabled] = useState(false);
 
   useEffect(() => {
     dispatch(showChat(""));

@@ -32,6 +32,7 @@ import {
   updateMessage,
   updateLiveTime,
   deleteConversation,
+  deleteMessage,
 } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
@@ -101,6 +102,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
+  const [isTextareaDisabled, setIsTextareaDisabled] = useState(true);
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -210,8 +212,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
+    let lastMessageId = "";
 
     try {
+      if(otherPerson.accountType === "bot") {
+        setIsTextareaDisabled(true);
+      }
       const isRead = friendId
         ? { [String(userdata._id)]: false, [friendId]: true }
         : { [String(userdata._id)]: true };
@@ -231,12 +237,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         content: newMessage,
         timestamp: new Date().toISOString(),
         chatType: "DM" as ChatType,
-        messageType: "Text" as MessageType,
+        messageType: "Markdown" as MessageType,
         reactions: [],
         attachments: [] as Attachment[], // Will be populated with file data
         quotedMessageId: id,
         status: "sending" as msgStatus,
       });
+      lastMessageId = msg._id;
 
       if (attachments.length) {
         // Read and process all files
@@ -275,7 +282,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           ...m,
         };
       });
-
+      
       dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
@@ -291,7 +298,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       // Emit the message via Socket.IO
       if (socket) {
         try {
-          socket.emit("chatMessage", msg);
           if (otherPerson.accountType === "bot") {
             const response = await api.post("/api/chat", {
               messages: [...Messages, msg],
@@ -299,6 +305,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             if (response.status !== 200) {
               throw new Error("Failed to get bot response");
             }
+          } else {
+            socket.emit("chatMessage", msg);
           }
           // console.log('Message emitted:', msg);
         } catch (error) {
@@ -320,11 +328,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }, 1000);
     } catch (error) {
       console.error("Error sending message:", error);
+      dispatch(deleteMessage(lastMessageId));
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsTextareaDisabled(false);
     }
   };
 
@@ -473,7 +484,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {callHooks && (
+              {(callHooks && otherPerson?.accountType === "bot") && (
                 <CallButton
                   roomId={pid}
                   targetUserId={friendId}
@@ -685,6 +696,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           handleSendMessage={handleSendMessage}
           handleTyping={handleTyping}
           closeQuote={closeQuote}
+          disbled={isTextareaDisabled}
         />
       )}
       {children}

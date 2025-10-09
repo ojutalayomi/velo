@@ -1,5 +1,5 @@
-import { Textarea } from "@/components/ui/textarea";
-import { X, Send, Smile, Plus, TextQuote, Folder, Image, Paintbrush2 } from "lucide-react";
+import { Cross2Icon } from "@radix-ui/react-icons";
+import { X, Send, Smile, Plus, Folder, Image, Paintbrush2 } from "lucide-react";
 import {
   ChangeEvent,
   Dispatch,
@@ -9,11 +9,20 @@ import {
   useRef,
   useState,
 } from "react";
-import { EmojiPicker } from "@/components/ui/emoji-picker";
+import { useSelector } from "react-redux";
+
+import CropMediaInterface from "@/components/CropMediaInterface";
+import { DocCard } from "@/components/DocCard";
+import ImageDiv from "@/components/imageDiv";
 import { LinkPreview } from "@/components/LinkPreview";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 import {
   Dialog,
   DialogTrigger,
@@ -24,25 +33,19 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
-import ImageDiv from "@/components/imageDiv";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { setToggleDialog } from "@/redux/utilsSlice";
-import VideoDiv from "@/templates/videoDiv";
-import { DocCard } from "@/components/DocCard";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
-import { Cross2Icon } from "@radix-ui/react-icons";
-import CropMediaInterface from "@/components/CropMediaInterface";
+import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
+import { useAppDispatch } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
+import { setToggleDialog } from "@/redux/utilsSlice";
+import VideoDiv from "@/templates/videoDiv";
+
+
 
 type Message = {
   _id: string;
@@ -58,6 +61,7 @@ type QuoteProp = {
 interface ChatTextareaProps {
   quote: QuoteProp;
   newMessage: string;
+  disbled?: boolean;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
   handleSendMessage: (messageId: string) => void;
   handleTyping?: () => void;
@@ -67,6 +71,7 @@ interface ChatTextareaProps {
 const ChatTextarea = ({
   quote,
   newMessage,
+  disbled,
   setNewMessage,
   handleSendMessage,
   handleTyping,
@@ -122,18 +127,18 @@ const ChatTextarea = ({
   const firstUrl = urls[0];
 
   return (
-    <div className="w-full relative">
-      <div className="fixed tablets1:absolute bottom-0 left-0 tablets1:left-auto right-0 tablets1:right-auto tablets1:w-full px-2 py-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg border-t dark:border-zinc-800 z-10">
+    <div className="relative w-full">
+      <div className={cn("fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80", disbled ? " pointer-events-none opacity-70" : "")}>
         {quote.state && (
-          <div className="mb-2 mx-2 bg-gray-100 dark:bg-zinc-800 rounded-lg p-3">
-            <div className="flex items-center justify-between gap-1 max-w-full">
-              <div className="flex items-stretch space-x-2 min-w-0">
+          <div className="mx-2 mb-2 rounded-lg bg-gray-100 p-3 dark:bg-zinc-800">
+            <div className="flex max-w-full items-center justify-between gap-1">
+              <div className="flex min-w-0 items-stretch space-x-2">
                 <div
                   onClick={handleQuoteClick}
-                  className="w-screen gap-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 shadow-inner shadow-gray-300 dark:shadow-zinc-700 transition-colors rounded-lg flex flex-1 break-words text-sm dark:text-slate-200 overflow-hidden"
+                  className="flex w-screen flex-1 cursor-pointer gap-2 overflow-hidden break-words rounded-lg text-sm shadow-inner shadow-gray-300 transition-colors hover:bg-gray-200 dark:text-slate-200 dark:shadow-zinc-700 dark:hover:bg-zinc-700"
                 >
-                  <div className="w-1 h-12 bg-brand rounded-full flex-shrink-0" />
-                  <div className="line-clamp-2 my-auto break-all">{quote.message?.content}</div>
+                  <div className="h-12 w-1 flex-shrink-0 rounded-full bg-brand" />
+                  <div className="my-auto line-clamp-2 break-all">{quote.message?.content}</div>
                 </div>
               </div>
               <button
@@ -141,7 +146,7 @@ const ChatTextarea = ({
                   e.stopPropagation();
                   closeQuote();
                 }}
-                className="p-1 hover:bg-gray-300 dark:hover:bg-zinc-600 rounded-full transition-colors flex-shrink-0"
+                className="flex-shrink-0 rounded-full p-1 transition-colors hover:bg-gray-300 dark:hover:bg-zinc-600"
               >
                 <X size={16} className="text-brand" />
               </button>
@@ -203,7 +208,7 @@ const ChatTextarea = ({
                 }
               }}
               onInput={handleInput}
-              className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
+              className="h-10 max-h-[160px] min-h-10 flex-1 resize-none rounded-2xl border-none bg-gray-100 px-4 py-2 focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:bg-zinc-800 dark:text-slate-200 dark:focus:ring-offset-zinc-900"
             />
             <EmojiPicker
               triggerClassName={`absolute inset-y-0 right-0 flex ${txtButton ? "items-end" : "items-center"} p-3 hover:text-brand/80 rounded-full`}
@@ -215,7 +220,7 @@ const ChatTextarea = ({
           <Button
             disabled={newMessage.length === 0 && attachments.length === 0}
             onClick={() => handleSendMessage(quote.message?._id)}
-            className="!p-2 px-1 mb-1.5 h-auto dark:hover:bg-neutral-800 bg-transparent cursor-pointer text-white rounded-full transition-colors"
+            className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
           >
             <Send size={20} className="text-brand" />
           </Button>
@@ -261,12 +266,12 @@ const Pop = ({ input, setFileAccepts }: PopProps) => {
     <>
       <Popover open={open} onOpenChange={() => setOpen(!open)}>
         <PopoverTrigger asChild>
-          <Button className="p-2 mb-1.5 h-auto dark:hover:bg-neutral-800 bg-transparent cursor-pointer text-white rounded-full transition-colors">
+          <Button className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent p-2 text-white transition-colors dark:hover:bg-neutral-800">
             <Plus size={20} className="text-brand" />
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="bg-white dark:bg-zinc-800 min-w-[160px] p-1 rounded-md shadow-lg w-auto"
+          className="w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg dark:bg-zinc-800"
           align="start"
           sideOffset={10}
         >
@@ -275,7 +280,7 @@ const Pop = ({ input, setFileAccepts }: PopProps) => {
               <button
                 key={index}
                 type="button"
-                className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded"
+                className="flex items-center gap-2 rounded p-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
                 onClick={() => {
                   onClick();
                   setOpen(false);
@@ -333,13 +338,13 @@ const UploadDialog = ({
       }}
     >
       <DialogTrigger className="hidden"></DialogTrigger>
-      <DialogContent className="backdrop-blur-xl bg-transparent border-0 flex flex-col w-screen h-screen max-w-none">
+      <DialogContent className="flex h-screen w-screen max-w-none flex-col border-0 bg-transparent backdrop-blur-xl">
         <DialogHeader>
           <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-            <Cross2Icon className="h-4 w-4" />
+            <Cross2Icon className="size-4" />
             <span className="sr-only">Close</span>
           </DialogClose>
-          <DialogTitle className="dark:text-white text-black">
+          <DialogTitle className="text-black dark:text-white">
             Preview
             <b className="block text-sm font-medium text-white dark:text-gray-700">
               Attach Files ({attachments.length}/{FILE_VALIDATION_CONFIG.maxFiles})
@@ -354,10 +359,10 @@ const UploadDialog = ({
           </p>
           <DialogDescription></DialogDescription>
         </DialogHeader>
-        <div className="flex-1 flex rounded-md max-h-[70%] backdrop-blur-xl shadow-xl h-full">
+        <div className="flex h-full max-h-[70%] flex-1 rounded-md shadow-xl backdrop-blur-xl">
           {inputRef.current?.files && (
-            <Carousel className="w-full flex flex-1 items-center max-h-full">
-              <CarouselContent className="flex max-h-[100%] h-full gap-2 sm:aspect-auto">
+            <Carousel className="flex max-h-full w-full flex-1 items-center">
+              <CarouselContent className="flex h-full max-h-[100%] gap-2 sm:aspect-auto">
                 {attachments.map((File, key) => {
                   const objectURL = URL.createObjectURL(File);
                   const [_, fileType] = File.type.split("/");
@@ -368,7 +373,7 @@ const UploadDialog = ({
                   return (
                     <CarouselItem
                       key={key + objectURL}
-                      className="flex items-center justify-center h-full w-full"
+                      className="flex size-full items-center justify-center"
                     >
                       {isImage ? (
                         <>
@@ -378,7 +383,7 @@ const UploadDialog = ({
                             setFiles={setFiles}
                             imageIndex={key}
                           >
-                            <button className="absolute top-2 left-2 p-1 rounded-full bg-black/50 text-white opacity-0 mb:opacity-100 group-hover:opacity-100 transition-opacity">
+                            <button className="absolute left-2 top-2 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 mb:opacity-100">
                               <Paintbrush2 size={16} />
                             </button>
                           </CropMediaInterface>
@@ -398,8 +403,8 @@ const UploadDialog = ({
                   );
                 })}
               </CarouselContent>
-              <CarouselPrevious className="hidden sm:flex left-2" />
-              <CarouselNext className="hidden sm:flex right-2" />
+              <CarouselPrevious className="left-2 hidden sm:flex" />
+              <CarouselNext className="right-2 hidden sm:flex" />
             </Carousel>
           )}
         </div>
@@ -408,7 +413,7 @@ const UploadDialog = ({
           <div className="text-sm text-white dark:text-gray-600">
             Total Size: {formatFileSize(attachments.reduce((acc, file) => acc + file.size, 0))}
           </div>
-          <div className="flex flex-1 items-center justify-between gap-2 w-full sm:max-w-96">
+          <div className="flex w-full flex-1 items-center justify-between gap-2 sm:max-w-96">
             <Pop input={inputRef} setFileAccepts={() => ".jpg, .jpeg, .png, .gif"} />
             <div className="relative flex-1">
               <Textarea
@@ -433,7 +438,7 @@ const UploadDialog = ({
                     }
                   }
                 }}
-                className="flex-1 min-h-10 h-10 max-h-[160px] px-4 py-2 bg-gray-100 dark:bg-zinc-800 dark:text-slate-200 border-none rounded-2xl resize-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900"
+                className="h-10 max-h-[160px] min-h-10 flex-1 resize-none rounded-2xl border-none bg-gray-100 px-4 py-2 focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:bg-zinc-800 dark:text-slate-200 dark:focus:ring-offset-zinc-900"
               />
               <EmojiPicker
                 triggerClassName="absolute inset-y-0 right-0 flex items-center p-3 hover:text-brand/80 rounded-full"
@@ -449,7 +454,7 @@ const UploadDialog = ({
                 dispatch(setToggleDialog(!toggleDialog));
                 // console.log('send')
               }}
-              className="!p-2 px-1 mb-1.5 h-auto dark:hover:bg-neutral-800 bg-transparent cursor-pointer text-white rounded-full transition-colors"
+              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
             >
               <Send size={20} className="text-brand" />
             </Button>

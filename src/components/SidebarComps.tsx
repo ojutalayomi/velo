@@ -164,7 +164,7 @@ export const SidebarItem = forwardRef<
           <div className={`${!isCollapsed && "md:block"} hidden  transition`}>{label}</div>
           {item.label === "Chats" && i > 0 && (
             <div
-              className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
+              className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white ${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
             >
               {i}
             </div>

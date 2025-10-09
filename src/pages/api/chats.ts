@@ -563,14 +563,25 @@ export const chatRepository = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
-  const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : "").replace(
-    /"/g,
-    ""
-  );
-  // if (!cookies) return res.status(405).end(`Not Allowed`);
-  const payload = (await verifyToken(cookie as unknown as string)) as unknown as Payload;
-  // console.log(payload)
-  if (!payload) return res.status(401).json(`Not Allowed`);
+  
+  // Improved cookie extraction
+  const rawCookie = req.cookies.velo_12;
+  if (!rawCookie) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  
+  // Clean the cookie value - only remove quotes if they exist at the beginning/end
+  const cookie = rawCookie.replace(/^"|"$/g, "");
+  
+  // Additional validation
+  if (!cookie || cookie.trim() === "") {
+    return res.status(401).json({ error: "Invalid authentication token" });
+  }
+  
+  const payload = (await verifyToken(cookie)) as unknown as Payload;
+  if (!payload) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
 
   switch (method) {
     case "GET":

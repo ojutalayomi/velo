@@ -40,7 +40,7 @@ export class ChatMessage implements MessageAttributes {
     this.receiverId = data.receiverId;
     this.content = data.content;
     this.timestamp = data.timestamp || new Date().toISOString(); // Current time
-    this.messageType = ChatMessage.determineMessageType(data);
+    this.messageType = data.messageType || ChatMessage.determineMessageType(data);
     this.isRead = data.isRead || {};
     this.sender = data.sender;
     this.reactions = data.reactions;
@@ -68,8 +68,8 @@ export class ChatMessage implements MessageAttributes {
     };
   }
 
-  public copy(): ChatMessage {
-    return new ChatMessage(this.toMessageAttributes());
+  public copy(): MessageAttributes {
+    return this.toMessageAttributes();
   }
 
   /**

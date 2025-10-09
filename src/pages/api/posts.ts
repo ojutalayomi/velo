@@ -1,9 +1,11 @@
+import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { MongoDBClient } from "@/lib/mongodb";
-import { Db, ObjectId } from "mongodb";
-import { addInteractionFlags } from "../../lib/apiUtils";
+
 import { verifyToken } from "@/lib/auth";
+import { MongoDBClient } from "@/lib/mongodb";
 import { Payload } from "@/lib/types/type";
+
+import { addInteractionFlags } from "../../lib/apiUtils";
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -11,10 +13,19 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
   }
 
   try {
-    const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : "").replace(
-      /"/g,
-      ""
-    );
+    const rawCookie = req.cookies.velo_12;
+    if (!rawCookie) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    // Clean the cookie value - only remove quotes if they exist at the beginning/end
+    const cookie = rawCookie.replace(/^"|"$/g, "");
+    
+    // Additional validation
+    if (!cookie || cookie.trim() === "") {
+      return res.status(401).json({ error: "Invalid authentication token" });
+    }
+    
     const payload = (await verifyToken(cookie)) as unknown as Payload;
     // if (!payload) return res.status(401).json({ error: `Not Allowed` });
     // if (payload.exp < Date.now() / 1000) return res.status(401).json({ error: `Token expired` });

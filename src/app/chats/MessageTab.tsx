@@ -1,7 +1,5 @@
 /* eslint-disable tailwindcss/no-custom-classname */
 "use client";
-import React, { TouchEvent, useEffect, useState } from "react";
-import Image from "next/image";
 import {
   Check,
   CheckCheck,
@@ -14,18 +12,15 @@ import {
   CircleX,
   SmilePlus,
 } from "lucide-react";
-import { MessageAttributes, Reaction } from "@/lib/types/type";
+import React, { TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { useUser } from "@/app/providers/UserProvider";
-import {
-  updateMessageReactions,
-  deleteMessage,
-  updateMessage,
-  updateLiveTime,
-  updateConversation,
-} from "@/redux/chatSlice";
+
 import { useSocket } from "@/app/providers/SocketProvider";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useUser } from "@/app/providers/UserProvider";
+import { LinkPreview } from "@/components/LinkPreview";
+import { Markdown } from "@/components/Markdown";
+import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -36,17 +31,23 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { LinkPreview } from "@/components/LinkPreview";
-import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
-import { MediaCollage } from "./FilesView";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Statuser } from "@/components/VerificationComponent";
-import { renderTextWithLinks } from "../../components/RenderTextWithLinks";
-import { ObjectId } from "mongodb";
-import { generateObjectId } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MessageAttributes, Reaction } from "@/lib/types/type";
+import {
+  deleteMessage,
+  updateMessage,
+  updateLiveTime,
+  updateConversation,
+} from "@/redux/chatSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
+import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
+
+import { MediaCollage } from "./FilesView";
 import { ReactionsInfo } from "./ReactionsInfo";
+
+
 
 type Message = {
   _id: string;
@@ -72,7 +73,7 @@ type Option = {
   onClick: () => void; // Click handler function
 };
 
-const MessageTab = ({ message, setQuote, chat = "DM" }: Props) => {
+const MessageTab = ({ message, setQuote }: Props) => {
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
   const [open, setOpen] = useState(false);
@@ -139,7 +140,6 @@ const MessageTab = ({ message, setQuote, chat = "DM" }: Props) => {
 
   // Update the optionss array to use the defined type
   const IsSelected = selectedMessages.includes(String(message._id));
-  const isRead = message.isRead?.[String(userdata._id)] || false;
   const optionss: Option[] = [
     {
       icon: TextQuote,
@@ -270,107 +270,6 @@ const MessageTab = ({ message, setQuote, chat = "DM" }: Props) => {
     if (selectedMessages.length) dispatch(addSelectedMessage(message._id as string));
   };
 
-  if (chat === "Group") {
-    return (
-      <>
-        <div
-          id={message._id as string}
-          onClick={handleClick}
-          onTouchStart={handleTouch}
-          onContextMenu={handleContextMenu}
-          className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} mb-4 flex flex-col transition-colors duration-300 dark:text-gray-400`}
-        >
-          <div
-            className={`flex max-w-[90%] flex-1 ${senderId === userdata._id ? "flex-row-reverse ml-auto" : "mr-auto"} relative items-start gap-3`}
-          >
-            <div
-              className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
-            >
-              {message.attachments.length ? <MediaCollage media={message.attachments} /> : <></>}
-
-              {/* Message bubble */}
-              <div
-                className={`relative max-w-full rounded-lg p-2 ${
-                  senderId === userdata._id
-                    ? "bg-brand text-white rounded-tr-none"
-                    : "rounded-tl-none bg-gray-100 dark:bg-zinc-800"
-                }`}
-                onTouchStart={handleTouch1}
-                onContextMenu={handleContextMenu1}
-              >
-                {/* Sender name for other users */}
-                {senderId !== userdata._id && (
-                  <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-1">
-                      <Avatar className="mt-1 size-8">
-                        <AvatarImage src={displayPicture} alt={sender} />
-                        <AvatarFallback>{sender?.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {sender}
-                      </span>
-                      {verified && <Statuser className="size-4" />}
-                    </div>
-                    <Options options={optionss} open={open} setOpen={setOpen} />
-                  </div>
-                )}
-                {/* Quote and Link Preview */}
-                {message.quotedMessageId && <Quote message={message} senderId={senderId} />}
-                {firstUrl && <LinkPreview url={firstUrl} />}
-                <p className="whitespace-pre-wrap break-words py-1 text-sm">
-                  {messageContent.length > MAX_LENGTH && !isExpanded
-                    ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
-                    : renderTextWithLinks(messageContent)}
-                </p>
-
-                {messageContent.length > MAX_LENGTH && (
-                  <Button
-                    variant="link"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className={`mt-1 text-sm ${
-                      senderId === userdata._id ? "text-gray-200" : "text-gray-500"
-                    } hover:underline`}
-                  >
-                    {isExpanded ? "Read less" : "Read more"}
-                  </Button>
-                )}
-
-                {/* Time and status */}
-                <div
-                  className={`flex items-center gap-2 text-nowrap text-xs ${
-                    senderId === userdata._id ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {time}
-                  {senderId === userdata._id && renderStatusIcon(message.status)}
-                </div>
-              </div>
-
-              {/* Reactions */}
-              <div
-                className={`${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} z-10 -mt-3 flex items-center gap-1`}
-              >
-                {senderId === userdata._id && (
-                  <div className="flex items-center gap-1 rounded-full border bg-white p-1 dark:border-gray-200 dark:bg-zinc-800">
-                    <Options options={optionss} open={open} setOpen={setOpen} />
-                  </div>
-                )}
-                <ReactionSection
-                  message={message}
-                  senderId={senderId}
-                  setReactionInfoDisplay={setReactionInfoDisplay}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        {rectionInfoDisplay && (
-          <ReactionsInfo message={message} setReactionInfoDisplay={setReactionInfoDisplay} />
-        )}
-      </>
-    );
-  }
-
   return (
     <>
       <div
@@ -399,51 +298,97 @@ const MessageTab = ({ message, setQuote, chat = "DM" }: Props) => {
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
             >
+              {/* Sender name for other users */}
+              {(senderId !== userdata._id && message.chatType === "Group") && (
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1">
+                    <Avatar className="mt-1 size-8">
+                      <AvatarImage src={displayPicture} alt={sender} />
+                      <AvatarFallback>{sender?.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {sender}
+                    </span>
+                    {verified && <Statuser className="size-4" />}
+                  </div>
+                  
+                </div>
+              )}
+
               {/* Quote and Link Preview */}
               {message.quotedMessageId && <Quote message={message} senderId={senderId} />}
               {firstUrl && <LinkPreview url={firstUrl} />}
+
               {/* Message Content */}
               <div className="">
-                <p
-                  className="whitespace-pre-wrap break-words py-1 text-sm"
-                  style={{ fontFamily: "inherit" }}
-                >
-                  {messageContent.length > MAX_LENGTH && !isExpanded
-                    ? renderTextWithLinks(messageContent.slice(0, MAX_LENGTH) + "...")
-                    : renderTextWithLinks(messageContent)}
-                </p>
-                {messageContent.length > MAX_LENGTH && (
-                  <Button
-                    variant="link"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className={`mt-1 text-sm ${
-                      senderId === userdata._id ? "text-gray-200" : "text-gray-500"
-                    } hover:underline`}
-                  >
-                    {isExpanded ? "Read less" : "Read more"}
-                  </Button>
-                )}
+                {/* Determine which portion of the message to display (truncated or full) */}
+                {(() => {
+                  const contentToDisplay =
+                    messageContent.length > MAX_LENGTH && !isExpanded
+                      ? messageContent.slice(0, MAX_LENGTH) + "..."
+                      : messageContent;
+
+                  return (
+                    <>
+                      {message.messageType === "Markdown" ? (
+                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                          <Markdown>{contentToDisplay}</Markdown>
+                        </div>
+                      ) : (
+                        <p
+                          className="whitespace-pre-wrap break-words py-1 text-sm"
+                          style={{ fontFamily: "inherit" }}
+                        >
+                          {renderTextWithLinks(contentToDisplay)}
+                        </p>
+                      )}
+
+                      {/* Show the "Read more/less" button if the original message is long */}
+                      {messageContent.length > MAX_LENGTH && (
+                        <Button
+                          variant="link"
+                          onClick={() => setIsExpanded(!isExpanded)}
+                          className={`mt-1 text-sm ${
+                            senderId === userdata._id ? "text-gray-200" : "text-gray-500"
+                          } hover:underline`}
+                        >
+                          {isExpanded ? "Read less" : "Read more"}
+                        </Button>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
+
               <div
                 className={`${senderId === userdata._id ? "justify-end text-right" : "justify-start text-left"} mt-1 flex items-center gap-2 text-nowrap text-xs`}
               >
                 <div className="after:content-[ • ] dark:after:text-slate-200">{time}</div>
                 {senderId === userdata._id && renderStatusIcon(message.status)}
               </div>
+
             </div>
           </div>
 
           {/* Message Options */}
-          <Options options={optionss} open={open} setOpen={setOpen} />
+          {senderId !== userdata._id && (
+            <Options options={optionss} open={open} setOpen={setOpen} />
+          )}
         </div>
 
         {/* Message Footer */}
+
         {/* Reactions */}
         <ReactionSection
           message={message}
           senderId={senderId}
           setReactionInfoDisplay={setReactionInfoDisplay}
         />
+
+        {message.messageType === "Markdown" && (
+          <Options options={optionss} open={open} setOpen={setOpen} />
+        )}
+
       </div>
       {rectionInfoDisplay && (
         <ReactionsInfo message={message} setReactionInfoDisplay={setReactionInfoDisplay} />
@@ -464,34 +409,6 @@ const ReactionSection = ({
   setReactionInfoDisplay: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const { userdata } = useUser();
-  const socket = useSocket();
-  const dispatch = useAppDispatch();
-
-  const onEmojiClick = (emoji: string) => {
-    if (message._id) {
-      if (socket) {
-        dispatch(
-          updateMessageReactions({
-            id: message._id as string,
-            updates: {
-              _id: generateObjectId() as unknown as ObjectId,
-              messageId: message._id as string,
-              userId: String(userdata._id),
-              reaction: emoji,
-              timestamp: new Date().toISOString(),
-            },
-          })
-        );
-        socket.emit("addReaction", {
-          messageId: message._id as string,
-          userId: String(userdata._id),
-          reaction: emoji,
-          timestamp: new Date().toISOString(),
-        });
-        setReactionInfoDisplay(false);
-      }
-    }
-  };
 
   const reactionArray: Reaction[] = [];
 
@@ -511,11 +428,6 @@ const ReactionSection = ({
           const reactionCount = message.reactions.filter(
             (r) => r.reaction === reaction.reaction
           ).length;
-          const check =
-            reactionCount > 1 &&
-            message.reactions.find(
-              (r) => r.userId === userdata._id && r.reaction === reaction.reaction
-            );
           acc.push(
             <span key={index} title={`${reaction.userId}`} className="cursor-pointer text-xs">
               {reaction.reaction}
@@ -543,7 +455,6 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
   const messages = useSelector((state: RootState) => state.chat.messages);
 
   const Messages = messages?.filter((msg) => {
-    const sender = "sender" in msg ? msg?.sender?.name : "";
     return msg.chatId === message.chatId;
   });
 

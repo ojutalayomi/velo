@@ -71,7 +71,8 @@ export type MessageType =
   | "PollResult"
   | "AnimatedGIF"
   | "Announcement"
-  | "Link";
+  | "Link"
+  | "Markdown";
 
 export interface ChatData {
   _id: ObjectId;

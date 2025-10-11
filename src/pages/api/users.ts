@@ -81,9 +81,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         res.status(400).json({ error: "Invalid ObjectId format" });
         return; 
       }
-      const foundUser = await db.users().findOne({
-        $or: [{ _id: ObjectId.isValid(query as string) ? new ObjectId(query as string) : undefined }, { username: query as string }],
-      });
+      const foundUser = ObjectId.isValid(query as string) ? await db.users().findOne({
+        $or: [{ _id:  new ObjectId(query as string) }, { username: query as string }],
+      }) : null;
 
       if (!foundUser) {
         return res.status(400).json({ error: "User not found" });

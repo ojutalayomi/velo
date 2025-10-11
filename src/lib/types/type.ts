@@ -75,12 +75,11 @@ export type MessageType =
   | "Markdown";
 
 export interface ChatData {
-  _id: ObjectId;
+  _id: ObjectId | string;
   name: {
     [id: string]: string;
   };
   chatType: ChatType;
-  participants: Participant[];
   groupDescription: string;
   groupDisplayPicture: string;
   verified: boolean;
@@ -88,6 +87,7 @@ export interface ChatData {
   inviteLink: string;
   isPrivate: boolean;
   timestamp: string;
+  lastMessageId: string;
   lastUpdated: string;
 }
 
@@ -287,24 +287,12 @@ export interface PostSchema_ {
   ParentId: string;
 }
 
-export interface ChatDataServer {
+export interface ChatDataServer extends ChatData {
   _id: ObjectId;
-  name: {
-    [id: string]: string;
-  };
-  chatType: ChatType;
-  groupDescription: string;
-  groupDisplayPicture: string;
-  verified: boolean;
-  adminIds: string[];
-  inviteLink: string;
-  isPrivate: boolean;
-  timestamp: string;
-  lastMessageId: string;
-  lastUpdated: string;
 }
 
-export interface ChatDataClient extends ChatDataServer {
+export interface ChatDataClient extends ChatData {
+  _id: string;
   participants: ChatParticipant[];
 }
 
@@ -328,6 +316,7 @@ export type AllChatsServer = {
 
 export interface NewChat_ {
   chat: ChatDataClient;
+  chatSettings: ChatSettings,
   requestId: string;
 }
 

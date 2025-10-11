@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
-import LeftSideBar from "@/components/LeftSideBar";
+import RightSideBar from "@/components/RightSideBar";
 import { UserSettings } from "@/lib/types/type";
 import { updateSettings } from "@/redux/userSlice";
 
@@ -236,7 +236,7 @@ const PrivacySecurityPage = () => {
           </section>
         </main>
       </div>
-      <LeftSideBar />
+      <RightSideBar />
     </div>
   );
 };

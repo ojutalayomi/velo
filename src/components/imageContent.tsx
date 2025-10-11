@@ -1,8 +1,9 @@
 "use client";
-import React from "react";
 import { Check } from "lucide-react";
-import { Statuser } from "./VerificationComponent";
+import React from "react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Statuser } from "./VerificationComponent";
 
 interface Props {
   userdata: any;
@@ -13,24 +14,23 @@ interface Props {
 export const UserProfileLazyLoader = () => {
   return (
     <div className="flex items-center">
-      <div className="relative w-7 h-7 mr-3">
-        <div className="w-7 h-7 rounded-full bg-gray-200 animate-pulse" />
+      <div className="relative mr-3 size-7">
+        <div className="size-7 animate-pulse rounded-full bg-gray-200" />
       </div>
       <div>
-        <div className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" />
-        <div className="w-20 h-3 bg-gray-200 rounded animate-pulse" />
+        <div className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
+        <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
       </div>
     </div>
   );
 };
 
 const ImageContent: React.FC<Props> = ({ userdata, onClick, selectedUsers = [] }) => {
-  const url = "https://s3.amazonaws.com/profile-display-images/";
 
   if (!userdata._id) return <UserProfileLazyLoader />;
   return (
     <div
-      className="cursor-pointer px-2 py-1 rounded-full hover:bg-slate-200 hover:dark:bg-zinc-700 transition-colors duration-150 tablets1:duration-300 flex items-center justify-between"
+      className="flex cursor-pointer items-center justify-between rounded-full px-2 py-1 transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 hover:dark:bg-zinc-700"
       onClick={() => onClick(userdata._id)}
     >
       <div className="flex items-center gap-2">
@@ -49,12 +49,12 @@ const ImageContent: React.FC<Props> = ({ userdata, onClick, selectedUsers = [] }
                     : userdata.displayPicture
                 : ""
             }
-            className="displayPicture dark:border-slate-200 size-10 rounded-full mr-3"
+            className="displayPicture mr-3 size-10 rounded-full dark:border-slate-200"
             alt="Display Picture"
           />
         </Avatar>
         <div>
-          <p className="flex items-center font-bold dark:text-slate-200 gap-1 text-sm">
+          <p className="flex items-center gap-1 text-sm font-bold dark:text-slate-200">
             {userdata.name ? userdata.name : `${userdata.firstname} ${userdata.lastname}`}
             {userdata?.verified && <Statuser className="size-4" />}
           </p>

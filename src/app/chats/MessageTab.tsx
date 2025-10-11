@@ -37,9 +37,9 @@ import { MessageAttributes, Reaction } from "@/lib/types/type";
 import {
   deleteMessage,
   updateMessage,
-  updateLiveTime,
   updateConversation,
 } from "@/redux/chatSlice";
+import { updateLiveTime } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";

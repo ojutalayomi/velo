@@ -16,13 +16,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { axiosApi } from "@/lib/api";
+import { Chat } from "@/lib/class/Chat";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
 import { Attachment, ChatType, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { timeFormatter as timeFormatterUtils } from "@/lib/utils";
-import { updateConversation, addMessage, setNewGroupMembers } from "@/redux/chatSlice";
+import { updateConversation, addMessage, setNewGroupMembers, addConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
@@ -389,7 +391,25 @@ const ChatPage = () => {
         });
         return;
       }
+      // Emit the message via Socket.IO
+      if (socket) {
+        try {
+          if (newPerson?.accountType === "bot") {
+            const response = await axiosApi.post("/chat", {
+              messages: [msg],
+            });
+            if (response.status !== 200) {
+              throw new Error("Failed to get bot response");
+            }
+          }
+          
+        } catch (error) {
+          console.error("Socket emission error:", error);
+        }
+      }
 
+      const chat = new Chat(result.chat, [])
+      dispatch(addConversation(chat.getConvo(userdata._id)))
       dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
@@ -433,7 +453,7 @@ const ChatPage = () => {
     router.push("/chats");
   };
 
-  const options = [{ id: 1, name: "View contact", action: () => console.log("View contact") }];
+  const options = [{ id: 1, name: "View contact", action: () => router.push(`/${newPerson?.username}`) }];
 
   return (
     <div
@@ -478,9 +498,7 @@ const ChatPage = () => {
                     className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (socket) {
-                        option.action();
-                      }
+                      option.action();
                     }}
                   >
                     {option.name}
@@ -584,7 +602,7 @@ const ChatPage = () => {
                 ) : (
                   <div className="flex items-center justify-center gap-2">
                     <Button className="bg-brand text-white hover:bg-brand/95">
-                      {newPerson?.isFollowing ? (
+                      {!newPerson?.isFollowing ? (
                         <>
                           <UserPlus2 className="size-4" />
                           Follow

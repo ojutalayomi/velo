@@ -20,17 +20,16 @@ import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "@/hooks/use-toast";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { api } from "@/lib/api";
+import { axiosApi } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import { Attachment, ChatType, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
-import { generateObjectId, timeFormatter } from "@/lib/utils";
+import { generateObjectId, timeFormatter, updateLiveTime } from "@/lib/utils";
 import {
   ConvoType,
   updateConversation,
   addMessage,
   updateMessage,
-  updateLiveTime,
   deleteConversation,
   deleteMessage,
 } from "@/redux/chatSlice";
@@ -299,7 +298,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       if (socket) {
         try {
           if (otherPerson.accountType === "bot") {
-            const response = await api.post("/api/chat", {
+            const response = await axiosApi.post("/chat", {
               messages: [...Messages, msg],
             });
             if (response.status !== 200) {
@@ -391,7 +390,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   };
 
   const options = [
-    { id: 1, name: "View contact", action: () => console.log("View contact") },
+    { id: 1, name: "View contact", action: () => router.push(`/${otherPerson.username}`) },
     { id: 2, name: "Search", action: () => openSearchBar(true) },
     { id: 3, name: "Mute notifications", action: () => console.log("Mute notifications") },
     { id: 4, name: "Wallpaper", action: () => console.log("Wallpaper") },

@@ -36,10 +36,10 @@ import {
   addSetting,
   fetchChats,
   addConversation,
-  Time,
   updateMessage,
   updateMessageReactions,
 } from "@/redux/chatSlice";
+import { Time } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, deletePost, updatePost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";

@@ -1,13 +1,14 @@
 // profile/layout.tsx
 import { Metadata } from "next";
+
 import { getUser } from "./action";
 
-let baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
-let defaultDescription =
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
+const defaultDescription =
   "Velo is a modern social platform for sharing, connecting, and discovering new content.";
-let defaultTitle = "Velo App";
-let siteName = "Velo";
-let defaultImage = baseUrl + "/velo11.png";
+const defaultTitle = "Velo App";
+const siteName = "Velo";
+const defaultImage = baseUrl + "/velo11.png";
 
 export async function generateMetadata({
   params,

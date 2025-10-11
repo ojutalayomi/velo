@@ -1,20 +1,15 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useUser } from "@/app/providers/UserProvider";
-import { useSelector } from "react-redux";
-import { showChat } from "@/redux/navigationSlice";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { updateLiveTime, updateConversation, deleteConversation } from "@/redux/chatSlice";
-import { ConvoType, MessageAttributes, NewChatSettings } from "@/lib/types/type";
-import { Pin } from "lucide-react";
-import { useSocket } from "@/app/providers/SocketProvider";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Statuser } from "@/components/VerificationComponent";
+import { ArrowUpRight, Ellipsis, MessageSquareText, Pin } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { useMediaQuery } from "usehooks-ts";
+
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerContent,
@@ -29,7 +24,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Ellipsis } from "lucide-react";
+import { Statuser } from "@/components/VerificationComponent";
+import { ConvoType, MessageAttributes, NewChatSettings } from "@/lib/types/type";
+import { updateLiveTime } from "@/lib/utils";
+import { updateConversation, deleteConversation } from "@/redux/chatSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
+
+
+
 
 type FilteredChatsProps = {
   filteredChats: () => Array<ConvoType>;
@@ -39,18 +42,6 @@ type FilteredChatsProps = {
 
 interface Props {
   chat: ConvoType;
-}
-
-interface ChatSetting {
-  [x: string]: NewChatSettings;
-}
-
-interface CHT {
-  messages: MessageAttributes[];
-  settings: ChatSetting;
-  conversations: ConvoType[];
-  loading: boolean;
-  isOnline: boolean;
 }
 
 const Card: React.FC<Props> = ({ chat }) => {
@@ -151,12 +142,13 @@ const Card: React.FC<Props> = ({ chat }) => {
           });
           setIsDeleted(true);
           break;
-        case option.name.toLowerCase().includes("read"):
+        case option.name.toLowerCase().includes("read"): {
           const unread = isUnread ? 1 : 0;
           socket.emit("updateConversation", {
             id: chat.id,
             updates: { unreadCount: unread, userId: userdata._id },
           });
+          }
           setIsUnread(!isUnread);
           break;
         default:
@@ -183,7 +175,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     if (isMobile) {
       longPressTimeout.current = setTimeout(() => {
         setDrawerOpen(true);
-      }, 500);
+      }, 1000);
     }
   };
 
@@ -212,7 +204,7 @@ const Card: React.FC<Props> = ({ chat }) => {
       }
     >
       <div
-        className="group bg-white dark:bg-zinc-900 dark:text-white hover:bg-slate-200 hover:dark:bg-zinc-700 p-3 cursor-pointer rounded-lg shadow-bar dark:shadow-bar-dark flex items-center gap-3 overflow-visible transition-colors duration-150 tablets1:duration-300 relative"
+        className="group relative flex cursor-pointer items-center gap-3 overflow-visible rounded-lg bg-white p-3 shadow-bar transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 dark:bg-zinc-900 dark:text-white dark:shadow-bar-dark hover:dark:bg-zinc-700"
         onContextMenu={handleContextMenu}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -222,7 +214,7 @@ const Card: React.FC<Props> = ({ chat }) => {
         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <button
-              className="absolute right-0 mr-4 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto rounded-full p-1 border-2 bg-white dark:bg-black border-zinc-200 dark:border-zinc-900 overflow-hidden transition-opacity"
+              className="pointer-events-none absolute right-0 mr-4 overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 dark:border-zinc-900 dark:bg-black"
               onClick={handleEllipsisClick}
             >
               <Ellipsis className="size-6" />
@@ -252,15 +244,15 @@ const Card: React.FC<Props> = ({ chat }) => {
               <span className="hidden"> {/* No visible trigger, open via long-press */}</span>
             </DrawerTrigger>
             <DrawerContent aria-describedby="Options" aria-labelledby="Options">
-              <DrawerHeader className="text-left hidden">
+              <DrawerHeader className="hidden text-left">
                 <DrawerTitle className="text-left">Options</DrawerTitle>
                 <DrawerDescription className="text-left">Options</DrawerDescription>
               </DrawerHeader>
-              <ul className="flex flex-col p-4 space-y-2">
+              <ul className="flex flex-col space-y-2 p-4">
                 {options.map((option) => (
                   <li
                     key={option.id}
-                    className="w-full text-left py-2 px-3 rounded hover:bg-muted cursor-pointer"
+                    className="w-full cursor-pointer rounded px-3 py-2 text-left hover:bg-muted"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -277,35 +269,36 @@ const Card: React.FC<Props> = ({ chat }) => {
         )}
         {/* Avatar and chat info */}
         <div className="relative">
-          <Avatar>
+          <Avatar
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              fullscreen();
+            }}>
             <AvatarFallback>{(chat.name ?? "????").slice(0, 2)}</AvatarFallback>
             <AvatarImage
               src={chat.displayPicture}
-              onClick={(e) => {
-                e.preventDefault();
-                fullscreen();
-              }}
               height={40}
               width={40}
               alt={chat.name}
-              className="w-10 h-10 min-w-10 rounded-full"
+              className="size-10 min-w-10 rounded-full"
             />
           </Avatar>
           {chat.type === "DM" &&
             onlineUsers.includes(chat.participants.find((id) => id !== userdata._id) as string) && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+              <div className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-white bg-green-500" />
             )}
         </div>
-        <div className="flex-grow w-1/4">
-          <div className="flex justify-between items-baseline">
+        <div className="w-1/4 flex-grow">
+          <div className="flex items-baseline justify-between">
             <div className="flex items-center gap-1">
-              <h2 className="font-semibold truncate">
+              <h2 className="truncate font-semibold">
                 {chat.name + (chat.type === "Personal" ? " (You)" : "")}
               </h2>
               {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
             </div>
           </div>
-          <p className="text-sm text-gray-600 truncate">
+          <p className="truncate text-sm text-gray-600">
             {filteredIsTypingList?.length > 0
               ? chat.type === "DM"
                 ? filteredIsTypingList.map((i) => i.name).join(", ") + " " + "is" + " typing..."
@@ -317,17 +310,17 @@ const Card: React.FC<Props> = ({ chat }) => {
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span className="group-hover:hidden text-sm text-gray-500 text-nowrap">{time}</span>
+          <span className="text-nowrap text-sm text-gray-500 group-hover:hidden">{time}</span>
           <div className="flex items-center gap-2">
             {chat.unread > 0 && (
-              <div className="bg-brand text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <div className="flex size-5 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
                 {chat.unread}
               </div>
             )}
             {chat.pinned && (
               <Pin
                 size={21}
-                className={`text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
+                className={`cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200`}
                 onClick={(event) => {
                   event.stopPropagation();
                   if (socket) {
@@ -344,26 +337,31 @@ const Card: React.FC<Props> = ({ chat }) => {
             )}
           </div>
         </div>
-        {showFullscreen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowFullscreen(false)}
-          >
-            <Image
-              src={
-                chat.displayPicture
-                  ? chat.displayPicture.includes("ila-")
-                    ? "/default.jpeg"
-                    : chat.displayPicture
-                  : "/default.jpeg"
-              }
-              height={500}
-              width={500}
+
+        {/* Fullscreen image */}
+        <Dialog open={showFullscreen} onOpenChange={setShowFullscreen}>
+          <DialogContent className="flex flex-col items-center justify-center">
+            <Avatar className="size-64">
+              <AvatarImage
+              src={chat.displayPicture}
               alt={chat.name}
-              className="max-h-[90vh] w-auto object-contain rounded-lg"
-            />
-          </div>
-        )}
+              className="size-64 rounded-full object-cover dark:border-slate-200"
+              />
+              <AvatarFallback className="text-6xl capitalize">
+                {chat.name?.slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <DialogTitle className="flex items-center gap-1">{chat.name}{" "}{chat.verified && <Statuser className="size-4 flex-shrink-0" />}</DialogTitle>
+            <DialogDescription className="flex items-center gap-2">
+              <span className="flex items-center gap-1 rounded-full bg-brand p-2 text-white">
+                <MessageSquareText className="size-8 flex-shrink-0" />
+              </span>
+              <span className="flex items-center gap-1 rounded-full bg-brand p-2 text-white">
+                <ArrowUpRight className="size-8 flex-shrink-0" />
+              </span>
+            </DialogDescription>
+          </DialogContent>
+        </Dialog>
       </div>
     </Link>
   );
@@ -375,7 +373,7 @@ const ChatListPage: React.FC<FilteredChatsProps> = ({
   className1 = "mb-10",
 }) => {
   return (
-    <div className={`flex-grow h-full ${className}`}>
+    <div className={`h-full flex-grow ${className}`}>
       <div className={`flex flex-col gap-2 ${className1} tablets1:mb-0`}>
         {filteredChats()
           .sort((a, b) => {

@@ -40,7 +40,7 @@ export class ChatMessage implements MessageAttributes {
     this.receiverId = data.receiverId;
     this.content = data.content;
     this.timestamp = data.timestamp || new Date().toISOString(); // Current time
-    this.messageType = data.messageType || ChatMessage.determineMessageType(data);
+    this.messageType = ChatMessage.determineMessageType(data);
     this.isRead = data.isRead || {};
     this.sender = data.sender;
     this.reactions = data.reactions;
@@ -123,10 +123,10 @@ export class ChatMessage implements MessageAttributes {
 
     // Default Fallback
     if (content.length > 0) {
-      return "Text";
+      return "Markdown";
     }
 
     // Failsafe for an empty message (shouldn't happen in a valid chat system)
-    return "Text"; 
+    return "Markdown"; 
   }
 }

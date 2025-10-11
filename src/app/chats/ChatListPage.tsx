@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Statuser } from "@/components/VerificationComponent";
-import { ConvoType, MessageAttributes, NewChatSettings } from "@/lib/types/type";
+import { ConvoType } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import { updateConversation, deleteConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";

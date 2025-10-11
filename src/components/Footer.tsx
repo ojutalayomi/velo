@@ -1,19 +1,20 @@
 "use client";
+import Link from "next/link";
 import React from "react";
 
 export const Footer = () => {
   const year = new Date().getFullYear();
 
   return (
-    <div className="!my-8 mx-4 text-xs text-gray-400 space-y-2">
+    <div className="!my-8 mx-4 space-y-2 text-xs text-gray-400">
       <div className="flex flex-wrap gap-x-2">
         <a href="#" className="hover:underline">
           About
         </a>
         ·
-        <a href="#" className="hover:underline">
+        <Link href="/help-support" className="hover:underline">
           Help
-        </a>
+        </Link>
         ·
         <a href="#" className="hover:underline">
           Press

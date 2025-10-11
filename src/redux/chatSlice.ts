@@ -1,7 +1,7 @@
 // redux/chatSlice.ts
 import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
-import moment from "moment";
 
+import { Chat } from "@/lib/class/Chat";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
 import { networkMonitor } from "@/lib/network";
@@ -46,79 +46,6 @@ export { defaultSettings };
 const stt = {
   "": defaultSettings,
 };
-export const Time = (params: string | Date) => {
-  const dateObj = new Date(params);
-
-  // Define options for formatting the date
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  };
-
-  // Format the Date object to the desired format
-  const formattedDateStr = dateObj.toLocaleString("en-US", options);
-
-  // Print the result
-  return formattedDateStr;
-};
-export function timeFormatter(Time: string) {
-  const date = moment(Time, moment.ISO_8601);
-  const formattedDate = date.format("MMM D, YYYY h:mm:ss A");
-  return formattedDate;
-}
-
-export function updateLiveTime(
-  response: "countdown" | "getlivetime" | "chat-time",
-  Time: string
-): string {
-  const time = new Date(timeFormatter(Time)).getTime();
-  const now = new Date().getTime();
-  let distance: number;
-
-  if (response === "countdown") {
-    // Find the distance between now an the count down date
-    distance = time - now;
-  } else if (response === "getlivetime") {
-    // Find the distance between now an the count up date
-    distance = now - time;
-  } else if (response === "chat-time") {
-    // Add hh:mm am/pm
-    const timeObj = new Date(Time);
-    const formattedTime = timeObj.toLocaleString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-    return formattedTime;
-  } else {
-    throw new Error("Invalid response type. Expected 'countdown' or 'getlivetime' or 'chat-time'.");
-  }
-
-  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-  let liveTime: string;
-
-  if (days > 0) {
-    const [date] = Time.split(",");
-    liveTime = date;
-  } else if (hours > 0) {
-    liveTime = hours + (hours === 1 ? " hr" : " hrs");
-  } else if (minutes > 0) {
-    liveTime = minutes + (minutes === 1 ? " min" : " mins");
-  } else {
-    liveTime = seconds + (seconds === 1 ? " sec" : " secs");
-  }
-
-  return liveTime;
-}
 
 const chatSlice = createSlice({
   name: "chat",
@@ -303,62 +230,11 @@ export const fetchChats = async (dispatch: Dispatch) => {
     dispatch(setLoading(true));
     const chats = await chatSystem.getAllChats();
 
-    function filter(param: string) {
-      if (!chats.messages) return;
-      const filteredResults = chats.messages.filter((msg: MessageAttributes) => msg._id === param);
-      const result = filteredResults[0];
-      return filteredResults.length > 0
-        ? `${result.attachments.length > 0 ? "📷 " : ""}${result.content}`
-        : null;
-    }
-
     const uid = chats.requestId;
     dispatch(setUserId(uid));
-    const conversations = chats.chats?.map((convo) => {
-      const participant = convo.participants.find((p) => p.userId === uid);
-      // const otherParticipant = convo.participants.find(p => p.id !== uid);
-      const displayPicture = convo.participants
-        ? convo.participants.length > 1
-          ? convo.participants.find((p) => p.userId !== uid)?.displayPicture
-          : convo.participants.find((p) => p.userId === uid)?.displayPicture
-        : undefined;
 
-      const getName = () =>
-        convo.participants.length === 1
-          ? convo.name[uid]
-          : convo.name[
-              Object.keys(convo.name).find((e) => !e.includes(uid)) || "Unknown Participant"
-            ];
-      return {
-        id: convo._id.toString(),
-        type: convo.chatType,
-        name:
-          convo.chatType === "DM"
-            ? getName()
-            : convo.chatType === "Personal"
-              ? convo.name[uid]
-              : convo.name.group,
-        lastMessage: convo.lastMessageId
-          ? filter(convo?.lastMessageId) || "🚫 Message not found"
-          : "📝 Be the first to send a message",
-        timestamp: convo.timestamp,
-        unread: participant?.unreadCount || 0,
-        displayPicture:
-          convo.chatType === "DM" || convo.chatType === "Personal"
-            ? (displayPicture as string)
-            : convo.groupDisplayPicture,
-        description:
-          convo.chatType === "DM" || convo.chatType === "Personal" ? "" : convo.groupDescription,
-        verified: convo.verified || false,
-        favorite: participant?.favorite || false,
-        pinned: participant?.pinned || false,
-        deleted: participant?.deleted || false,
-        archived: participant?.archived || false,
-        lastUpdated: Time(convo.lastUpdated),
-        participants: convo.participants.map((p) => p.userId),
-        online: false,
-        isTypingList: [],
-      };
+    const conversations = chats.chats?.map(chat => {
+      return new Chat(chat, chats.messages).getConvo(uid)
     });
 
     dispatch(setConversations(conversations));

@@ -4,7 +4,7 @@ import { notFound, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useSocket } from "@/app/providers/SocketProvider";
-import LeftSideBar from "@/components/LeftSideBar";
+import RightSideBar from "@/components/RightSideBar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
@@ -286,7 +286,7 @@ export default function Profile({
         <ContentSection profileData={profileData} posts={postCards} />
       </div>
 
-      <LeftSideBar />
+      <RightSideBar />
     </div>
   );
 }

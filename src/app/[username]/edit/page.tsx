@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import LeftSideBar from "@/components/LeftSideBar";
+import RightSideBar from "@/components/RightSideBar";
 import { updateUserData } from "@/redux/userSlice";
 import { useDispatch } from "react-redux";
 
@@ -294,7 +294,7 @@ export default function EditProfile() {
           </div>
         </form>
       </div>
-      <LeftSideBar />
+      <RightSideBar />
     </div>
   );
 }

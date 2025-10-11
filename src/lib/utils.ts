@@ -1,6 +1,9 @@
-import { clsx, type ClassValue } from "clsx";
 import crypto from "crypto";
+
+import { clsx, type ClassValue } from "clsx";
+import moment from "moment";
 import { twMerge } from "tailwind-merge";
+
 import { FileValidationConfig } from "./types/type";
 
 export const generateRandomToken = (length: number) => {
@@ -17,8 +20,8 @@ export function delay(ms: number): Promise<void> {
 
 export function timeFormatter() {
   const time = new Date().toLocaleString();
-  const [datePart, _] = time.split(", ");
-  let [month, day, year] = datePart.split("/");
+  const [datePart] = time.split(", ");
+  const [month, day, year] = datePart.split("/");
   const formattedDate = year + "/" + month + "/" + day;
   return formattedDate;
 }
@@ -100,3 +103,78 @@ export const generateObjectId = () => {
 
   return timestamp + machineId + processId + counter;
 };
+
+export const Time = (params: string | Date) => {
+  const dateObj = new Date(params);
+
+  // Define options for formatting the date
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  };
+
+  // Format the Date object to the desired format
+  const formattedDateStr = dateObj.toLocaleString("en-US", options);
+
+  // Print the result
+  return formattedDateStr;
+};
+export function formatTime(Time: string) {
+  const date = moment(Time, moment.ISO_8601);
+  const formattedDate = date.format("MMM D, YYYY h:mm:ss A");
+  return formattedDate;
+}
+
+export function updateLiveTime(
+  response: "countdown" | "getlivetime" | "chat-time",
+  Time: string
+): string {
+  const time = new Date(formatTime(Time)).getTime();
+  const now = new Date().getTime();
+  let distance: number;
+
+  if (response === "countdown") {
+    // Find the distance between now an the count down date
+    distance = time - now;
+  } else if (response === "getlivetime") {
+    // Find the distance between now an the count up date
+    distance = now - time;
+  } else if (response === "chat-time") {
+    // Add hh:mm am/pm
+    const timeObj = new Date(Time);
+    const formattedTime = timeObj.toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return formattedTime;
+  } else {
+    throw new Error("Invalid response type. Expected 'countdown' or 'getlivetime' or 'chat-time'.");
+  }
+
+  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  let liveTime: string;
+
+  if (days > 0) {
+    const [date] = Time.split(",");
+    liveTime = date;
+  } else if (hours > 0) {
+    liveTime = hours + (hours === 1 ? " hr" : " hrs");
+  } else if (minutes > 0) {
+    liveTime = minutes + (minutes === 1 ? " min" : " mins");
+  } else {
+    liveTime = seconds + (seconds === 1 ? " sec" : " secs");
+  }
+
+  return liveTime;
+}
+

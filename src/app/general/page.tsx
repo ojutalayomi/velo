@@ -17,7 +17,7 @@ import {
   Settings2,
   ArrowLeft,
 } from "lucide-react";
-import LeftSideBar from "@/components/LeftSideBar";
+import RightSideBar from "@/components/RightSideBar";
 
 interface SettingsItem {
   icon: React.ReactNode;
@@ -183,7 +183,7 @@ const SettingsPage = () => {
           </Link>
         </main>
       </div>
-      <LeftSideBar />
+      <RightSideBar />
     </div>
   );
 };

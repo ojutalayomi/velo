@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Homepage from "@/components/Home1";
-import LeftSideBar from "@/components/LeftSideBar";
+import RightSideBar from "@/components/RightSideBar";
 
 const Home = () => {
   return (
@@ -9,7 +9,7 @@ const Home = () => {
       <div className="md:w-3/5 overflow-hidden w-full">
         <Homepage />
       </div>
-      <LeftSideBar />
+      <RightSideBar />
     </div>
   );
 };

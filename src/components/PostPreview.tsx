@@ -327,7 +327,7 @@ const PostPreview: React.FC = () => {
           handleComment={handleComment}
         />
       </div>
-      <LeftSideBar
+      <RightSideBar
         id={id || ""}
         currentPost={currentPost}
         replyText={replyText}
@@ -341,7 +341,7 @@ const PostPreview: React.FC = () => {
 
 export default PostPreview;
 
-const LeftSideBar = ({
+const RightSideBar = ({
   className,
   currentPost,
   id,

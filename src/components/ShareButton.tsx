@@ -1,7 +1,7 @@
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { updateLiveTime } from "@/redux/chatSlice";
+import { updateLiveTime } from "@/lib/utils";
 import { updatePost } from "@/redux/postsSlice";
 import { PostSchema } from "@/lib/types/type";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "./ui/dropdown-menu";

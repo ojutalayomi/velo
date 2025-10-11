@@ -9,7 +9,7 @@ import { getComments, getPost } from "@/lib/getStatus";
 import { useUser } from "@/app/providers/UserProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
-import LeftSideBar from "@/components/LeftSideBar";
+import RightSideBar from "@/components/RightSideBar";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
@@ -320,7 +320,7 @@ const PostContent: React.FC = () => {
           </div>
         )}
       </div>
-      <LeftSideBar />
+      <RightSideBar />
     </div>
   );
 };

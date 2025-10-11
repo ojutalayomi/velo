@@ -6,7 +6,7 @@ import { UserSchema } from "@/lib/class/User";
 import { MongoDBClient } from "@/lib/mongodb";
 import { getSocketInstance } from "@/lib/socket";
 import {
-  AllChatsServer,
+  AllChats,
   ChatDataClient,
   ChatParticipant,
   ChatType,
@@ -42,7 +42,7 @@ const func = async (_id: string): Promise<UserSchema | null> => {
 export const chatRepository = {
   getAllChats: async (
     req: NextApiRequest,
-    res: NextApiResponse<AllChatsServer | { error: string }>,
+    res: NextApiResponse<AllChats | { error: string }>,
     payload: Payload
   ) => {
     try {
@@ -249,7 +249,7 @@ export const chatRepository = {
       if (chat) {
         // Map the MongoDB document to ChatAttributes
         const formattedChat: ChatDataClient = {
-          _id: chat._id,
+          _id: chat._id.toString(),
           name: chat.name || "",
           chatType: chat.chatType as ChatType,
           participants: chatParticipants || [],
@@ -283,12 +283,12 @@ export const chatRepository = {
     payload: Payload
   ) => {
     try {
-      const chatData: Omit<NewChat, "id"> & { msg: MessageAttributes } = req.body;
+      const chatData: NewChat & { msg: MessageAttributes } = req.body;
 
-      const newID = new ObjectId(chatData._id) || new ObjectId(generateRandom16DigitNumber());
+      const newID = new ObjectId(chatData._id) || new ObjectId();
       // ChatSettings Collection
       const chatSettings: NewChatSettings = {
-        _id: new ObjectId(generateRandom16DigitNumber()),
+        _id: new ObjectId(),
         chatId: newID.toString(), // Reference to the chat in Chats collection
         // General settings
         isMuted: false,
@@ -344,7 +344,7 @@ export const chatRepository = {
 
       const newObj = {
         chat: await (async () => {
-          const chatCopy: ChatDataClient = { ...chat, _id: chat._id, participants };
+          const chatCopy: ChatDataClient = { ...chat, _id: chat._id.toString(), participants };
           // delete (chatCopy as any)._id;
 
           if (chatCopy.chatType === "DM" && chatCopy.participants.length === 2) {
@@ -365,6 +365,7 @@ export const chatRepository = {
 
           return chatCopy;
         })(),
+        chatSettings,
         requestId: payload._id,
       };
 
@@ -392,7 +393,7 @@ export const chatRepository = {
     try {
       const { id } = req.query;
       const updatedAttributes: Partial<ChatDataClient> = req.body;
-      await db.chats().updateOne({ _id: new ObjectId(id as string) }, { $set: updatedAttributes });
+      await db.chats().updateOne({ _id: new ObjectId(id as string) }, { $set: {...updatedAttributes, _id: new ObjectId(id as string) } });
       res.status(200).end();
     } catch (error) {
       console.error(error);

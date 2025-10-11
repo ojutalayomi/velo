@@ -392,8 +392,8 @@ export const chatRepository = {
   updateChat: async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const { id } = req.query;
-      const updatedAttributes: Partial<ChatDataClient> = req.body;
-      await db.chats().updateOne({ _id: new ObjectId(id as string) }, { $set: {...updatedAttributes, _id: new ObjectId(id as string) } });
+      const updatedAttributes = req.body;
+      await db.chats().updateOne({ _id: new ObjectId(id as string) }, { $set: updatedAttributes });
       res.status(200).end();
     } catch (error) {
       console.error(error);

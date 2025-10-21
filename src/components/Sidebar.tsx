@@ -133,7 +133,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div
       id="sidebar"
-      className={`${pathname?.includes("/accounts") ? "!hidden" : ""} relative hidden max-w-min flex-col overflow-auto transition-all duration-300 tablets:flex ${isCollapsed ? "w-16" : "w-64"}`}
+      className={`${pathname?.includes("/accounts") ? "!hidden" : ""} tablets:flex relative hidden max-w-min flex-col overflow-auto transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`}
     >
       <button
         onClick={toggleSidebar}
@@ -153,17 +153,17 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-1">{memoizedSidebarItems}</div>
       <div className="flex justify-center px-2 md:block">
         <div
-          className={`${isCollapsed ? "hidden" : "hidden items-center justify-between rounded-full bg-gray-100 p-1 shadow-bar md:flex dark:bg-zinc-900 dark:text-gray-200 dark:shadow-bar-dark"}`}
+          className={`${isCollapsed ? "hidden" : "shadow-bar dark:shadow-bar-dark hidden items-center justify-between rounded-full bg-gray-100 p-1 md:flex dark:bg-zinc-900 dark:text-gray-200"}`}
         >
           <button
             onClick={() => darkMode(false)}
-            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${!isDarkMode ? "bg-white shadow-bar dark:bg-zinc-600 dark:shadow-bar-dark" : ""}`}
+            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${!isDarkMode ? "shadow-bar dark:shadow-bar-dark bg-white dark:bg-zinc-600" : ""}`}
           >
             <Sun size={20} className="inline" /> Light
           </button>
           <button
             onClick={() => darkMode(true)}
-            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${isDarkMode ? "bg-white shadow-bar dark:bg-zinc-600 dark:shadow-bar-dark" : ""}`}
+            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${isDarkMode ? "shadow-bar dark:shadow-bar-dark bg-white dark:bg-zinc-600" : ""}`}
           >
             <Moon size={20} className="inline" /> Dark
           </button>
@@ -173,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <TooltipTrigger asChild>
               <button
                 onClick={toggleDarkMode}
-                className={`${isCollapsed ? "mx-auto !block" : ""} rounded-full bg-gray-100 p-2 shadow-bar md:hidden dark:bg-gray-700 dark:shadow-bar-dark`}
+                className={`${isCollapsed ? "mx-auto !block" : ""} shadow-bar dark:shadow-bar-dark rounded-full bg-gray-100 p-2 md:hidden dark:bg-gray-700`}
               >
                 {isDarkMode ? (
                   <Moon size={20} className="mx-auto" />

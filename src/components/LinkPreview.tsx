@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
+
+import { axiosApi } from "@/lib/api";
+
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 interface LinkPreviewProps {
@@ -9,10 +11,12 @@ interface LinkPreviewProps {
 }
 
 interface Metadata {
+  url?: string;
   title?: string;
   description?: string;
   image?: string;
   favicon?: string;
+  site_name?: string;
 }
 
 export function LinkPreview({ url, direction }: LinkPreviewProps) {
@@ -27,25 +31,23 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
       if (fetchPreviewRef.current) return;
       fetchPreviewRef.current = true;
 
-      try {
-        const response = await fetch("/api/link-preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
-        });
-        const data = await response.json();
-        setMetadata(data);
-        setIsImage(data.image ? true : false);
-        fetchPreviewRef.current = false;
-      } catch (error) {
+      axiosApi(process.env.NEXT_PUBLIC_LINK_PREVIEW_URL).post("/preview", {
+        url
+      })
+      .then(response => {
+        setMetadata(response.data);
+        setIsImage(!!response.data.image);
+      })
+      .catch(error => {
         console.error("Error fetching metadata:", error);
         setError(true);
-      } finally {
+      })
+      .finally(() => {
         setLoading(false);
-      }
+      });
     };
 
-    fetchMetadata();
+    (async () => fetchMetadata())();
   }, [url]);
 
   if (loading || error) return null;
@@ -57,10 +59,10 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block my-2 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800"
+        className="my-2 block overflow-hidden rounded-lg border border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
       >
-        <div className="flex items-center p-3 gap-3">
-          {(isImage || metadata.favicon) && (
+        <div className="flex items-center gap-3 p-3">
+          {metadata.image && (
             <Avatar className="rounded object-cover">
               <AvatarImage
                 className="rounded object-cover"
@@ -70,14 +72,14 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
               <AvatarFallback>{metadata.title || "Link preview"}</AvatarFallback>
             </Avatar>
           )}
-          <div className="flex-1 min-w-0">
-            {metadata.title && <h3 className="text-sm font-medium truncate">{metadata.title}</h3>}
+          <div className="min-w-0 flex-1">
+            {metadata.title && <h3 className="truncate text-sm font-medium">{metadata.title}</h3>}
             {metadata.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+              <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                 {metadata.description}
               </p>
             )}
-            <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">{url}</p>
+            <p className="mt-1 truncate text-xs text-gray-400 dark:text-gray-500">{url}</p>
           </div>
         </div>
       </a>
@@ -88,29 +90,29 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block my-2 rounded-lg backdrop-blur-2xl overflow-hidden bg-transparent shadow-bar"
+      className="my-2 block overflow-hidden rounded-lg bg-transparent shadow-bar backdrop-blur-2xl"
     >
-      <div className="flex flex-col items-center p-2 gap-3 h-full">
-        {(isImage || metadata.favicon) && (
-          <div className="flex flex-1 w-full">
+      <div className="flex h-full flex-col items-center gap-3 p-2">
+        {metadata.image && (
+          <div className="flex w-full flex-1">
             <Avatar className="aspect-square h-auto flex-1 rounded object-cover">
               <AvatarImage
-                className="object-cover rounded-none"
-                src={isImage ? metadata.image : metadata.favicon}
+                className="rounded-none object-cover"
+                src={metadata.image}
                 alt={metadata.title || "Link preview"}
               />
-              <AvatarFallback className="text-brand rounded-none">
+              <AvatarFallback className="rounded-none text-brand">
                 {metadata.title || "Link preview"}
               </AvatarFallback>
             </Avatar>
           </div>
         )}
-        <div className="flex-1 max-w-full">
-          {metadata.title && <h3 className="text-sm font-medium truncate">{metadata.title}</h3>}
+        <div className="max-w-full flex-1">
+          {metadata.title && <h3 className="truncate text-sm font-medium">{metadata.title}</h3>}
           {metadata.description && (
-            <p className="text-sm line-clamp-2 truncate">{metadata.description}</p>
+            <p className="line-clamp-2 truncate text-sm">{metadata.description}</p>
           )}
-          <p className="text-xs truncate mt-1">{url}</p>
+          <p className="mt-1 truncate text-xs">{metadata.site_name}</p>
         </div>
       </div>
     </a>

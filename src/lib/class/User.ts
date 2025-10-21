@@ -76,7 +76,7 @@ export class SocialMediaUser implements UserSchema {
   public readonly accountType: AccountType = AccountType.HUMAN;
   // You could infer 'ORGANIZATION' based on 'Google Gemini' name and content
 
-  constructor(data: UserSchema) {
+  constructor(data: UserSchema & {accountType?: AccountType}) {
     this.isNull = data === null || data === undefined;
     this._id = data._id || new ObjectId();
     this.userId = data.userId;
@@ -122,7 +122,7 @@ export class SocialMediaUser implements UserSchema {
     this.isFollowing = data.isFollowing || false;
 
     // Inferred/Default Type
-    this.accountType = this.inferAccountType(data);
+    this.accountType = data.accountType || this.inferAccountType(data);
   }
 
   // A helper function to infer the account type

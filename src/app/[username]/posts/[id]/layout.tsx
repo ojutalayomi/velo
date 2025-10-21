@@ -9,15 +9,13 @@ const defaultImage = baseUrl + "/velo11.png";
 export async function generateMetadata(props: any): Promise<Metadata> {
   const params = props?.params || {};
   const id = params.id;
-  let post: any = null;
+  let post: any;
 
-  try {
-    const data = await getPost(id);
-    post = data?.post;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (e) {
-    // Intentionally silent, fall back to not found
-  }
+  getPost(id)
+  .then((data) => {
+    post = data.post;
+  })
+  .catch();
 
   if (!post) {
     return {

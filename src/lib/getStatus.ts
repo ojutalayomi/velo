@@ -1,7 +1,6 @@
 import { Comments, Post } from "../templates/PostProps";
 import { PostSchema } from "./types/type";
 
-const domain: string = "http://localhost:5003";
 const url1: string = "/api/status";
 const url2: string = "/api/posts";
 const url4: string = "/api/comments/";

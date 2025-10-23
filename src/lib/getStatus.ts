@@ -38,7 +38,24 @@ export const getPosts = async (): Promise<PostSchema[]> => {
 };
 
 export const getPost = async (id: string | string[] | undefined): Promise<Post> => {
-  const url3: string = "/api/post/" + id;
+  // Handle array case - take the first element
+  const postId = Array.isArray(id) ? id[0] : id;
+  
+  if (!postId) {
+    throw new Error("Post ID is required");
+  }
+  
+  // Check if we're in a server-side context
+  let url3: string;
+  if (typeof window === 'undefined') {
+    // Server-side: construct full URL
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    url3 = `${baseUrl}/api/post/${postId}`;
+  } else {
+    // Client-side: use relative URL
+    url3 = `/api/post/${postId}`;
+  }
+  
   const response = await fetch(url3, {
     method: "GET",
     headers: {

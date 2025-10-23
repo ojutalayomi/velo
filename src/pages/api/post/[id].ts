@@ -1,8 +1,9 @@
+import { ObjectId } from "mongodb";
+import type { NextApiRequest, NextApiResponse } from "next";
+
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 import { Payload } from "@/lib/types/type";
-import { Db, ObjectId } from "mongodb";
-import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {

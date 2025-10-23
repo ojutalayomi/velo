@@ -1,7 +1,8 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 import { Payload } from "@/lib/types/type";
-import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
@@ -12,13 +13,16 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         /"/g,
         ""
       );
-      const payload = await verifyToken(cookie);
+      let payload: Payload | null = null;
+      if (cookie !== "" && cookie !== undefined) {
+        payload = (await verifyToken(cookie)) as unknown as Payload;
+      }
       const db = await new MongoDBClient().init();
       const users = db.users();
       const followers = db.followers();
 
       // Find user
-      const user = await users.findOne({ username: username });
+      const user = await users.findOne({ username });
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }

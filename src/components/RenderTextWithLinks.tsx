@@ -1,8 +1,8 @@
 "use client";
-import React from "react";
 import Link from "next/link";
+import React from "react";
 
-const hashtagMentionTokenOrUrlRegex = /([#@\$]\w+|https?:\/\/[^\s]+|www\.[^\s]+)/g;
+const hashtagMentionTokenOrUrlRegex = /([#@\\$]\w+|https?:\/\/[^\s]+|www\.[^\s]+)/g;
 
 export const renderTextWithLinks = (text: string) => {
   const safeText = text || "";
@@ -16,7 +16,7 @@ export const renderTextWithLinks = (text: string) => {
         <Link
           key={`hashtag-${i}`}
           href={`/hashtag/${encodeURIComponent(part.slice(1))}?src=hashtag_click`}
-          className="text-brand hover:underline transition-all duration-150"
+          className="text-brand transition-all duration-150 hover:underline"
           onClick={() => console.log(`Hashtag clicked: ${part}`)}
         >
           {part}
@@ -28,7 +28,7 @@ export const renderTextWithLinks = (text: string) => {
         <Link
           key={`cashtag-${i}`}
           href={`/search?q=${encodeURIComponent(part.slice(1))}?src=cashtag_click`}
-          className="text-blue-500 hover:underline transition-all duration-150"
+          className="text-blue-500 transition-all duration-150 hover:underline"
           onClick={() => console.log(`Cashtag clicked: ${part}`)}
         >
           {part}
@@ -40,7 +40,7 @@ export const renderTextWithLinks = (text: string) => {
         <Link
           key={`mention-${i}`}
           href={`/${encodeURIComponent(part.slice(1))}?src=mention_click`}
-          className="text-blue-500 hover:underline transition-all duration-150"
+          className="text-blue-500 transition-all duration-150 hover:underline"
           onClick={() => console.log(`Mention clicked: ${part}`)}
         >
           {part}
@@ -53,7 +53,7 @@ export const renderTextWithLinks = (text: string) => {
         <Link
           key={`url-${i}`}
           href={url}
-          className="text-blue-600 hover:underline transition-all duration-150"
+          className="text-blue-600 transition-all duration-150 hover:underline"
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => console.log(`URL clicked: ${part}`)}

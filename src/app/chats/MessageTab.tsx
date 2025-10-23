@@ -34,12 +34,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Statuser } from "@/components/VerificationComponent";
 import { MessageAttributes, Reaction } from "@/lib/types/type";
+import { updateLiveTime } from "@/lib/utils";
 import {
   deleteMessage,
   updateMessage,
   updateConversation,
 } from "@/redux/chatSlice";
-import { updateLiveTime } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
@@ -292,7 +292,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
             <div
               className={`relative mb-1 flex max-w-full flex-col overflow-auto rounded-2xl p-2 shadow-sm ${
                 senderId === userdata._id
-                  ? "rounded-br-none bg-brand text-white"
+                  ? "bg-brand rounded-br-none text-white"
                   : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
               } text-left`}
               onTouchStart={handleTouch1}
@@ -331,7 +331,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
                   return (
                     <>
                       {message.messageType === "Markdown" ? (
-                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
                           <Markdown>{contentToDisplay}</Markdown>
                         </div>
                       ) : (
@@ -571,12 +571,12 @@ function Options({
       {/* Desktop Popover */}
       <Popover open={open} onOpenChange={handlePopoverChange}>
         <PopoverTrigger asChild>
-          <button type="button" className="hidden tablets:block" aria-label="Open message options">
+          <button type="button" className="tablets:block hidden" aria-label="Open message options">
             <Ellipsis size={20} className="cursor-pointer dark:text-gray-400" />
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="hidden w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg tablets:block dark:bg-zinc-800"
+          className="tablets:block hidden w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg dark:bg-zinc-800"
           align="end"
           sideOffset={5}
         >

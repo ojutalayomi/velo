@@ -6,7 +6,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChevronDown, EllipsisVertical } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
+import React, { Fragment, JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -131,9 +131,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
   }, [convo, convoLoading, dispatch, convo?.unread, socket, userdata._id]);
 
-  const Messages = messages?.filter((msg) => {
-    return msg.chatId === pid && msg.content.toLowerCase().includes(searchQuery.toLowerCase());
-  }) as MessageAttributes[];
+  const Messages = useMemo(() => {
+    return messages?.filter((msg) => {
+      return msg.chatId === pid && msg.content.toLowerCase().includes(searchQuery.toLowerCase());
+    })
+  }, [messages, pid, searchQuery]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -184,7 +186,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         if (cachedData) {
           setOtherPerson(cachedData);
         } else {
-          const apiData = await fetchFromAPI(String(userdata._id));
+          const apiData = await fetchFromAPI(userdata._id);
           setOtherPerson(apiData);
         }
       }
@@ -204,8 +206,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   }, [convo, convoLoading, friendId, pid, router, userdata._id]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData, friendId, pid]);
+    if (!friendId) return;
+    (async () => {
+      fetchData();
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [friendId, pid]);
 
   const handleSendMessage = async (id: string) => {
     if (newMessage.trim() === "" && attachments.length === 0) {
@@ -218,8 +224,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         setIsTextareaDisabled(true);
       }
       const isRead = friendId
-        ? { [String(userdata._id)]: false, [friendId]: true }
-        : { [String(userdata._id)]: true };
+        ? { [userdata._id]: false, [friendId]: true }
+        : { [userdata._id]: true };
 
       // Prepare the message object
       const msg = new ChatMessage({
@@ -287,7 +293,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         updateConversation({
           id: msg._id as string,
           updates: {
-            unread: isRead[String(userdata._id)] ? convo.unread : (convo.unread ?? 0) + 1,
+            unread: isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
             lastMessage: msg.content,
             lastUpdated: msg.timestamp,
           },
@@ -298,7 +304,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       if (socket) {
         try {
           if (otherPerson.accountType === "bot") {
-            const response = await axiosApi.post("/chat", {
+            const response = await axiosApi.post("/api/chat", {
               messages: [...Messages, msg],
             });
             if (response.status !== 200) {

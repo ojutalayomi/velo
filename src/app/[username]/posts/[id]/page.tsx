@@ -1,20 +1,21 @@
 "use client";
-import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
-import { Comments, Post } from "@/templates/PostProps";
-import { PostSchema } from "@/lib/types/type";
-import PostCard from "@/components/PostCard";
-import { useEffect, useRef, useState } from "react";
-import { getComments, getPost } from "@/lib/getStatus";
-import { useUser } from "@/app/providers/UserProvider";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
-import RightSideBar from "@/components/RightSideBar";
-import { useSocket } from "@/app/providers/SocketProvider";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
+import PostCard from "@/components/PostCard";
+import RightSideBar from "@/components/RightSideBar";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { getComments, getPost } from "@/lib/getStatus";
+import { PostSchema } from "@/lib/types/type";
+import { RootState } from "@/redux/store";
+import { Comments, Post } from "@/templates/PostProps";
 
 const PostContent: React.FC = () => {
   const params = useParams();
@@ -76,10 +77,10 @@ const PostContent: React.FC = () => {
 
   useEffect(() => {
     if (!postsLoading && params && params.id) {
-      const available_post = posts.find((post) => post.PostID === params?.id) as PostSchema;
-      if (available_post) {
+      const availablePost = posts.find((post) => post.PostID === params?.id) as PostSchema;
+      if (availablePost) {
         // If the post is already available in the Redux store, set it to currentPost
-        setPost(available_post);
+        setPost(availablePost);
         setLoading((l) => {
           return {
             post: false,
@@ -91,7 +92,7 @@ const PostContent: React.FC = () => {
         fetchPost(params.id as string);
       }
     }
-  }, [postsLoading, posts, params?.id]);
+  }, [postsLoading, posts, params?.id, params]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -222,13 +223,13 @@ const PostContent: React.FC = () => {
       // socket.off('deletePost');
       // socket.off('updatePost');
     };
-  }, [socket]);
+  }, [post, socket]);
 
   return (
-    <div className="w-full flex h-screen max-h-screen dark:bg-black overflow-auto">
-      <div className="md:w-3/5 flex flex-col h-full w-full">
-        <div className="flex justify-between p-1 sticky top-0 z-10 bg-white dark:bg-zinc-900 shadow-md">
-          <div className="flex items-center m-2 w-full justify-between gap-2">
+    <div className="flex h-screen max-h-screen w-full overflow-auto dark:bg-black">
+      <div className="flex size-full flex-col md:w-3/5">
+        <div className="sticky top-0 z-10 flex justify-between bg-white p-1 shadow-md dark:bg-zinc-900">
+          <div className="m-2 flex w-full items-center justify-between gap-2">
             <ArrowLeft size={24} className="cursor-pointer" onClick={() => navigate()} />
             <h1>
               {post?.Username
@@ -240,7 +241,7 @@ const PostContent: React.FC = () => {
         </div>
         <div id="postpage" className="dark:text-slate-200">
           {loading.post ? (
-            <div className="flex flex-col w-full space-y-3 cursor-progress mt-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
+            <div className="mt-4 flex w-full cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
               <div className="flex items-center justify-start gap-2">
                 <Skeleton className="size-10 rounded-full" />
                 <div className="flex flex-col space-y-2">
@@ -261,7 +262,7 @@ const PostContent: React.FC = () => {
             <PostCard key={post._id} postData={post} />
           ) : (
             errorMessage.post && (
-              <div className="flex items-center justify-center w-full h-[90%]">
+              <div className="flex h-[90%] w-full items-center justify-center">
                 <div className="text-2xl">{errorMessage.post}</div>
               </div>
             )
@@ -270,7 +271,7 @@ const PostContent: React.FC = () => {
           <div className="commentSection">
             {!errorMessage.comment ? <div className="commentHeader">Comments</div> : null}
             {loading.comment ? (
-              <div className="flex items-center justify-center w-full h-[90%]">
+              <div className="flex h-[90%] w-full items-center justify-center">
                 <Loader2 className="loader" size={30} />
               </div>
             ) : comments && comments.length > 0 ? (
@@ -279,15 +280,15 @@ const PostContent: React.FC = () => {
               <div className="noComments">No comments yet.</div>
             )}
             {errorMessage.comment && (
-              <div className="flex items-center justify-center w-full h-[90%]">
+              <div className="flex h-[90%] w-full items-center justify-center">
                 <div className="text-2xl">{errorMessage.comment}</div>
               </div>
             )}
           </div>
         </div>
         {(!errorMessage.post || commentsMessage === "Disable Comment.") && (
-          <div className="sticky bottom-0 w-full bg-white dark:bg-black border-t border-gray-200 dark:border-zinc-800 py-2 px-3">
-            <div className="flex items-center gap-2 max-w-3xl mx-auto">
+          <div className="sticky bottom-0 w-full border-t border-gray-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-black">
+            <div className="mx-auto flex max-w-3xl items-center gap-2">
               <Image
                 src={userdata.displayPicture || "/velo11.png"}
                 className={`rounded-full object-cover ${isTextAreaFocused ? "hidden" : ""}`}
@@ -297,23 +298,23 @@ const PostContent: React.FC = () => {
               />
               <div className={`relative flex flex-1 ${textAreaStyle} overflow-hidden`}>
                 <textarea
-                  className={`flex-1 bg-gray-100 dark:bg-zinc-900 min-h-[34px] max-h-28 py-2 pl-3 pr-[70px] resize-none outline-none placeholder:text-gray-500 dark:placeholder:text-gray-400 text-sm`}
+                  className={`max-h-28 min-h-[34px] flex-1 resize-none bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400`}
                   ref={textAreaRef}
                   placeholder="Write a comment..."
                   rows={1}
                 />
                 <div
-                  className={`absolute right-3 ${isTextAreaFocused ? "bottom-0" : "top-1/2"} transform -translate-y-1/2 text-gray-400 flex items-center gap-2`}
+                  className={`absolute right-3 ${isTextAreaFocused ? "bottom-0" : "top-1/2"} flex -translate-y-1/2 transform items-center gap-2 text-gray-400`}
                 >
                   <EmojiPicker
                     onChange={(emoji: string) =>
                       textAreaRef.current && (textAreaRef.current.value += emoji)
                     }
                   >
-                    <SmileIcon className="size-4 text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200" />
+                    <SmileIcon className="size-4 cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
                   </EmojiPicker>
-                  <Upload className="size-4 text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200" />
-                  <Send className="size-4 text-brand cursor-pointer hover:text-brand/80" />
+                  <Upload className="size-4 cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
+                  <Send className="size-4 cursor-pointer text-brand hover:text-brand/80" />
                 </div>
               </div>
             </div>

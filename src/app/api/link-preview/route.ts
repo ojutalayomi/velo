@@ -21,6 +21,7 @@ interface LinkPreviewData {
 export async function POST(req: Request) {
   try {
     const { url } = await req.json();
+    console.log("URL: ", url);
 
     const data = (await getLinkPreview(url, {
       timeout: 3000,
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
         "user-agent": "Googlebot/2.1 (+http://www.google.com/bot.html)",
       },
     })) as LinkPreviewData;
+    console.log("Data: ", data);
     return NextResponse.json({
       title: data.title,
       description: data.description,

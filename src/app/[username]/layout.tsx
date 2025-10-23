@@ -15,7 +15,8 @@ export async function generateMetadata({
 }: {
   params: { username: string };
 }): Promise<Metadata> {
-  const user = await getUser(params.username);
+  const { username } = await params;
+  const user = await getUser(username);
 
   const title = `${user.name || defaultTitle} - ${defaultTitle}`;
   const description = user.bio || defaultDescription;

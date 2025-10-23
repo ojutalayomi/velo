@@ -18,14 +18,14 @@ const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   useHotkeys("cmd+m", () => {
     // console.log('Cmmd');
     let thm = "" as "light" | "dark" | "system";
-    theme === "light" ? (thm = "dark") : (thm = "light");
+    thm = theme === "light" ? "dark" : "light";
     setTheme(thm);
   });
 
   useHotkeys("ctrl+m", () => {
     // console.log('Cmmd');
     let thm = "" as "light" | "dark" | "system";
-    theme === "light" ? (thm = "dark") : (thm = "light");
+    thm = theme === "light" ? "dark" : "light";
     setTheme(thm);
   });
 

@@ -12,6 +12,9 @@ export const Markdown = ({ children }: { children: string }) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       code({ node, className, children, ref, ...props }) {
         const match = /language-(\w+)/.exec(className || '');
+        const codeString = Array.isArray(children) 
+          ? children.join('') 
+          : String(children);
         return match ? (
           <SyntaxHighlighter
             {...props} // Spread the safe props (excluding ref/node)
@@ -19,11 +22,11 @@ export const Markdown = ({ children }: { children: string }) => {
             language={match[1]}
             PreTag="div"
           >
-            {String(children).replace(/\n$/, '')}
+            {codeString.replace(/\n$/, '')}
           </SyntaxHighlighter>
         ) : (
           <code {...props} className={className}>
-            {children}
+            {codeString}
           </code>
         );
       },

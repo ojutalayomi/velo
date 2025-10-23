@@ -14,8 +14,10 @@ export async function generateMetadata(props: any): Promise<Metadata> {
   getPost(id)
   .then((data) => {
     post = data.post;
+    console.log("Data: ", data);
   })
   .catch();
+  console.log("Post: ", post);
 
   if (!post) {
     return {

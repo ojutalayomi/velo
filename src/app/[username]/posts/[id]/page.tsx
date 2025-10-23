@@ -1,7 +1,7 @@
 "use client";
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -19,9 +19,8 @@ import { Comments, Post } from "@/templates/PostProps";
 
 const PostContent: React.FC = () => {
   const params = useParams();
-  const router = useRouter();
   const socket = useSocket();
-  const { userdata, loading: userdataLoading, error: userdataError, refetchUser } = useUser();
+  const { userdata } = useUser();
   const navigate = useNavigateWithHistory();
   const [errorMessage, setErrorMessage] = useState<{
     post: string | null;
@@ -38,7 +37,6 @@ const PostContent: React.FC = () => {
     comment: true,
   });
   const { posts, loading: postsLoading } = useSelector((state: RootState) => state.posts);
-  const post_ = posts.find((post) => post.PostID === params?.id) as PostSchema;
   const [post, setPost] = useState<Post["post"]>();
   const [postMessage, setPostMessage] = useState<Post["message"]>();
   const [comments, setComments] = useState<Comments["comments"]>();

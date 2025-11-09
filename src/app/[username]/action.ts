@@ -1,7 +1,8 @@
 "use server";
+import { headers } from "next/headers";
+
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
-import { headers } from "next/headers";
 
 export async function getUser(username: string): Promise<UserData> {
   try {

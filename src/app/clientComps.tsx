@@ -3,6 +3,7 @@ import { WifiOff, XCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
+import 'react-textarea-enhanced/dist/index.css';
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -30,6 +31,7 @@ import {
   PostSchema 
 } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
+import { Time } from "@/lib/utils";
 import {
   updateConversation,
   addMessage,
@@ -39,7 +41,6 @@ import {
   updateMessage,
   updateMessageReactions,
 } from "@/redux/chatSlice";
-import { Time } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, deletePost, updatePost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";

@@ -310,6 +310,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             if (response.status !== 200) {
               throw new Error("Failed to get bot response");
             }
+            const botResponse = response.data.result;
+            dispatch(addMessage(botResponse));
+            dispatch(updateConversation({
+              id: msg._id as string,
+              updates: {
+                lastMessage: botResponse.content,
+                lastUpdated: botResponse.timestamp,
+              },
+            }));
           } else {
             socket.emit("chatMessage", msg);
           }

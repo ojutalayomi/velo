@@ -1,4 +1,7 @@
 "use client";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import ImageDiv from "@/components/imageDiv";
 import {
   Carousel,
@@ -8,11 +11,12 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import VideoDiv from "./videoDiv";
 import { PostSchema } from "@/lib/types/type";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+
+import VideoDiv from "./videoDiv";
+
+
 
 const MediaSlide = ({
   className,
@@ -63,7 +67,7 @@ const MediaSlide = ({
       className={cn(`relative w-full flex items-center justify-center flex-1`, className)}
       {...props}
     >
-      <Carousel setApi={setApi} className="w-full h-full">
+      <Carousel setApi={setApi} className="size-full">
         <CarouselContent className="h-full items-center">
           {postData.Image?.map((media, index) => {
             const isImage =
@@ -74,7 +78,7 @@ const MediaSlide = ({
             return (
               <CarouselItem
                 key={`${media}-${index}`}
-                className="flex items-center justify-center bg-primary/10 h-full w-full"
+                className="flex size-full items-center justify-center bg-primary/10"
               >
                 {isImage ? (
                   <ImageDiv {...(isLink ? { link } : {})} media={media} host={isHosted} />
@@ -88,17 +92,26 @@ const MediaSlide = ({
 
         {showControls && (
           <>
-            <CarouselPrevious className="hidden sm:flex left-2" />
-            <CarouselNext className="hidden sm:flex right-2" />
+            <CarouselPrevious className="left-2 hidden sm:flex" />
+            <CarouselNext className="right-2 hidden sm:flex" />
           </>
         )}
       </Carousel>
 
-      {showControls && (
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
-          <span className="bg-black/50 text-white px-2 py-1 rounded-full text-sm">
-            {current} / {count}
-          </span>
+      {showControls && postData.Image.length > 1 && (
+        <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+          {postData.Image.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => api?.scrollTo(index)}
+              className={`h-1.5 rounded-full transition-all ${
+                index === current
+                  ? 'w-6 bg-white'
+                  : 'w-1.5 bg-white/40 hover:bg-white/60'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       )}
     </div>

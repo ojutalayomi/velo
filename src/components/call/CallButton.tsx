@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CallButtonProps {
@@ -43,6 +44,10 @@ export default function CallButton({
     }
   };
 
+  if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
+    return null;
+  }
+
   return (
     <Popover open={showCallOptions && !disabled} onOpenChange={setShowCallOptions}>
       <PopoverTrigger asChild>
@@ -50,11 +55,11 @@ export default function CallButton({
           onClick={toggleCallOptions}
           disabled={disabled}
           className={`
-            p-2 rounded-lg transition-all duration-200 hover:scale-105
+            rounded-lg p-2 transition-all duration-200 hover:scale-105
             ${
               disabled
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl"
+                ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                : "bg-blue-500 text-white shadow-lg hover:bg-blue-600 hover:shadow-xl"
             }
           `}
           title="Start a call"
@@ -62,7 +67,7 @@ export default function CallButton({
           aria-haspopup="menu"
           aria-expanded={showCallOptions && !disabled}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -75,17 +80,17 @@ export default function CallButton({
       <PopoverContent
         align="end"
         side="top"
-        className="mb-2 min-w-[160px] p-0 z-50 bg-white dark:bg-zinc-800"
+        className="z-50 mb-2 min-w-[160px] bg-white p-0 dark:bg-zinc-800"
       >
         <div className="py-2">
           {/* Audio Call Option */}
           <button
             onClick={() => handleCallInitiation("audio")}
-            className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3"
+            className="flex w-full items-center space-x-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
             type="button"
           >
-            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-green-600 text-sm">📞</span>
+            <div className="flex size-8 items-center justify-center rounded-full bg-green-100">
+              <span className="text-sm text-green-600">📞</span>
             </div>
             <div>
               <div className="font-medium text-gray-900">Audio Call</div>
@@ -97,11 +102,11 @@ export default function CallButton({
           {chatType === "DM" && (
             <button
               onClick={() => handleCallInitiation("video")}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3"
+              className="flex w-full items-center space-x-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
               type="button"
             >
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 text-sm">📹</span>
+              <div className="flex size-8 items-center justify-center rounded-full bg-blue-100">
+                <span className="text-sm text-blue-600">📹</span>
               </div>
               <div>
                 <div className="font-medium text-gray-900">Video Call</div>
@@ -111,12 +116,12 @@ export default function CallButton({
           )}
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-1"></div>
+          <div className="my-1 border-t border-gray-200"></div>
 
           {/* Cancel Option */}
           <button
             onClick={() => setShowCallOptions(false)}
-            className="w-full px-4 py-2 text-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors text-sm"
+            className="w-full px-4 py-2 text-center text-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
             type="button"
           >
             Cancel

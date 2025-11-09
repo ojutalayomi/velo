@@ -80,7 +80,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
   const [isCopied, setIsCopied] = useState(false);
   const [options, openOptions] = useState<boolean>(false);
   const [messageContent, setMessageContent] = useState<string>(message.content.replace("≤≤≤", ""));
-  const [time, setTime] = useState<string>(updateLiveTime("chat-time", message.timestamp));
+  const [time] = useState<string>(updateLiveTime("chat-time", message.timestamp));
   const socket = useSocket();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [rectionInfoDisplay, setReactionInfoDisplay] = useState(false);
@@ -276,12 +276,12 @@ const MessageTab = ({ message, setQuote }: Props) => {
         id={message._id as string}
         onClick={handleClick}
         onTouchStart={handleTouch}
-        onContextMenu={handleContextMenu}
+        // onContextMenu={handleContextMenu}
         className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} mb-2 flex flex-col transition-colors duration-300 dark:text-gray-400`}
       >
         {/* Main Message Container */}
         <div
-          className={`flex max-w-[90%] flex-1 ${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} relative items-center gap-2`}
+          className={`flex ${message.messageType !== "Markdown" ? "max-w-[90%]" : "max-w-full"} flex-1 ${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} relative items-center gap-2`}
         >
           <div
             className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
@@ -292,7 +292,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
             <div
               className={`relative mb-1 flex max-w-full flex-col overflow-auto rounded-2xl p-2 shadow-sm ${
                 senderId === userdata._id
-                  ? "bg-brand rounded-br-none text-white"
+                  ? "rounded-br-none bg-brand text-white"
                   : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
               } text-left`}
               onTouchStart={handleTouch1}
@@ -331,7 +331,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
                   return (
                     <>
                       {message.messageType === "Markdown" ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <div className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}>
                           <Markdown>{contentToDisplay}</Markdown>
                         </div>
                       ) : (
@@ -371,7 +371,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
           </div>
 
           {/* Message Options */}
-          {senderId !== userdata._id && (
+          {message.messageType !== "Markdown" && (
             <Options options={optionss} open={open} setOpen={setOpen} />
           )}
         </div>
@@ -571,12 +571,12 @@ function Options({
       {/* Desktop Popover */}
       <Popover open={open} onOpenChange={handlePopoverChange}>
         <PopoverTrigger asChild>
-          <button type="button" className="tablets:block hidden" aria-label="Open message options">
+          <button type="button" className="hidden tablets:block" aria-label="Open message options">
             <Ellipsis size={20} className="cursor-pointer dark:text-gray-400" />
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="tablets:block hidden w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg dark:bg-zinc-800"
+          className="hidden w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg tablets:block dark:bg-zinc-800"
           align="end"
           sideOffset={5}
         >

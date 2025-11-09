@@ -1,15 +1,6 @@
+/* eslint-disable camelcase */
+/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
-import { Post, formatNo, timeFormatter, updateLiveTime } from "../templates/PostProps";
-import { PostSchema } from "@/lib/types/type";
-import { useRouter } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
 import {
   Copy,
   Delete,
@@ -19,11 +10,20 @@ import {
   Minus,
   Repeat2,
   Save,
-  Search,
   ShieldX,
   UserRoundMinus,
   UserRoundPlus,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
+import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerClose,
@@ -34,23 +34,25 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import MediaSlide from "../templates/mediaSlides";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Statuser } from "@/components/VerificationComponent";
-import { useSelector } from "react-redux";
-import { deletePost, updatePost } from "@/redux/postsSlice";
-import { useSocket } from "@/app/providers/SocketProvider";
-import { useUser } from "@/app/providers/UserProvider";
-import { Skeleton } from "./ui/skeleton";
-import { FileValidationConfig } from "@/lib/types/type";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import ShareButton from "./ShareButton";
-import PostMaker from "./PostMaker";
-import { getPost } from "@/lib/getStatus";
 import { toast } from "@/hooks/use-toast";
-import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
+import { getPost } from "@/lib/getStatus";
+import { PostSchema } from "@/lib/types/type";
+import { useAppDispatch } from "@/redux/hooks";
+import { deletePost, updatePost } from "@/redux/postsSlice";
+import { RootState } from "@/redux/store";
+
+import PostMaker from "./PostMaker";
+import ShareButton from "./ShareButton";
+import { Skeleton } from "./ui/skeleton";
+import MediaSlide from "../templates/mediaSlides";
+import { Post, formatNo, timeFormatter, updateLiveTime } from "../templates/PostProps";
 
 type PostComponentProps = {
   postData: Post["post"];
@@ -63,26 +65,11 @@ interface Option {
   onClick: () => void;
 }
 
-const FILE_VALIDATION_CONFIG: FileValidationConfig = {
-  maxFileSize: 10 * 1024 * 1024, // 10MB per file
-  maxTotalSize: 50 * 1024 * 1024, // 50MB total
-  maxFiles: 4, // Maximum 4 files
-  allowedFileTypes: [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "video/mp4",
-    "video/mpeg",
-    "video/mkv",
-  ],
-};
-
 const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const dispatch = useAppDispatch();
   const socket = useSocket();
   const { userdata } = useUser();
   const posts = useSelector((state: RootState) => state.posts.posts);
-  const [activePost, setActivePost] = useState<string>("");
   const [originalPost, setOriginalPost] = useState<PostSchema | null>(null);
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const [postType, setPostType] = useState("blog");
@@ -153,12 +140,13 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       setTime1(updateLiveTime("getlivetime", originalPost.TimeOfPost));
     }, 1000);
     return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [originalPost?.TimeOfPost]);
+  }, [originalPost, originalPost?.TimeOfPost]);
 
   const handleActivePost = (route: string) => {
-    const [username, posts, id] = route.split("/");
-    router.push(route);
-    setActivePost(id);
+    const id = route.split("/").at(-1);
+    if (id) {
+      router.push(route);
+    }
   };
 
   const handleClick = (clicked: string) => {
@@ -230,13 +218,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     }
   };
 
-  const checkLength = useCallback(() => {
-    if (data?.Image) {
-      return data?.Image.length > 1;
-    }
-    return false;
-  }, [data?.Image]);
-
   const handleFollow = async (follow: boolean) => {
     try {
       const res = await fetch(`/api/follow`, {
@@ -249,12 +230,9 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           followerId: userdata._id,
           followedId: data.UserId,
           time: new Date().toISOString(),
-          follow: follow,
+          follow,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-      }
     } catch (error) {
       console.error(error);
       toast({
@@ -343,16 +321,12 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     },
   ];
 
-  const fullscreen = () => {
-    router.push(`/${data.Username}/photo`);
-  };
-
   if (!data || !data.PostID) return <RenderLoadingPlaceholder />;
 
   return (
     <div className="pre-blog" id={data.PostID.slice(0, -4)}>
       <div
-        className="blog !dark:shadow-bar-dark select-none dark:bg-zinc-900 shadow-md dark:text-slate-200"
+        className="blog !dark:shadow-bar-dark select-none shadow-md dark:bg-zinc-900 dark:text-slate-200"
         data-id={data.PostID}
       >
         {postType === "repost" && (
@@ -373,7 +347,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                 <Avatar>
                   <AvatarFallback>{data.NameOfPoster.slice(0, 2)}</AvatarFallback>
                   <AvatarImage
-                    className="pdp cursor-pointer size-9"
+                    className="pdp size-9 cursor-pointer"
                     alt="blogger"
                     src={data.DisplayPicture}
                   />
@@ -382,10 +356,10 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </div>
             <div className="blog-maker">
               <Link href={`/${data.Username}`}>
-                <div className="flex items-center justify-start flex-wrap gap-1">
+                <div className="flex flex-wrap items-center justify-start gap-1">
                   <span className="font-bold after:content-[.]">{data.NameOfPoster}</span>
                   {data.Verified ? <Statuser className="size-4" /> : null}
-                  {containsPost ? null : <div className="text-brand text-xs">@{data.Username}</div>}
+                  {containsPost ? null : <div className="text-xs text-brand">@{data.Username}</div>}
                 </div>
               </Link>
               {containsPost ? (
@@ -406,7 +380,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           {data.Caption && data.Caption.length > 250 && !containsPost ? (
             <>
               <abbr title={data.Caption}>
-                <p className="text-sm whitespace-pre-wrap">
+                <p className="whitespace-pre-wrap text-sm">
                   {renderTextWithLinks(data.Caption.substring(0, 250))}...{" "}
                   <span className="showMore">show more</span>
                 </p>
@@ -414,7 +388,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </>
           ) : (
             <abbr title={data.Caption}>
-              <p className="text-sm whitespace-pre-wrap">{renderTextWithLinks(data.Caption)}</p>
+              <p className="whitespace-pre-wrap text-sm">{renderTextWithLinks(data.Caption)}</p>
             </abbr>
           )}
         </div>
@@ -422,16 +396,16 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         {data?.Image.length > 0 && showMedia && (
           <MediaSlide
             postData={data}
-            className={`${containsPost ? "" : "max-h-96"} ${data?.Image.length > 0 ? "rounded-xl overflow-hidden mb-2" : ""}`}
+            className={`${containsPost ? "" : "max-h-96"} ${data?.Image.length > 0 ? "mb-2 overflow-hidden rounded-xl" : ""}`}
             isLink
           />
         )}
         {/* Post Card */}
         {originalPost && (
           <Link href={`/${originalPost.Username}/posts/${originalPost.PostID}`}>
-            <div className="border border-gray-800 rounded-xl p-4">
+            <div className="rounded-xl border border-gray-800 p-4">
               <div className="flex items-start space-x-1">
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
                   <Avatar className="size-8">
                     <AvatarFallback>{originalPost.NameOfPoster.slice(0, 2)}</AvatarFallback>
                     <AvatarImage
@@ -442,23 +416,23 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                   </Avatar>
                 </div>
                 <div className={`w-[90%] ${data?.Image.length > 0 ? "grid" : ""}`}>
-                  <div className="flex items-center col-span-2 flex-wrap text-sm">
-                    <span className="font-bold dark:text-white mr-1 truncate">
+                  <div className="col-span-2 flex flex-wrap items-center text-sm">
+                    <span className="mr-1 truncate font-bold dark:text-white">
                       {originalPost.NameOfPoster}
                     </span>
                     {originalPost.Verified && (
-                      <svg className="w-4 h-4 text-brand fill-current" viewBox="0 0 24 24">
+                      <svg className="size-4 fill-current text-brand" viewBox="0 0 24 24">
                         <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z" />
                       </svg>
                     )}
-                    <span className="text-gray-500 ml-1">
+                    <span className="ml-1 text-gray-500">
                       @{originalPost.Username} · {time1}
                     </span>
                   </div>
                   {/* <div className="text-gray-500 text-sm mb-2">Replying to @NintendoAmerica</div> */}
                   {originalPost?.Caption ? (
                     <p
-                      className={`dark:text-white text-sm mb-2 ${originalPost.Image.length > 0 ? "" : "col-span-2"} whitespace-pre-wrap`}
+                      className={`mb-2 text-sm dark:text-white ${originalPost.Image.length > 0 ? "" : "col-span-2"} whitespace-pre-wrap`}
                     >
                       {originalPost.Caption.length > 250
                         ? renderTextWithLinks(originalPost.Caption.substring(0, 250)) + "..."
@@ -482,7 +456,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             <div className="blog-time border-t pt-1">
               {timeFormatter(data.TimeOfPost).replaceAll(":", " : ")}
             </div>
-            <div className="border-b flex flex-row flex-wrap justify-start items-center gap-2 text-sm pb-1">
+            <div className="flex flex-row flex-wrap items-center justify-start gap-2 border-b pb-1 text-sm">
               <div className="flex flex-row items-center gap-1">
                 <span>{formatNo(data.NoOfLikes)}</span>
                 <span>{data.NoOfLikes > 0 ? "Like" : "Likes"}</span>
@@ -515,7 +489,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
               onClick={() => handleClick("liked")}
             >
               <path
-                className="dark:stroke-slate-200 !stroke-current"
+                className="!stroke-current dark:stroke-slate-200"
                 d="M8.10627 18.2468C5.29819 16.0833 2 13.5422 2 9.1371C2 4.27416 7.50016 0.825464 12 5.50063L14 7.49928C14.2929 7.79212 14.7678 7.79203 15.0607 7.49908C15.3535 7.20614 15.3534 6.73127 15.0605 6.43843L13.1285 4.50712C17.3685 1.40309 22 4.67465 22 9.1371C22 13.5422 18.7018 16.0833 15.8937 18.2468C15.6019 18.4717 15.3153 18.6925 15.0383 18.9109C14 19.7294 13 20.5 12 20.5C11 20.5 10 19.7294 8.96173 18.9109C8.68471 18.6925 8.39814 18.4717 8.10627 18.2468Z"
                 fill="#242742fd"
               />
@@ -586,7 +560,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
               onClick={() => handleClick("bookmarked")}
             >
               <path
-                className="dark:stroke-slate-200 !stroke-current"
+                className="!stroke-current dark:stroke-slate-200"
                 fillRule="evenodd"
                 clipRule="evenodd"
                 d="M21 11.0975V16.0909C21 19.1875 21 20.7358 20.2659 21.4123C19.9158 21.735 19.4739 21.9377 19.0031 21.9915C18.016 22.1045 16.8633 21.0849 14.5578 19.0458C13.5388 18.1445 13.0292 17.6938 12.4397 17.5751C12.1494 17.5166 11.8506 17.5166 11.5603 17.5751C10.9708 17.6938 10.4612 18.1445 9.44216 19.0458C7.13673 21.0849 5.98402 22.1045 4.99692 21.9915C4.52615 21.9377 4.08421 21.735 3.73411 21.4123C3 20.7358 3 19.1875 3 16.0909V11.0975C3 6.80891 3 4.6646 4.31802 3.3323C5.63604 2 7.75736 2 12 2C16.2426 2 18.364 2 19.682 3.3323C21 4.6646 21 6.80891 21 11.0975ZM8.25 6C8.25 5.58579 8.58579 5.25 9 5.25H15C15.4142 5.25 15.75 5.58579 15.75 6C15.75 6.41421 15.4142 6.75 15 6.75H9C8.58579 6.75 8.25 6.41421 8.25 6Z"
@@ -633,7 +607,7 @@ function Options({
         <DrawerTrigger asChild>
           <Ellipsis
             size={20}
-            className="cursor-pointer dark:text-gray-400 tablets:hidden"
+            className="cursor-pointer tablets:hidden dark:text-gray-400"
             onClick={() => setOpen(true)}
           />
         </DrawerTrigger>
@@ -644,7 +618,7 @@ function Options({
               {options.map(({ icon, text, onClick }, index) => (
                 <span
                   key={index}
-                  className="flex gap-1 items-center cursor-pointer"
+                  className="flex cursor-pointer items-center gap-1"
                   onClick={onClick}
                 >
                   {icon}
@@ -665,16 +639,16 @@ function Options({
         <DropdownMenuTrigger asChild>
           <Ellipsis
             size={20}
-            className="cursor-pointer dark:text-gray-400 hidden tablets:block"
+            className="hidden cursor-pointer tablets:block dark:text-gray-400"
             onClick={() => setOpen(true)}
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-white dark:bg-zinc-800 w-auto mt-1 mr-2">
+        <DropdownMenuContent className="mr-2 mt-1 w-auto bg-white dark:bg-zinc-800">
           {options.map(({ icon, text, onClick }, index) => (
             <DropdownMenuItem
               key={index}
               onClick={onClick}
-              className="flex gap-1 items-center min-w-32 cursor-pointer hover:bg-slate-200 hover:dark:bg-zinc-700"
+              className="flex min-w-32 cursor-pointer items-center gap-1 hover:bg-slate-200 hover:dark:bg-zinc-700"
             >
               {icon}
               <span className="text-base">{text}</span>
@@ -688,7 +662,7 @@ function Options({
 
 export function RenderLoadingPlaceholder() {
   return (
-    <div className="flex flex-col space-y-3 cursor-progress m-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
+    <div className="m-4 flex cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
       <div className="flex items-center justify-start gap-2">
         <Skeleton className="size-10 rounded-full" />
         <div className="flex flex-col space-y-2">

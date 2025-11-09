@@ -51,6 +51,7 @@ export const Markdown = ({ children }: { children: string }) => {
         return match ? (
           <SyntaxHighlighter
             {...props}
+            customStyle={{ fontFamily: "myCustomFont, myCustomFont Fallback", margin: "inherit" }}
             style={isDark ? coldarkDark : ghcolors}
             language={match[1]}
             PreTag="div"

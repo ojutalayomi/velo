@@ -17,8 +17,8 @@ const Wrapper = ({
   };
 
   return (
-    <div className="sm:backdrop-blur sm:shadow-xl rounded-lg flex flex-col gap-2 items-stretch justify-center p-4 w-full max-w-lg">
-      <div className="flex sm:hidden items-center justify-center">
+    <div className="flex w-full max-w-lg flex-col items-stretch justify-center gap-2 rounded-lg p-4 sm:shadow-xl sm:backdrop-blur">
+      <div className="flex items-center justify-center sm:hidden">
         <Image
           src="/velo11.png"
           className="-ml-5 -mr-2 size-10"
@@ -26,7 +26,7 @@ const Wrapper = ({
           width={70}
           alt="brand logo"
         />
-        <abbr className="!text-3xl font-bold mt-1" title="Velo is?">
+        <abbr className="mt-1 !text-3xl font-bold" title="Velo is?">
           elo
         </abbr>
       </div>
@@ -36,7 +36,7 @@ const Wrapper = ({
           <div className="flex items-center justify-center gap-2 px-2">
             <Button
               onClick={() => handleClick("google")}
-              className="google dark:bg-black dark:text-white dark:hover:bg-primary/90 hover:bg-primary/10 bg-transparent text-black flex items-center justify-center gap-2 p-2 rounded-lg shadow w-1/2"
+              className="google flex w-full items-center justify-center gap-2 rounded-lg bg-transparent p-2 text-black shadow hover:bg-primary/10 dark:bg-black dark:text-white dark:hover:bg-primary/90"
               disabled={!auth}
             >
               <svg
@@ -95,7 +95,7 @@ const Wrapper = ({
             </Button>
             <Button
               onClick={() => handleClick("facebook")}
-              className="facebook dark:bg-black dark:text-white dark:hover:bg-primary/90 hover:bg-primary/10 bg-transparent text-black flex items-center justify-center gap-2 p-2 rounded-lg shadow w-1/2"
+              className="facebook hidden w-full items-center justify-center gap-2 rounded-lg bg-transparent p-2 text-black shadow hover:bg-primary/10 dark:bg-black dark:text-white dark:hover:bg-primary/90"
               disabled
             >
               <svg

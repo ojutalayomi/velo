@@ -25,6 +25,12 @@ body {
     )
     rgb(var(--background-start-rgb));
 } */
+
+.prose.prose-sm.max-w-none.dark\:prose-invert pre:has(div) {
+  padding: 0;
+  margin: 0;
+}
+
 @media (min-height: 585px) {
   div#others,
   div[aria-label="morePopOver"] {

@@ -81,6 +81,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.1.1",
     "react-syntax-highlighter": "^15.6.6",
+    "react-textarea-enhanced": "file:../../ojutalayomi.github.io/textarea1/react-textarea-enhanced-1.3.0.tgz",
     "rehype-highlight": "^7.0.2",
     "rehype-raw": "^7.0.0",
     "remark-breaks": "^4.0.0",

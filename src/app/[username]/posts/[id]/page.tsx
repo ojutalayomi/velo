@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
+import PostAnalytics from "@/components/PostAnalytics";
 import PostCard from "@/components/PostCard";
 import RightSideBar from "@/components/RightSideBar";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
@@ -225,6 +226,7 @@ const PostContent: React.FC = () => {
 
   return (
     <div className="flex h-screen max-h-screen w-full overflow-auto dark:bg-black">
+      {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
       <div className="flex size-full flex-col md:w-3/5">
         <div className="sticky top-0 z-10 flex justify-between bg-white p-1 shadow-md dark:bg-zinc-900">
           <div className="m-2 flex w-full items-center justify-between gap-2">

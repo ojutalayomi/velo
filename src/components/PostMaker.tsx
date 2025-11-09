@@ -1,11 +1,40 @@
+/* eslint-disable @next/next/no-img-element */
+import {
+  X,
+  Paintbrush,
+  CircleAlert,
+  Images,
+  ChartBarDecreasing,
+  Smile,
+  Clock4,
+  MapPin,
+  Loader2,
+} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  useState,
+  useRef,
+  useEffect,
+  ChangeEvent,
+  Dispatch,
+  SetStateAction,
+  ReactNode,
+} from "react";
+import { TextAreaBox } from "react-textarea-enhanced";
+
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
+import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { PostSchema } from "@/lib/types/type";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import MediaSlide from "@/templates/mediaSlides";
 import { updateLiveTime } from "@/templates/PostProps";
-import { PostSchema } from "@/lib/types/type";
+
+import CropMediaInterface from "./CropMediaInterface";
+import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
@@ -16,37 +45,14 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "./ui/dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
-import {
-  X,
-  Paintbrush,
-  CircleAlert,
-  Images,
-  CircleCheck,
-  ChartBarDecreasing,
-  Smile,
-  Clock4,
-  MapPin,
-  Loader2,
-} from "lucide-react";
-import {
-  useState,
-  useRef,
-  useEffect,
-  ChangeEvent,
-  Dispatch,
-  SetStateAction,
-  ReactNode,
-} from "react";
-import CropMediaInterface from "./CropMediaInterface";
-import { Button } from "./ui/button";
-import { Skeleton } from "./ui/skeleton";
-import { Input } from "./ui/input";
-import { useRouter } from "next/navigation";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
 import { EmojiPicker } from "./ui/emoji-picker";
-import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { Input } from "./ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
+import { Skeleton } from "./ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+
+
+
 
 export default function PostMaker({
   children,
@@ -61,6 +67,7 @@ export default function PostMaker({
   post?: PostSchema;
   onOpenChange: Dispatch<SetStateAction<boolean>>;
 }) {
+  const pathname = usePathname();
   const navigate = useNavigateWithHistory();
   const { userdata } = useUser();
   const socket = useSocket();
@@ -115,14 +122,15 @@ export default function PostMaker({
     setFullscreenImage(null);
   };
 
-  const handleInput = () => {
-    const textArea = textAreaRef.current;
-    if (textArea) {
-      textArea.style.height = "auto";
-      textArea.style.height = `${textArea.scrollHeight}px`;
-      setTxtButton(textArea.value.trim() !== "");
+  useEffect(() => {
+    if (errors.length > 0) {
+      toast({
+        title: "Error",
+        description: errors[0],
+      });
+      setErrors([]);
     }
-  };
+  }, [errors]);
 
   function handleFiles(e: ChangeEvent<HTMLInputElement>): void {
     if (!imageInputRef.current) return;
@@ -291,6 +299,16 @@ export default function PostMaker({
     }
   };
 
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (!open && pathname?.includes("compose")) {
+        navigate();
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [navigate, open, pathname]);
+
   if (!userdata._id) {
     if (children) {
       return (
@@ -306,48 +324,48 @@ export default function PostMaker({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
-      <DialogContent className="bg-white dark:bg-zinc-900 dialogCloseBtnHide mb:w-screen mb:max-w-none overflow-auto mb:h-full flex flex-col">
+      <DialogContent className="dialogCloseBtnHide flex flex-col overflow-auto bg-white mb:h-full mb:w-screen mb:max-w-none dark:bg-zinc-900">
         <DialogHeader className="dark:text-white">
           <DialogTitle className="text-center"></DialogTitle>
           <DialogDescription>
-            <span className="flex justify-between items-center">
+            <span className="flex items-center justify-between">
               <DialogClose
-                className="dark:text-white hover:bg-gray-800 p-2 rounded-full transition-all duration-200 transform hover:scale-110"
+                className="transform rounded-full p-2 transition-all duration-200 hover:scale-110 hover:bg-gray-800 dark:text-white"
                 onClick={() => {
-                  if (type === "post") navigate();
+                  // if (type === "post") navigate();
                 }}
               >
                 <X size={16} />
               </DialogClose>
-              <span className="text-brand text-xl font-bold">Drafts</span>
+              <span className="text-xl font-bold text-brand">Drafts</span>
             </span>
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-80 mb:max-h-none overflow-auto">
+        <div className="max-h-80 overflow-auto p-1 mb:max-h-none">
           {post && type === "comment" && (
             <>
               <MiniPostCard type={type} post={post} />
-              <div className="text-gray-500 text-sm my-2">
-                Replying to <span className="text-brand font-bold">@{post.Username}</span>
+              <div className="my-2 text-sm text-gray-500">
+                Replying to <span className="font-bold text-brand">@{post.Username}</span>
               </div>
             </>
           )}
 
           {/* User Info and Dropdown */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden">
+            <div className="size-10 overflow-hidden rounded-full">
               {userdata.displayPicture ? (
                 <img
                   src={userdata.displayPicture}
                   alt="Profile"
-                  className="w-full h-full object-cover"
+                  className="size-full object-cover"
                 />
               ) : (
-                <Skeleton className="w-full h-full object-cover" />
+                <Skeleton className="size-full object-cover" />
               )}
             </div>
             <Select onValueChange={setVisibility} defaultValue="everyone" value={visibility}>
-              <SelectTrigger className="max-w-[120px] h-8 rounded-2xl">
+              <SelectTrigger className="h-8 max-w-[120px] rounded-2xl">
                 <SelectValue placeholder="Everyone" />
               </SelectTrigger>
               <SelectContent>
@@ -369,29 +387,34 @@ export default function PostMaker({
           />
 
           {/* Comment Input */}
-          <textarea
+          <TextAreaBox
             ref={textAreaRef}
             value={text}
+            onChange={setText}
+            highlightColor="#ff6257"
+            minHeight={60}
+            maxHeight={400}
             maxLength={textLimit}
+            charLimit={textLimit}
             spellCheck
-            onChange={(e) => setText(e.target.value.substring(0, textLimit))}
-            placeholder="Add a comment"
-            className="flex-grow text-sm w-full mt-2 max-h-[400px] focus:border-b focus:border-brand resize-none bg-transparent border-none focus:outline-none dark:text-white"
-            onInput={handleInput}
+            placeholder="What's on your mind?"
+            fontFamily="myCustomFont, myCustomFont Fallback"
+            className="mt-2 w-full flex-grow resize-none border-none bg-transparent px-4 py-2 text-sm !text-black focus:border-b focus:border-brand focus:outline-none dark:!text-white dark:!caret-white"
+            textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
           />
 
           {/* Fullscreen Image Modal */}
           {fullscreenImage && (
             <Dialog open={!!fullscreenImage} onOpenChange={closeFullscreen}>
-              <DialogContent className="bg-transparent dialogCloseBtnHide border-0 gap-0 h-screen max-w-none flex items-center justify-center">
+              <DialogContent className="dialogCloseBtnHide flex h-screen max-w-none items-center justify-center gap-0 border-0 bg-transparent">
                 <DialogTitle className="text-center"></DialogTitle>
-                <DialogClose className="absolute top-4 right-4 text-white">
+                <DialogClose className="absolute right-4 top-4 text-white">
                   <X size={24} />
                 </DialogClose>
                 <img
                   src={fullscreenImage}
                   alt="Fullscreen"
-                  className="max-w-full max-h-full object-contain"
+                  className="max-h-full max-w-full object-contain"
                 />
               </DialogContent>
             </Dialog>
@@ -400,19 +423,19 @@ export default function PostMaker({
           {/** Media */}
           {files.length > 0 && (
             <div className="overflow-x-auto">
-              <div className="flex gap-4 items-center justify-center p-2 status w-fit">
+              <div className="status flex w-fit items-center justify-center gap-4 p-2">
                 {files.map((file, index) => (
-                  <div key={index} className="relative group w-52">
+                  <div key={index} className="group relative w-52">
                     {file.type.startsWith("image/") ? (
                       <>
                         <img
                           src={URL.createObjectURL(file)}
                           alt={file.name}
-                          className="w-full h-40 object-cover rounded-lg"
+                          className="h-40 w-full rounded-lg object-cover"
                           onClick={() => handleImageClick(file)}
                         />
                         <CropMediaInterface files={files} setFiles={setFiles} imageIndex={index}>
-                          <button className="absolute top-2 left-2 p-1 rounded-full bg-black/50 text-white opacity-0 mb:opacity-100 group-hover:opacity-100 transition-opacity">
+                          <button className="absolute left-2 top-2 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 mb:opacity-100">
                             <Paintbrush size={16} />
                           </button>
                         </CropMediaInterface>
@@ -420,7 +443,7 @@ export default function PostMaker({
                     ) : file.type.startsWith("video/") ? (
                       <video
                         src={URL.createObjectURL(file)}
-                        className="w-full h-40 object-cover rounded-lg"
+                        className="h-40 w-full rounded-lg object-cover"
                         controls
                       />
                     ) : null}
@@ -429,7 +452,7 @@ export default function PostMaker({
                         const newFiles = files.filter((_, i) => i !== index);
                         setFiles(newFiles);
                       }}
-                      className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white opacity-0 mb:opacity-100 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-2 top-2 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 mb:opacity-100"
                     >
                       <X size={16} />
                     </button>
@@ -445,14 +468,14 @@ export default function PostMaker({
 
         <div className="sticky bottom-0 space-y-2">
           {/* Everyone Can Reply */}
-          <div className="bg-white dark:bg-zinc-900 flex items-center text-brand space-x-2">
+          <div className="flex items-center space-x-2 bg-white text-brand dark:bg-zinc-900">
             <CircleAlert size={16} />
             <span>{visibility[0].toUpperCase() + visibility.slice(1)} can reply</span>
           </div>
 
           {/* Character Counter */}
           <div
-            className={`flex justify-end text-gray-500 text-sm mb-2 ${text.length === textLimit ? "text-red-500" : ""}`}
+            className={`mb-2 flex justify-end text-sm text-gray-500 ${text.length === textLimit ? "text-red-500" : ""}`}
           >
             <span>
               {text.length === textLimit && "You have reached the text characters limit! • "}
@@ -462,9 +485,9 @@ export default function PostMaker({
 
           <DialogFooter className="bg-white dark:bg-zinc-900">
             {/* Bottom Toolbar */}
-            <div className="border-t border-gray-800 flex-1 py-3">
-              <div className="gap-8 grid grid-cols-2 mb:grid-cols-1">
-                <div className="flex justify-between items-center">
+            <div className="flex-1 border-t border-gray-800 py-3">
+              <div className="grid grid-cols-2 gap-8 mb:grid-cols-1">
+                <div className="flex items-center justify-between">
                   {buttons.map((button, index) => (
                     <TooltipProvider key={button.label + index}>
                       <Tooltip>
@@ -479,7 +502,7 @@ export default function PostMaker({
                           ) : (
                             <button
                               onClick={button.action}
-                              className="text-brand hover:bg-brand/90 group p-2 rounded-full transition-all duration-200"
+                              className="group rounded-full p-2 text-brand transition-all duration-200 hover:bg-brand/90"
                             >
                               <button.icon size={16} className="group-hover:text-white" />
                             </button>
@@ -496,10 +519,10 @@ export default function PostMaker({
                 <Button
                   disabled={!txtButton || text.length > textLimit}
                   onClick={handlePost}
-                  className="bg-brand hover:bg-brand/60 text-white w-full my-2 tablets:w-auto tablets:my-0 font-bold py-2 px-6 rounded-full transition-all duration-200 transform hover:scale-105"
+                  className="my-2 w-full transform rounded-full bg-brand px-6 py-2 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-brand/60 tablets:my-0 tablets:w-auto"
                 >
                   {isPosting ? "Posting..." : "Post"}
-                  {isPosting && <Loader2 className="animate-spin ml-2" size={16} />}
+                  {isPosting && <Loader2 className="ml-2 animate-spin" size={16} />}
                 </Button>
               </div>
             </div>
@@ -526,34 +549,34 @@ function MiniPostCard({
       setTime(updateLiveTime("getlivetime", post.TimeOfPost));
     }, 1000);
     return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [post?.TimeOfPost]);
+  }, [post, post.TimeOfPost]);
 
   return (
-    <div className="border border-gray-500 rounded-xl p-4">
+    <div className="rounded-xl border border-gray-500 p-4">
       <div className="flex items-start space-x-3">
-        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+        <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
           <img
             src={post.DisplayPicture}
             alt={post.Username}
-            className="w-full h-full object-cover"
+            className="size-full object-cover"
           />
         </div>
-        <div className={`flex-1 ${type !== "comment" ? "grid" : ""} gap-2 grid-cols-2`}>
-          <div className="flex items-center col-span-2 flex-wrap">
-            <span className="font-bold dark:text-white mr-1 truncate">{post.NameOfPoster}</span>
+        <div className={`flex-1 ${type !== "comment" ? "grid" : ""} grid-cols-2 gap-2`}>
+          <div className="col-span-2 flex flex-wrap items-center">
+            <span className="mr-1 truncate font-bold dark:text-white">{post.NameOfPoster}</span>
             {post.Verified && (
-              <svg className="w-4 h-4 text-brand fill-current" viewBox="0 0 24 24">
+              <svg className="size-4 fill-current text-brand" viewBox="0 0 24 24">
                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z" />
               </svg>
             )}
-            <span className="text-gray-500 ml-1">
+            <span className="ml-1 text-gray-500">
               @{post.Username} · {time}
             </span>
           </div>
 
           {post.Caption ? (
             <p
-              className={`dark:text-white text-sm mb-2 ${post.Image.length > 0 ? "" : "col-span-2"} whitespace-pre-wrap`}
+              className={`mb-2 text-sm dark:text-white ${post.Image.length > 0 ? "" : "col-span-2"} whitespace-pre-wrap`}
             >
               {post.Caption.length > 250
                 ? renderTextWithLinks(post.Caption.substring(0, 250)) + "..."
@@ -586,11 +609,11 @@ function SignInPrompt({ open, onClose }: { open: boolean; onClose: () => void })
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="bg-white dark:bg-zinc-900">
-        <DialogTitle className="text-center text-brand font-bold">Sign In Required</DialogTitle>
-        <DialogDescription className="text-center text-gray-500 mt-2">
+        <DialogTitle className="text-center font-bold text-brand">Sign In Required</DialogTitle>
+        <DialogDescription className="mt-2 text-center text-gray-500">
           You need to sign in or sign up to create a post.
         </DialogDescription>
-        <DialogFooter className="flex justify-center mt-4">
+        <DialogFooter className="mt-4 flex justify-center">
           <Button onClick={() => router.push("/signin")} className="bg-brand text-white">
             Sign In
           </Button>

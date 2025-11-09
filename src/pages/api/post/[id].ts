@@ -12,7 +12,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         /"/g,
         ""
       );
-      const payload = (await verifyToken(cookie)) as unknown as Payload;
+      const payload = cookie ? (await verifyToken(cookie)) as unknown as Payload : null;
 
       if (!req.query.id) return res.status(400).json({ error: `Post ID is required` });
       const id = req.query.id;

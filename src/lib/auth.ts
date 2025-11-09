@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { jwtVerify } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 import { cookies, headers } from "next/headers";
 import { AuthOptions as NextAuthOptions, User, Account, Profile } from "next-auth";
 import { AdapterUser } from "next-auth/adapters";
@@ -36,7 +36,7 @@ export const authOptions: NextAuthOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/accounts/login",
     error: "/auth/error",
     verifyRequest: "/auth/verify-request",
   },
@@ -57,6 +57,8 @@ export const authOptions: NextAuthOptions = {
         const users = db.users();
         // Extract device information
         const userAgent = (await headers()).get("user-agent") || "";
+        const { searchParams } = new URL((await headers()).get("referer") || "");
+        const backTo = searchParams.get("backTo") || "";
 
         // Check if user exists
         const existingUser = new SocialMediaUser(
@@ -64,35 +66,44 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (existingUser) {
-          // Update last login and provider info for existing user
-          if (existingUser.providers) {
-            if (Object.keys(existingUser.providers).includes(account?.provider || "")) {
-              await users.updateOne(
-                { email: user.email as string },
-                {
-                  $set: {
-                    lastLogin: new Date().toISOString(),
-                    [`providers.${account?.provider}`]: {
-                      id: profile?.sub,
-                      lastUsed: new Date().toISOString(),
-                    },
-                  },
-                }
-              );
-            }
-          } else {
+          // Check if user has this provider already
+          const hasProvider = existingUser.providers && 
+            Object.keys(existingUser.providers).includes(account?.provider || "");
+          
+          if (hasProvider) {
+            // User already has this provider, update and proceed
             await users.updateOne(
               { email: user.email as string },
               {
                 $set: {
                   lastLogin: new Date().toISOString(),
+                  [`providers.${account?.provider}`]: {
+                    id: profile?.sub,
+                    lastUsed: new Date().toISOString(),
+                  },
                 },
               }
             );
-          }
-          await existingUser.setSession(db, userAgent, "app", undefined, setCookie);
+            await existingUser.setSession(db, userAgent, "app", undefined, setCookie);
+            return backTo || "/home";
+          } else {
+            // User doesn't have this provider yet, redirect to consent page
+            // Store provider info temporarily in a token
+            const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+            
+            const providerConsentToken = await new SignJWT({
+              email: user.email,
+              provider: account?.provider,
+              providerId: profile?.sub,
+              backTo: backTo || "/home",
+            })
+              .setProtectedHeader({ alg: "HS256" })
+              .setExpirationTime("15m")
+              .sign(secret);
 
-          return `/home`;
+            // Redirect to consent page with token
+            return `/auth/provider-consent?token=${encodeURIComponent(providerConsentToken)}`;
+          }
         }
 
         // Create new user
@@ -134,10 +145,12 @@ export const authOptions: NextAuthOptions = {
 
         await newUser.setSession(db, userAgent, "app", undefined, setCookie);
 
-        return `/accounts/signup-complete?email=${encodeURIComponent(user.email || "")}`;
+        return `/accounts/signup-complete?email=${encodeURIComponent(user.email || "")}&backTo=${backTo}`;
       } catch (error) {
+        const { searchParams } = new URL((await headers()).get("referer") || "");
+        const backTo = searchParams.get("backTo") || "";
         console.error("Auth error:", error);
-        return "/auth/error?error=DatabaseError";
+        return `/auth/error?error=DatabaseError&backTo=${backTo}`;
       }
     },
 

@@ -14,19 +14,19 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
   try {
     const rawCookie = req.cookies.velo_12;
-    if (!rawCookie) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
+    // if (!rawCookie) {
+    //   return res.status(401).json({ error: "Authentication required" });
+    // }
     
     // Clean the cookie value - only remove quotes if they exist at the beginning/end
-    const cookie = rawCookie.replace(/^"|"$/g, "");
+    const cookie = rawCookie?.replace(/^"|"$/g, "");
     
     // Additional validation
-    if (!cookie || cookie.trim() === "") {
-      return res.status(401).json({ error: "Invalid authentication token" });
-    }
+    // if (!cookie || cookie.trim() === "") {
+    //   return res.status(401).json({ error: "Invalid authentication token" });
+    // }
     
-    const payload = (await verifyToken(cookie)) as unknown as Payload;
+    const payload = cookie ? (await verifyToken(cookie)) as unknown as Payload : null;
     // if (!payload) return res.status(401).json({ error: `Not Allowed` });
     // if (payload.exp < Date.now() / 1000) return res.status(401).json({ error: `Token expired` });
 
@@ -35,7 +35,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     // console.log('MongoDB connection established successfully!');
 
     // Fetch user details if username is provided
-    const user = payload ? await db.users().findOne({ _id: new ObjectId(payload._id) }) : null;
+    const user = payload?._id ? await db.users().findOne({ _id: new ObjectId(payload._id) }) : null;
 
     // Fetch posts from multiple collections
     const posts = await fetchPostsFromMultipleCollections(db);

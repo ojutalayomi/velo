@@ -12,8 +12,8 @@ export default function AuthError() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-4xl font-bold text-red-600 mb-4">Authentication Error</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold text-red-600">Authentication Error</h1>
       <p className="text-lg text-red-500">An error occurred: {error}</p>
     </div>
   );

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -70,7 +70,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const socket = useSocket();
   const { userdata } = useUser();
   const posts = useSelector((state: RootState) => state.posts.posts);
-  const [activePost, setActivePost] = useState<string>("");
   const [originalPost, setOriginalPost] = useState<PostSchema | null>(null);
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const [postType, setPostType] = useState("blog");
@@ -144,9 +143,10 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   }, [originalPost, originalPost?.TimeOfPost]);
 
   const handleActivePost = (route: string) => {
-    const [username, posts, id] = route.split("/");
-    router.push(route);
-    setActivePost(id);
+    const id = route.split("/").at(-1);
+    if (id) {
+      router.push(route);
+    }
   };
 
   const handleClick = (clicked: string) => {
@@ -218,13 +218,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     }
   };
 
-  const checkLength = useCallback(() => {
-    if (data?.Image) {
-      return data?.Image.length > 1;
-    }
-    return false;
-  }, [data?.Image]);
-
   const handleFollow = async (follow: boolean) => {
     try {
       const res = await fetch(`/api/follow`, {
@@ -237,12 +230,9 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           followerId: userdata._id,
           followedId: data.UserId,
           time: new Date().toISOString(),
-          follow: follow,
+          follow,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-      }
     } catch (error) {
       console.error(error);
       toast({
@@ -330,10 +320,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       },
     },
   ];
-
-  const fullscreen = () => {
-    router.push(`/${data.Username}/photo`);
-  };
 
   if (!data || !data.PostID) return <RenderLoadingPlaceholder />;
 

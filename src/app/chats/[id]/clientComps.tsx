@@ -478,7 +478,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 size="lg"
               />
-              {load ? (
+              {(load && !otherPerson._id) ? (
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
                 <div>

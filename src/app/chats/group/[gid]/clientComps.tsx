@@ -317,7 +317,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   };
 
   const options = [
-    { id: 1, name: "View contact", action: () => console.log("Pinned") },
+    { id: 1, name: "View info", action: () => router.push(`/chats/group/${gid}/settings`) },
     { id: 2, name: "Search", action: () => openSearchBar(true) },
     { id: 3, name: "Mute notifications", action: () => console.log("Archived") },
     { id: 4, name: "Wallpaper", action: () => console.log("Hidden") },
@@ -521,9 +521,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                     alt="Display Picture"
                   />
                 </Avatar>
-                {/* {convo?.online && (
-                  <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-zinc-900"></div>
-                )} */}
+                {convo?.verified && (
+                  <div className="absolute bottom-1 right-1">
+                    <Statuser className="size-4" />
+                  </div>
+                )}
               </div>
             </>
           )}

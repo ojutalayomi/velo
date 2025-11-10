@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Statuser } from "@/components/VerificationComponent";
-import { MessageAttributes, Reaction } from "@/lib/types/type";
+import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import {
   deleteMessage,
@@ -91,7 +91,6 @@ const MessageTab = ({ message, setQuote }: Props) => {
   const sender = message?.sender?.name || "";
   const verified = message?.sender?.verified ?? false;
   const displayPicture = message?.sender?.displayPicture || "";
-  // const url = "https://s3.amazonaws.com/profile-display-images/";
 
   useEffect(() => {
     setMessageContent(message.content.replace("≤≤≤", ""));
@@ -265,7 +264,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
   };
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
+    if ((e.target as HTMLElement).closest("a")) return;
     if (IsSelected) dispatch(removeSelectedMessage(message._id as string));
     if (selectedMessages.length) dispatch(addSelectedMessage(message._id as string));
   };
@@ -286,11 +285,11 @@ const MessageTab = ({ message, setQuote }: Props) => {
           <div
             className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
           >
-            {message.attachments.length ? <MediaCollage media={message.attachments} /> : <></>}
+            {message.attachments.length ? <MediaCollage media={message.attachments as (Attachment & { uploadedAt: string })[]} /> : <></>}
 
             {/* Message Bubble */}
             <div
-              className={`relative mb-1 flex max-w-full flex-col overflow-auto rounded-2xl p-2 shadow-sm ${
+              className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl p-2 ${
                 senderId === userdata._id
                   ? "rounded-br-none bg-brand text-white"
                   : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
@@ -300,11 +299,11 @@ const MessageTab = ({ message, setQuote }: Props) => {
             >
               {/* Sender name for other users */}
               {(senderId !== userdata._id && message.chatType === "Group") && (
-                <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center justify-between gap-1 mr-4">
                   <div className="flex items-center gap-1">
                     <Avatar className="mt-1 size-8">
                       <AvatarImage src={displayPicture} alt={sender} />
-                      <AvatarFallback>{sender?.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="border-2 border-white dark:border-black text-xs">{sender?.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {sender}
@@ -474,6 +473,10 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
     }
   };
 
+  if (!quotedMessageId) return null;
+
+  if (quotedMessageId.content.length === 0) return null;
+
   return (
     <div
       className={`m-1 flex ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
@@ -484,20 +487,20 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
           flex w-full max-w-full cursor-pointer items-center gap-2 rounded-lg p-2
           ${
             senderId === userdata._id
-              ? "bg-emerald-100 dark:bg-emerald-900/30"
+              ? "bg-gray-100 dark:bg-zinc-700/50"
               : "bg-gray-100 dark:bg-zinc-700/50"
           }
-          border-l-4 ${senderId === userdata._id ? "border-emerald-500" : "border-gray-400"}
+          border-l-4 ${senderId === userdata._id ? "border-purple-500" : "border-gray-400"}
           transition-all hover:bg-opacity-80
         `}
       >
         <div className="flex max-w-full flex-col overflow-auto">
           <span
-            className={`text-xs font-medium ${senderId === userdata._id ? "text-emerald-700 dark:text-emerald-400" : "text-gray-700 dark:text-gray-300"}`}
+            className={`text-xs font-medium ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-300"}`}
           >
             {quotedMessageId?.sender?.name || ""}
           </span>
-          <span className="line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
+          <span className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}>
             {quotedMessageId?.content}
           </span>
         </div>

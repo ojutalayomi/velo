@@ -64,7 +64,7 @@ type QuoteProp = {
 interface ChatTextareaProps {
   quote: QuoteProp;
   newMessage: string;
-  disbled?: boolean;
+  disabled?: boolean;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
   handleSendMessage: (messageId: string) => void;
   handleTyping?: () => void;
@@ -74,7 +74,7 @@ interface ChatTextareaProps {
 const ChatTextarea = ({
   quote,
   newMessage,
-  disbled,
+  disabled,
   setNewMessage,
   handleSendMessage,
   handleTyping,
@@ -102,7 +102,7 @@ const ChatTextarea = ({
   }, []);
 
   useEffect(() => {
-    if (attachments.length) {
+    if (attachments.length > 0 && pathname && pathname.includes("/chats")) {
       dispatch(setToggleDialog(true));
     }
   }, [attachments, dispatch]);
@@ -187,7 +187,7 @@ const ChatTextarea = ({
 
   // Memoize emoji picker trigger className
   const emojiPickerTriggerClassName = useMemo(
-    () => `absolute inset-y-0 right-0 flex ${txtButton ? "items-end" : "items-center"} p-3 hover:text-brand/80 rounded-full`,
+    () => `absolute inset-y-0 right-0 flex ${txtButton ? "items-end" : "items-center"} p-3 hover:text-brand/80 rounded-full z-10`,
     [txtButton]
   );
 
@@ -214,7 +214,7 @@ const ChatTextarea = ({
 
   return (
     <div className="relative w-full">
-      <div className={cn("fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80", disbled ? " pointer-events-none opacity-70" : "")}>
+      <div className={cn("fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80", disabled ? " pointer-events-none opacity-70" : "")}>
         {quote.state && (
           <div className="mx-2 mb-2 rounded-lg bg-gray-100 p-3 dark:bg-zinc-800">
             <div className="flex max-w-full items-center justify-between gap-1">

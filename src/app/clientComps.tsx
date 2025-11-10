@@ -129,6 +129,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
           data.chat.chatType === "DM"
             ? data.chat.name[Object.keys(data.chat.name).find((e) => !e.includes(uid)) || ""]
             : data.chat.name.group,
+        adminIds: data.chat.adminIds,
         displayPicture: otherParticipant?.displayPicture || "",
         description: data.chat.groupDescription || "",
         verified: data.chat.verified || false,

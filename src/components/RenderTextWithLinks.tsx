@@ -50,16 +50,15 @@ export const renderTextWithLinks = (text: string) => {
       // URL link
       const url = part.startsWith("www.") ? `https://${part}` : part;
       return (
-        <Link
+        <a
           key={`url-${i}`}
           href={url}
           className="text-blue-600 transition-all duration-150 hover:underline"
-          target="_blank"
           rel="noopener noreferrer"
-          onClick={() => console.log(`URL clicked: ${part}`)}
+          target="_blank"
         >
           {part}
-        </Link>
+        </a>
       );
     }
 

@@ -324,6 +324,7 @@ export interface ConvoType {
   id: string;
   type: string;
   name: string;
+  adminIds: string[];
   lastMessage: string;
   timestamp: string;
   unread: number;
@@ -346,6 +347,7 @@ export interface ConvoType {
     chatId: string;
   }[];
 }
+
 export type hook<P = any, Q = boolean, R = boolean> = {
   payload: P;
   suspense: Q;

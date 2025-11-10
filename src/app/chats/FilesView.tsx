@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Attachment } from "@/lib/types/type";
 import VideoDiv from "@/templates/videoDiv";
+import { updateLiveTime } from "@/lib/utils";
 
 const downloadFile = (url: string, filename: string) => {
   saveAs(url, filename);
@@ -45,7 +46,7 @@ const formatFileSize = (bytes: number): string => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
-export const MediaCollage = ({ media }: { media: Attachment[] }) => {
+export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: string })[] }) => {
   const [mediaDialog, toggleMediaDialog] = useState({ open: false, index: 0 });
   const mediaLength = media.length;
   const moreThanFour = mediaLength > 4;
@@ -86,17 +87,16 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
 
   return (
     <div
-      className={`w-full ${mediaType === "image" ? "bg-gray-100" : "bg-transparent"} overflow-hidden rounded-lg dark:bg-zinc-800`}
+      className={`w-full ${mediaType === "image" ? "bg-gray-100" : "bg-transparent"} overflow-hidden rounded-lg shadow-lg dark:bg-zinc-800`}
     >
-      {/* <div className="p-4 text-xs border-b border-gray-700 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <span className="text-pink-400">~Dara🤫</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-gray-400">+234 708 933 73</span>
-                    <ChevronDown className="text-gray-400 transform transition hover:rotate-180"/>
-                </div>
-            </div> */}
+      {/* <div className="p-2 text-xs flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-pink-400">~Dara🤫</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">+234 708 933 73</span>
+        </div>
+      </div> */}
       <MediaDialog files={media} mediaDialog={mediaDialog} toggleMediaDialog={toggleMediaDialog} />
       {mediaType === "image" ? (
         <div className="grid grid-cols-2 gap-2 p-2 text-xs">
@@ -109,7 +109,7 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
                 className={`${key === 2 && mediaLength === 3 ? "col-span-2 row-span-1 aspect-video" : "aspect-square"} ${mediaLength === 1 && "col-span-2"} group relative cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300`}
               >
                 <img src={m.url} alt={m.name} className="size-full object-cover" />
-                {/* <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white">8:21 PM</div> */}
+                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">{updateLiveTime("chat-time", m.uploadedAt)}</div>
               </div>
             );
           })}
@@ -117,7 +117,7 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
             <div onClick={() => toggleMediaDialog({ open: true, index: 3 })} className="relative">
               <div className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300">
                 <img src={media[3].url} alt={media[3].name} className="size-full object-cover" />
-                {/* <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white text-sm">8:21 PM</div> */}
+                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">{updateLiveTime("chat-time", media[3].uploadedAt)}</div>
               </div>
               <div className="group absolute inset-0 flex aspect-square items-center justify-center rounded-lg text-2xl font-light text-gray-400 backdrop-blur-sm transition hover:bg-gray-700">
                 +{excess}
@@ -149,7 +149,7 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
                   className="relative flex aspect-square items-center justify-center rounded-lg p-2 shadow-md dark:bg-zinc-800"
                 >
                   <div
-                    className={`text- absolute bg-gray-100${clr} -right-1.5 top-0 rounded-lg border p-1 text-xs dark:bg-neutral-950`}
+                    className={`text-${clr} absolute bg-gray-100 -right-1.5 top-0 rounded-lg border p-1 text-xs dark:bg-neutral-950`}
                   >
                     {type1()?.toUpperCase()}
                   </div>
@@ -157,9 +157,12 @@ export const MediaCollage = ({ media }: { media: Attachment[] }) => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-gray-400">{m.name}</span>
-                  {m.size && (
-                    <span className="text-xs text-gray-500">{formatFileSize(m.size)}</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {m.size && (
+                      <span className="text-xs text-gray-500">{formatFileSize(m.size)}</span>
+                    )}{"•"}
+                    <span className="text-xs text-gray-500">{updateLiveTime("chat-time", m.uploadedAt)}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>

@@ -1,18 +1,22 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Loader2, Trash2 } from "lucide-react";
+import { Pin, Bell, Loader2, Trash2, Archive, Image, FileText, Link as LinkIcon, ChevronRight } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { Switch, Slider } from "@/components/ui";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
-import { ChatDataClient, ChatSettings, MessageAttributes, NewChatSettings } from "@/lib/types/type";
-import { ConvoType } from "@/redux/chatSlice";
+import { ChatDataClient, ChatSettings, MessageAttributes, NewChatSettings, Attachment } from "@/lib/types/type";
+import { ConvoType, updateConversation } from "@/redux/chatSlice";
 import { RootState } from "@/redux/store";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Statuser } from "@/components/VerificationComponent";
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useAppDispatch } from "@/redux/hooks";
+import { Time } from "@/lib/utils";
 
 interface Params {
   gid?: string;
@@ -39,31 +43,99 @@ const ChatSettingsPage: React.FC = () => {
   const params = useParams() as Params;
   const { gid } = params;
   const {
+    conversations,
     settings,
+    messages,
     loading: convoLoading,
   } = useSelector<RootState, CHT>((state) => state.chat);
-  const [chat, setChat] = useState<ChatDataClient | "i">("i");
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
+  const convo = useMemo(() => conversations?.find((c) => c.id === gid) as ConvoType, [conversations, gid]);
+  const { userdata } = useSelector((state: RootState) => state.user);
+  const socket = useSocket();
+  const dispatch = useAppDispatch();
+  // Extract URLs from message content
+  const extractUrls = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.match(urlRegex) || [];
+  };
+
+  // Get preview data for media, docs, and links
+  const previewData = useMemo(() => {
+    const chatMessages = (messages?.filter((msg) => msg.chatId === gid) as MessageAttributes[]) || [];
+    
+    // Sort messages by timestamp (most recent first)
+    const sortedMessages = [...chatMessages].sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+    
+    // Get media (images/videos) - latest 4
+    const mediaItems: Array<{ attachment: Attachment; message: MessageAttributes }> = [];
+    sortedMessages.forEach((msg) => {
+      msg.attachments?.forEach((att) => {
+        const type = att.type?.split("/")[0];
+        if ((type === "image" || type === "video") && mediaItems.length < 4) {
+          mediaItems.push({ attachment: att, message: msg });
+        }
+      });
+    });
+    
+    // Get documents - latest 3
+    const docItems: Array<{ attachment: Attachment; message: MessageAttributes }> = [];
+    sortedMessages.forEach((msg) => {
+      msg.attachments?.forEach((att) => {
+        const type = att.type?.split("/")[0];
+        if (type !== "image" && type !== "video" && type !== "audio" && docItems.length < 3) {
+          docItems.push({ attachment: att, message: msg });
+        }
+      });
+    });
+    
+    // Get links - latest 3
+    const linkItems: Array<{ url: string; message: MessageAttributes }> = [];
+    sortedMessages.forEach((msg) => {
+      if (msg.content) {
+        const urls = extractUrls(msg.content);
+        urls.forEach((url) => {
+          if (linkItems.length < 3) {
+            linkItems.push({ url, message: msg });
+          }
+        });
+      }
+    });
+    
+    // Count totals
+    let mediaCount = 0;
+    let docCount = 0;
+    let linkCount = 0;
+    
+    chatMessages.forEach((msg) => {
+      msg.attachments?.forEach((att) => {
+        const type = att.type?.split("/")[0];
+        if (type === "image" || type === "video") {
+          mediaCount++;
+        } else if (type !== "audio") {
+          docCount++;
+        }
+      });
+      if (msg.content) {
+        const urls = extractUrls(msg.content);
+        linkCount += urls.length;
+      }
+    });
+    
+    return {
+      media: mediaItems.slice(0, 4),
+      docs: docItems.slice(0, 3),
+      links: linkItems.slice(0, 3),
+      counts: { media: mediaCount, docs: docCount, links: linkCount },
+    };
+  }, [messages, gid]);
 
   useEffect(() => {
-    const fetchChat = async () => {
-      if (gid) {
-        const fetchedChat = await chatSystem.getChatById(gid);
-        setChat(fetchedChat as ChatDataClient);
-        const chatSettings = fetchedChat?.participants.find(
-          (participant) => participant._id.toString() === gid
-        )?.chatSettings;
-        setChatSettings(chatSettings);
-      }
-    };
-
     if (!convoLoading) {
       const chatSettings = settings?.[gid as string];
       if (chatSettings) {
-        setChatSettings(chatSettings);
-        setChat("i");
-      } else {
-        fetchChat();
+        setChatSettings(prev => ({ ...prev, ...chatSettings, isPinned: convo?.pinned || false, isArchived: convo?.archived || false }));
       }
     }
   }, [gid, convoLoading, settings]);
@@ -71,14 +143,21 @@ const ChatSettingsPage: React.FC = () => {
   const handleSettingsChange = async (field: keyof ChatSettings, value: any) => {
     if (chatSettings) {
       setChatSettings({ ...chatSettings, [field]: value });
-      const result = await chatSystem.updateChatSettings(gid || "", {
-        ["chatSettings." + field]: value,
+      if (field === "isMuted") {
+        return;
+      } else if (field === "isPinned") {
+        dispatch(updateConversation({ id: gid as string, updates: { pinned: value } }));
+      } else if (field === "isArchived") {
+        dispatch(updateConversation({ id: gid as string, updates: { archived: value } }));
+      }
+      socket?.emit("updateConversation", {
+        id: gid,
+        updates: { [field]: value, userId: userdata._id },
       });
-      setChatSettings(result);
     }
   };
 
-  if (!chat || !chatSettings) {
+  if (!convo || !chatSettings) {
     return (
       <div
         className={`absolute z-10 flex size-full flex-col items-center justify-center bg-white tablets1:z-[unset] tablets1:w-1/2 dark:bg-black dark:text-slate-200`}
@@ -108,7 +187,7 @@ const ChatSettingsPage: React.FC = () => {
 
   return (
     <div
-      className={`absolute z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-md tablets1:z-[unset] tablets1:w-1/2 tablets1:bg-white dark:bg-black`}
+      className={`absolute z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-md tablets1:w-1/2 tablets1:bg-white dark:bg-black`}
     >
       <div className="flex items-center justify-between gap-4 border-b bg-gray-100 p-2 dark:bg-zinc-900 dark:text-slate-200">
         <div className="flex items-center justify-start gap-4">
@@ -125,10 +204,151 @@ const ChatSettingsPage: React.FC = () => {
           onClick={() => router.push(`/chats/group/${params?.gid}/settings`)}
         />
       </div>
+
       <div className="m-2 space-y-4">
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative">
+            <Avatar className="size-32 border-2 border-white dark:border-black" data-src={convo?.displayPicture}>
+              <AvatarFallback className="capitalize text-xl">
+                {convo?.name?.slice(0, 2).toUpperCase() || ""}
+              </AvatarFallback>
+              <AvatarImage
+                src={convo?.displayPicture}
+                className="displayPicture size-32 rounded-full object-cover dark:border-slate-200"
+                width={80}
+                height={80}
+                alt="Display Picture"
+              />
+            </Avatar>
+            {convo?.verified && (
+              <div className="absolute bottom-1 right-1 mr-5">
+                <Statuser className="size-4" />
+              </div>
+            )}
+          </div>
+          <p className="text-center text-gray-700 dark:text-slate-200">{convo?.name}</p>
+          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.description || 'No description'}</p>
+          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.lastUpdated}</p>
+          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.participants.length} members</p>
+          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.adminIds.length} admins</p>
+          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">Date created: {Time(convo?.timestamp)}</p>
+          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">Last updated: {Time(convo?.lastUpdated)}</p>
+        </div>
+
+        {/* Media, Docs, and Links Sneak Peek */}
+        <div className="space-y-3 rounded-lg border bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Media, Links & Docs</h3>
+            <button
+              onClick={() => router.push(`/chats/group/${gid}/media`)}
+              className="flex items-center gap-1 text-xs text-brand hover:underline"
+            >
+              See all
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Media Preview */}
+          {previewData.media.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <Image size={14} />
+                <span>Media ({previewData.counts.media})</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1">
+                {previewData.media.map(({ attachment }, index) => {
+                  const [type] = attachment.type?.split("/") || [];
+                  const isImage = type === "image";
+                  const isVideo = type === "video";
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="relative aspect-square overflow-hidden rounded bg-gray-200 dark:bg-zinc-800"
+                    >
+                      {isImage && attachment.url ? (
+                        <img
+                          src={attachment.url}
+                          alt={attachment.name}
+                          className="size-full object-cover"
+                        />
+                      ) : isVideo && attachment.url ? (
+                        <>
+                          <video
+                            src={attachment.url}
+                            className="size-full object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <div className="rounded-full bg-black/50 p-1">
+                              <svg
+                                className="size-3 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Docs Preview */}
+          {previewData.docs.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <FileText size={14} />
+                <span>Documents ({previewData.counts.docs})</span>
+              </div>
+              <div className="space-y-1">
+                {previewData.docs.slice(0, 2).map(({ attachment }, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 rounded bg-white p-2 text-xs dark:bg-zinc-800"
+                  >
+                    <FileText size={16} className="text-brand" />
+                    <span className="truncate text-gray-700 dark:text-gray-300">{attachment.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Links Preview */}
+          {previewData.links.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <LinkIcon size={14} />
+                <span>Links ({previewData.counts.links})</span>
+              </div>
+              <div className="space-y-1">
+                {previewData.links.slice(0, 2).map(({ url }, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 rounded bg-white p-2 text-xs dark:bg-zinc-800"
+                  >
+                    <LinkIcon size={16} className="text-blue-600 dark:text-blue-400" />
+                    <span className="truncate text-gray-700 dark:text-gray-300">{url}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {previewData.media.length === 0 && previewData.docs.length === 0 && previewData.links.length === 0 && (
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">No media, links, or documents yet</p>
+          )}
+        </div>
+
         <div className="flex items-center justify-between">
-          <label htmlFor="mute" className="text-gray-700 dark:text-slate-200">
-            Mute
+          <label htmlFor="mute" className="flex items-center gap-2 text-gray-700 dark:text-slate-200">
+            <Bell className="size-4" />
+            Notifications
           </label>
           <Switch
             id="mute"
@@ -137,7 +357,8 @@ const ChatSettingsPage: React.FC = () => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="pin" className="text-gray-700 dark:text-slate-200">
+          <label htmlFor="pin" className="flex items-center gap-2 text-gray-700 dark:text-slate-200">
+            <Pin className="size-4" />
             Pin
           </label>
           <Switch
@@ -147,7 +368,8 @@ const ChatSettingsPage: React.FC = () => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="archive" className="text-gray-700 dark:text-slate-200">
+          <label htmlFor="archive" className="flex items-center gap-2 text-gray-700 dark:text-slate-200">
+            <Archive className="size-4" />
             Archive
           </label>
           <Switch
@@ -155,82 +377,6 @@ const ChatSettingsPage: React.FC = () => {
             checked={chatSettings.isArchived}
             onChange={(value: any) => handleSettingsChange("isArchived", value)}
           />
-        </div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="notification-sound" className="text-gray-700 dark:text-slate-200">
-            Notification Sound
-          </label>
-          <input
-            id="notification-sound"
-            type="file"
-            accept="audio/*"
-            list="audio-files"
-            value={chatSettings.notificationSound || ""}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file && file.size <= 2 * 1024 * 1024) {
-                handleSettingsChange("notificationSound", e.target.value);
-              } else {
-                alert("File size must be 2MB or less");
-                e.target.value = "";
-              }
-            }}
-            className="rounded-md border px-2 py-1"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="wallpaper" className="text-gray-700 dark:text-slate-200">
-            Wallpaper
-          </label>
-          <input
-            id="wallpaper"
-            type="file"
-            accept="image/*"
-            list="image-files"
-            value={chatSettings.wallpaper || ""}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file && file.size <= 5 * 1024 * 1024) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                  if (event.target?.result) {
-                    handleSettingsChange("wallpaper", event.target.result as string);
-                  }
-                };
-                reader.readAsDataURL(file);
-              } else {
-                alert("File size must be 5MB or less");
-                e.target.value = "";
-              }
-            }}
-            className="rounded-md border px-2 py-1"
-          />
-        </div>
-        <div className="hidden items-center justify-between">
-          <label htmlFor="notification-volume" className="text-gray-700 dark:text-slate-200">
-            Notification Volume
-          </label>
-          <Slider
-            id="notification-volume"
-            min={0}
-            max={100}
-            value={chatSettings.notificationVolume || 50}
-            onChange={(value: any) => handleSettingsChange("notificationVolume", value)}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="theme" className="text-gray-700 dark:text-slate-200">
-            Theme
-          </label>
-          <select
-            id="theme"
-            value={chatSettings.theme}
-            onChange={(e) => handleSettingsChange("theme", e.target.value as "light" | "dark")}
-            className="rounded-md border px-2 py-1"
-          >
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
         </div>
       </div>
     </div>

@@ -67,6 +67,7 @@ export default function PostMaker({
   post?: PostSchema;
   onOpenChange: Dispatch<SetStateAction<boolean>>;
 }) {
+  const router = useRouter();
   const pathname = usePathname();
   const navigate = useNavigateWithHistory();
   const { userdata } = useUser();
@@ -83,8 +84,8 @@ export default function PostMaker({
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   useEffect(() => {
-    setTxtButton(files.length > 0);
-  }, [files]);
+    setTxtButton(files.length === 0 && text.length > textLimit);
+  }, [files.length, text.length, textLimit]);
 
   const buttons = [
     {
@@ -123,13 +124,7 @@ export default function PostMaker({
   };
 
   useEffect(() => {
-    if (errors.length > 0) {
-      toast({
-        title: "Error",
-        description: errors[0],
-      });
-      setErrors([]);
-    }
+    console.groupCollapsed(errors.length);
   }, [errors]);
 
   function handleFiles(e: ChangeEvent<HTMLInputElement>): void {
@@ -290,7 +285,7 @@ export default function PostMaker({
         socket.emit("post", Post);
       }
     } catch (error: any) {
-      // console.log(error)
+      console.log(error)
     } finally {
       setFiles([]);
       if (type === "post") navigate();
@@ -300,14 +295,10 @@ export default function PostMaker({
   };
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (!open && pathname?.includes("compose")) {
-        navigate();
-      }
-    }, 3000);
-    
-    return () => clearTimeout(timeoutId);
-  }, [navigate, open, pathname]);
+    if (!open && pathname?.includes("/compose/post")) {
+      router.back();
+    }
+  }, [open]);
 
   if (!userdata._id) {
     if (children) {
@@ -331,9 +322,6 @@ export default function PostMaker({
             <span className="flex items-center justify-between">
               <DialogClose
                 className="transform rounded-full p-2 transition-all duration-200 hover:scale-110 hover:bg-gray-800 dark:text-white"
-                onClick={() => {
-                  // if (type === "post") navigate();
-                }}
               >
                 <X size={16} />
               </DialogClose>
@@ -517,7 +505,7 @@ export default function PostMaker({
                 </div>
 
                 <Button
-                  disabled={!txtButton || text.length > textLimit}
+                  disabled={txtButton}
                   onClick={handlePost}
                   className="my-2 w-full transform rounded-full bg-brand px-6 py-2 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-brand/60 tablets:my-0 tablets:w-auto"
                 >

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-unused-vars */
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -137,39 +136,39 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     })
   }, [messages, pid, searchQuery]);
 
+  const getCachedData = useCallback((id: string) => {
+    const cachedData = localStorage.getItem(id);
+    if (cachedData) {
+      const parsedData = JSON.parse(cachedData);
+      if (Date.now() - parsedData.timestamp < 60000 * 5) {
+        // Cache for 5 minutes
+        return parsedData.data;
+      } else {
+        localStorage.removeItem(id);
+      }
+    }
+    return null;
+  }, [localStorage, friendId]);
+
+  const fetchFromAPI = useCallback(async (id: string) => {
+    const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
+    if (!response.ok) {
+      // console.log();
+    }
+    const data = await response.json();
+    localStorage.setItem(
+      data[0]?._id,
+      JSON.stringify({
+        data: data[0],
+        timestamp: Date.now(),
+      })
+    );
+    return data[0];
+  }, [friendId]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(false);
-
-    const getCachedData = (id: string) => {
-      const cachedData = localStorage.getItem(id);
-      if (cachedData) {
-        const parsedData = JSON.parse(cachedData);
-        if (Date.now() - parsedData.timestamp < 60000 * 5) {
-          // Cache for 5 minutes
-          return parsedData.data;
-        } else {
-          localStorage.removeItem(id);
-        }
-      }
-      return null;
-    };
-
-    const fetchFromAPI = async (id: string) => {
-      const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
-      if (!response.ok) {
-        // console.log();
-      }
-      const data = await response.json();
-      localStorage.setItem(
-        data[0]?._id,
-        JSON.stringify({
-          data: data[0],
-          timestamp: Date.now(),
-        })
-      );
-      return data[0];
-    };
 
     try {
       if (friendId) {
@@ -710,7 +709,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           handleSendMessage={handleSendMessage}
           handleTyping={handleTyping}
           closeQuote={closeQuote}
-          disbled={isTextareaDisabled}
+          disabled={isTextareaDisabled}
         />
       )}
       {children}

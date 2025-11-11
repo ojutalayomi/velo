@@ -10,7 +10,7 @@ import { UserData } from "@/lib/types/user";
 
 import { SidebarItem, UserSection, sidebarItems } from "./SidebarComps";
 import { handleThemeChange1 } from "./ThemeToggle";
-import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface SidebarProps {
   activeRoute: string;
@@ -81,28 +81,26 @@ const Sidebar: React.FC<SidebarProps> = ({
   const memoizedSidebarItems = useMemo(
     () =>
       sidebarItems.map((item, key) => (
-        <TooltipProvider key={item.route + key}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <SidebarItem
-                item={item}
-                activeRoute={activeRoute}
-                handleClick={handleClick}
-                userdata={userdata}
-                isCollapsed={isCollapsed}
-              />
-            </TooltipTrigger>
-            <TooltipContent
-              side="right"
-              align="center"
-              className="md:hidden"
-              sideOffset={5}
-              alignOffset={5}
-            >
-              {item.label}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip key={item.route + key}>
+          <TooltipTrigger asChild>
+            <SidebarItem
+              item={item}
+              activeRoute={activeRoute}
+              handleClick={handleClick}
+              userdata={userdata}
+              isCollapsed={isCollapsed}
+            />
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            align="center"
+            className="md:hidden"
+            sideOffset={5}
+            alignOffset={5}
+          >
+            {item.label}
+          </TooltipContent>
+        </Tooltip>
       )),
     [activeRoute, handleClick, userdata, isCollapsed]
   );
@@ -168,31 +166,29 @@ const Sidebar: React.FC<SidebarProps> = ({
             <Moon size={20} className="inline" /> Dark
           </button>
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={toggleDarkMode}
-                className={`${isCollapsed ? "mx-auto !block" : ""} shadow-bar dark:shadow-bar-dark rounded-full bg-gray-100 p-2 md:hidden dark:bg-gray-700`}
-              >
-                {isDarkMode ? (
-                  <Moon size={20} className="mx-auto" />
-                ) : (
-                  <Sun size={20} className="mx-auto" />
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent
-              side="right"
-              align="center"
-              className="md:hidden"
-              sideOffset={5}
-              alignOffset={5}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={toggleDarkMode}
+              className={`${isCollapsed ? "mx-auto !block" : ""} shadow-bar dark:shadow-bar-dark rounded-full bg-gray-100 p-2 md:hidden dark:bg-gray-700`}
             >
-              Toggle {!isDarkMode ? "Dark" : "Light"} Mode
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              {isDarkMode ? (
+                <Moon size={20} className="mx-auto" />
+              ) : (
+                <Sun size={20} className="mx-auto" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            align="center"
+            className="md:hidden"
+            sideOffset={5}
+            alignOffset={5}
+          >
+            Toggle {!isDarkMode ? "Dark" : "Light"} Mode
+          </TooltipContent>
+        </Tooltip>
       </div>
       <div className="px-2">
         <UserSection

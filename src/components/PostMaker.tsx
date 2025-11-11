@@ -10,7 +10,7 @@ import {
   MapPin,
   Loader2,
 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useState,
   useRef,
@@ -19,6 +19,7 @@ import {
   Dispatch,
   SetStateAction,
   ReactNode,
+  Suspense,
 } from "react";
 import { TextAreaBox } from "react-textarea-enhanced";
 
@@ -49,26 +50,27 @@ import { EmojiPicker } from "./ui/emoji-picker";
 import { Input } from "./ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Skeleton } from "./ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 
-
-
-export default function PostMaker({
-  children,
-  open,
-  type = "post",
-  post,
-  onOpenChange,
-}: {
+interface PostMakerClientProps {
   children?: ReactNode;
   open: boolean;
   type?: PostSchema["Type"];
   post?: PostSchema;
   onOpenChange: Dispatch<SetStateAction<boolean>>;
-}) {
+}
+
+function PostMakerClient({
+  children,
+  open,
+  type = "post",
+  post,
+  onOpenChange,
+}: PostMakerClientProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const navigate = useNavigateWithHistory();
   const { userdata } = useUser();
   const socket = useSocket();
@@ -77,14 +79,14 @@ export default function PostMaker({
   const [errors, setErrors] = useState([""]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [txtButton, setTxtButton] = useState(false);
+  const [txtButton, setTxtButton] = useState(true);
   const [text, setText] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const textLimit = userdata.verified ? 10000 : 1000; // 10000 for verified users, 1000 for others
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   useEffect(() => {
-    setTxtButton(files.length === 0 && text.length > textLimit);
+    setTxtButton(text.length > textLimit || (!files.length && !text.length));
   }, [files.length, text.length, textLimit]);
 
   const buttons = [
@@ -295,7 +297,7 @@ export default function PostMaker({
   };
 
   useEffect(() => {
-    if (!open && pathname?.includes("/compose/post")) {
+    if (!open && (pathname?.includes("/compose/post") || searchParams?.get("composeComment"))) {
       router.back();
     }
   }, [open]);
@@ -382,7 +384,6 @@ export default function PostMaker({
             highlightColor="#ff6257"
             minHeight={60}
             maxHeight={400}
-            maxLength={textLimit}
             charLimit={textLimit}
             spellCheck
             placeholder="What's on your mind?"
@@ -463,10 +464,10 @@ export default function PostMaker({
 
           {/* Character Counter */}
           <div
-            className={`mb-2 flex justify-end text-sm text-gray-500 ${text.length === textLimit ? "text-red-500" : ""}`}
+            className={`mb-2 flex justify-end text-sm text-gray-500 ${text.length > textLimit ? "text-red-500" : ""}`}
           >
             <span>
-              {text.length === textLimit && "You have reached the text characters limit! • "}
+              {text.length > textLimit ? "You have reached the text characters limit! • " : ""}
               {text.length}/{textLimit}
             </span>
           </div>
@@ -477,30 +478,28 @@ export default function PostMaker({
               <div className="grid grid-cols-2 gap-8 mb:grid-cols-1">
                 <div className="flex items-center justify-between">
                   {buttons.map((button, index) => (
-                    <TooltipProvider key={button.label + index}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          {button.id === "emoji" ? (
-                            <EmojiPicker
-                              triggerClassName="text-brand hover:bg-brand/90 group p-2 rounded-full transition-all duration-200"
-                              onChange={(emoji: string) => setText((prev) => prev + emoji)}
-                            >
-                              <button.icon size={16} className="group-hover:text-white " />
-                            </EmojiPicker>
-                          ) : (
-                            <button
-                              onClick={button.action}
-                              className="group rounded-full p-2 text-brand transition-all duration-200 hover:bg-brand/90"
-                            >
-                              <button.icon size={16} className="group-hover:text-white" />
-                            </button>
-                          )}
-                        </TooltipTrigger>
-                        <TooltipContent className="shadow-lg">
-                          <span>{button.label}</span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip key={button.label + index}>
+                      <TooltipTrigger asChild>
+                        {button.id === "emoji" ? (
+                          <EmojiPicker
+                            triggerClassName="text-brand hover:bg-brand/90 group p-2 rounded-full transition-all duration-200"
+                            onChange={(emoji: string) => setText((prev) => prev + emoji)}
+                          >
+                            <button.icon size={16} className="group-hover:text-white " />
+                          </EmojiPicker>
+                        ) : (
+                          <button
+                            onClick={button.action}
+                            className="group rounded-full p-2 text-brand transition-all duration-200 hover:bg-brand/90"
+                          >
+                            <button.icon size={16} className="group-hover:text-white" />
+                          </button>
+                        )}
+                      </TooltipTrigger>
+                      <TooltipContent className="shadow-lg">
+                        <span>{button.label}</span>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
 
@@ -518,6 +517,14 @@ export default function PostMaker({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function PostMaker(props: PostMakerClientProps) {
+  return (
+    <Suspense fallback={<></>}>
+      <PostMakerClient {...props} />
+    </Suspense>
   );
 }
 

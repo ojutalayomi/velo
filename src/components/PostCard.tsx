@@ -10,12 +10,13 @@ import {
   Minus,
   Repeat2,
   Save,
+  Share,
   ShieldX,
   UserRoundMinus,
   UserRoundPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -67,6 +68,8 @@ interface Option {
 
 const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const dispatch = useAppDispatch();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const socket = useSocket();
   const { userdata } = useUser();
   const posts = useSelector((state: RootState) => state.posts.posts);
@@ -259,6 +262,24 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       icon: <Save size={20} />,
       text: "Save post",
       onClick: () => handleClick("bookmarked"),
+    },
+    {
+      icon: <Share size={20} />,
+      text: "Share post via…",
+      onClick: async () => {
+        if (navigator.share) {
+          navigator.share({ url: `${window.location.origin}/${data.Username}/posts/${data.PostID}` });
+        } else {
+          try {
+            await navigator.clipboard.writeText(
+              `${window.location.protocol}//${window.location.host}/${data.Username}/posts/${data.PostID}`
+            );
+            toast({ title: "Post link copied!" });
+          } catch (err) {
+            console.error("Failed to copy post link to clipboard: ", err);
+          }
+        }
+      },
     },
     {
       icon: <Copy size={20} />,
@@ -478,7 +499,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         ) : null}
         {/* <Blog Footer> */}
         <div className="reaction-panel">
-          <div className="blog-foot" id="like">
+          <div className="blog-foot" id="like" onClick={() => handleClick("liked")}>
             <svg
               className={data.Liked ? "like-icon clicked" : "like-icon"}
               width="30px"
@@ -486,7 +507,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              onClick={() => handleClick("liked")}
             >
               <path
                 className="!stroke-current dark:stroke-slate-200"
@@ -502,7 +522,13 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             open={isPostMakerModalOpen}
             onOpenChange={setPostMakerModalOpen}
           >
-            <div className="blog-foot" id="comment">
+            <div className="blog-foot" id="comment" onClick={() => {
+              const currParams = new URLSearchParams(searchParams?.toString() || "");
+              currParams.set("composeComment", "true");
+              currParams.set("postId", data.PostID);
+              currParams.set("postType", "comment");
+              router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
+            }}>
               <svg
                 className="comment-icon"
                 width="30px"
@@ -551,13 +577,12 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </svg>
             {!containsPost && <div className="shares">{formatNo(data.NoOfShares)}</div>}
           </ShareButton>
-          <div className="blog-foot" id="bookmark">
+          <div className="blog-foot" id="bookmark" onClick={() => handleClick("bookmarked")}>
             <svg
               className={data.Bookmarked ? "bookmark-icon clicked" : "bookmark-icon"}
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              onClick={() => handleClick("bookmarked")}
             >
               <path
                 className="!stroke-current dark:stroke-slate-200"
@@ -643,12 +668,12 @@ function Options({
             onClick={() => setOpen(true)}
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="mr-2 mt-1 w-auto bg-white dark:bg-zinc-800">
+        <DropdownMenuContent className="min-w-52 w-auto bg-white dark:bg-zinc-800" align="end">
           {options.map(({ icon, text, onClick }, index) => (
             <DropdownMenuItem
               key={index}
               onClick={onClick}
-              className="flex min-w-32 cursor-pointer items-center gap-1 hover:bg-slate-200 hover:dark:bg-zinc-700"
+              className="flex w-52 m-2 cursor-pointer items-center gap-2 hover:bg-slate-200 hover:dark:bg-zinc-700"
             >
               {icon}
               <span className="text-base">{text}</span>

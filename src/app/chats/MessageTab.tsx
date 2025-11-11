@@ -63,7 +63,7 @@ type QuoteProp = {
 type Props = {
   message: MessageAttributes;
   setQuote: React.Dispatch<React.SetStateAction<QuoteProp>>;
-  chat?: string;
+  onClick?: () => void;
 };
 
 // Define the type for each option
@@ -73,7 +73,7 @@ type Option = {
   onClick: () => void; // Click handler function
 };
 
-const MessageTab = ({ message, setQuote }: Props) => {
+const MessageTab = ({ message, setQuote, onClick }: Props) => {
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
   const [open, setOpen] = useState(false);
@@ -264,6 +264,7 @@ const MessageTab = ({ message, setQuote }: Props) => {
   };
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (onClick) return onClick();
     if ((e.target as HTMLElement).closest("a")) return;
     if (IsSelected) dispatch(removeSelectedMessage(message._id as string));
     if (selectedMessages.length) dispatch(addSelectedMessage(message._id as string));

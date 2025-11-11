@@ -2,8 +2,8 @@
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ChevronDown, EllipsisVertical } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
+import { ChevronDown, EllipsisVertical, MessageSquare } from "lucide-react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -74,6 +74,7 @@ const generateObjectId = () => {
 
 const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const params = useParams<{ gid: string }>();
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
@@ -106,6 +107,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
+  const [searchFocus, setSearchFocus] = useState(false);
+  const [searchResults, setSearchResults] = useState<MessageAttributes[]>([]);
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -143,6 +146,24 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         sender.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }) as MessageAttributes[];
+
+  useEffect(() => {
+    // Prevent unnecessary updates if search results would not change
+    if (!searchQuery) {
+      if (searchResults.length > 0) setSearchResults([]);
+      return;
+    }
+    const filtered = Messages.filter((msg) => {
+      return msg.chatId === gid && msg.content.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+    // Only update if the results have actually changed
+    if (
+      filtered.length !== searchResults.length ||
+      filtered.some((msg, idx) => msg._id !== searchResults[idx]?._id)
+    ) {
+      setSearchResults(filtered);
+    }
+  }, [searchQuery, Messages, gid]);  
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -316,9 +337,25 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }, 3000);
   };
 
+  useEffect(() => {
+    if (searchParams && searchParams.get("search") === "true") {
+      openSearchBar(true);
+      setSearchFocus(true);
+      setSearchQuery(searchParams.get("searchQuery") || "");
+    } else {
+      openSearchBar(false);
+      setSearchFocus(false);
+      setSearchQuery("");
+    }
+  }, [searchParams, searchQuery]);
+
   const options = [
     { id: 1, name: "View info", action: () => router.push(`/chats/group/${gid}/settings`) },
-    { id: 2, name: "Search", action: () => openSearchBar(true) },
+    { id: 2, name: "Search", action: () => {
+      const currParams = new URLSearchParams(searchParams?.toString() || "");
+      currParams.set("search", "true");
+      router.push(`/chats/group/${gid}?${currParams.toString()}`, { scroll: false });
+    } },
     { id: 3, name: "Mute notifications", action: () => console.log("Archived") },
     { id: 4, name: "Wallpaper", action: () => console.log("Hidden") },
     {
@@ -382,7 +419,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     <div
       className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -461,7 +498,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         ) : (
           <div className="flex w-full items-center gap-2">
             <FontAwesomeIcon
-              onClick={() => openSearchBar(false)}
+              onClick={() => router.back()}
               icon={"arrow-left"}
               className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
               size="lg"
@@ -479,6 +516,25 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             >
               Clear
             </button>
+            <div className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}>
+              <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
+                {searchResults.length > 0 ? (
+                  searchResults.map((result) => (
+                    <MessageTab key={result._id} message={result} setQuote={setQuote} onClick={() => {
+                      setSearchQuery("");
+                      setSearchFocus(false);
+                      openSearchBar(false);
+                      router.replace(`/chats/group/${gid}#${result._id}`, { scroll: true });
+                    }} />
+                  ))
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
+                    <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No messages found</h3>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -581,7 +637,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
                 <MessageTab
                   key={message._id as string}
-                  chat="Group"
                   message={message}
                   setQuote={setQuote}
                 />
@@ -595,30 +650,28 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         {filteredIsTypingList?.length > 0 && (
           <div
             key={`typing-${filteredIsTypingList[0].id}`}
-            className="sticky top-0 z-[1] mb-4 mt-2 text-center"
+            className="my-2 mb-4 text-left"
           >
-            <div className="flex flex-wrap items-center justify-center gap-2 -space-x-2">
-              {filteredIsTypingList.slice(0, 3).map((i) => (
-                <Avatar className="size-4" key={i.id + i.name} data-src={i.displayPicture}>
-                  <AvatarFallback className="capitalize">{i.name?.slice(0, 2)}</AvatarFallback>
-                  <AvatarImage
-                    src={i.displayPicture}
-                    className="displayPicture size-4 rounded-full object-cover dark:border-slate-200"
-                    width={16}
-                    height={16}
-                    alt="Display Picture"
-                  />
-                </Avatar>
-              ))}
+            <div className="flex flex-wrap items-center justify-start gap-2">
+              <div className="rounded-full bg-gray-100 flex items-center gap-2 rounded-bl-none p-3 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
+                <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2">
+                  {filteredIsTypingList.slice(0, 3).map((i) => (
+                    <Avatar className="size-8 ring-4 ring-offset-background" key={i.id} data-src={i.displayPicture}>
+                      <AvatarFallback className="capitalize size-8">{i.name?.slice(0, 2)}</AvatarFallback>
+                      <AvatarImage
+                        src={i.displayPicture}
+                        className="displayPicture size-8 rounded-full object-cover dark:border-slate-200"
+                        width={16}
+                        height={16}
+                        alt="User Display Picture"
+                      />
+                    </Avatar>
+                  ))}
+                </div>
+                {filteredIsTypingList.slice(0, 3).map((i) => i.name).length > 1 ? "are" : "is"}{" "}
+                typing...
+              </div>
             </div>
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-              {filteredIsTypingList
-                .slice(0, 3)
-                .map((i) => i.name)
-                .join(", ")}{" "}
-              {filteredIsTypingList.slice(0, 3).map((i) => i.name).length > 1 ? "are" : "is"}{" "}
-              typing...
-            </span>
           </div>
         )}
       </div>

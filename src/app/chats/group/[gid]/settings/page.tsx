@@ -9,7 +9,7 @@ import { Switch, Slider } from "@/components/ui";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
-import { ChatDataClient, ChatSettings, MessageAttributes, NewChatSettings, Attachment } from "@/lib/types/type";
+import { ChatSettings, MessageAttributes, NewChatSettings, Attachment } from "@/lib/types/type";
 import { ConvoType, updateConversation } from "@/redux/chatSlice";
 import { RootState } from "@/redux/store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useAppDispatch } from "@/redux/hooks";
 import { Time } from "@/lib/utils";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface Params {
   gid?: string;
@@ -187,9 +188,9 @@ const ChatSettingsPage: React.FC = () => {
 
   return (
     <div
-      className={`absolute z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-md tablets1:w-1/2 tablets1:bg-white dark:bg-black`}
+      className={`absolute z-10 flex size-full overflow-y-auto max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-md tablets1:w-1/2 tablets1:bg-white dark:bg-black`}
     >
-      <div className="flex items-center justify-between gap-4 border-b bg-gray-100 p-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         <div className="flex items-center justify-start gap-4">
           <FontAwesomeIcon
             onClick={() => navigate()}
@@ -206,34 +207,54 @@ const ChatSettingsPage: React.FC = () => {
       </div>
 
       <div className="m-2 space-y-4">
-        <div className="flex flex-col items-center justify-center">
-          <div className="relative">
-            <Avatar className="size-32 border-2 border-white dark:border-black" data-src={convo?.displayPicture}>
-              <AvatarFallback className="capitalize text-xl">
-                {convo?.name?.slice(0, 2).toUpperCase() || ""}
-              </AvatarFallback>
-              <AvatarImage
-                src={convo?.displayPicture}
-                className="displayPicture size-32 rounded-full object-cover dark:border-slate-200"
-                width={80}
-                height={80}
-                alt="Display Picture"
-              />
-            </Avatar>
-            {convo?.verified && (
-              <div className="absolute bottom-1 right-1 mr-5">
-                <Statuser className="size-4" />
+        <Card className="mx-auto mt-2 max-w-md rounded-lg border bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+          <CardHeader className="flex flex-col items-center justify-center p-4">
+            <div className="relative mb-2">
+              <Avatar className="size-24 border-2 border-white shadow-md dark:border-black" data-src={convo?.displayPicture}>
+                <AvatarFallback className="capitalize text-xl">
+                  {convo?.name?.slice(0, 2).toUpperCase() || ""}
+                </AvatarFallback>
+                <AvatarImage
+                  src={convo?.displayPicture}
+                  className="displayPicture size-24 rounded-full object-cover"
+                  width={96}
+                  height={96}
+                  alt="Display Picture"
+                />
+              </Avatar>
+              {convo?.verified && (
+                <div className="absolute bottom-1 right-1 mr-2">
+                  <Statuser className="size-4" />
+                </div>
+              )}
+            </div>
+            <h2 className="mt-2 mb-0 text-lg font-bold text-gray-900 dark:text-slate-100">{convo?.name}</h2>
+            <span className="mt-1 inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-zinc-800 dark:text-gray-400">
+              Group ID: {convo?.id}
+            </span>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <p className="mb-1 text-center text-sm text-gray-500 dark:text-slate-400">{convo?.description || <span className="italic text-gray-400">No description</span>}</p>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+              <span className="rounded bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
+                {convo?.participants.length} members
+              </span>
+              <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700 dark:bg-yellow-900 dark:text-yellow-100">
+                {convo?.adminIds.length} admins
+              </span>
+            </div>
+            <div className="mt-2 flex flex-col items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
+              <div>
+                <span className="font-medium text-gray-500 dark:text-slate-400">Date created: </span>
+                {Time(convo?.timestamp)}
               </div>
-            )}
-          </div>
-          <p className="text-center text-gray-700 dark:text-slate-200">{convo?.name}</p>
-          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.description || 'No description'}</p>
-          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.lastUpdated}</p>
-          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.participants.length} members</p>
-          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">{convo?.adminIds.length} admins</p>
-          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">Date created: {Time(convo?.timestamp)}</p>
-          <p className="text-center text-gray-500 dark:text-slate-400 text-xs">Last updated: {Time(convo?.lastUpdated)}</p>
-        </div>
+              <div>
+                <span className="font-medium text-gray-500 dark:text-slate-400">Last updated: </span>
+                {Time(convo?.lastUpdated)}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Media, Docs, and Links Sneak Peek */}
         <div className="space-y-3 rounded-lg border bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">

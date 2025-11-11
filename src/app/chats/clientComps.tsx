@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SwiperCore from "swiper";
 import { Swiper, SwiperSlide, useSwiper } from "swiper/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -43,9 +43,10 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
   const [swiper, updateSwiper] = useState<SwiperCore | null>(null);
   const [activeTab, setActiveTab] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ConvoType[]>([]);
   const [createPage, openCreatePage] = useState(false);
-
-  // console.log(conversations);
+  const [searchFocus, setSearchFocus] = useState(false);
+  
   const filterConversations = (type: string) => {
     if (!conversations) return [];
     const filteredConversations = conversations.filter((conv) => {
@@ -53,22 +54,16 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
         return (
           conv.type === type &&
           !conv.archived &&
-          !conv.deleted &&
-          (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()))
+          !conv.deleted
         );
       } else if (type === "Archived") {
         return (
-          conv.archived &&
-          (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()))
+          conv.archived
         );
       } else {
         return (
           !conv.archived &&
-          !conv.deleted &&
-          (conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase()))
+          !conv.deleted
         );
       }
     });
@@ -78,9 +73,14 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
     );
   };
 
-  const create = (arg: string) => {
-    openCreatePage(true);
-  };
+  useEffect(() => {
+    const c = filterConversations(activeTab == "All" ? "all" : activeTab);
+    setSearchResults(c.filter((conv) => {
+      if (!searchQuery) return [];
+      return conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase());
+    }));
+  }, [searchQuery, activeTab]);
 
   const tabs = ["All", "DM", "Group", "Archived"];
 
@@ -129,7 +129,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
           />
         </div>
         {/* Search */}
-        <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3">
+        <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3 relative">
           <div className="dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -147,6 +147,8 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
               ></path>
             </svg>
             <input
+              onFocus={() => setSearchFocus(true)}
+              onBlur={() => setSearchFocus(false)}
               className="bg-transparent border-0 dark:text-slate-200 outline-0 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -162,6 +164,20 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
               Clear
             </div>
           )}
+          <div className={`absolute right-0 top-full max-h-[calc(100vh-100px)] w-full z-10 mt-2 p-2 ${searchFocus ? "block" : "hidden"}`}>
+            <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg">
+              {searchResults.length > 0 ? (
+                <ChatListPage className="p-2" filteredChats={() => searchResults} />
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
+                  <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
+                    No results found
+                  </h3>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         {/* Tabs */}
         <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3">

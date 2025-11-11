@@ -184,7 +184,7 @@ const MediaPage: React.FC = () => {
   return (
     <div className="absolute z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-md tablets1:w-1/2 tablets1:bg-white dark:bg-black">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 border-b bg-gray-100 p-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         <div className="flex items-center justify-start gap-4">
           <FontAwesomeIcon
             onClick={() => navigate()}

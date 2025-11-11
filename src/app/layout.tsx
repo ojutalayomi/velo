@@ -7,6 +7,7 @@ import ClientComponents from "./clientComps";
 import React from "react";
 import Providers from "./providers";
 import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 const description =
@@ -61,26 +62,17 @@ export default function RootLayout({
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
         <meta name="mobile-web-app-capable" content="yes" />
-        {/* <meta property="twitter:image" content="Twitter link preview image URL" />
-        <meta property="twitter:card" content="Twitter link preview card" />
-        <meta property="twitter:title" content="Twitter link preview title" />
-        <meta property="twitter:description" content="Twitter link preview description" />
-        <meta property="og:image" content="Link preview image URL" />
-        <meta property="og:site_name" content="Velo" />
-        <meta property="og:title" content="Link preview title" />
-        <meta property="og:description" content="Link preview description" />
-        <meta property="og:url" content="Link preview URL" />
-        <meta property="og:type" content="website" />
-        <meta property="og:locale" content="en_US" /> */}
       </head>
       <body
         className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}
         suppressHydrationWarning
       >
         <Providers>
-          <SpeedInsights />
-          <ClientComponents>{children}</ClientComponents>
-          {modal}
+          <TooltipProvider delayDuration={200}>
+            <SpeedInsights />
+            <ClientComponents>{children}</ClientComponents>
+            {modal}
+          </TooltipProvider>
         </Providers>
         <Toaster />
       </body>

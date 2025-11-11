@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { networkMonitor, NetworkStatus } from "@/lib/network";
 import { Wifi, WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const qualityConfig = {
   excellent: {
@@ -48,26 +48,24 @@ export function NetworkIndicator() {
   }, []);
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center gap-2">
-            <config.icon className={cn("size-5", config.color)} />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="text-sm">
-            <p className="font-medium">{config.label}</p>
-            {status?.online && (
-              <div className="text-xs text-muted-foreground">
-                <p>Speed: {status?.downlink} Mbps</p>
-                <p>Latency: {status?.rtt} ms</p>
-                <p>Network: {status?.effectiveType.toUpperCase()}</p>
-              </div>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="flex items-center gap-2">
+          <config.icon className={cn("size-5", config.color)} />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        <div className="text-sm">
+          <p className="font-medium">{config.label}</p>
+          {status?.online && (
+            <div className="text-xs text-muted-foreground">
+              <p>Speed: {status?.downlink} Mbps</p>
+              <p>Latency: {status?.rtt} ms</p>
+              <p>Network: {status?.effectiveType.toUpperCase()}</p>
+            </div>
+          )}
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }

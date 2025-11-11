@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 
 import { axiosApi } from "@/lib/api";
 
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarImage } from "./ui/avatar";
 
 interface LinkPreviewProps {
   url: string;
@@ -69,7 +69,6 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
                 src={isImage ? metadata.image : metadata.favicon}
                 alt={metadata.title || "Link preview"}
               />
-              <AvatarFallback>{metadata.title || "Link preview"}</AvatarFallback>
             </Avatar>
           )}
           <div className="min-w-0 flex-1">
@@ -101,9 +100,6 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
                 src={metadata.image}
                 alt={metadata.title || "Link preview"}
               />
-              <AvatarFallback className="rounded-none text-brand">
-                {metadata.title || "Link preview"}
-              </AvatarFallback>
             </Avatar>
           </div>
         )}

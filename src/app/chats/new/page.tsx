@@ -401,6 +401,17 @@ const ChatPage = () => {
             if (response.status !== 200) {
               throw new Error("Failed to get bot response");
             }
+            const botResponse = response.data.message;
+            dispatch(addMessage(botResponse));
+            dispatch(
+              updateConversation({
+                id: msg.chatId,
+                updates: {
+                  lastMessage: botResponse.content,
+                  lastUpdated: botResponse.timestamp,
+                },
+              })
+            );
           }
           
         } catch (error) {

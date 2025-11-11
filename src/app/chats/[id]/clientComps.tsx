@@ -3,8 +3,8 @@
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ChevronDown, EllipsisVertical } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
+import { ChevronDown, EllipsisVertical, MessageSquare } from "lucide-react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -91,6 +91,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [isArchived, setIsArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const searchParams = useSearchParams();
   const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -101,6 +102,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [isTextareaDisabled, setIsTextareaDisabled] = useState(false);
+  const [searchResults, setSearchResults] = useState<MessageAttributes[]>([]);
+  const [searchFocus, setSearchFocus] = useState(false);
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -132,7 +135,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   const Messages = useMemo(() => {
     return messages?.filter((msg) => {
-      return msg.chatId === pid && msg.content.toLowerCase().includes(searchQuery.toLowerCase());
+      return msg.chatId === pid;
     })
   }, [messages, pid, searchQuery]);
 
@@ -148,7 +151,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
     }
     return null;
-  }, [localStorage, friendId]);
+  }, [friendId]);
 
   const fetchFromAPI = useCallback(async (id: string) => {
     const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
@@ -209,8 +212,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     (async () => {
       fetchData();
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [friendId, pid]);
+  }, [friendId]);
 
   const handleSendMessage = async (id: string) => {
     if (newMessage.trim() === "" && attachments.length === 0) {
@@ -403,9 +405,25 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }, 3000);
   };
 
+  useEffect(() => {
+    if (searchParams && searchParams.get("search") === "true") {
+      openSearchBar(true);
+      setSearchFocus(true);
+      setSearchQuery(searchParams.get("searchQuery") || "");
+    } else {
+      openSearchBar(false);
+      setSearchFocus(false);
+      setSearchQuery("");
+    }
+  }, [searchParams, searchQuery]);
+
   const options = [
     { id: 1, name: "View contact", action: () => router.push(`/${otherPerson.username}`) },
-    { id: 2, name: "Search", action: () => openSearchBar(true) },
+    { id: 2, name: "Search", action: () => {
+      const currParams = new URLSearchParams(searchParams?.toString() || "");
+      currParams.set("search", "true");
+      router.push(`/chats/${pid}?${currParams.toString()}`, { scroll: false });
+    } },
     { id: 3, name: "Mute notifications", action: () => console.log("Mute notifications") },
     { id: 4, name: "Wallpaper", action: () => console.log("Wallpaper") },
     {
@@ -463,11 +481,19 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
   };
 
+  useEffect(() => {
+    if (!searchQuery) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchResults(Messages.filter((message) => message.content.toLowerCase().includes(searchQuery.toLowerCase())));
+  }, [searchQuery, Messages]);
+
   return (
     <div
       className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -550,7 +576,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         ) : (
           <div className="flex w-full items-center gap-2">
             <FontAwesomeIcon
-              onClick={() => openSearchBar(false)}
+              onClick={() => router.back()}
               icon={"arrow-left"}
               className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
               size="lg"
@@ -558,6 +584,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             <Input
               type="text"
               value={searchQuery}
+              onFocus={() => setSearchFocus(true)}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search"
               className="rounded-full bg-gray-100 dark:bg-zinc-800"
@@ -568,6 +595,27 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             >
               Clear
             </button>
+            <div className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}>
+              <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
+                {searchResults.length > 0 ? (
+                  searchResults.map((result) => (
+                    <MessageTab key={result._id} message={result} setQuote={setQuote} onClick={() => {
+                      setSearchQuery("");
+                      setSearchFocus(false);
+                      openSearchBar(false);
+                      router.replace(`/chats/${result.chatId}#${result._id}`, { scroll: true });
+                    }} />
+                  ))
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
+                    <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
+                      No messages found
+                    </h3>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -681,9 +729,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         {convo?.isTypingList?.filter((i) => i.chatId === pid).map((i) => i.name).length > 0 && (
           <div
             key={`typing-${convo?.isTypingList.find((i) => i.chatId === pid)?.id}`}
-            className="sticky top-0 z-[1] my-2 mb-4 text-center"
+            className="my-2 mb-4 text-left"
           >
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
+            <span className="rounded-full bg-gray-100 rounded-bl-none px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
               {convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...
             </span>
           </div>

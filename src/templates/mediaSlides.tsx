@@ -104,13 +104,15 @@ const MediaSlide = ({
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`h-1.5 rounded-full transition-all ${
-                index === current
+              className={`h-1.5 rounded-full transition-all border-[1px] border-black ${
+                index === current - 1
                   ? 'w-6 bg-white'
                   : 'w-1.5 bg-white/40 hover:bg-white/60'
               }`}
               aria-label={`Go to slide ${index + 1}`}
-            />
+            >
+              <span className="sr-only">Go to slide {index + 1}</span>
+            </button>
           ))}
         </div>
       )}

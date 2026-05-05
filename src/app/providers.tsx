@@ -1,13 +1,15 @@
 "use client";
 import React, { ReactNode } from "react";
 import { Provider } from "react-redux";
+
+import { CallProvider } from "@/components/call";
 import { store } from "@/redux/store";
+
 import NetworkProvider from "./providers/NetworkProvider";
-import SocketProvider, { useSocket } from "./providers/SocketProvider";
 import PostsProvider from "./providers/PostsProvider";
+import SocketProvider, { useSocket } from "./providers/SocketProvider";
 import ThemeProvider from "./providers/ThemeProvider";
 import UserProvider from "./providers/UserProvider";
-import { CallProvider } from "@/components/call";
 
 const WithCallProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const socket = useSocket();

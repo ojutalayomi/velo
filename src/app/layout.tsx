@@ -1,13 +1,15 @@
-import type { Metadata, Viewport } from "next";
-import { myCustomFont } from "../lib/fonts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import type { Metadata, Viewport } from "next";
+import React from "react";
+
 import "@/styles/style.css";
 import "./globals.css";
-import ClientComponents from "./clientComps";
-import React from "react";
-import Providers from "./providers";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+import ClientComponents from "./clientComps";
+import Providers from "./providers";
+import { myCustomFont } from "../lib/fonts";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 const description =
@@ -17,17 +19,17 @@ const siteName = "Velo";
 const image = baseUrl + "/velo11.png";
 
 export const metadata: Metadata = {
-  title: title,
-  description: description,
+  title,
+  description,
   openGraph: {
     images: [
       {
         url: image,
       },
     ],
-    siteName: siteName,
-    title: title,
-    description: description,
+    siteName,
+    title,
+    description,
     url: baseUrl,
     type: "website",
     locale: "en_US",
@@ -39,8 +41,8 @@ export const metadata: Metadata = {
       },
     ],
     card: "summary_large_image",
-    title: title,
-    description: description,
+    title,
+    description,
   },
 };
 
@@ -64,7 +66,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body
-        className={`selection:bg-tomatom-300 dark:bg-bgDark dark:bg-black ${myCustomFont.className}`}
+        className={`selection:bg-tomatom-300 dark:bg-black dark:bg-bgDark ${myCustomFont.className}`}
         suppressHydrationWarning
       >
         <Providers>

@@ -13,7 +13,7 @@ const defaultImage = baseUrl + "/velo11.png";
 export async function generateMetadata({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
   const user = await getUser(username);

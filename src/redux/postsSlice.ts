@@ -1,4 +1,5 @@
 import { Post } from "@/templates/PostProps";
+import type { PaginationMeta } from "@/lib/apiPagination";
 import { PostSchema } from "@/lib/types/type";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
@@ -7,6 +8,9 @@ interface PostsState {
   loading: boolean;
   error: string | null;
   postPreview: Post;
+  feedNextSkip: number;
+  feedHasMore: boolean;
+  feedLoadingMore: boolean;
 }
 
 const initialState: PostsState = {
@@ -14,7 +18,14 @@ const initialState: PostsState = {
   loading: true,
   error: null,
   postPreview: {} as Post,
+  feedNextSkip: 0,
+  feedHasMore: false,
+  feedLoadingMore: false,
 };
+
+function postKey(p: PostSchema) {
+  return String(p.PostID ?? p._id);
+}
 
 const postsSlice = createSlice({
   name: "posts",
@@ -22,6 +33,36 @@ const postsSlice = createSlice({
   reducers: {
     setPosts: (state, action: PayloadAction<PostSchema[]>) => {
       state.posts = action.payload;
+    },
+    initFeedPage: (
+      state,
+      action: PayloadAction<{ posts: PostSchema[]; pagination: PaginationMeta }>
+    ) => {
+      state.posts = action.payload.posts;
+      const p = action.payload.pagination;
+      state.feedNextSkip = p.skip + p.limit;
+      state.feedHasMore = p.hasMore;
+      state.feedLoadingMore = false;
+    },
+    appendFeedPage: (
+      state,
+      action: PayloadAction<{ posts: PostSchema[]; pagination: PaginationMeta }>
+    ) => {
+      const seen = new Set(state.posts.map(postKey));
+      for (const post of action.payload.posts) {
+        const k = postKey(post);
+        if (!seen.has(k)) {
+          seen.add(k);
+          state.posts.push(post);
+        }
+      }
+      const p = action.payload.pagination;
+      state.feedNextSkip = p.skip + p.limit;
+      state.feedHasMore = p.hasMore;
+      state.feedLoadingMore = false;
+    },
+    setFeedLoadingMore: (state, action: PayloadAction<boolean>) => {
+      state.feedLoadingMore = action.payload;
     },
     addPost: (state, action: PayloadAction<PostSchema>) => {
       if (!state.posts.some((post) => post._id === action.payload._id)) {
@@ -78,6 +119,9 @@ const postsSlice = createSlice({
 
 export const {
   setPosts,
+  initFeedPage,
+  appendFeedPage,
+  setFeedLoadingMore,
   addPost,
   updatePost,
   updatePosts,

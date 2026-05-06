@@ -2,7 +2,7 @@
 import { ObjectId } from "bson";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useUser } from "@/app/providers/UserProvider";
@@ -31,9 +31,11 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
     setLoading(true);
     axiosApi("/api")
       .get("/users?getSuggestions=true&limit=10")
-      .then((suggestions) => {
+      .then((suggestionsRes) => {
+        const root = suggestionsRes.data as { data?: SocialMediaUser[] };
+        const rows = root?.data ?? [];
         setSuggestions(
-          suggestions.data.filter(
+          rows.filter(
             (d: SocialMediaUser) =>
               d.isFollowing === false && d._id.toString() !== userdata._id.toString()
           )

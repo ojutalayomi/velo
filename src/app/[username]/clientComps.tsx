@@ -1,7 +1,7 @@
 "use client";
 import { ArrowLeft, Cake, Check, Link, Plus, Pin, Loader2 } from "lucide-react";
 import { notFound, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import RightSideBar from "@/components/RightSideBar";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "@/hooks/use-toast";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import type { PaginationMeta } from "@/lib/apiPagination";
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { timeFormatter } from "@/templates/PostProps";
@@ -18,12 +19,18 @@ import ContentSection from "./ContentTabs";
 import ProfileMenu from "./ProfileMenu";
 import { useUser } from "../providers/UserProvider";
 
+function postDedupeKey(p: PostSchema) {
+  return String(p.PostID ?? p._id);
+}
+
 export default function Profile({
   profileData: pd,
   profilePostCards,
+  postsPagination: initialPagination,
 }: {
   profileData: UserData;
   profilePostCards: PostSchema[];
+  postsPagination: PaginationMeta;
 }) {
   const router = useRouter();
   const { userdata } = useUser();
@@ -32,6 +39,8 @@ export default function Profile({
   const [isLoading, setIsLoading] = useState(false);
   const [profileData, setProfileData] = useState(pd);
   const [postCards, setPostCards] = useState(profilePostCards);
+  const [postsPagination, setPostsPagination] = useState(initialPagination);
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!socket) return;
@@ -139,6 +148,34 @@ export default function Profile({
       setIsLoading(false);
     }
   };
+
+  const loadMoreProfilePosts = useCallback(async () => {
+    const uname = profileData.username;
+    if (!uname || !postsPagination.hasMore || postsLoadingMore) return;
+    setPostsLoadingMore(true);
+    try {
+      const nextSkip = postsPagination.skip + postsPagination.limit;
+      const res = await fetch(
+        `/api/posts/${encodeURIComponent(uname)}?skip=${nextSkip}&limit=${postsPagination.limit}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) return;
+      const body = (await res.json()) as {
+        data?: PostSchema[];
+        pagination?: PaginationMeta;
+      };
+      const chunk = body.data ?? [];
+      const nextPage = body.pagination ?? postsPagination;
+      setPostCards((prev) => {
+        const seen = new Set(prev.map(postDedupeKey));
+        const extra = chunk.filter((c) => !seen.has(postDedupeKey(c)));
+        return [...prev, ...extra];
+      });
+      setPostsPagination(nextPage);
+    } finally {
+      setPostsLoadingMore(false);
+    }
+  }, [profileData.username, postsLoadingMore, postsPagination]);
 
   return (
     <div className="flex h-screen max-h-screen w-full overflow-auto dark:bg-black">
@@ -283,7 +320,13 @@ export default function Profile({
             </div>
           </div>
         </div>
-        <ContentSection profileData={profileData} posts={postCards} />
+        <ContentSection
+          profileData={profileData}
+          posts={postCards}
+          postsHasMore={postsPagination.hasMore}
+          onLoadMorePosts={loadMoreProfilePosts}
+          postsLoadingMore={postsLoadingMore}
+        />
       </div>
 
       <RightSideBar />

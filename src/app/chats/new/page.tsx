@@ -158,15 +158,18 @@ const ChatPage = () => {
       if (!response.ok) {
         // console.log();
       }
-      const data = await response.json();
-      localStorage.setItem(
-        data[0]?._id,
-        JSON.stringify({
-          data: data[0],
-          timestamp: Date.now(),
-        })
-      );
-      return data[0];
+      const body = await response.json();
+      const arr = Array.isArray(body?.data) ? body.data : [];
+      const row = arr[0];
+      if (row?._id != null)
+        localStorage.setItem(
+          String(row._id),
+          JSON.stringify({
+            data: row,
+            timestamp: Date.now(),
+          })
+        );
+      return row;
     };
 
     try {

@@ -2,7 +2,7 @@
 "use client";
 import { Users, Plus, X, ArrowLeft, Ellipsis, Camera } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React, { Dispatch, SetStateAction, Suspense, useEffect, useState, useRef } from "react";
+import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useUser } from "@/app/providers/UserProvider";
@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import type { PaginationMeta } from "@/lib/apiPagination";
+import { fetchUsersSearchPage } from "@/lib/getStatus";
 import { UserData } from "@/lib/types/user";
 import { ConvoType, setNewGroupMembers } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
@@ -20,46 +22,7 @@ import { UserDataPartial } from "@/redux/userSlice";
 
 import { Dialog, DialogContent } from "./ui/dialog";
 
-interface Props {
-  [x: string]: any;
-}
-
-const setSearch = async (
-  arg: string,
-  setSearchQuery: Dispatch<SetStateAction<string>>,
-  setNoUser: Dispatch<SetStateAction<boolean>>,
-  setIsLoading: Dispatch<SetStateAction<boolean>>,
-  setResults: Dispatch<SetStateAction<Props>>,
-  conversations: ConvoType[],
-  userdata: UserData
-) => {
-  try {
-    arg = arg.replace(/[^a-zA-Z0-9\s]/g, "");
-    setSearchQuery(arg);
-    setNoUser(false);
-    setIsLoading(true);
-    if (arg.trim() !== "") {
-      const response = await fetch("/api/users?query=" + encodeURIComponent(arg));
-      if (!response.ok) {
-        throw new Error("Failed to fetch");
-      }
-      const data = await response.json();
-      setNoUser(data.length < 1);
-      // Get all participant IDs from existing conversations
-
-      const newData = data.filter((user: UserData) => user.username !== userdata.username);
-      setResults(newData);
-
-      setIsLoading(false);
-    } else {
-      setResults([]);
-      setNoUser(false);
-      setIsLoading(false);
-    }
-  } catch (error) {
-    console.error("Error searching people:", error);
-  }
-};
+type Props = UserData[];
 
 const DirectChatMenu = () => {
   const router = useRouter();
@@ -71,6 +34,7 @@ const DirectChatMenu = () => {
   const [noUser, setNoUser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<Props>([]);
+  const [peoplePaging, setPeoplePaging] = useState<PaginationMeta | null>(null);
   const [isDisabled, setIsDisabled] = useState(false);
 
   const openChat = (_id: string) => {
@@ -93,6 +57,63 @@ const DirectChatMenu = () => {
   useEffect(() => {
     dispatch(showChat(""));
   }, [dispatch]);
+
+  const mergePeopleRows = useCallback((rows: Props, extras: Props) => {
+    const ids = new Set(rows.map((r) => String(r._id)));
+    const add = extras.filter((r) => !ids.has(String(r._id)));
+    return [...rows, ...add];
+  }, []);
+
+  const handleDmSearchChange = async (raw: string) => {
+    const cleaned = raw.replace(/[^a-zA-Z0-9\s]/g, "");
+    setSearchQuery(cleaned);
+    setNoUser(false);
+
+    if (cleaned.trim() === "") {
+      setResults([]);
+      setPeoplePaging(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const page = await fetchUsersSearchPage(cleaned, 0, 15);
+      const data = page.data as unknown as UserData[];
+      setNoUser(data.length < 1);
+      const filtered = data.filter((user) => user.username !== userdata.username);
+      setResults(filtered);
+      setPeoplePaging(page.pagination);
+    } catch (error) {
+      console.error("Error searching people:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMoreDmPeople = async () => {
+    if (
+      !peoplePaging?.hasMore ||
+      isLoading ||
+      searchQuery.trim() === ""
+    ) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const skip = peoplePaging.skip + peoplePaging.limit;
+      const page = await fetchUsersSearchPage(searchQuery, skip, peoplePaging.limit);
+      const chunk = page.data as unknown as UserData[];
+      const filtered = chunk.filter((user) => user.username !== userdata.username);
+      setResults((prev) => mergePeopleRows(prev, filtered));
+      setPeoplePaging(page.pagination);
+      if (filtered.length === 0 && !page.pagination.hasMore) setNoUser(true);
+    } catch (error) {
+      console.error("Error searching people:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const keyHolder = [
     {
@@ -134,17 +155,7 @@ const DirectChatMenu = () => {
           <input
             className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
             value={searchQuery}
-            onChange={(e) =>
-              setSearch(
-                e.target.value,
-                setSearchQuery,
-                setNoUser,
-                setIsLoading,
-                setResults,
-                conversations,
-                userdata
-              )
-            }
+            onChange={(e) => void handleDmSearchChange(e.target.value)}
             type="text"
             placeholder="Search for people..."
           />
@@ -203,6 +214,15 @@ const DirectChatMenu = () => {
               <ImageContent key={index} userdata={person} onClick={openChat} />
             ))
           )}
+          {peoplePaging?.hasMore && !isLoading ? (
+            <button
+              type="button"
+              className="text-sm font-medium text-brand"
+              onClick={() => void loadMoreDmPeople()}
+            >
+              Load more
+            </button>
+          ) : null}
         </div>
       </div>
     </>
@@ -219,6 +239,7 @@ const GroupChatMenu = () => {
   const [noUser, setNoUser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<Props>([]);
+  const [groupPeoplePaging, setGroupPeoplePaging] = useState<PaginationMeta | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<UserDataPartial[]>([]);
   const [selectedUsersIds, setSelectedUsersIds] = useState<string[]>([]);
   const [groupName, setGroupName] = useState("");
@@ -297,6 +318,53 @@ const GroupChatMenu = () => {
     dispatch(showChat(""));
   }, [dispatch]);
 
+  const mergeGroupRows = useCallback((rows: Props, extras: Props) => {
+    const ids = new Set(rows.map((r) => String(r._id)));
+    const add = extras.filter((r) => !ids.has(String(r._id)));
+    return [...rows, ...add];
+  }, []);
+
+  const handleGroupPeopleSearchChange = async (raw: string) => {
+    const cleaned = raw.replace(/[^a-zA-Z0-9\s]/g, "");
+    setSearchQuery(cleaned);
+    setNoUser(false);
+    if (cleaned.trim() === "") {
+      setResults([]);
+      setGroupPeoplePaging(null);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const page = await fetchUsersSearchPage(cleaned, 0, 15);
+      const data = page.data as unknown as UserData[];
+      setNoUser(data.length < 1);
+      const filtered = data.filter((user) => user.username !== userdata.username);
+      setResults(filtered);
+      setGroupPeoplePaging(page.pagination);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMoreGroupPeople = async () => {
+    if (!groupPeoplePaging?.hasMore || isLoading || searchQuery.trim() === "") return;
+    setIsLoading(true);
+    try {
+      const skip = groupPeoplePaging.skip + groupPeoplePaging.limit;
+      const page = await fetchUsersSearchPage(searchQuery, skip, groupPeoplePaging.limit);
+      const chunk = (page.data as unknown as UserData[]).filter(
+        (user) => user.username !== userdata.username
+      );
+      setResults((prev) => mergeGroupRows(prev, chunk));
+      setGroupPeoplePaging(page.pagination);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (userdata._id) {
       setSelectedUsersIds([String(userdata._id)]);
@@ -372,17 +440,7 @@ const GroupChatMenu = () => {
           <input
             className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
             value={searchQuery}
-            onChange={(e) =>
-              setSearch(
-                e.target.value,
-                setSearchQuery,
-                setNoUser,
-                setIsLoading,
-                setResults,
-                conversations,
-                userdata
-              )
-            }
+            onChange={(e) => void handleGroupPeopleSearchChange(e.target.value)}
             type="text"
             placeholder="Search for people..."
           />
@@ -468,6 +526,15 @@ const GroupChatMenu = () => {
                 ))}
               </>
             )}
+            {groupPeoplePaging?.hasMore && !isLoading ? (
+              <button
+                type="button"
+                className="mt-2 text-sm font-medium text-brand"
+                onClick={() => void loadMoreGroupPeople()}
+              >
+                Load more
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

@@ -80,9 +80,11 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const [time, setTime] = useState("");
   const [time1, setTime1] = useState("");
   const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [isCaptionCopied, setIsCaptionCopied] = useState(false);
   const router = useRouter();
   const [data, setData] = useState<PostSchema>({} as PostSchema);
   const [containsPost, setContainsPost] = useState(false);
+  const [showFullCaption, setShowFullCaption] = useState(false);
 
   useEffect(() => {
     setContainsPost(window.location.pathname.includes("posts"));
@@ -246,6 +248,11 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     }
   };
 
+  const handleShowMore = (e: React.MouseEvent<HTMLSpanElement>) => {
+    e.preventDefault();
+    setShowFullCaption(!showFullCaption);
+  };
+
   const options: Option[] = [
     ...(data.UserId !== userdata._id
       ? [
@@ -268,7 +275,9 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       text: "Share post via…",
       onClick: async () => {
         if (navigator.share) {
-          navigator.share({ url: `${window.location.origin}/${data.Username}/posts/${data.PostID}` });
+          navigator.share({
+            url: `${window.location.origin}/${data.Username}/posts/${data.PostID}`,
+          });
         } else {
           try {
             await navigator.clipboard.writeText(
@@ -293,6 +302,19 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           setTimeout(() => setIsLinkCopied(false), 3000);
         } catch (err) {
           console.error("Failed to copy post link to clipboard: ", err);
+        }
+      },
+    },
+    {
+      icon: <Copy size={20} />,
+      text: isCaptionCopied ? "Copied" : "Copy caption",
+      onClick: async () => {
+        try {
+          await navigator.clipboard.writeText(data.Caption);
+          setIsCaptionCopied(true);
+          setTimeout(() => setIsCaptionCopied(false), 3000);
+        } catch (err) {
+          console.error("Failed to copy post caption to clipboard: ", err);
         }
       },
     },
@@ -398,18 +420,22 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           className="blog-contents"
           onClick={() => handleActivePost(`/${data.Username}/posts/${data.PostID}`)}
         >
-          {data.Caption && data.Caption.length > 250 && !containsPost ? (
+          {data.Caption && data.Caption.length > 250 && !containsPost && !showFullCaption ? (
             <>
               <abbr title={data.Caption}>
-                <p className="whitespace-pre-wrap text-sm">
+                <p className="whitespace-pre-wrap text-sm truncate">
                   {renderTextWithLinks(data.Caption.substring(0, 250))}...{" "}
-                  <span className="showMore">show more</span>
+                  <span className="showMore" onClick={handleShowMore}>
+                    show more
+                  </span>
                 </p>
               </abbr>
             </>
           ) : (
             <abbr title={data.Caption}>
-              <p className="whitespace-pre-wrap text-sm">{renderTextWithLinks(data.Caption)}</p>
+              <p className="whitespace-pre-wrap text-sm truncate">
+                {renderTextWithLinks(data.Caption)}
+              </p>
             </abbr>
           )}
         </div>
@@ -423,8 +449,21 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         )}
         {/* Post Card */}
         {originalPost && (
-          <Link href={`/${originalPost.Username}/posts/${originalPost.PostID}`}>
-            <div className="rounded-xl border border-gray-800 p-4">
+          <div
+            role="link"
+            tabIndex={0}
+            className="cursor-pointer rounded-xl border border-gray-800 p-4"
+            onClick={() =>
+              handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`)
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`);
+              }
+            }}
+          >
+            <div>
               <div className="flex items-start space-x-1">
                 <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
                   <Avatar className="size-8">
@@ -470,7 +509,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                 </div>
               </div>
             </div>
-          </Link>
+          </div>
         )}
         {containsPost ? (
           <>
@@ -522,13 +561,17 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             open={isPostMakerModalOpen}
             onOpenChange={setPostMakerModalOpen}
           >
-            <div className="blog-foot" id="comment" onClick={() => {
-              const currParams = new URLSearchParams(searchParams?.toString() || "");
-              currParams.set("composeComment", "true");
-              currParams.set("postId", data.PostID);
-              currParams.set("postType", "comment");
-              router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
-            }}>
+            <div
+              className="blog-foot"
+              id="comment"
+              onClick={() => {
+                const currParams = new URLSearchParams(searchParams?.toString() || "");
+                currParams.set("composeComment", "true");
+                currParams.set("postId", data.PostID);
+                currParams.set("postType", "comment");
+                router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
+              }}
+            >
               <svg
                 className="comment-icon"
                 width="30px"
@@ -647,7 +690,7 @@ function Options({
                   onClick={onClick}
                 >
                   {icon}
-                  <span className="text-lg dark:text-white">{text}</span>
+                  <span className="text-lg dark:text-white truncate">{text}</span>
                 </span>
               ))}
             </DrawerDescription>
@@ -676,7 +719,7 @@ function Options({
               className="flex w-52 m-2 cursor-pointer items-center gap-2 hover:bg-slate-200 hover:dark:bg-zinc-700"
             >
               {icon}
-              <span className="text-base">{text}</span>
+              <span className="text-base truncate">{text}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

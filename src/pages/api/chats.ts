@@ -3,6 +3,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
 import { UserSchema } from "@/lib/class/User";
+import {
+  DEFAULT_MESSAGE_LIMIT,
+  pagingMeta,
+  parsePaging,
+} from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
 import { getSocketInstance } from "@/lib/socket";
 import {
@@ -59,7 +64,15 @@ export const chatRepository = {
         .find({ chatId: { $in: chatIds } })
         .toArray();
 
-      const messages = await db
+      const msgPaging = parsePaging(req, {
+        skipKey: "messageSkip",
+        limitKey: "messageLimit",
+        defaultLimit: DEFAULT_MESSAGE_LIMIT,
+        maxLimit: 2000,
+      });
+      const fetchMessageCount = msgPaging.limit + 1;
+
+      const messageDocs = await db
         .chatMessages()
         .find({
           $or: [
@@ -71,12 +84,18 @@ export const chatRepository = {
                     },
                   },
                 ]
-              : []), // Use $in to get messages for all chatIds if the array isn't empty
-            { senderId: payload._id }, // Direct sender ID match
-            { receiverId: payload._id }, // Match receiver ID
+              : []),
+            { senderId: payload._id },
+            { receiverId: payload._id },
           ],
         })
+        .sort({ timestamp: -1, _id: -1 })
+        .skip(msgPaging.skip)
+        .limit(fetchMessageCount)
         .toArray();
+
+      const hasMoreMessages = messageDocs.length > msgPaging.limit;
+      const messages = messageDocs.slice(0, msgPaging.limit);
 
       const readReceipts = await db
         .readReceipts()
@@ -227,8 +246,10 @@ export const chatRepository = {
         chatSettings,
         messages: newMessages,
         requestId: payload._id,
+        pagination: {
+          messages: pagingMeta(msgPaging.skip, msgPaging.limit, hasMoreMessages),
+        },
       };
-      // console.log(newObj)
 
       res.status(200).json(newObj);
     } catch (error) {

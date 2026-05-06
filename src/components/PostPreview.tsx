@@ -3,7 +3,9 @@ import SwiperCore from "swiper";
 import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Bookmark } from "lucide-react";
 import { Comments, formatNo, Post } from "@/templates/PostProps";
 import { PostSchema } from "@/lib/types/type";
-import { getComments, getPost } from "../lib/getStatus";
+import type { PaginationMeta } from "@/lib/apiPagination";
+
+import { fetchCommentsPage, getPost } from "../lib/getStatus";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import MediaSlide from "@/templates/mediaSlides";
@@ -361,22 +363,44 @@ const RightSideBar = ({
   const { userdata } = useUser();
   const socket = useSocket();
   const [comments, setComments] = useState<Comments["comments"]>();
+  const [commentsPagination, setCommentsPagination] = useState<PaginationMeta | null>(null);
+  const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (id) {
-      setLoading(true);
-      try {
-        const commentsResponse = await getComments(id);
-        setComments(commentsResponse.comments);
-      } catch (error) {
-        setError((error as Error).message);
-      } finally {
-        setLoading(false);
-      }
+    if (!id) return;
+    setLoading(true);
+    try {
+      const commentsResponse = await fetchCommentsPage(id, 0);
+      setComments(commentsResponse.data);
+      setCommentsPagination(commentsResponse.pagination);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
     }
   }, [id]);
+
+  const commentKeyInner = useCallback((c: PostSchema) => String(c.PostID ?? c._id), []);
+
+  const loadMoreCommentsSidebar = useCallback(async () => {
+    if (!id || !commentsPagination?.hasMore || commentsLoadingMore) return;
+    setCommentsLoadingMore(true);
+    try {
+      const nextSkip = commentsPagination.skip + commentsPagination.limit;
+      const page = await fetchCommentsPage(id, nextSkip);
+      setComments((prev) => {
+        const base = prev ?? [];
+        const seen = new Set(base.map(commentKeyInner));
+        const extras = page.data.filter((c) => !seen.has(commentKeyInner(c)));
+        return [...base, ...extras];
+      });
+      setCommentsPagination(page.pagination);
+    } finally {
+      setCommentsLoadingMore(false);
+    }
+  }, [id, commentsLoadingMore, commentsPagination, commentKeyInner]);
 
   useEffect(() => {
     fetchData();
@@ -387,7 +411,7 @@ const RightSideBar = ({
     socket.on("newComment", (data: { excludeUser: string; blog: PostSchema }) => {
       setComments((prevComments) => {
         if (prevComments) {
-          return [...prevComments, data.blog];
+          return [data.blog, ...prevComments];
         }
         return [data.blog];
       });
@@ -471,7 +495,23 @@ const RightSideBar = ({
 
         {/* Comments Section */}
         {comments && !loading ? (
-          comments.map((comment) => <PostCard key={generateRandomToken(10)} postData={comment} />)
+          <>
+            {comments.map((comment) => (
+              <PostCard key={generateRandomToken(10)} postData={comment} />
+            ))}
+            {commentsPagination?.hasMore ? (
+              <div className="flex justify-center py-3">
+                <button
+                  type="button"
+                  disabled={commentsLoadingMore}
+                  onClick={() => void loadMoreCommentsSidebar()}
+                  className="rounded-full border border-gray-200 px-3 py-1.5 text-xs dark:border-zinc-600"
+                >
+                  {commentsLoadingMore ? "Loading…" : "Load older comments"}
+                </button>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="flex items-center justify-center w-full h-full">
             <div className="loader size-7 show"></div>

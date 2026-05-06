@@ -26,9 +26,15 @@ const tabs: { id: ID; label: string }[] = [
 export default function ContentSection({
   profileData,
   posts,
+  postsHasMore,
+  onLoadMorePosts,
+  postsLoadingMore,
 }: {
   profileData: UserData;
   posts: PostSchema[];
+  postsHasMore?: boolean;
+  onLoadMorePosts?: () => void | Promise<void>;
+  postsLoadingMore?: boolean;
 }) {
   const userdata = useSelector((state: RootState) => state.user.userdata);
   const [api, setApi] = useState<CarouselApi>();
@@ -145,6 +151,18 @@ export default function ContentSection({
             })}
           </CarouselContent>
         </Carousel>
+        {postsHasMore && onLoadMorePosts ? (
+          <div className="flex justify-center pb-8 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={postsLoadingMore}
+              onClick={() => void onLoadMorePosts()}
+            >
+              {postsLoadingMore ? "Loading…" : "Load more posts"}
+            </Button>
+          </div>
+        ) : null}
       </Tabs>
     </div>
   );

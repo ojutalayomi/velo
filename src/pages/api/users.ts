@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { pagingMeta, MAX_API_LIMIT, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { SocialMediaUser, UserSchema } from "@/lib/class/User";
 import { MongoDBClient } from "@/lib/mongodb";
@@ -20,13 +21,71 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     /"/g,
     ""
   );
-  const payload = (await verifyToken(cookie as unknown as string)) as unknown as Payload;
 
   try {
-    const db = await new MongoDBClient().init();
-    let users;
+    let payload: Payload | null = null;
+    if (cookie) {
+      try {
+        payload = (await verifyToken(cookie as unknown as string)) as unknown as Payload;
+      } catch {
+        payload = null;
+      }
+    }
 
-    const agg = [
+    const db = await new MongoDBClient().init();
+
+    if (search) {
+      const qSearch = Array.isArray(query) ? query[0] : query;
+      if (!ObjectId.isValid(qSearch as string)) {
+        res.status(400).json({ error: "Invalid ObjectId format" });
+        return;
+      }
+      const foundUser = await db.users().findOne({
+        $or: [{ _id: new ObjectId(qSearch as string) }, { username: query as string }],
+      });
+
+      if (!foundUser) {
+        return res.status(400).json({ error: "User not found" });
+      }
+
+      const users = await addIsFollowing(db, [foundUser as UserSchema], payload);
+      return res.status(200).json({
+        data: users,
+        pagination: pagingMeta(0, 1, false),
+      });
+    }
+
+    if (getSuggestions) {
+      const { limit: pageLimit, skip } = parsePaging(req, {
+        limitKey: "limit",
+        defaultLimit: limit ? parseInt(String(limit), 10) || 10 : 10,
+        maxLimit: MAX_API_LIMIT,
+      });
+      const fetchLimit = pageLimit + 1;
+      const raw = await db
+        .users()
+        .find({})
+        .sort({ _id: 1 })
+        .skip(skip)
+        .limit(fetchLimit)
+        .toArray();
+      const hasMore = raw.length > pageLimit;
+      const slice = raw.slice(0, pageLimit);
+      const users = await addIsFollowing(db, slice as UserSchema[], payload);
+      return res.status(200).json({
+        data: users,
+        pagination: pagingMeta(skip, pageLimit, hasMore),
+      });
+    }
+
+    const autocompleteQuery = String(Array.isArray(query) ? query[0] : query);
+    const { limit: pageLimit, skip } = parsePaging(req, {
+      defaultLimit: 15,
+      maxLimit: 30,
+    });
+    const fetchLimit = pageLimit + 1;
+
+    const agg: Record<string, unknown>[] = [
       {
         $search: {
           index: "Users",
@@ -34,7 +93,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
             should: [
               {
                 autocomplete: {
-                  query,
+                  query: autocompleteQuery,
                   path: "name",
                   fuzzy: {
                     maxEdits: 1,
@@ -44,7 +103,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
               },
               {
                 autocomplete: {
-                  query,
+                  query: autocompleteQuery,
                   path: "username",
                   fuzzy: {
                     maxEdits: 1,
@@ -56,9 +115,8 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
           },
         },
       },
-      {
-        $limit: 15,
-      },
+      { $skip: skip },
+      { $limit: fetchLimit },
       {
         $project: {
           password: 0,
@@ -76,51 +134,38 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         },
       },
     ];
-    if (search) {
-      if (!ObjectId.isValid(query as string)) {
-        res.status(400).json({ error: "Invalid ObjectId format" });
-        return; 
-      }
-      const foundUser = ObjectId.isValid(query as string) ? await db.users().findOne({
-        $or: [{ _id:  new ObjectId(query as string) }, { username: query as string }],
-      }) : null;
 
-      if (!foundUser) {
-        return res.status(400).json({ error: "User not found" });
-      }
+    const rawAgg = await db.users().aggregate(agg).toArray();
+    const hasMore = rawAgg.length > pageLimit;
+    const pageUsers = rawAgg.slice(0, pageLimit);
+    const users = await addIsFollowing(db, pageUsers as UserSchema[], payload);
 
-      const data = new SocialMediaUser(foundUser);
-      users = [data.getClientSafeData()];
-    } else if (getSuggestions) {
-      users = await addIsFollowing(db, await db.users().find({}).limit(limit ? parseInt(limit as string) : 10).toArray(), payload);
-    } else {
-      users = await addIsFollowing(db, await db.users().aggregate(agg).toArray() as UserSchema[], payload);
-    }
-
-    if (!users || users.length === 0) {
-      return res.status(404).json({ error: "No users found" });
-    }
-
-
-    res.status(200).json(users);
+    return res.status(200).json({
+      data: users,
+      pagination: pagingMeta(skip, pageLimit, hasMore),
+    });
   } catch (error) {
     console.error("An error occurred:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
 
-async function addIsFollowing(db: MongoDBClient, users: UserSchema[], payload: Payload) {
-  const userData = users.map(user => new SocialMediaUser(user as UserSchema).getClientSafeData());
-  
-  const usersWithFollowingStatus = await Promise.all(
+async function addIsFollowing(db: MongoDBClient, users: UserSchema[], payload: Payload | null) {
+  const userData = users.map((user) =>
+    new SocialMediaUser(user as UserSchema).getClientSafeData()
+  );
+
+  return Promise.all(
     userData.map(async (obj) => {
-      const isFollowing = payload
-        ? await db.followers().findOne({ followerId: payload._id, followedId: obj._id.toString() })
-        : false;
+      const isFollowing =
+        payload?._id != null
+          ? await db.followers().findOne({
+              followerId: payload._id,
+              followedId: obj._id.toString(),
+            })
+          : false;
       obj.isFollowing = !!isFollowing;
       return obj;
     })
   );
-  
-  return usersWithFollowingStatus;
 }

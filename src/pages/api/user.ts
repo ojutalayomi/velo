@@ -50,16 +50,16 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     );
     
     if (user.isUserNull()) {
-      return res.status(401).json({ error: "Invalid username or email" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     if (!user.isEmailConfirmed) {
-      return res.status(401).json({ error: "Email not confirmed" });
+      return res.status(401).json({ error: "Account not confirmed" });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password as string);
     if (!passwordMatch) {
-      return res.status(401).json({ error: "Invalid password" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     // const following = (await db.followers().find({ followerId: user._id.toString() }).toArray()).length;

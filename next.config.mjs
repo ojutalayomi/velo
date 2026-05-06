@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  turbopack: {
+    root: __dirname,
   },
   async headers() {
     return [
@@ -96,6 +96,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "**.amazonaws.com",
+        port: "",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
         port: "",
       },
       {

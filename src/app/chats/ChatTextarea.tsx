@@ -13,7 +13,7 @@ import {
   useState,
 } from "react";
 import { useSelector } from "react-redux";
-import { TextAreaBox, Details } from 'react-textarea-enhanced';
+import { TextAreaBox, Details } from '@ojutalayomi/react-textarea-enhanced';
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";

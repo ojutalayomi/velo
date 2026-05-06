@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import {
   X,
   Paintbrush,
@@ -21,7 +22,6 @@ import {
   ReactNode,
   Suspense,
 } from "react";
-import { TextAreaBox } from "react-textarea-enhanced";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -124,10 +124,6 @@ function PostMakerClient({
   const closeFullscreen = () => {
     setFullscreenImage(null);
   };
-
-  useEffect(() => {
-    console.groupCollapsed(errors.length);
-  }, [errors]);
 
   function handleFiles(e: ChangeEvent<HTMLInputElement>): void {
     if (!imageInputRef.current) return;

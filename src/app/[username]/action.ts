@@ -1,8 +1,11 @@
 "use server";
+
 import { headers } from "next/headers";
 
-import { PostSchema } from "@/lib/types/type";
-import { UserData } from "@/lib/types/user";
+import type { PaginationMeta } from "@/lib/apiPagination";
+import { DEFAULT_POST_LIMIT } from "@/lib/apiPagination";
+import type { PostSchema } from "@/lib/types/type";
+import type { UserData } from "@/lib/types/user";
 
 export async function getUser(username: string): Promise<UserData> {
   try {
@@ -38,36 +41,53 @@ export async function getUser(username: string): Promise<UserData> {
   }
 }
 
-export async function getUserPosts(username: string) {
+export async function getProfilePostsFirstPage(username: string): Promise<{
+  posts: PostSchema[];
+  pagination: PaginationMeta;
+}> {
+  const empty: PaginationMeta = { skip: 0, limit: DEFAULT_POST_LIMIT, hasMore: false };
   try {
     const headersList = headers();
     const protocol = (await headersList).get("x-forwarded-proto");
     const host = (await headersList).get("host");
 
-    const res = await fetch(`${protocol}://${host}/api/posts/${username}`, {
-      method: "GET",
-      cache: "no-store",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: (await headersList).get("cookie") || "",
-      },
-    });
+    const res = await fetch(
+      `${protocol}://${host}/api/posts/${encodeURIComponent(username)}?limit=${DEFAULT_POST_LIMIT}&skip=0`,
+      {
+        method: "GET",
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: (await headersList).get("cookie") || "",
+        },
+      }
+    );
 
     if (!res.ok) {
       console.error(`Error fetching posts: ${res.status} ${res.statusText}`);
-      return [];
+      return { posts: [], pagination: empty };
     }
 
     const text = await res.text();
+    let body: {
+      data?: PostSchema[];
+      pagination?: PaginationMeta;
+    };
+
     try {
-      return JSON.parse(text) as PostSchema[];
+      body = JSON.parse(text);
     } catch (e) {
       console.error("Failed to parse response as JSON:", text.substring(0, 200));
-      return [];
+      return { posts: [], pagination: empty };
     }
+
+    return {
+      posts: body.data ?? [],
+      pagination: body.pagination ?? empty,
+    };
   } catch (error) {
     console.error("Error fetching posts:", error);
-    return [];
+    return { posts: [], pagination: empty };
   }
 }

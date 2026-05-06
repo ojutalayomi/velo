@@ -17,7 +17,10 @@ export const renderTextWithLinks = (text: string) => {
           key={`hashtag-${i}`}
           href={`/hashtag/${encodeURIComponent(part.slice(1))}?src=hashtag_click`}
           className="text-brand transition-all duration-150 hover:underline"
-          onClick={() => console.log(`Hashtag clicked: ${part}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log(`Hashtag clicked: ${part}`);
+          }}
         >
           {part}
         </Link>
@@ -29,7 +32,10 @@ export const renderTextWithLinks = (text: string) => {
           key={`cashtag-${i}`}
           href={`/search?q=${encodeURIComponent(part.slice(1))}?src=cashtag_click`}
           className="text-blue-500 transition-all duration-150 hover:underline"
-          onClick={() => console.log(`Cashtag clicked: ${part}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log(`Cashtag clicked: ${part}`);
+          }}
         >
           {part}
         </Link>
@@ -41,7 +47,10 @@ export const renderTextWithLinks = (text: string) => {
           key={`mention-${i}`}
           href={`/${encodeURIComponent(part.slice(1))}?src=mention_click`}
           className="text-blue-500 transition-all duration-150 hover:underline"
-          onClick={() => console.log(`Mention clicked: ${part}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log(`Mention clicked: ${part}`);
+          }}
         >
           {part}
         </Link>
@@ -56,6 +65,7 @@ export const renderTextWithLinks = (text: string) => {
           className="text-blue-600 transition-all duration-150 hover:underline"
           rel="noopener noreferrer"
           target="_blank"
+          onClick={(e) => e.stopPropagation()}
         >
           {part}
         </a>

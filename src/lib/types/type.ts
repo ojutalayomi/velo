@@ -296,6 +296,12 @@ export interface ChatDataClient extends ChatData {
   participants: ChatParticipant[];
 }
 
+export type MessagesPaginationMeta = {
+  skip: number;
+  limit: number;
+  hasMore: boolean;
+};
+
 export type AllChats = {
   chats: ChatDataClient[];
   chatSettings: {
@@ -303,6 +309,9 @@ export type AllChats = {
   };
   messages?: MessageAttributes[];
   requestId: string;
+  pagination?: {
+    messages: MessagesPaginationMeta;
+  };
 };
 
 export type AllChatsServer = {
@@ -312,6 +321,9 @@ export type AllChatsServer = {
   };
   messages?: MessageAttributes[];
   requestId: string;
+  pagination?: {
+    messages: MessagesPaginationMeta;
+  };
 };
 
 export interface NewChat_ {

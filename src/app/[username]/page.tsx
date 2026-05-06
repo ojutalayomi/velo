@@ -1,9 +1,25 @@
-import { getUser, getUserPosts } from "./action";
+import type { PaginationMeta } from "@/lib/apiPagination";
+import { DEFAULT_POST_LIMIT } from "@/lib/apiPagination";
+
+import { getProfilePostsFirstPage, getUser } from "./action";
 import Profile from "./clientComps";
 
-export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const userData = await getUser((await params).username);
-  const userPosts = await getUserPosts((await params).username);
+const defaultPagination: PaginationMeta = {
+  skip: 0,
+  limit: DEFAULT_POST_LIMIT,
+  hasMore: false,
+};
 
-  return <Profile profileData={userData} profilePostCards={userPosts} />;
+export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
+  const username = (await params).username;
+  const userData = await getUser(username);
+  const bundle = await getProfilePostsFirstPage(username);
+
+  return (
+    <Profile
+      profileData={userData}
+      profilePostCards={bundle.posts}
+      postsPagination={bundle.pagination ?? defaultPagination}
+    />
+  );
 }

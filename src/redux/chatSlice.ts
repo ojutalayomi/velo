@@ -14,7 +14,15 @@ import {
 } from "@/lib/types/type";
 
 import { UserDataPartial } from "./userSlice";
+import type { AppDispatch, RootState } from "./store";
 export type { ConvoType };
+
+function sortMsgs(a: MessageAttributes, b: MessageAttributes) {
+  const ta = new Date(a.timestamp ?? 0).getTime();
+  const tb = new Date(b.timestamp ?? 0).getTime();
+  if (ta !== tb) return ta - tb;
+  return String(a._id).localeCompare(String(b._id));
+}
 
 const chatRepository = new ChatRepository();
 
@@ -59,6 +67,9 @@ const chatSlice = createSlice({
     loading: true,
     error: "",
     userId: "",
+    messagesNextSkip: 0,
+    messagesHasMore: false,
+    loadingMoreMessages: false,
     newChat: {
       type: "" as ChatType,
       name: "",
@@ -126,11 +137,32 @@ const chatSlice = createSlice({
       }
     },
     setMessages: (state, action: PayloadAction<MessageAttributes[]>) => {
-      state.messages = action.payload;
+      state.messages = [...action.payload].sort(sortMsgs);
+    },
+    appendMessages: (state, action: PayloadAction<MessageAttributes[]>) => {
+      const seen = new Set(state.messages.map((m) => String(m._id)));
+      for (const m of action.payload) {
+        if (!seen.has(String(m._id))) {
+          seen.add(String(m._id));
+          state.messages.push(m);
+        }
+      }
+      state.messages.sort(sortMsgs);
+    },
+    setMessagesPagination: (
+      state,
+      action: PayloadAction<{ nextSkip: number; hasMore: boolean }>
+    ) => {
+      state.messagesNextSkip = action.payload.nextSkip;
+      state.messagesHasMore = action.payload.hasMore;
+    },
+    setLoadingMoreMessages: (state, action: PayloadAction<boolean>) => {
+      state.loadingMoreMessages = action.payload;
     },
     addMessage: (state, action: PayloadAction<MessageAttributes>) => {
       if (!state.messages.some((msg) => msg._id === action.payload._id)) {
         state.messages.push(action.payload);
+        state.messages.sort(sortMsgs);
       }
     },
     editMessage: (state, action: PayloadAction<{ id: string; content: string }>) => {
@@ -206,6 +238,9 @@ export const {
   updateMessageReactions,
   deleteConversation,
   setMessages,
+  appendMessages,
+  setMessagesPagination,
+  setLoadingMoreMessages,
   addMessage,
   editMessage,
   updateMessage,
@@ -238,7 +273,16 @@ export const fetchChats = async (dispatch: Dispatch) => {
     });
 
     dispatch(setConversations(conversations));
-    dispatch(setMessages(chats.messages as MessageAttributes[]));
+    dispatch(setMessages((chats.messages ?? []) as MessageAttributes[]));
+
+    const pg = chats.pagination?.messages;
+    dispatch(
+      setMessagesPagination({
+        nextSkip: pg ? pg.skip + pg.limit : 0,
+        hasMore: pg?.hasMore ?? false,
+      })
+    );
+
     dispatch(setSettings(chats.chatSettings));
     return conversations;
   } catch (error) {
@@ -248,3 +292,30 @@ export const fetchChats = async (dispatch: Dispatch) => {
     dispatch(setLoading(false));
   }
 };
+
+export function fetchMoreChatMessages() {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const s = getState().chat;
+    if (!s.messagesHasMore || s.loadingMoreMessages) return;
+
+    dispatch(setLoadingMoreMessages(true));
+    try {
+      const batch = await chatRepository.fetchChatsPage(s.messagesNextSkip);
+      const extras = (batch.messages ?? []) as MessageAttributes[];
+      if (extras.length) {
+        dispatch(appendMessages(extras));
+      }
+      const pg = batch.pagination?.messages;
+      dispatch(
+        setMessagesPagination({
+          nextSkip: pg ? pg.skip + pg.limit : s.messagesNextSkip,
+          hasMore: pg?.hasMore ?? false,
+        })
+      );
+    } catch {
+      dispatch(setError("Failed to load older messages"));
+    } finally {
+      dispatch(setLoadingMoreMessages(false));
+    }
+  };
+}

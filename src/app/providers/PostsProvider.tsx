@@ -1,62 +1,202 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { getStatus, getPosts } from "@/lib/getStatus";
-import { setPosts, setLoading, setError } from "@/redux/postsSlice";
-import { NetworkStatus, networkMonitor } from "@/lib/network";
-import { useAppDispatch } from "@/redux/hooks";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { useSelector } from "react-redux";
 
-const PostsContext = createContext<
-  { success: string[] | null; setReload: React.Dispatch<React.SetStateAction<boolean>> } | undefined
->(undefined);
+import { fetchFollowingPostsPage, fetchPostsPage, fetchStatusPage } from "@/lib/getStatus";
+import { NetworkStatus, networkMonitor } from "@/lib/network";
+import {
+  appendFollowingFeedPage,
+  initFollowingFeedPage,
+  setFollowingError,
+  setFollowingFeedLoadingMore,
+  setFollowingLoading,
+} from "@/redux/followingFeedSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import {
+  appendFeedPage,
+  initFeedPage,
+  setFeedLoadingMore,
+  setLoading,
+  setError,
+} from "@/redux/postsSlice";
+import { RootState } from "@/redux/store";
+
+type PostsCtx = {
+  success: string[] | null;
+  setReload: React.Dispatch<React.SetStateAction<boolean>>;
+  setFollowingReload: React.Dispatch<React.SetStateAction<boolean>>;
+  loadMoreFeed: () => Promise<void>;
+  loadMoreFollowing: () => Promise<void>;
+  loadMoreAvatars: () => Promise<void>;
+  avatarsLoadingMore: boolean;
+  avatarsHasMore: boolean;
+};
+
+const PostsContext = createContext<PostsCtx | undefined>(undefined);
 
 const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [status, setStatus] = useState<NetworkStatus>();
+  const [network, setNetwork] = useState<NetworkStatus>();
   const dispatch = useAppDispatch();
   const [success, setSuccess] = useState<string[] | null>(null);
   const [reload, setReload] = useState<boolean>(false);
+  const [followingReload, setFollowingReload] = useState<boolean>(false);
+  const [avatarsLoadingMore, setAvatarsLoadingMore] = useState(false);
+  const [avatarNextSkip, setAvatarNextSkip] = useState(0);
+  const [avatarsHasMore, setAvatarsHasMore] = useState(false);
+
+  // For You feed selectors
+  const feedHasMore = useSelector((s: RootState) => s.posts.feedHasMore);
+  const feedLoadingMore = useSelector((s: RootState) => s.posts.feedLoadingMore);
+  const feedNextSkip = useSelector((s: RootState) => s.posts.feedNextSkip);
+
+  // Following feed selectors
+  const followingFeedHasMore = useSelector((s: RootState) => s.followingFeed.feedHasMore);
+  const followingFeedLoadingMore = useSelector((s: RootState) => s.followingFeed.feedLoadingMore);
+  const followingFeedNextSkip = useSelector((s: RootState) => s.followingFeed.feedNextSkip);
 
   useEffect(() => {
-    setStatus(networkMonitor.getNetworkStatus());
-    // console.log(networkMonitor.getNetworkStatus())
+    setNetwork(networkMonitor.getNetworkStatus());
   }, []);
 
+  // For You feed initial load
   useEffect(() => {
-    if (!status?.online) return;
-    const fetchData1 = async () => {
+    if (!network?.online) return;
+
+    let cancelled = false;
+
+    const run = async () => {
       dispatch(setLoading(true));
 
       try {
-        const statusResponse = await getStatus();
-        setSuccess(statusResponse);
+        const [statusPage, postsPage] = await Promise.all([fetchStatusPage(0), fetchPostsPage(0)]);
+
+        if (cancelled) return;
+
+        setSuccess(statusPage.data);
+        setAvatarNextSkip(statusPage.pagination.skip + statusPage.pagination.limit);
+        setAvatarsHasMore(statusPage.pagination.hasMore);
+
+        dispatch(initFeedPage({ posts: postsPage.data, pagination: postsPage.pagination }));
+        dispatch(setError(null));
       } catch (error) {
-        setError((error as Error).message);
+        if (!cancelled) {
+          dispatch(setError((error as Error).message));
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          dispatch(setLoading(false));
+        }
       }
     };
 
-    const fetchData2 = async () => {
-      dispatch(setLoading(true));
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reload, network, dispatch]);
+
+  // Following feed initial load
+  useEffect(() => {
+    if (!network?.online) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      dispatch(setFollowingLoading(true));
 
       try {
-        const postsResponse = await getPosts();
-        dispatch(setPosts(postsResponse));
+        const postsPage = await fetchFollowingPostsPage(0);
+        if (cancelled) return;
+        dispatch(
+          initFollowingFeedPage({ posts: postsPage.data, pagination: postsPage.pagination })
+        );
+        dispatch(setFollowingError(null));
       } catch (error) {
-        dispatch(setError((error as Error).message));
+        if (!cancelled) {
+          dispatch(setFollowingError((error as Error).message));
+        }
       } finally {
-        dispatch(setLoading(false));
+        if (!cancelled) {
+          dispatch(setFollowingLoading(false));
+        }
       }
     };
 
-    fetchData1();
-    fetchData2();
-    if (reload) {
-      fetchData1();
-      fetchData2();
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [followingReload, network, dispatch]);
+
+  const loadMoreFeed = useCallback(async () => {
+    if (!feedHasMore || feedLoadingMore || !network?.online) return;
+    dispatch(setFeedLoadingMore(true));
+    try {
+      const postsPage = await fetchPostsPage(feedNextSkip);
+      dispatch(appendFeedPage({ posts: postsPage.data, pagination: postsPage.pagination }));
+    } catch (error) {
+      dispatch(setError((error as Error).message));
+      dispatch(setFeedLoadingMore(false));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reload, status]);
+  }, [dispatch, feedHasMore, feedLoadingMore, feedNextSkip, network?.online]);
 
-  return <PostsContext.Provider value={{ success, setReload }}>{children}</PostsContext.Provider>;
+  const loadMoreFollowing = useCallback(async () => {
+    if (!followingFeedHasMore || followingFeedLoadingMore || !network?.online) return;
+    dispatch(setFollowingFeedLoadingMore(true));
+    try {
+      const postsPage = await fetchFollowingPostsPage(followingFeedNextSkip);
+      dispatch(
+        appendFollowingFeedPage({ posts: postsPage.data, pagination: postsPage.pagination })
+      );
+    } catch (error) {
+      dispatch(setFollowingError((error as Error).message));
+      dispatch(setFollowingFeedLoadingMore(false));
+    }
+  }, [
+    dispatch,
+    followingFeedHasMore,
+    followingFeedLoadingMore,
+    followingFeedNextSkip,
+    network?.online,
+  ]);
+
+  const loadMoreAvatars = useCallback(async () => {
+    if (!avatarsHasMore || avatarsLoadingMore || !network?.online) return;
+    setAvatarsLoadingMore(true);
+    try {
+      const page = await fetchStatusPage(avatarNextSkip);
+      setSuccess((prev) => [...(prev ?? []), ...page.data]);
+      setAvatarNextSkip(page.pagination.skip + page.pagination.limit);
+      setAvatarsHasMore(page.pagination.hasMore);
+    } finally {
+      setAvatarsLoadingMore(false);
+    }
+  }, [avatarNextSkip, avatarsHasMore, avatarsLoadingMore, network?.online]);
+
+  return (
+    <PostsContext.Provider
+      value={{
+        success,
+        setReload,
+        setFollowingReload,
+        loadMoreFeed,
+        loadMoreFollowing,
+        loadMoreAvatars,
+        avatarsLoadingMore,
+        avatarsHasMore,
+      }}
+    >
+      {children}
+    </PostsContext.Provider>
+  );
 };
 
 export default PostsProvider;

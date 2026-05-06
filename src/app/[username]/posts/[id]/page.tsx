@@ -2,7 +2,7 @@
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -13,7 +13,8 @@ import RightSideBar from "@/components/RightSideBar";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
-import { getComments, getPost } from "@/lib/getStatus";
+import type { PaginationMeta } from "@/lib/apiPagination";
+import { fetchCommentsPage, getPost } from "@/lib/getStatus";
 import { PostSchema } from "@/lib/types/type";
 import { RootState } from "@/redux/store";
 import { Comments, Post } from "@/templates/PostProps";
@@ -42,6 +43,8 @@ const PostContent: React.FC = () => {
   const [postMessage, setPostMessage] = useState<Post["message"]>();
   const [comments, setComments] = useState<Comments["comments"]>();
   const [commentsMessage, setCommentsMessage] = useState<Comments["message"]>();
+  const [commentsPagination, setCommentsPagination] = useState<PaginationMeta | null>(null);
+  const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [textAreaStyle, setTextAreaStyle] = useState<string>("rounded-full");
   const [isTextAreaFocused, setIsTextAreaFocused] = useState<boolean>(false);
@@ -95,37 +98,51 @@ const PostContent: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading((l) => {
-        return {
+      setLoading((l) => ({
+        post: l.post,
+        comment: true,
+      }));
+      if (!params?.id) return;
+      try {
+        const commentsResponse = await fetchCommentsPage(params.id as string, 0);
+        setComments(commentsResponse.data);
+        setCommentsMessage(commentsResponse.message);
+        setCommentsPagination(commentsResponse.pagination);
+      } catch (error) {
+        setErrorMessage((e) => ({
+          comment: (error as Error).message,
+          post: e.post,
+        }));
+      } finally {
+        setLoading((l) => ({
           post: l.post,
-          comment: true,
-        };
-      });
-      if (params && params.id) {
-        try {
-          const commentsResponse = await getComments(params.id);
-          setComments(commentsResponse.comments);
-          setCommentsMessage(commentsResponse.message);
-        } catch (error) {
-          setErrorMessage((e) => {
-            return {
-              comment: (error as Error).message,
-              post: e.post,
-            };
-          });
-        } finally {
-          setLoading((l) => {
-            return {
-              post: l.post,
-              comment: false,
-            };
-          });
-        }
+          comment: false,
+        }));
       }
     };
 
     fetchData();
-  }, [params, params?.id]);
+  }, [params?.id]);
+
+  const commentKey = useCallback((c: PostSchema) => String(c.PostID ?? c._id), []);
+
+  const loadMoreComments = useCallback(async () => {
+    if (!params?.id || !commentsPagination?.hasMore || commentsLoadingMore) return;
+    setCommentsLoadingMore(true);
+    try {
+      const nextSkip = commentsPagination.skip + commentsPagination.limit;
+      const page = await fetchCommentsPage(params.id as string, nextSkip);
+      setComments((prev) => {
+        const base = prev ?? [];
+        const seen = new Set(base.map(commentKey));
+        const extras = page.data.filter((c) => !seen.has(commentKey(c)));
+        return [...base, ...extras];
+      });
+      setCommentsPagination(page.pagination);
+    } finally {
+      setCommentsLoadingMore(false);
+    }
+  }, [commentsLoadingMore, commentsPagination, params?.id, commentKey]);
 
   useEffect(() => {
     const handleInput = () => {
@@ -157,7 +174,7 @@ const PostContent: React.FC = () => {
     socket.on("newComment", (data: { excludeUser: string; blog: PostSchema }) => {
       setComments((prevComments) => {
         if (prevComments) {
-          return [...prevComments, data.blog];
+          return [data.blog, ...prevComments];
         }
         return [data.blog];
       });
@@ -275,7 +292,23 @@ const PostContent: React.FC = () => {
                 <Loader2 className="loader" size={30} />
               </div>
             ) : comments && comments.length > 0 ? (
-              comments.map((comment) => <PostCard key={comment._id} postData={comment} />)
+              <>
+                {comments.map((comment) => (
+                  <PostCard key={comment._id} postData={comment} />
+                ))}
+                {commentsPagination?.hasMore ? (
+                  <div className="flex justify-center py-4">
+                    <button
+                      type="button"
+                      disabled={commentsLoadingMore}
+                      onClick={() => void loadMoreComments()}
+                      className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900"
+                    >
+                      {commentsLoadingMore ? "Loading…" : "Load older comments"}
+                    </button>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <div className="noComments">No comments yet.</div>
             )}

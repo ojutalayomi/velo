@@ -3,7 +3,7 @@ import { WifiOff, XCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
-import 'react-textarea-enhanced/dist/index.css';
+import '@ojutalayomi/react-textarea-enhanced/dist/index.css';
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";

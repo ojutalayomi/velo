@@ -3,7 +3,7 @@
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ChevronDown, EllipsisVertical, MessageSquare } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -31,6 +31,7 @@ import {
   updateMessage,
   deleteConversation,
   deleteMessage,
+  fetchMoreChatMessages,
 } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
@@ -72,6 +73,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     conversations,
     loading: convoLoading,
   } = useSelector((state: RootState) => state.chat);
+  const messagesHasMore = useSelector((state: RootState) => state.chat.messagesHasMore);
+  const loadingMoreMessages = useSelector((state: RootState) => state.chat.loadingMoreMessages);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const { settings: userSettings } = useSelector((state: RootState) => state.user);
   const [quote, setQuote] = useState<QuoteProp>(initialQuoteState);
@@ -97,6 +100,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastDateRef = useRef<string>("");
   const messageBoxRef = useRef<HTMLDivElement>(null);
+  const olderLoadThrottleRef = useRef(0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
@@ -158,15 +162,18 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (!response.ok) {
       // console.log();
     }
-    const data = await response.json();
-    localStorage.setItem(
-      data[0]?._id,
-      JSON.stringify({
-        data: data[0],
-        timestamp: Date.now(),
-      })
-    );
-    return data[0];
+    const body = await response.json();
+    const arr = Array.isArray(body?.data) ? body.data : [];
+    const row = arr[0];
+    if (row?._id != null)
+      localStorage.setItem(
+        String(row._id),
+        JSON.stringify({
+          data: row,
+          timestamp: Date.now(),
+        })
+      );
+    return row;
   }, [friendId]);
 
   const fetchData = useCallback(async () => {
@@ -474,10 +481,31 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   };
 
   const handleScroll = () => {
-    if (messageBoxRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messageBoxRef.current;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px threshold
-      setShowScrollButton(!isNearBottom);
+    const box = messageBoxRef.current;
+    if (!box) return;
+    const { scrollTop, scrollHeight, clientHeight } = box;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShowScrollButton(!isNearBottom);
+
+    if (
+      scrollTop < 120 &&
+      messagesHasMore &&
+      !loadingMoreMessages &&
+      scrollHeight > clientHeight + 40
+    ) {
+      const now = Date.now();
+      if (now - olderLoadThrottleRef.current < 900) return;
+      olderLoadThrottleRef.current = now;
+      const prevSH = box.scrollHeight;
+      const prevST = box.scrollTop;
+      void (async () => {
+        await dispatch(fetchMoreChatMessages() as never);
+        requestAnimationFrame(() => {
+          const b = messageBoxRef.current;
+          if (!b) return;
+          b.scrollTop = prevST + (b.scrollHeight - prevSH);
+        });
+      })();
     }
   };
 
@@ -697,6 +725,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           </div>
         </div>
         <div className="my-4 flex-1">
+          {loadingMoreMessages && (
+            <div className="flex justify-center py-2">
+              <Loader2 className="size-6 animate-spin text-gray-400" aria-label="Loading older" />
+            </div>
+          )}
           {Messages?.reduce((acc: JSX.Element[], message, index) => {
             const messageDate = new Date(message.timestamp).toLocaleDateString("en-US", {
               day: "2-digit",

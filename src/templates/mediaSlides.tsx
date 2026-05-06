@@ -16,8 +16,6 @@ import { cn } from "@/lib/utils";
 
 import VideoDiv from "./videoDiv";
 
-
-
 const MediaSlide = ({
   className,
   postData,
@@ -70,8 +68,11 @@ const MediaSlide = ({
       <Carousel setApi={setApi} className="size-full">
         <CarouselContent className="h-full items-center">
           {postData.Image?.map((media, index) => {
-            const isImage =
-              media.includes("png") || media.includes("jpg") || media.includes("jpeg");
+            const mediaPath = media.split("?")[0].split("#")[0];
+            const imageExtensions = /\.(png|jpe?g|gif|webp|bmp|svg|tiff?|avif)([-_]\w+)?$/i;
+            const imageHosts =
+              /^https?:\/\/(images\.unsplash\.com|i\.imgur\.com|cdn\.pixabay\.com|lh[0-9]+\.googleusercontent\.com|pbs\.twimg\.com)/i;
+            const isImage = imageExtensions.test(mediaPath) || imageHosts.test(media);
             const isHosted = !media.includes("https") && !media.startsWith("/");
             const link = `/${postData.Username}/posts/${postData.PostID}/photo/${index}`;
 
@@ -104,10 +105,10 @@ const MediaSlide = ({
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`h-1.5 rounded-full transition-all border-[1px] border-black ${
-                index === current - 1
-                  ? 'w-6 bg-white'
-                  : 'w-1.5 bg-white/40 hover:bg-white/60'
+              className={`h-1.5 rounded-full border border-black transition-all ${
+                index === current - 1 && index !== 0
+                  ? "w-6 bg-white"
+                  : "w-1.5 bg-white/40 hover:bg-white/60"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             >

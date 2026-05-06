@@ -21,7 +21,7 @@ export default async function proxy(request: NextRequest) {
     !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 
   try {
-    if (hasKV) {
+    if (process.env.NODE_ENV === "production" && hasKV) {
       const { success } = await ratelimit.limit(ip);
       if (!success) {
         return NextResponse.json(

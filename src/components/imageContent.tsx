@@ -9,25 +9,32 @@ interface Props {
   userdata: any;
   onClick?: any;
   selectedUsers?: any;
+  dpOnly?: boolean;
 }
 
-export const UserProfileLazyLoader = () => {
+export const UserProfileLazyLoader: React.FC<Pick<Props, "dpOnly">> = ({ dpOnly }) => {
   return (
     <div className="flex items-center">
       <div className="relative mr-3 size-7">
         <div className="size-7 animate-pulse rounded-full bg-gray-200" />
       </div>
-      <div>
-        <div className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
-        <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
-      </div>
+      {!dpOnly && (
+        <div>
+          <div className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
+          <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
+        </div>
+      )}
     </div>
   );
 };
 
-const ImageContent: React.FC<Props> = ({ userdata, onClick, selectedUsers = [] }) => {
-
-  if (!userdata._id) return <UserProfileLazyLoader />;
+const ImageContent: React.FC<Props> = ({
+  userdata,
+  onClick,
+  selectedUsers = [],
+  dpOnly = false,
+}) => {
+  if (!userdata._id) return <UserProfileLazyLoader dpOnly={dpOnly} />;
   return (
     <div
       className="flex cursor-pointer items-center justify-between rounded-full px-2 py-1 transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 hover:dark:bg-zinc-700"
@@ -53,15 +60,17 @@ const ImageContent: React.FC<Props> = ({ userdata, onClick, selectedUsers = [] }
             alt="Display Picture"
           />
         </Avatar>
-        <div>
-          <p className="flex items-center gap-1 text-sm font-bold dark:text-slate-200">
-            {userdata.name ? userdata.name : `${userdata.firstname} ${userdata.lastname}`}
-            {userdata?.verified && <Statuser className="size-4" />}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            @{userdata.username ? userdata.username : "useranme"}
-          </p>
-        </div>
+        {!dpOnly && (
+          <div>
+            <p className="flex items-center gap-1 text-sm font-bold dark:text-slate-200">
+              {userdata.name ? userdata.name : `${userdata.firstname} ${userdata.lastname}`}
+              {userdata?.verified && <Statuser className="size-4" />}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              @{userdata.username ? userdata.username : "useranme"}
+            </p>
+          </div>
+        )}
       </div>
       {selectedUsers.includes(userdata._id) && <Check size={20} className="dark:text-gray-400" />}
     </div>

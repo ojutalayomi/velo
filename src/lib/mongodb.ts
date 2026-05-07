@@ -133,6 +133,14 @@ export class MongoDBClient {
   }
 
   /**
+   * Gets the posts anlytics collection
+   * @returns Collection for storing posts analytics
+   */
+  postsAnalytics() {
+    return this.db.collection("Post_Analytics");
+  }
+
+  /**
    * Gets the post bookmarks collection
    * @returns Collection for storing bookmarked posts
    */

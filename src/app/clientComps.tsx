@@ -3,7 +3,7 @@ import { WifiOff, XCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
-import '@ojutalayomi/react-textarea-enhanced/dist/index.css';
+import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -13,6 +13,7 @@ import NewChatMenu from "@/components/ComposeChat";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import PostMaker from "@/components/PostMaker";
 import PostPreview from "@/components/PostPreview";
+import RightSideBar from "@/components/RightSideBar";
 import Sidebar from "@/components/Sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import UserPhoto from "@/components/UserPhoto";
@@ -28,7 +29,7 @@ import {
   NewChat_,
   Reaction,
   ReactionType,
-  PostSchema 
+  PostSchema,
 } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { Time } from "@/lib/utils";
@@ -49,8 +50,6 @@ import { RootState } from "@/redux/store";
 import Error from "./error";
 import VideoChat from "../components/CallPage";
 import { useNetwork } from "./providers/NetworkProvider";
-
-
 
 const ClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
@@ -527,6 +526,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
               {showPostPreview && <PostPreview />}
               {callRoute && <VideoChat />}
             </div>
+            {!callRoute ? <RightSideBar /> : null}
             {!pathname?.includes("posts") &&
             !pathname?.includes("chats") &&
             !routes.includes(activeRoute) &&

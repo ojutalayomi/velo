@@ -61,6 +61,8 @@ const Root: React.FC<BottombarProps> = ({
     "accounts/signup",
     "accounts/forgot-password",
     "accounts/reset-password",
+    "explore",
+    "explore/reel",
   ];
 
   useEffect(() => {

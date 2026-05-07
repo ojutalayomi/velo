@@ -42,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const userIdStr = user._id.toString();
     const usernameStr = user.username as string;
-    const database = await db.getDb();
     const fetchLimit = pageLimit + 1;
 
     const pipeline = [
@@ -68,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { $limit: fetchLimit },
     ];
 
-    const batch = await database.collection("Posts").aggregate(pipeline).toArray();
+    const batch = await db.posts().aggregate(pipeline).toArray();
     const hasMore = batch.length > pageLimit;
     const combinedPosts = batch.slice(0, pageLimit) as unknown as PostSchema[];
 

@@ -5,11 +5,8 @@ import RightSideBar from "@/components/RightSideBar";
 
 const Home = () => {
   return (
-    <div className="h-screen flex">
-      <div className="md:w-3/5 overflow-hidden w-full">
-        <Homepage />
-      </div>
-      <RightSideBar />
+    <div className="h-screen overflow-hidden w-full">
+      <Homepage />
     </div>
   );
 };

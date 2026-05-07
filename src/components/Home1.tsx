@@ -72,19 +72,9 @@ const Homepage: React.FC = () => {
     feedLoadingMore: followingLoadingMore,
   } = useSelector((state: RootState) => state.followingFeed);
 
-  const {
-    success,
-    setReload,
-    setFollowingReload,
-    loadMoreFeed,
-    loadMoreFollowing,
-    loadMoreAvatars,
-    avatarsHasMore,
-    avatarsLoadingMore,
-  } = usePosts();
+  const { setReload, setFollowingReload, loadMoreFeed, loadMoreFollowing } = usePosts();
 
   const homeRef = useRef<HTMLDivElement>(null);
-  const statusStripRef = useRef<HTMLDivElement>(null);
   const feedSentinelRef = useRef<HTMLDivElement>(null);
   const followingSentinelRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef(0);
@@ -158,20 +148,6 @@ const Homepage: React.FC = () => {
     return () => observer.disconnect();
   }, [followingHasMore, followingLoadingMore, loadMoreFollowing, followingLoading]);
 
-  // Avatar strip scroll
-  useEffect(() => {
-    const strip = statusStripRef.current;
-    if (!strip) return;
-    const onScrollStrip = () => {
-      const nearEnd = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 24;
-      if (nearEnd && avatarsHasMore && !avatarsLoadingMore) {
-        loadMoreAvatars();
-      }
-    };
-    strip.addEventListener("scroll", onScrollStrip, { passive: true });
-    return () => strip.removeEventListener("scroll", onScrollStrip);
-  }, [avatarsHasMore, avatarsLoadingMore, loadMoreAvatars]);
-
   // Save scroll position on scroll
   const handleScroll = () => {
     if (homeRef.current && !loading && !load) {
@@ -234,36 +210,6 @@ const Homepage: React.FC = () => {
           ))}
         </div>
       </header>
-
-      <div className="pre-status pl-2 mt-2 overflow-x-auto" ref={statusStripRef}>
-        <div className="status p-2 flex flex-nowrap items-center justify-start gap-4 w-max min-h-[52px]">
-          {(loading || load) &&
-            [...Array(7)].map((_, i) => (
-              <Skeleton
-                key={"uidg" + i}
-                className="size-10 shrink-0 rounded-full ring-4 ring-brand"
-              />
-            ))}
-          {!loading &&
-            !load &&
-            success &&
-            success.length > 0 &&
-            success.map((status: string, index: number) => (
-              <div
-                key={`${status}-${index}`}
-                id={`status-${index}`}
-                className="status-child shrink-0 rounded-full size-10 ring-4 ring-brand"
-                style={{
-                  backgroundImage: `url(${!status.includes("/") ? "/default.jpeg" : status})`,
-                }}
-              />
-            ))}
-          {avatarsLoadingMore && (
-            <Skeleton className="size-10 shrink-0 rounded-full ring-4 ring-brand" />
-          )}
-          {!loading && error && <RefreshCw size={30} />}
-        </div>
-      </div>
 
       <div className="h3 dark:!text-slate-200">
         <h3>Connect with friends and the world around you on noow.</h3>

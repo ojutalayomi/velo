@@ -2,7 +2,8 @@
 import { ObjectId } from "bson";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useUser } from "@/app/providers/UserProvider";
@@ -17,10 +18,9 @@ import { RootState } from "@/redux/store";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-
-
 const RightSideBar = ({ className, ...props }: { className?: string; props?: HTMLDivElement }) => {
   const { userdata } = useUser();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<SocialMediaUser[]>([]);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
@@ -56,7 +56,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   return (
     <div
       className={cn(
-        "min-h-screen hidden md:block flex-1 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50",
+        `${pathname?.includes("/accounts") || pathname?.includes("/chats") ? "!hidden" : ""} min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
         className
       )}
       {...props}
@@ -96,13 +96,18 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
               <RenderLoadingPlaceholder />
             ) : (
               suggestions.map((suggestion, index) => (
-                <Link key={suggestion._id.toString()} href={`/${suggestion.username}`} className="group flex items-center justify-between gap-3">
+                <Link
+                  key={suggestion._id.toString()}
+                  href={`/${suggestion.username}`}
+                  className="group flex items-center justify-between gap-3"
+                >
                   <div className="relative">
                     <Avatar>
-                      <AvatarImage src={suggestion.displayPicture} className="rounded-full object-cover" />
-                      <AvatarFallback>
-                        {suggestion.username?.slice(0, 2)}
-                      </AvatarFallback>
+                      <AvatarImage
+                        src={suggestion.displayPicture}
+                        className="rounded-full object-cover"
+                      />
+                      <AvatarFallback>{suggestion.username?.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     {onlineUsers.includes(suggestion?._id.toString()) && (
                       <div className="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-white bg-green-500 dark:border-zinc-800"></div>
@@ -141,13 +146,12 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
 
 export default RightSideBar;
 
-
 function RenderLoadingPlaceholder() {
   return (
     <div className="flex cursor-progress flex-col space-y-3">
       {[...Array(6)].map((_, i) => (
         <UserProfileLazyLoader key={i++} />
-      ))} 
+      ))}
     </div>
   );
 }

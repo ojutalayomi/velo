@@ -30,7 +30,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       /"/g,
       ""
     );
-    const payload = cookie ? (await verifyToken(cookie)) as unknown as Payload : null;
+    const payload = cookie ? ((await verifyToken(cookie)) as unknown as Payload) : null;
 
     const { postId, event, metadata } = req.body;
 
@@ -39,14 +39,14 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     const db = await new MongoDBClient().init();
-    
+
     // Verify post exists
     const post = await db.posts().findOne({ PostID: postId });
     if (!post) {
       // Check other collections
       const comment = await db.postsComments().findOne({ PostID: postId });
       const share = await db.postsShares().findOne({ PostID: postId });
-      
+
       if (!comment && !share) {
         return res.status(404).json({ error: "Post not found" });
       }
@@ -67,7 +67,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     };
 
     // Store analytics in database
-    const analyticsCollection = (await db.getDb()).collection<PostAnalytics>("Post_Analytics");
+    const analyticsCollection = db.postsAnalytics();
     await analyticsCollection.insertOne(analyticsEntry);
 
     // For view events, update post view count (optional - can be done via aggregation)
@@ -82,4 +82,3 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
-

@@ -71,6 +71,23 @@ export async function fetchFollowingPostsPage(
   return { data, pagination };
 }
 
+export async function fetchExplorePosts(
+  skip = 0,
+  limit = DEFAULT_POST_LIMIT
+): Promise<{ data: PostSchema[]; pagination: PaginationMeta }> {
+  const response = await fetch(`/api/explore?limit=${limit}&skip=${skip}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const body = (await parseJsonResponse(response)) as {
+    data?: PostSchema[];
+    pagination?: PaginationMeta;
+  };
+  const data = Array.isArray(body?.data) ? body.data : [];
+  const pagination = body.pagination ?? { skip: 0, limit, hasMore: false };
+  return { data, pagination };
+}
+
 export async function fetchCommentsPage(
   postId: string,
   skip = 0,

@@ -9,7 +9,6 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import PostAnalytics from "@/components/PostAnalytics";
 import PostCard from "@/components/PostCard";
-import RightSideBar from "@/components/RightSideBar";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
@@ -242,9 +241,9 @@ const PostContent: React.FC = () => {
   }, [post, socket]);
 
   return (
-    <div className="flex h-screen max-h-screen w-full overflow-auto dark:bg-black">
+    <>
       {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
-      <div className="flex size-full flex-col md:w-3/5">
+      <div className="flex size-full flex-col h-screen max-h-screen w-full overflow-auto">
         <div className="sticky top-0 z-10 flex justify-between bg-white p-1 shadow-md dark:bg-zinc-900">
           <div className="m-2 flex w-full items-center justify-between gap-2">
             <ArrowLeft size={24} className="cursor-pointer" onClick={() => navigate()} />
@@ -354,8 +353,7 @@ const PostContent: React.FC = () => {
           </div>
         )}
       </div>
-      <RightSideBar />
-    </div>
+    </>
   );
 };
 export default PostContent;

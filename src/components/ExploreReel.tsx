@@ -6,6 +6,9 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { fetchExplorePosts } from "@/lib/getStatus";
 import type { PostSchema } from "@/lib/types/type";
 
+import { renderTextWithLinks } from "./RenderTextWithLinks";
+import { Statuser } from "./VerificationComponent";
+
 // ── media helpers ──────────────────────────────────────────────────────────────
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|tiff?|avif)([-_]\w+)?$/i;
 const IMAGE_HOSTS =
@@ -52,52 +55,109 @@ function ReelSlide({
   post,
   isActive,
   muted,
+  onToggleMute,
 }: {
   post: PostSchema;
   isActive: boolean;
   muted: boolean;
+  onToggleMute: () => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const media = post.Image[0];
-  const isImg = isImageUrl(media);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [activeMediaType, setActiveMediaType] = useState<"image" | "video">("image");
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
-  // autoplay / pause on visibility change
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v || isImg) return;
-    if (isActive) {
-      v.play().catch(() => {});
-    } else {
-      v.pause();
-      v.currentTime = 0;
-    }
-  }, [isActive, isImg]);
+    setActiveMediaType(isImageUrl(post.Image[activeMediaIndex]) ? "image" : "video");
+  }, [activeMediaIndex, post.Image]);
 
-  // sync mute state
+  // autoplay / pause: only the visible carousel item's video plays
   useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = muted;
+    post.Image.forEach((media, i) => {
+      const v = videoRefs.current[i];
+      if (!v || isImageUrl(media)) return;
+      if (isActive && activeMediaIndex === i) {
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+        v.currentTime = 0;
+      }
+    });
+  }, [isActive, activeMediaIndex, post.Image]);
+
+  // sync mute across all video refs
+  useEffect(() => {
+    videoRefs.current.forEach((v) => {
+      if (v) v.muted = muted;
+    });
   }, [muted]);
 
+  const handleCarouselScroll = () => {
+    const el = carouselRef.current;
+    if (!el) return;
+    setActiveMediaIndex(Math.round(el.scrollLeft / el.clientWidth));
+    setActiveMediaType(isImageUrl(post.Image[activeMediaIndex]) ? "image" : "video");
+  };
+
   return (
-    <div className="relative h-full w-full overflow-hidden bg-black">
-      {/* media */}
-      {isImg ? (
-        <img src={media} alt="" className="absolute inset-0 h-full w-full object-contain" />
-      ) : (
-        <video
-          ref={videoRef}
-          src={media}
-          className="absolute inset-0 h-full w-full object-contain"
-          loop
-          playsInline
-          muted={muted}
-          preload="metadata"
-        />
+    <div className="relative size-full overflow-hidden bg-black">
+      {/* horizontal media carousel */}
+      <div
+        ref={carouselRef}
+        onScroll={handleCarouselScroll}
+        className="flex size-full snap-x snap-mandatory overflow-x-scroll"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {post.Image.map((media, i) => {
+          const isImg = isImageUrl(media);
+          return (
+            <div key={i} data-index={i} className="relative size-full min-w-full snap-start overflow-hidden">
+              {isImg ? (
+                <img src={media} alt="" className="absolute inset-0 size-full object-contain" />
+              ) : (
+                <video
+                  ref={(el) => {
+                    videoRefs.current[i] = el;
+                  }}
+                  src={media}
+                  className="absolute inset-0 size-full object-contain"
+                  loop
+                  playsInline
+                  muted={muted}
+                  preload="metadata"
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* dot indicators for multi-media posts */}
+      {post.Image.length > 1 && (
+        <div className="absolute inset-x-0 top-4 flex justify-center gap-1.5 px-4">
+          {post.Image.map((_, i) => (
+            <div
+              key={i}
+              className={`h-0.5 rounded-full transition-all duration-200 ${
+                i === activeMediaIndex ? "w-5 bg-white" : "w-2 bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
       )}
+
+      {/* mute toggle */}
+      <button
+        onClick={onToggleMute}
+        className={`absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white backdrop-blur-sm ${activeMediaType === "image" ? "hidden" : ""}`}
+        aria-label={muted ? "Unmute" : "Mute"}
+      >
+        {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+      </button>
 
       {/* gradient: dark at bottom and very slightly at top */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
             "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 45%, rgba(0,0,0,0.2) 100%)",
@@ -106,18 +166,24 @@ function ReelSlide({
 
       {/* bottom-left: avatar + username + caption */}
       <div className="absolute bottom-5 left-4 right-20 text-white">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="mb-2 flex items-center gap-2">
           <div
             className="size-9 shrink-0 rounded-full bg-cover bg-center ring-2 ring-white"
             style={{ backgroundImage: `url(${post.DisplayPicture || "/default.jpeg"})` }}
           />
-          <span className="font-semibold text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-            @{post.Username}
-          </span>
+          <div>
+            <p className="flex items-center gap-1 text-sm font-bold text-slate-200 dark:text-slate-200">
+              {post.NameOfPoster ? post.NameOfPoster : ""}
+              {post?.Verified && <Statuser className="size-4" />}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              @{post.Username ? post.Username : "useranme"}
+            </p>
+          </div>
         </div>
         {post.Caption ? (
-          <p className="text-sm leading-snug line-clamp-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-            {post.Caption}
+          <p className="line-clamp-3 text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            {renderTextWithLinks(post.Caption)}
           </p>
         ) : null}
       </div>
@@ -246,8 +312,8 @@ export default function ExploreReel() {
   // ── render ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="h-screen w-full bg-black flex items-center justify-center">
-        <div className="size-10 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+      <div className="flex h-screen w-full items-center justify-center bg-black">
+        <div className="size-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
       </div>
     );
   }
@@ -257,24 +323,16 @@ export default function ExploreReel() {
       {/* fixed chrome — outside the scroll container so it never scrolls away */}
       <button
         onClick={() => router.back()}
-        className="fixed top-4 left-4 z-50 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
+        className="fixed left-4 top-4 z-50 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
         aria-label="Go back"
       >
         <ArrowLeft size={22} />
       </button>
 
-      <button
-        onClick={() => setMuted((m) => !m)}
-        className="fixed top-4 right-4 z-50 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
-        aria-label={muted ? "Unmute" : "Mute"}
-      >
-        {muted ? <VolumeX size={22} /> : <Volume2 size={22} />}
-      </button>
-
       {/* scroll container */}
       <div
         ref={containerRef}
-        className="h-screen w-full overflow-y-scroll snap-y snap-mandatory bg-black"
+        className="h-screen w-full snap-y snap-mandatory overflow-y-scroll bg-black"
         style={{ scrollbarWidth: "none" }}
       >
         {posts.map((post, i) => (
@@ -285,14 +343,19 @@ export default function ExploreReel() {
             }}
             className="h-screen w-full snap-start snap-always"
           >
-            <ReelSlide post={post} isActive={activeIndex === i} muted={muted} />
+            <ReelSlide
+              post={post}
+              isActive={activeIndex === i}
+              muted={muted}
+              onToggleMute={() => setMuted((m) => !m)}
+            />
           </div>
         ))}
 
         {/* loading-more spinner as a snap slide */}
         {loadingMore && (
-          <div className="h-screen w-full snap-start flex items-center justify-center bg-black">
-            <div className="size-8 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+          <div className="flex h-screen w-full snap-start items-center justify-center bg-black">
+            <div className="size-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
           </div>
         )}
       </div>

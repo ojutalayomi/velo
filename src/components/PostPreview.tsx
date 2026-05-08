@@ -9,7 +9,6 @@ import { fetchCommentsPage, getPost } from "../lib/getStatus";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import MediaSlide from "@/templates/mediaSlides";
-import Image from "next/image";
 import { Search } from "lucide-react";
 import { useUser } from "@/app/providers/UserProvider";
 import ImageContent from "@/components/imageContent";

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import React from "react";
+
 import App from "./clientComps";
 
 export const metadata: Metadata = {

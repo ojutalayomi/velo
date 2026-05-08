@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+
 import ExploreReel from "@/components/ExploreReel";
 
 export default function ExploreReelPage() {

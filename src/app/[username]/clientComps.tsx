@@ -43,46 +43,49 @@ export default function Profile({
 
   useEffect(() => {
     if (!socket) return;
-    socket.on(
-      "followNotification",
-      (data: {
-        followedDetails: UserData;
-        followerDetails: UserData;
-        type: "follow" | "unfollow";
-        timestamp: string;
-      }) => {
-        setProfileData((prev) => ({
+
+    const handleFollowNotification = (data: {
+      followedDetails: UserData;
+      followerDetails: UserData;
+      timestamp?: string;
+    }) => {
+      const followedId = String(data.followedDetails._id ?? "");
+      const followerId = String(data.followerDetails._id ?? "");
+      const me = String(userdata._id ?? "");
+      const relationshipActive = data.followedDetails.isFollowing ?? false;
+
+      // velo-socket only emits followNotification to the followed user’s room, so in practice
+      // `me === followedId` for anyone who receives this. Still gate by viewed profile so we
+      // never overwrite the wrong page if routing/broadcast changes later.
+      setProfileData((prev) => {
+        if (String(prev._id) !== followedId) return prev;
+        return {
           ...prev,
           followers: data.followedDetails.followers,
-          isFollowing: data.followedDetails.isFollowing,
-        }));
+          // Follow button is “do I follow this profile?” — only the follower cares.
+          ...(followerId === me ? { isFollowing: relationshipActive } : {}),
+        };
+      });
 
-        // If current user is the follower, update follow state and posts
-        if (data.followerDetails._id?.toString() === userdata._id) {
-          setProfileData((prev) => ({
-            ...prev,
-            isFollowing: data.followedDetails.isFollowing,
-          }));
-          setPostCards((prev) =>
-            prev.map((post) =>
-              post.UserId === (profileData?._id as unknown as string)
-                ? { ...post, IsFollowing: data.followedDetails.isFollowing ?? false }
-                : post
-            )
-          );
-        }
-
-        // If current user is the followed user, show a notification
-        if (data.followedDetails._id?.toString() === userdata._id) {
-          toast({
-            title: data.followedDetails.isFollowing
-              ? `${data.followerDetails.username} started following you`
-              : `${data.followerDetails.username} unfollowed you`,
-            variant: "default",
-          });
-        }
+      if (followerId === me) {
+        setPostCards((prev) =>
+          prev.map((post) =>
+            post.UserId === followedId ? { ...post, IsFollowing: relationshipActive } : post
+          )
+        );
       }
-    );
+
+      if (followedId === me) {
+        toast({
+          title: relationshipActive
+            ? `${data.followerDetails.username} started following you`
+            : `${data.followerDetails.username} unfollowed you`,
+          variant: "default",
+        });
+      }
+    };
+
+    socket.on("followNotification", handleFollowNotification);
     socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
       setPostCards((prev) => {
         return prev.filter((p) => p.PostID !== data.postId);
@@ -109,9 +112,9 @@ export default function Profile({
     });
 
     return () => {
-      // socket.off('followNotification');
+      socket.off("followNotification", handleFollowNotification);
     };
-  }, [socket]);
+  }, [socket, userdata._id]);
 
   if (!profileData || !profileData._id) {
     notFound();

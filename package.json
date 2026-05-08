@@ -20,7 +20,7 @@
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "dev": "next dev --turbopack",
     "dev-exp": "next dev --experimental-https --turbopack",
-    "build": "next build --webpack",
+    "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",

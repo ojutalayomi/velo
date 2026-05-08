@@ -1,10 +1,8 @@
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { Ellipsis } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { useMediaQuery } from "usehooks-ts";
+
 import {
   Drawer,
   DrawerContent,
@@ -13,12 +11,14 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Ellipsis } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
-import { useMediaQuery } from "usehooks-ts";
-import React from "react";
-import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 
 export default function ProfileMenu({
@@ -55,13 +55,13 @@ export default function ProfileMenu({
 
   // For mobile drawer, use plain buttons
   const mobileMenuItems = (
-    <div className="flex flex-col p-4 space-y-2">
-      <button onClick={handleShare} className="w-full text-left py-2 px-3 rounded hover:bg-muted">
+    <div className="flex flex-col space-y-2 p-4">
+      <button onClick={handleShare} className="w-full rounded px-3 py-2 text-left hover:bg-muted">
         Share profile via…
       </button>
       <button
         onClick={handleCopyLink}
-        className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+        className="w-full rounded px-3 py-2 text-left hover:bg-muted"
       >
         Copy link to profile
       </button>
@@ -70,19 +70,19 @@ export default function ProfileMenu({
           <hr className="my-2 border-gray-200 dark:border-gray-700" />
           <button
             onClick={handleMute}
-            className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+            className="w-full rounded px-3 py-2 text-left hover:bg-muted"
           >
             Mute
           </button>
           <button
             onClick={handleBlock}
-            className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+            className="w-full rounded px-3 py-2 text-left hover:bg-muted"
           >
             Block
           </button>
           <button
             onClick={handleReport}
-            className="w-full text-left py-2 px-3 rounded hover:bg-muted"
+            className="w-full rounded px-3 py-2 text-left hover:bg-muted"
           >
             Report
           </button>
@@ -95,12 +95,12 @@ export default function ProfileMenu({
     return (
       <Drawer>
         <DrawerTrigger asChild>
-          <button className="rounded-full p-1 border-2 bg-white dark:bg-black border-zinc-200 dark:border-zinc-900 overflow-hidden">
+          <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
             <Ellipsis className="size-6" />
           </button>
         </DrawerTrigger>
         <DrawerContent aria-describedby="Options" aria-labelledby="Options">
-          <DrawerHeader className="text-left hidden">
+          <DrawerHeader className="hidden text-left">
             <DrawerTitle className="text-left">Options</DrawerTitle>
             <DrawerDescription className="text-left">Options</DrawerDescription>
           </DrawerHeader>
@@ -114,7 +114,7 @@ export default function ProfileMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="rounded-full p-1 border-2 bg-white dark:bg-black border-zinc-200 dark:border-zinc-900 overflow-hidden">
+        <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
           <Ellipsis className="size-6" />
         </button>
       </DropdownMenuTrigger>

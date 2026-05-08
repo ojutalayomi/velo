@@ -3,6 +3,7 @@ import { ArrowLeft, Bookmark, Heart, MessageCircle, Share2, Volume2, VolumeX } f
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
+import { getExplorePostsCache, setExplorePostsCache } from "@/lib/explorePostsCache";
 import { fetchExplorePosts } from "@/lib/getStatus";
 import type { PostSchema } from "@/lib/types/type";
 
@@ -234,12 +235,25 @@ export default function ExploreReel() {
   // initial fetch
   useEffect(() => {
     let cancelled = false;
+
+    const cached = getExplorePostsCache();
+    if (cached?.posts?.length) {
+      setPosts(cached.posts);
+      setNextSkip(cached.pagination.skip + cached.pagination.limit);
+      setHasMore(cached.pagination.hasMore);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     fetchExplorePosts(0)
       .then(({ data, pagination }) => {
         if (cancelled) return;
         setPosts(data);
         setNextSkip(pagination.skip + pagination.limit);
         setHasMore(pagination.hasMore);
+        setExplorePostsCache({ posts: data, pagination });
       })
       .catch(console.error)
       .finally(() => {
@@ -291,7 +305,9 @@ export default function ExploreReel() {
       const { data, pagination } = await fetchExplorePosts(nextSkip);
       setPosts((prev) => {
         const seen = new Set(prev.map((p) => String(p.PostID ?? p._id)));
-        return [...prev, ...data.filter((p) => !seen.has(String(p.PostID ?? p._id)))];
+        const merged = [...prev, ...data.filter((p) => !seen.has(String(p.PostID ?? p._id)))];
+        setExplorePostsCache({ posts: merged, pagination });
+        return merged;
       });
       setNextSkip(pagination.skip + pagination.limit);
       setHasMore(pagination.hasMore);

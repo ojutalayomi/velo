@@ -40,7 +40,7 @@ import {
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
@@ -121,8 +121,7 @@ const ChatTextarea = ({
 
   useEffect(() => {
     if (errors.length > 0) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: errors[0],
       });
       setErrors([]);
@@ -528,9 +527,7 @@ const UploadDialog = ({
         fileToKeyMapRef.current.delete(fileToRemove);
       }
       setFiles(attachments.filter((_, i) => i !== index));
-      toast({
-        title: "File removed",
-      });
+      toast("File removed");
     },
     [attachments, setFiles, getFileKey]
   );
@@ -717,10 +714,8 @@ function fileHandler(
 
     // Check total number of files
     if (attachments.length + newFiles.length > FILE_VALIDATION_CONFIG.maxFiles) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Maximum ${FILE_VALIDATION_CONFIG.maxFiles} files allowed`,
-        variant: "destructive",
       });
       clearFiles();
       return;
@@ -731,10 +726,8 @@ function fileHandler(
     const newTotalSize = newFiles.reduce((acc, file) => acc + file.size, existingSize);
 
     if (newTotalSize > FILE_VALIDATION_CONFIG.maxTotalSize) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Total size exceeds ${formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}`,
-        variant: "destructive",
       });
       return;
     }
@@ -755,8 +748,7 @@ function fileHandler(
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
       validationErrors.forEach((error) =>
-        toast({
-          title: "Warning",
+        toast.warning("Warning", {
           description: error,
         })
       );

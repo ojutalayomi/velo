@@ -26,7 +26,7 @@ import {
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { PostSchema } from "@/lib/types/type";
@@ -137,10 +137,8 @@ function PostMakerClient({
 
     // Check total number of files
     if (files.length > FILE_VALIDATION_CONFIG.maxFiles) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Maximum ${FILE_VALIDATION_CONFIG.maxFiles} files allowed`,
-        variant: "destructive",
       });
       clearFiles();
       return;
@@ -151,10 +149,8 @@ function PostMakerClient({
     const newTotalSize = newFiles.reduce((acc, file) => acc + file.size, existingSize);
 
     if (newTotalSize > FILE_VALIDATION_CONFIG.maxTotalSize) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Total size exceeds ${formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}`,
-        variant: "destructive",
       });
       return;
     }
@@ -175,8 +171,7 @@ function PostMakerClient({
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
       validationErrors.forEach((error) =>
-        toast({
-          title: "Warning",
+        toast.warning("Warning", {
           description: error,
         })
       );

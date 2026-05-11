@@ -5,6 +5,8 @@ import { Provider } from "react-redux";
 import { CallProvider } from "@/components/call";
 import { store } from "@/redux/store";
 
+import { Toaster } from "@/components/ui/sonner";
+
 import NetworkProvider from "./providers/NetworkProvider";
 import PostsProvider from "./providers/PostsProvider";
 import SocketProvider, { useSocket } from "./providers/SocketProvider";
@@ -25,7 +27,10 @@ const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
           <SocketProvider>
             <WithCallProvider>
               <PostsProvider>
-                <ThemeProvider>{children}</ThemeProvider>
+                <ThemeProvider>
+                  {children}
+                  <Toaster />
+                </ThemeProvider>
               </PostsProvider>
             </WithCallProvider>
           </SocketProvider>

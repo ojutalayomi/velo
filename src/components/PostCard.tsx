@@ -42,7 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { getPost } from "@/lib/getStatus";
 import { PostSchema } from "@/lib/types/type";
 import { useAppDispatch } from "@/redux/hooks";
@@ -240,10 +240,8 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       });
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to follow user",
-        variant: "destructive",
       });
     }
   };
@@ -283,7 +281,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             await navigator.clipboard.writeText(
               `${window.location.protocol}//${window.location.host}/${data.Username}/posts/${data.PostID}`
             );
-            toast({ title: "Post link copied!" });
+            toast("Post link copied!");
           } catch (err) {
             console.error("Failed to copy post link to clipboard: ", err);
           }
@@ -357,9 +355,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       text: "Remove post",
       onClick: () => {
         dispatch(deletePost(data.PostID));
-        toast({
-          title: "Post Removed.",
-        });
+        toast("Post Removed.");
       },
     },
   ];

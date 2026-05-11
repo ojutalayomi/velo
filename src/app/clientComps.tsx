@@ -17,7 +17,7 @@ import RightSideBar from "@/components/RightSideBar";
 import Sidebar from "@/components/Sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import UserPhoto from "@/components/UserPhoto";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { FileStorageProvider } from "@/hooks/useFileStorage";
 import {
@@ -246,10 +246,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on(
       "chatError",
       (data: { error: string; chatId: string; updates: Partial<ConvoType> }) => {
-        toast({
-          title: data.error,
-          variant: "destructive",
-        });
+        toast.error(data.error);
         if (data.updates.deleted) {
           dispatch(
             addConversation(
@@ -362,7 +359,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
 
     // Handle follow notifications
     socket.on(
-      "followNotification",
+      "followNotification_old",
       (data: {
         followedDetails: UserData;
         followerDetails: UserData;
@@ -376,12 +373,11 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
             : Boolean(data.followedDetails.isFollowing);
 
         if (data.followedDetails._id?.toString() === userdata._id) {
-          toast({
-            title: nowFollowing
+          toast(
+            nowFollowing
               ? `${data.followerDetails.username} started following you`
-              : `${data.followerDetails.username} unfollowed you`,
-            variant: "default",
-          });
+              : `${data.followerDetails.username} unfollowed you`
+          );
         } else if (data.followerDetails._id?.toString() === userdata._id) {
           const authorId = data.followedDetails._id?.toString() || "";
           const updates = { IsFollowing: nowFollowing };

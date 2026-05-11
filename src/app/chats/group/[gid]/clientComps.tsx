@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
@@ -304,10 +304,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }, 1000);
     } catch (error) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to send message. Please try again.",
-        variant: "destructive",
       });
     }
   };

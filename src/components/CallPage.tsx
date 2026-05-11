@@ -8,7 +8,7 @@ import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface CallState {
   isIncoming: boolean;
@@ -26,8 +26,6 @@ const CallPage_ = () => {
   const router = useRouter();
   const socket = useSocket();
   const { userdata } = useUser();
-  const { toast } = useToast();
-
   // Call parameters
   const roomId = searchParams?.get("id");
   const isIncoming = searchParams?.get("accept") === "true";
@@ -112,8 +110,7 @@ const CallPage_ = () => {
         }));
 
         if (state === "connected") {
-          toast({
-            title: "Call Connected",
+          toast.success("Call Connected", {
             description: "You are now connected to the call",
           });
         } else if (state === "failed") {
@@ -130,7 +127,7 @@ const CallPage_ = () => {
       }));
       return null;
     }
-  }, [roomId, socket, toast]);
+  }, [roomId, socket]);
 
   // Start call (for caller)
   const startCall = useCallback(async () => {
@@ -152,15 +149,14 @@ const CallPage_ = () => {
         from: userdata._id,
       });
 
-      toast({
-        title: "Calling...",
+      toast("Calling...", {
         description: "Waiting for the other person to answer",
       });
     } catch (error) {
       console.error("Failed to start call:", error);
       setCallState((prev) => ({ ...prev, error: "Failed to start call" }));
     }
-  }, [roomId, socket, userdata._id, initializeWebRTC, toast]);
+  }, [roomId, socket, userdata._id, initializeWebRTC]);
 
   // Answer call (for callee)
   const answerCall = useCallback(async () => {
@@ -175,15 +171,14 @@ const CallPage_ = () => {
       // Join the room
       socket.emit("join-room", roomId);
 
-      toast({
-        title: "Joining Call",
+      toast("Joining Call", {
         description: "Connecting to the call...",
       });
     } catch (error) {
       console.error("Failed to answer call:", error);
       setCallState((prev) => ({ ...prev, error: "Failed to join call" }));
     }
-  }, [roomId, socket, initializeWebRTC, toast]);
+  }, [roomId, socket, initializeWebRTC]);
 
   // Handle incoming offer
   const handleOffer = useCallback(
@@ -290,8 +285,7 @@ const CallPage_ = () => {
     });
 
     socket.on("webrtc:hangup", () => {
-      toast({
-        title: "Call Ended",
+      toast("Call Ended", {
         description: "The other person ended the call",
       });
       endCall();
@@ -303,7 +297,7 @@ const CallPage_ = () => {
       socket.off("webrtc:candidate");
       socket.off("webrtc:hangup");
     };
-  }, [socket, handleOffer, handleAnswer, handleCandidate, endCall, toast]);
+  }, [socket, handleOffer, handleAnswer, handleCandidate, endCall]);
 
   // Initialize call based on type
   useEffect(() => {

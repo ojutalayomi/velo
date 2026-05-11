@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { Chat } from "@/lib/class/Chat";
@@ -387,10 +387,8 @@ const ChatPage = () => {
 
       const result = await chatSystem.addChat(newChatAttributes);
       if (!result) {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "Failed to create chat. Please try again.",
-          variant: "destructive",
         });
         return;
       }
@@ -447,10 +445,8 @@ const ChatPage = () => {
       router.push(`/chats/${result.chat.chatType === "Group" ? "group/" : ""}${result.chat._id}`);
     } catch (error) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to send message. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setAllowSend(true);

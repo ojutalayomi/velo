@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { useUser } from "@/app/providers/UserProvider";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
@@ -272,10 +272,8 @@ const GroupChatMenu = () => {
       dispatch(showChat(""));
     } catch (error) {
       console.error("Error:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to create group. Please try again.",
-        variant: "destructive",
       });
     }
   };
@@ -304,10 +302,8 @@ const GroupChatMenu = () => {
 
   const createGroup = () => {
     if (selectedUsers.length < 2) {
-      toast({
-        title: "Please select at least 2 users to create a group",
+      toast.error("Please select at least 2 users to create a group", {
         description: "You need at least 2 users to create a group",
-        variant: "destructive",
       });
       return;
     }

@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { RootState } from "@/redux/store";
 
 export default function ProfileMenu({
@@ -33,17 +33,17 @@ export default function ProfileMenu({
   const userdata = useSelector((state: RootState) => state.user.userdata);
 
   const handleMute = () => {
-    toast({ title: `Muted @${username}` });
+    toast(`Muted @${username}`);
   };
   const handleBlock = () => {
-    toast({ title: `Blocked @${username}` });
+    toast(`Blocked @${username}`);
   };
   const handleReport = () => {
-    toast({ title: `Reported @${username}` });
+    toast(`Reported @${username}`);
   };
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/${username}`);
-    toast({ title: "Profile link copied!" });
+    toast("Profile link copied!");
   };
   const handleShare = () => {
     if (navigator.share) {

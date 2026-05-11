@@ -14,7 +14,7 @@ import Wrapper from "@/components/AccountComponentWrapper";
 import { setUserData } from "@/redux/userSlice";
 import { fetchChats } from "@/redux/chatSlice";
 import { useSocket } from "@/app/providers/SocketProvider";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const Comps: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -89,10 +89,8 @@ const Comps: React.FC = () => {
       dispatch(setSuccess(true));
     } catch (error: any) {
       dispatch(setError1(error.message));
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       dispatch(setLoading(false));

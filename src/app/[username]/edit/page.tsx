@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Camera, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
@@ -75,10 +75,7 @@ export default function EditProfile() {
       return data.url;
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error uploading image",
-        variant: "destructive",
-      });
+      toast.error("Error uploading image");
       return null;
     }
   };
@@ -92,10 +89,8 @@ export default function EditProfile() {
 
     if (file.size > 5 * 1024 * 1024) {
       // 5MB limit
-      toast({
-        title: "File too large",
+      toast.error("File too large", {
         description: "Please upload an image smaller than 5MB",
-        variant: "destructive",
       });
       return;
     }
@@ -147,16 +142,11 @@ export default function EditProfile() {
       const data = await res.json();
       dispatch(updateUserData(data.data));
 
-      toast({
-        title: "Profile updated successfully",
-      });
+      toast.success("Profile updated successfully");
       router.push(`/${userdata.username}`);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error updating profile",
-        variant: "destructive",
-      });
+      toast.error("Error updating profile");
     } finally {
       setIsLoading(false);
     }

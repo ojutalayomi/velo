@@ -1,5 +1,4 @@
 import { debounce } from "lodash";
-import { User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useState,
@@ -12,8 +11,7 @@ import {
 } from "react";
 import { useSelector } from "react-redux";
 
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { networkMonitor, NetworkStatus } from "@/lib/network";
 import { UserData } from "@/lib/types/user";
 import { delay } from "@/lib/utils";
@@ -71,25 +69,19 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const data = await response.json();
         if (data.message === "Too many requests") {
           fetchedSuccessfullyRef.current = true;
-          toast({
-            title: "User Data Is Loading",
+          toast.error("User Data Is Loading", {
             description: `Please wait, your data is been fetched`,
-            variant: "destructive",
           });
           await delay(30000);
           fetchedSuccessfullyRef.current = false;
         } else if (data.message === "login") {
           fetchedSuccessfullyRef.current = true;
-          toast({
-            title: "User needs to log in",
+          toast.error("User needs to log in", {
             description: `We were not able to fetch your data. Please log in or create an account with us.`,
-            variant: "destructive",
-            action: (
-              <Button onClick={() => router.push("/accounts/login")}>
-                {" "}
-                <User /> Log in
-              </Button>
-            ),
+            action: {
+              label: "Log in",
+              onClick: () => router.push("/accounts/login"),
+            },
           });
         } else {
           throw new Error("Failed to fetch user data");

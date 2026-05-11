@@ -7,7 +7,7 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { PostSchema } from "@/lib/types/type";
@@ -78,12 +78,11 @@ export default function Profile({
       }
 
       if (followedId === me) {
-        toast({
-          title: relationshipActive
+        toast(
+          relationshipActive
             ? `${data.followerDetails.username} started following you`
-            : `${data.followerDetails.username} unfollowed you`,
-          variant: "default",
-        });
+            : `${data.followerDetails.username} unfollowed you`
+        );
       }
     };
 
@@ -143,10 +142,8 @@ export default function Profile({
       }
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to follow user",
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

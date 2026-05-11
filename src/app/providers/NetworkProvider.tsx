@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { networkMonitor, NetworkStatus, NetworkQuality } from "@/lib/network";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 type NetworkContextType = {
   status: NetworkStatus | undefined;
@@ -13,7 +13,6 @@ export const NetworkContext = createContext<NetworkContextType | undefined>(unde
 
 export default function NetworkProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<NetworkStatus>();
-  const { toast } = useToast();
 
   useEffect(() => {
     setStatus(networkMonitor.getNetworkStatus());
@@ -32,13 +31,15 @@ export default function NetworkProvider({ children }: { children: React.ReactNod
       setStatus(newStatus);
 
       if (newStatus.online !== status?.online) {
-        toast({
-          title: newStatus.online ? "Back Online" : "Offline",
-          description: newStatus.online
-            ? "Your internet connection has been restored"
-            : "You are currently offline",
-          variant: newStatus.online ? "default" : "destructive",
-        });
+        if (newStatus.online) {
+          toast.success("Back Online", {
+            description: "Your internet connection has been restored",
+          });
+        } else {
+          toast.error("Offline", {
+            description: "You are currently offline",
+          });
+        }
       }
     }
 
@@ -57,7 +58,7 @@ export default function NetworkProvider({ children }: { children: React.ReactNod
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", updateOnlineStatus);
     };
-  }, [status, toast]);
+  }, [status]);
 
   const getQuality = (): NetworkQuality => {
     if (!status?.online) return "offline";

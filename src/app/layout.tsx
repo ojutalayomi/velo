@@ -4,7 +4,6 @@ import React from "react";
 
 import "@/styles/style.css";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import ClientComponents from "./clientComps";
@@ -76,7 +75,6 @@ export default function RootLayout({
             {modal}
           </TooltipProvider>
         </Providers>
-        <Toaster />
       </body>
     </html>
   );

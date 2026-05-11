@@ -47,12 +47,16 @@ export default function Profile({
     const handleFollowNotification = (data: {
       followedDetails: UserData;
       followerDetails: UserData;
+      following?: boolean;
       timestamp?: string;
     }) => {
       const followedId = String(data.followedDetails._id ?? "");
       const followerId = String(data.followerDetails._id ?? "");
       const me = String(userdata._id ?? "");
-      const relationshipActive = data.followedDetails.isFollowing ?? false;
+      const relationshipActive =
+        typeof data.following === "boolean"
+          ? data.following
+          : Boolean(data.followedDetails.isFollowing);
 
       // Both followed and follower can receive this; only update UI when it matches this page / role.
       setProfileData((prev) => {

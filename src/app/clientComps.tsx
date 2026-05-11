@@ -43,6 +43,7 @@ import {
   updateMessageReactions,
 } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
+import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { addPost, deletePost, updatePost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
@@ -365,27 +366,27 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       (data: {
         followedDetails: UserData;
         followerDetails: UserData;
-        type: "follow" | "unfollow";
-        timestamp: string;
+        following?: boolean;
+        type?: "follow" | "unfollow";
+        timestamp?: string;
       }) => {
+        const nowFollowing =
+          typeof data.following === "boolean"
+            ? data.following
+            : Boolean(data.followedDetails.isFollowing);
+
         if (data.followedDetails._id?.toString() === userdata._id) {
           toast({
-            title: data.followedDetails.isFollowing
+            title: nowFollowing
               ? `${data.followerDetails.username} started following you`
               : `${data.followerDetails.username} unfollowed you`,
             variant: "default",
           });
         } else if (data.followerDetails._id?.toString() === userdata._id) {
-          // I am the follower: update feed cards for the user I followed/unfollowed (their UserId on posts).
-          dispatch(
-            updatePosts({
-              key: "UserId",
-              value: data.followedDetails._id?.toString() || "",
-              updates: {
-                IsFollowing: data.followedDetails.isFollowing ?? false,
-              },
-            })
-          );
+          const authorId = data.followedDetails._id?.toString() || "";
+          const updates = { IsFollowing: nowFollowing };
+          dispatch(updatePosts({ key: "UserId", value: authorId, updates }));
+          dispatch(updateFollowingFeedPosts({ key: "UserId", value: authorId, updates }));
         }
       }
     );

@@ -69,6 +69,8 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
           followedDetails,
           followerDetails,
           time: time || new Date().toISOString(),
+          /** Explicit flag so clients never rely on nested booleans that can drop across the wire */
+          following: true,
         });
       } catch (e) {
         console.error("[api/follow] socket follow notify failed:", e);
@@ -104,6 +106,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
           followedDetails,
           followerDetails,
           time: time || new Date().toISOString(),
+          following: false,
         });
       } catch (e) {
         console.error("[api/follow] socket unfollow notify failed:", e);

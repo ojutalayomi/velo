@@ -18,6 +18,22 @@ export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Normalize user ids from Redux, RSC props, or Socket.IO payloads (string, ObjectId, or `{ $oid }`). */
+export function userIdString(id: unknown): string {
+  if (id == null || id === "") return "";
+  if (typeof id === "string") return id;
+  if (typeof id === "object" && id !== null && "$oid" in id) {
+    const oid = (id as { $oid?: unknown }).$oid;
+    if (typeof oid === "string") return oid;
+  }
+  if (typeof id === "object" && id !== null && typeof (id as { toString?: () => string }).toString === "function") {
+    const s = (id as { toString: () => string }).toString();
+    if (s && s !== "[object Object]") return s;
+  }
+  const fallback = String(id);
+  return fallback === "[object Object]" ? "" : fallback;
+}
+
 export function timeFormatter() {
   const time = new Date().toLocaleString();
   const [datePart] = time.split(", ");

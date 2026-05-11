@@ -359,7 +359,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
 
     // Handle follow notifications
     socket.on(
-      "followNotification_old",
+      "followNotification",
       (data: {
         followedDetails: UserData;
         followerDetails: UserData;

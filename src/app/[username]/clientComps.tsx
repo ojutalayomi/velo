@@ -12,6 +12,7 @@ import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
+import { userIdString } from "@/lib/utils";
 import { timeFormatter } from "@/templates/PostProps";
 
 import ContentSection from "./ContentTabs";
@@ -50,9 +51,9 @@ export default function Profile({
       following?: boolean;
       timestamp?: string;
     }) => {
-      const followedId = String(data.followedDetails._id ?? "");
-      const followerId = String(data.followerDetails._id ?? "");
-      const me = String(userdata._id ?? "");
+      const followedId = userIdString(data.followedDetails._id);
+      const followerId = userIdString(data.followerDetails._id);
+      const me = userIdString(userdata._id);
       const relationshipActive =
         typeof data.following === "boolean"
           ? data.following
@@ -60,10 +61,12 @@ export default function Profile({
 
       // Both followed and follower can receive this; only update UI when it matches this page / role.
       setProfileData((prev) => {
-        if (String(prev._id) !== followedId) return prev;
+        if (userIdString(prev._id) !== followedId) return prev;
         return {
           ...prev,
-          followers: data.followedDetails.followers,
+          ...(data.followedDetails.followers != null
+            ? { followers: data.followedDetails.followers }
+            : {}),
           // Follow button is “do I follow this profile?” — only the follower cares.
           ...(followerId === me ? { isFollowing: relationshipActive } : {}),
         };
@@ -72,7 +75,7 @@ export default function Profile({
       if (followerId === me) {
         setPostCards((prev) =>
           prev.map((post) =>
-            post.UserId === followedId ? { ...post, IsFollowing: relationshipActive } : post
+            userIdString(post.UserId) === followedId ? { ...post, IsFollowing: relationshipActive } : post
           )
         );
       }

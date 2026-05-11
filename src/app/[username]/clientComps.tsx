@@ -42,6 +42,14 @@ export default function Profile({
   const [postsPagination, setPostsPagination] = useState(initialPagination);
   const [postsLoadingMore, setPostsLoadingMore] = useState(false);
 
+  const viewedProfileKey = `${userIdString(pd._id)}:${pd.username ?? ""}`;
+
+  useEffect(() => {
+    setProfileData(pd);
+    setPostCards(profilePostCards);
+    setPostsPagination(initialPagination);
+  }, [viewedProfileKey, pd, profilePostCards, initialPagination]);
+
   useEffect(() => {
     if (!socket) return;
 
@@ -118,7 +126,7 @@ export default function Profile({
     return () => {
       socket.off("followNotification", handleFollowNotification);
     };
-  }, [socket, userdata._id]);
+  }, [socket, userdata._id, viewedProfileKey]);
 
   if (!profileData || !profileData._id) {
     notFound();
@@ -141,7 +149,33 @@ export default function Profile({
         }),
       });
       if (res.ok) {
-        // setIsFollowing(follow);
+        const profileId = userIdString(profileData._id);
+        if (follow) {
+          setProfileData((prev) => ({
+            ...prev,
+            isFollowing: true,
+            followers: typeof prev.followers === "number" ? prev.followers + 1 : prev.followers,
+          }));
+          setPostCards((prev) =>
+            prev.map((post) =>
+              userIdString(post.UserId) === profileId ? { ...post, IsFollowing: true } : post
+            )
+          );
+        } else {
+          setProfileData((prev) => ({
+            ...prev,
+            isFollowing: false,
+            followers:
+              typeof prev.followers === "number" && prev.followers > 0
+                ? prev.followers - 1
+                : prev.followers,
+          }));
+          setPostCards((prev) =>
+            prev.map((post) =>
+              userIdString(post.UserId) === profileId ? { ...post, IsFollowing: false } : post
+            )
+          );
+        }
       }
     } catch (error) {
       console.error(error);
@@ -181,6 +215,8 @@ export default function Profile({
     }
   }, [profileData.username, postsLoadingMore, postsPagination]);
 
+  const postCount = postCards.filter((post) => post.Type === "post").length;
+
   return (
     <div className="h-screen max-h-screen overflow-auto w-full dark:bg-black">
       <div
@@ -197,7 +233,7 @@ export default function Profile({
               : "Velo"}{" "}
             {profileData.verified && <Statuser className="size-4" />}
           </p>
-          <p className="text-sm text-gray-600">{profilePostCards.length} posts</p>
+          <p className="text-sm text-gray-600">{postCards.length} posts</p>
         </div>
       </div>
       {/* Cover Photo */}
@@ -315,8 +351,8 @@ export default function Profile({
             </span>
             <span>{profileData.following ?? 0} following</span>
             <span>
-              {profilePostCards.filter((post) => post.Type === "post").length} post
-              {profilePostCards.filter((post) => post.Type === "post").length === 1 ? "" : "s"}
+              {postCount} post
+              {postCount === 1 ? "" : "s"}
             </span>
           </div>
         </div>

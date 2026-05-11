@@ -376,10 +376,11 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
             variant: "default",
           });
         } else if (data.followerDetails._id?.toString() === userdata._id) {
+          // I am the follower: update feed cards for the user I followed/unfollowed (their UserId on posts).
           dispatch(
             updatePosts({
               key: "UserId",
-              value: data.followerDetails._id?.toString() || "",
+              value: data.followedDetails._id?.toString() || "",
               updates: {
                 IsFollowing: data.followedDetails.isFollowing ?? false,
               },

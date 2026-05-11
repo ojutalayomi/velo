@@ -54,9 +54,7 @@ export default function Profile({
       const me = String(userdata._id ?? "");
       const relationshipActive = data.followedDetails.isFollowing ?? false;
 
-      // velo-socket only emits followNotification to the followed user’s room, so in practice
-      // `me === followedId` for anyone who receives this. Still gate by viewed profile so we
-      // never overwrite the wrong page if routing/broadcast changes later.
+      // Both followed and follower can receive this; only update UI when it matches this page / role.
       setProfileData((prev) => {
         if (String(prev._id) !== followedId) return prev;
         return {
@@ -180,7 +178,7 @@ export default function Profile({
   }, [profileData.username, postsLoadingMore, postsPagination]);
 
   return (
-    <div className="h-screen max-h-screen overflow-auto w-full overflow-auto dark:bg-black">
+    <div className="h-screen max-h-screen overflow-auto w-full dark:bg-black">
       <div
         className={`sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg`}
       >

@@ -1,6 +1,6 @@
 import { verifyToken } from "@/lib/auth";
 import { FollowersSchema, MongoDBClient } from "@/lib/mongodb";
-import { getSocketInstance } from "@/lib/socket";
+import { emitViaSocketServer } from "@/lib/socket";
 import { Payload } from "@/lib/types/type";
 import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -28,9 +28,6 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     if (payload._id !== followerId) {
       return res.status(403).json({ message: "Forbidden" });
     }
-
-    // Initialize socket with the followerId
-    const socket = getSocketInstance(followerId);
 
     const db = await new MongoDBClient().init();
     const followers = db.followers();
@@ -67,11 +64,15 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         .users()
         .findOne({ _id: new ObjectId(followedId) }, { projection });
       followedDetails!.isFollowing = true;
-      socket.emit("follow", {
-        followedDetails,
-        followerDetails,
-        time: time || new Date().toISOString(),
-      });
+      try {
+        await emitViaSocketServer(followerId, "follow", {
+          followedDetails,
+          followerDetails,
+          time: time || new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error("[api/follow] socket follow notify failed:", e);
+      }
 
       return res.status(200).json({
         message: "User is now following the target user",
@@ -98,11 +99,15 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         .users()
         .findOne({ _id: new ObjectId(followedId) }, { projection });
       followedDetails!.isFollowing = false;
-      socket.emit("unfollow", {
-        followedDetails,
-        followerDetails,
-        time: time || new Date().toISOString(),
-      });
+      try {
+        await emitViaSocketServer(followerId, "unfollow", {
+          followedDetails,
+          followerDetails,
+          time: time || new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error("[api/follow] socket unfollow notify failed:", e);
+      }
 
       return res.status(200).json({
         message: "User has now unfollowed the target user",

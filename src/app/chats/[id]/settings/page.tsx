@@ -38,10 +38,7 @@ const ChatSettingsPage: React.FC = () => {
   const params = useParams() as Params;
   const navigate = useNavigateWithHistory();
   const { id } = params;
-  const {
-    settings,
-    loading: convoLoading,
-  } = useSelector<RootState, CHT>((state) => state.chat);
+  const { settings, loading: convoLoading } = useSelector<RootState, CHT>((state) => state.chat);
   const [chat, setChat] = useState<ChatDataClient | "i">("i");
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
 

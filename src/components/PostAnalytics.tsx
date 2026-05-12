@@ -48,19 +48,15 @@ export default function PostAnalytics({ postId, userId }: PostAnalyticsProps) {
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
       const scrollableHeight = documentHeight - windowHeight;
-      const currentScrollDepth = scrollableHeight > 0 
-        ? Math.round((scrollTop / scrollableHeight) * 100) 
-        : 0;
+      const currentScrollDepth =
+        scrollableHeight > 0 ? Math.round((scrollTop / scrollableHeight) * 100) : 0;
 
       setScrollDepth(currentScrollDepth);
 
       // Track scroll milestones (25%, 50%, 75%, 100%)
       const milestones = [25, 50, 75, 100];
       milestones.forEach((milestone) => {
-        if (
-          currentScrollDepth >= milestone &&
-          !scrollTrackedRef.current.has(milestone)
-        ) {
+        if (currentScrollDepth >= milestone && !scrollTrackedRef.current.has(milestone)) {
           scrollTrackedRef.current.add(milestone);
           trackEvent({
             postId,
@@ -138,4 +134,3 @@ export default function PostAnalytics({ postId, userId }: PostAnalyticsProps) {
   // This component doesn't render anything
   return null;
 }
-

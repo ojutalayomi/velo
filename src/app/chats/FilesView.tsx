@@ -109,7 +109,9 @@ export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: str
                 className={`${key === 2 && mediaLength === 3 ? "col-span-2 row-span-1 aspect-video" : "aspect-square"} ${mediaLength === 1 && "col-span-2"} group relative cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300`}
               >
                 <img src={m.url} alt={m.name} className="size-full object-cover" />
-                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">{updateLiveTime("chat-time", m.uploadedAt)}</div>
+                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">
+                  {updateLiveTime("chat-time", m.uploadedAt)}
+                </div>
               </div>
             );
           })}
@@ -117,7 +119,9 @@ export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: str
             <div onClick={() => toggleMediaDialog({ open: true, index: 3 })} className="relative">
               <div className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300">
                 <img src={media[3].url} alt={media[3].name} className="size-full object-cover" />
-                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">{updateLiveTime("chat-time", media[3].uploadedAt)}</div>
+                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">
+                  {updateLiveTime("chat-time", media[3].uploadedAt)}
+                </div>
               </div>
               <div className="group absolute inset-0 flex aspect-square items-center justify-center rounded-lg text-2xl font-light text-gray-400 backdrop-blur-sm transition hover:bg-gray-700">
                 +{excess}
@@ -160,8 +164,11 @@ export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: str
                   <div className="flex items-center gap-2">
                     {m.size && (
                       <span className="text-xs text-gray-500">{formatFileSize(m.size)}</span>
-                    )}{"•"}
-                    <span className="text-xs text-gray-500">{updateLiveTime("chat-time", m.uploadedAt)}</span>
+                    )}
+                    {"•"}
+                    <span className="text-xs text-gray-500">
+                      {updateLiveTime("chat-time", m.uploadedAt)}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

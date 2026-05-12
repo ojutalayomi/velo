@@ -9,10 +9,10 @@ import {
   Ellipsis,
   CircleEllipsis,
   Settings,
-  CircleHelp,
   Home,
   Search,
   User2,
+  Bookmark,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -64,9 +64,9 @@ export const sidebarItems = [
     label: "Notifications",
   },
   {
-    route: "feedback",
-    icon: CircleHelp,
-    label: "Feedback",
+    route: "bookmarks",
+    icon: Bookmark,
+    label: "Bookmarks",
   },
   {
     route: "#",

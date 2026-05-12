@@ -328,7 +328,7 @@ export type AllChatsServer = {
 
 export interface NewChat_ {
   chat: ChatDataClient;
-  chatSettings: ChatSettings,
+  chatSettings: ChatSettings;
   requestId: string;
 }
 
@@ -464,6 +464,15 @@ export interface PostSchema {
   ParentId: string;
   OriginalPostId?: string;
 }
+
+export interface PostInfo {
+  _id: ObjectId;
+  postId: string;
+  userId: string;
+}
+
+export type PostBookmarkSchema = PostInfo;
+export type PostLikesSchema = PostInfo;
 
 export interface UserSettings {
   twoFactorAuth: boolean;

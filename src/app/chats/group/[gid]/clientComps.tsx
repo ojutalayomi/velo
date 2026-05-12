@@ -163,7 +163,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     ) {
       setSearchResults(filtered);
     }
-  }, [searchQuery, Messages, gid]);  
+  }, [searchQuery, Messages, gid]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -194,7 +194,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (socket && gid && userdata._id) {
       socket.on("groupAnnouncement", (data: string) => {
         // console.log('You have joined a group chat');
-        alert('You have joined a group chat: ' + data);
+        alert("You have joined a group chat: " + data);
       });
     }
   }, [otherIds, gid, socket, userdata._id]);
@@ -230,7 +230,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         reactions: [],
         attachments: [] as Attachment[],
         quotedMessageId: id,
-        status: "sending" as msgStatus
+        status: "sending" as msgStatus,
       });
 
       // Read and process all files
@@ -349,11 +349,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   const options = [
     { id: 1, name: "View info", action: () => router.push(`/chats/group/${gid}/settings`) },
-    { id: 2, name: "Search", action: () => {
-      const currParams = new URLSearchParams(searchParams?.toString() || "");
-      currParams.set("search", "true");
-      router.push(`/chats/group/${gid}?${currParams.toString()}`, { scroll: false });
-    } },
+    {
+      id: 2,
+      name: "Search",
+      action: () => {
+        const currParams = new URLSearchParams(searchParams?.toString() || "");
+        currParams.set("search", "true");
+        router.push(`/chats/group/${gid}?${currParams.toString()}`, { scroll: false });
+      },
+    },
     { id: 3, name: "Mute notifications", action: () => console.log("Archived") },
     { id: 4, name: "Wallpaper", action: () => console.log("Hidden") },
     {
@@ -514,21 +518,30 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             >
               Clear
             </button>
-            <div className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}>
+            <div
+              className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
+            >
               <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
                 {searchResults.length > 0 ? (
                   searchResults.map((result) => (
-                    <MessageTab key={result._id} message={result} setQuote={setQuote} onClick={() => {
-                      setSearchQuery("");
-                      setSearchFocus(false);
-                      openSearchBar(false);
-                      router.replace(`/chats/group/${gid}#${result._id}`, { scroll: true });
-                    }} />
+                    <MessageTab
+                      key={result._id}
+                      message={result}
+                      setQuote={setQuote}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchFocus(false);
+                        openSearchBar(false);
+                        router.replace(`/chats/group/${gid}#${result._id}`, { scroll: true });
+                      }}
+                    />
                   ))
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No messages found</h3>
+                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
+                      No messages found
+                    </h3>
                   </div>
                 )}
               </div>
@@ -633,11 +646,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   </div>
                 ) : null}
 
-                <MessageTab
-                  key={message._id as string}
-                  message={message}
-                  setQuote={setQuote}
-                />
+                <MessageTab key={message._id as string} message={message} setQuote={setQuote} />
               </Fragment>
             );
             lastDateRef.current = messageDate;
@@ -646,16 +655,19 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           }, [])}
         </div>
         {filteredIsTypingList?.length > 0 && (
-          <div
-            key={`typing-${filteredIsTypingList[0].id}`}
-            className="my-2 mb-4 text-left"
-          >
+          <div key={`typing-${filteredIsTypingList[0].id}`} className="my-2 mb-4 text-left">
             <div className="flex flex-wrap items-center justify-start gap-2">
               <div className="rounded-full bg-gray-100 flex items-center gap-2 rounded-bl-none p-3 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
                 <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2">
                   {filteredIsTypingList.slice(0, 3).map((i) => (
-                    <Avatar className="size-8 ring-4 ring-offset-background" key={i.id} data-src={i.displayPicture}>
-                      <AvatarFallback className="capitalize size-8">{i.name?.slice(0, 2)}</AvatarFallback>
+                    <Avatar
+                      className="size-8 ring-4 ring-offset-background"
+                      key={i.id}
+                      data-src={i.displayPicture}
+                    >
+                      <AvatarFallback className="capitalize size-8">
+                        {i.name?.slice(0, 2)}
+                      </AvatarFallback>
                       <AvatarImage
                         src={i.displayPicture}
                         className="displayPicture size-8 rounded-full object-cover dark:border-slate-200"

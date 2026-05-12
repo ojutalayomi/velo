@@ -18,11 +18,7 @@ interface SidebarProps {
   setLoad: (status: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  setLoad,
-  activeRoute,
-  setActiveRoute,
-}) => {
+const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute }) => {
   const { userdata, loading, error, refetchUser } = useUser();
   const [isPopUp, setPopUp] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);

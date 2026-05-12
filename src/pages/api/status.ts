@@ -1,11 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import {
-  pagingMeta,
-  DEFAULT_STATUS_LIMIT,
-  MAX_API_LIMIT,
-  parsePaging,
-} from "@/lib/apiPagination";
+import { pagingMeta, DEFAULT_STATUS_LIMIT, MAX_API_LIMIT, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {

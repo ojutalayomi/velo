@@ -101,13 +101,16 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = "", host }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (progressRef.current && videoRef.current) {
-      const rect = progressRef.current.getBoundingClientRect();
-      const pos = (e.clientX - rect.left) / rect.width;
-      videoRef.current.currentTime = pos * duration;
-    }
-  }, [duration]);
+  const handleProgressClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (progressRef.current && videoRef.current) {
+        const rect = progressRef.current.getBoundingClientRect();
+        const pos = (e.clientX - rect.left) / rect.width;
+        videoRef.current.currentTime = pos * duration;
+      }
+    },
+    [duration]
+  );
 
   const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);

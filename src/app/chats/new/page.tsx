@@ -24,7 +24,12 @@ import ChatSystem from "@/lib/class/chatSystem";
 import { Attachment, ChatType, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { timeFormatter as timeFormatterUtils } from "@/lib/utils";
-import { updateConversation, addMessage, setNewGroupMembers, addConversation } from "@/redux/chatSlice";
+import {
+  updateConversation,
+  addMessage,
+  setNewGroupMembers,
+  addConversation,
+} from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
@@ -414,14 +419,13 @@ const ChatPage = () => {
               })
             );
           }
-          
         } catch (error) {
           console.error("Socket emission error:", error);
         }
       }
 
-      const chat = new Chat(result.chat, [])
-      dispatch(addConversation(chat.getConvo(userdata._id)))
+      const chat = new Chat(result.chat, []);
+      dispatch(addConversation(chat.getConvo(userdata._id)));
       dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
@@ -463,7 +467,9 @@ const ChatPage = () => {
     router.push("/chats");
   };
 
-  const options = [{ id: 1, name: "View contact", action: () => router.push(`/${newPerson?.username}`) }];
+  const options = [
+    { id: 1, name: "View contact", action: () => router.push(`/${newPerson?.username}`) },
+  ];
 
   return (
     <div

@@ -1,5 +1,16 @@
 import { Cross2Icon } from "@radix-ui/react-icons";
-import { X, Send, Smile, Plus, Folder, Image, Paintbrush2, Expand, Shrink, Trash } from "lucide-react";
+import {
+  X,
+  Send,
+  Smile,
+  Plus,
+  Folder,
+  Image,
+  Paintbrush2,
+  Expand,
+  Shrink,
+  Trash,
+} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChangeEvent,
@@ -13,7 +24,7 @@ import {
   useState,
 } from "react";
 import { useSelector } from "react-redux";
-import { TextAreaBox, Details } from '@ojutalayomi/react-textarea-enhanced';
+import { TextAreaBox, Details } from "@ojutalayomi/react-textarea-enhanced";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";
@@ -47,8 +58,6 @@ import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { setToggleDialog } from "@/redux/utilsSlice";
 import VideoDiv from "@/templates/videoDiv";
-
-
 
 type Message = {
   _id: string;
@@ -114,7 +123,9 @@ const ChatTextarea = ({
       router.replace(`${pathname}?${currParams.toString()}`, { scroll: false });
     } else {
       currParams.delete("toggleDialog");
-      router.replace(`${pathname}${currParams.toString() ? "?" + currParams.toString() : ""}`, { scroll: false });
+      router.replace(`${pathname}${currParams.toString() ? "?" + currParams.toString() : ""}`, {
+        scroll: false,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toggleDialog]);
@@ -186,7 +197,8 @@ const ChatTextarea = ({
 
   // Memoize emoji picker trigger className
   const emojiPickerTriggerClassName = useMemo(
-    () => `absolute inset-y-0 right-0 flex ${txtButton ? "items-end" : "items-center"} p-3 hover:text-brand/80 rounded-full z-10`,
+    () =>
+      `absolute inset-y-0 right-0 flex ${txtButton ? "items-end" : "items-center"} p-3 hover:text-brand/80 rounded-full z-10`,
     [txtButton]
   );
 
@@ -213,7 +225,12 @@ const ChatTextarea = ({
 
   return (
     <div className="relative w-full">
-      <div className={cn("fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80", disabled ? " pointer-events-none opacity-70" : "")}>
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80",
+          disabled ? " pointer-events-none opacity-70" : ""
+        )}
+      >
         {quote.state && (
           <div className="mx-2 mb-2 rounded-lg bg-gray-100 p-3 dark:bg-zinc-800">
             <div className="flex max-w-full items-center justify-between gap-1">
@@ -292,10 +309,17 @@ const ChatTextarea = ({
                   onClick={handleExpandToggle}
                   className="absolute right-0 top-0 z-30 mr-1 rounded-full bg-transparent p-3 transition-colors hover:text-brand/90"
                 >
-                  {expanded ? <Shrink size={20} className="text-brand" /> : <Expand size={20} className="text-brand" />}
+                  {expanded ? (
+                    <Shrink size={20} className="text-brand" />
+                  ) : (
+                    <Expand size={20} className="text-brand" />
+                  )}
                 </Button>
               )}
-              <EmojiPicker triggerClassName={emojiPickerTriggerClassName} onChange={handleEmojiChange}>
+              <EmojiPicker
+                triggerClassName={emojiPickerTriggerClassName}
+                onChange={handleEmojiChange}
+              >
                 <Smile size={20} className="flex-1 text-brand" />
               </EmojiPicker>
             </>
@@ -430,7 +454,11 @@ const LazyCarouselItem = ({
 
   return (
     <div ref={itemRef} className={className}>
-      {isVisible ? children : <div className="flex size-full items-center justify-center">Loading...</div>}
+      {isVisible ? (
+        children
+      ) : (
+        <div className="flex size-full items-center justify-center">Loading...</div>
+      )}
     </div>
   );
 };
@@ -462,13 +490,13 @@ const UploadDialog = ({
   const objectURLs = useMemo(() => {
     const urlMap = new Map<File, string>();
     const currentFileKeys = new Set<string>();
-    
+
     // Create URLs for current files
     attachments.forEach((file) => {
       const fileKey = getFileKey(file);
       currentFileKeys.add(fileKey);
       fileToKeyMapRef.current.set(file, fileKey);
-      
+
       if (!prevURLsRef.current.has(fileKey)) {
         // Create new URL for new file
         urlMap.set(file, URL.createObjectURL(file));
@@ -477,14 +505,14 @@ const UploadDialog = ({
         urlMap.set(file, prevURLsRef.current.get(fileKey)!);
       }
     });
-    
+
     // Revoke URLs for files that are no longer in attachments
     prevURLsRef.current.forEach((url, fileKey) => {
       if (!currentFileKeys.has(fileKey)) {
         URL.revokeObjectURL(url);
       }
     });
-    
+
     // Update refs for next render
     const newURLsMap = new Map<string, string>();
     urlMap.forEach((url, file) => {
@@ -494,7 +522,7 @@ const UploadDialog = ({
       }
     });
     prevURLsRef.current = newURLsMap;
-    
+
     return urlMap;
   }, [attachments, getFileKey]);
 
@@ -502,7 +530,7 @@ const UploadDialog = ({
   useEffect(() => {
     const currentURLs = prevURLsRef.current;
     const currentFileToKeyMap = fileToKeyMapRef.current;
-    
+
     return () => {
       // Revoke all URLs when component unmounts
       currentURLs.forEach((url) => {
@@ -555,7 +583,12 @@ const UploadDialog = ({
 
             const [, fileType] = file.type.split("/");
             const isImage = fileType === "png" || fileType === "jpeg" || fileType === "jpg";
-            const isVideo = fileType === "mp4" || fileType === "mov" || fileType === "mkv" || fileType === "avi" || fileType === "quicktime";
+            const isVideo =
+              fileType === "mp4" ||
+              fileType === "mov" ||
+              fileType === "mkv" ||
+              fileType === "avi" ||
+              fileType === "quicktime";
 
             // Stable key based on file properties
             const stableKey = `${file.name}-${file.size}-${file.lastModified}-${index}`;
@@ -565,7 +598,10 @@ const UploadDialog = ({
                 key={stableKey}
                 className="flex size-full flex-col items-center justify-center"
               >
-                <LazyCarouselItem index={index} className="flex size-full flex-col items-center justify-center">
+                <LazyCarouselItem
+                  index={index}
+                  className="flex size-full flex-col items-center justify-center"
+                >
                   {isImage ? (
                     <>
                       <ImageDiv media={objectURL} host={false} />

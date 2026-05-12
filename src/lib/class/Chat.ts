@@ -1,4 +1,3 @@
-
 import { ChatDataClient, MessageAttributes } from "../types/type";
 import { Time } from "../utils";
 
@@ -11,9 +10,9 @@ export class Chat {
     this.messages = messages || [];
   }
 
-  private filter(param: string,) {
+  private filter(param: string) {
     if (!this.messages) return;
-    const filteredResults = this.messages.filter(msg => msg._id === param);
+    const filteredResults = this.messages.filter((msg) => msg._id === param);
     const result = filteredResults[0];
     return filteredResults.length > 0
       ? `${result.attachments.length > 0 ? "📷 " : ""}${result.content}`
@@ -30,11 +29,11 @@ export class Chat {
   public getConvo(uid: string) {
     const participant = this.chat.participants.find((p) => p.userId === uid);
     const displayPicture = this.chat.participants
-        ? this.chat.participants.length > 1
-          ? this.chat.participants.find((p) => p.userId !== uid)?.displayPicture
-          : this.chat.participants.find((p) => p.userId === uid)?.displayPicture
-        : undefined;
-        
+      ? this.chat.participants.length > 1
+        ? this.chat.participants.find((p) => p.userId !== uid)?.displayPicture
+        : this.chat.participants.find((p) => p.userId === uid)?.displayPicture
+      : undefined;
+
     return {
       id: this.chat._id.toString(),
       type: this.chat.chatType,
@@ -54,7 +53,10 @@ export class Chat {
         this.chat.chatType === "DM" || this.chat.chatType === "Personal"
           ? (displayPicture as string)
           : this.chat.groupDisplayPicture,
-      description: this.chat.chatType === "DM" || this.chat.chatType === "Personal" ? "" : this.chat.groupDescription,
+      description:
+        this.chat.chatType === "DM" || this.chat.chatType === "Personal"
+          ? ""
+          : this.chat.groupDescription,
       verified: this.chat.verified || false,
       favorite: participant?.favorite || false,
       pinned: participant?.pinned || false,

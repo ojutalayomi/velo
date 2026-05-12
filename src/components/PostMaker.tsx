@@ -52,7 +52,6 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from ".
 import { Skeleton } from "./ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-
 interface PostMakerClientProps {
   children?: ReactNode;
   open: boolean;
@@ -278,7 +277,7 @@ function PostMakerClient({
         socket.emit("post", Post);
       }
     } catch (error: any) {
-      console.log(error)
+      console.log(error);
     } finally {
       setFiles([]);
       if (type === "post") navigate();
@@ -313,9 +312,7 @@ function PostMakerClient({
           <DialogTitle className="text-center"></DialogTitle>
           <DialogDescription>
             <span className="flex items-center justify-between">
-              <DialogClose
-                className="transform rounded-full p-2 transition-all duration-200 hover:scale-110 hover:bg-gray-800 dark:text-white"
-              >
+              <DialogClose className="transform rounded-full p-2 transition-all duration-200 hover:scale-110 hover:bg-gray-800 dark:text-white">
                 <X size={16} />
               </DialogClose>
               <span className="text-xl font-bold text-brand">Drafts</span>
@@ -541,11 +538,7 @@ function MiniPostCard({
     <div className="rounded-xl border border-gray-500 p-4">
       <div className="flex items-start space-x-3">
         <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
-          <img
-            src={post.DisplayPicture}
-            alt={post.Username}
-            className="size-full object-cover"
-          />
+          <img src={post.DisplayPicture} alt={post.Username} className="size-full object-cover" />
         </div>
         <div className={`flex-1 ${type !== "comment" ? "grid" : ""} grid-cols-2 gap-2`}>
           <div className="col-span-2 flex flex-wrap items-center">

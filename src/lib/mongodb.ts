@@ -8,6 +8,8 @@ import {
   ChatParticipant,
   ChatSettings,
   MessageSchema,
+  PostBookmarkSchema,
+  PostLikesSchema,
   PostSchema,
   Reaction,
   ReadReceipt,
@@ -145,7 +147,7 @@ export class MongoDBClient {
    * @returns Collection for storing bookmarked posts
    */
   postsBookmarks() {
-    return this.db.collection<PostSchema>("Posts_Bookmarks");
+    return this.db.collection<PostBookmarkSchema>("Posts_Bookmarks");
   }
 
   /**
@@ -161,7 +163,7 @@ export class MongoDBClient {
    * @returns Collection for storing post likes
    */
   postsLikes() {
-    return this.db.collection<PostSchema>("Posts_Likes");
+    return this.db.collection<PostLikesSchema>("Posts_Likes");
   }
 
   /**

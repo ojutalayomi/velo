@@ -1,10 +1,5 @@
 import { addInteractionFlags } from "@/lib/apiUtils";
-import {
-  pagingMeta,
-  DEFAULT_COMMENT_LIMIT,
-  MAX_API_LIMIT,
-  parsePaging,
-} from "@/lib/apiPagination";
+import { pagingMeta, DEFAULT_COMMENT_LIMIT, MAX_API_LIMIT, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 import { Payload } from "@/lib/types/type";
@@ -29,8 +24,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     );
     let payload: Payload | null = null;
     try {
-      if (cookie)
-        payload = (await verifyToken(cookie as unknown as string)) as unknown as Payload;
+      if (cookie) payload = (await verifyToken(cookie as unknown as string)) as unknown as Payload;
     } catch {
       payload = null;
     }

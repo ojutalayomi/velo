@@ -268,8 +268,8 @@ export const fetchChats = async (dispatch: Dispatch) => {
     const uid = chats.requestId;
     dispatch(setUserId(uid));
 
-    const conversations = chats.chats?.map(chat => {
-      return new Chat(chat, chats.messages).getConvo(uid)
+    const conversations = chats.chats?.map((chat) => {
+      return new Chat(chat, chats.messages).getConvo(uid);
     });
 
     dispatch(setConversations(conversations));

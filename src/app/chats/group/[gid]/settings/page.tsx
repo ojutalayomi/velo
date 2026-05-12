@@ -1,6 +1,16 @@
 "use client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Pin, Bell, Loader2, Trash2, Archive, Image, FileText, Link as LinkIcon, ChevronRight } from "lucide-react";
+import {
+  Pin,
+  Bell,
+  Loader2,
+  Trash2,
+  Archive,
+  Image,
+  FileText,
+  Link as LinkIcon,
+  ChevronRight,
+} from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
@@ -50,7 +60,10 @@ const ChatSettingsPage: React.FC = () => {
     loading: convoLoading,
   } = useSelector<RootState, CHT>((state) => state.chat);
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
-  const convo = useMemo(() => conversations?.find((c) => c.id === gid) as ConvoType, [conversations, gid]);
+  const convo = useMemo(
+    () => conversations?.find((c) => c.id === gid) as ConvoType,
+    [conversations, gid]
+  );
   const { userdata } = useSelector((state: RootState) => state.user);
   const socket = useSocket();
   const dispatch = useAppDispatch();
@@ -62,13 +75,14 @@ const ChatSettingsPage: React.FC = () => {
 
   // Get preview data for media, docs, and links
   const previewData = useMemo(() => {
-    const chatMessages = (messages?.filter((msg) => msg.chatId === gid) as MessageAttributes[]) || [];
-    
+    const chatMessages =
+      (messages?.filter((msg) => msg.chatId === gid) as MessageAttributes[]) || [];
+
     // Sort messages by timestamp (most recent first)
     const sortedMessages = [...chatMessages].sort((a, b) => {
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     });
-    
+
     // Get media (images/videos) - latest 4
     const mediaItems: Array<{ attachment: Attachment; message: MessageAttributes }> = [];
     sortedMessages.forEach((msg) => {
@@ -79,7 +93,7 @@ const ChatSettingsPage: React.FC = () => {
         }
       });
     });
-    
+
     // Get documents - latest 3
     const docItems: Array<{ attachment: Attachment; message: MessageAttributes }> = [];
     sortedMessages.forEach((msg) => {
@@ -90,7 +104,7 @@ const ChatSettingsPage: React.FC = () => {
         }
       });
     });
-    
+
     // Get links - latest 3
     const linkItems: Array<{ url: string; message: MessageAttributes }> = [];
     sortedMessages.forEach((msg) => {
@@ -103,12 +117,12 @@ const ChatSettingsPage: React.FC = () => {
         });
       }
     });
-    
+
     // Count totals
     let mediaCount = 0;
     let docCount = 0;
     let linkCount = 0;
-    
+
     chatMessages.forEach((msg) => {
       msg.attachments?.forEach((att) => {
         const type = att.type?.split("/")[0];
@@ -123,7 +137,7 @@ const ChatSettingsPage: React.FC = () => {
         linkCount += urls.length;
       }
     });
-    
+
     return {
       media: mediaItems.slice(0, 4),
       docs: docItems.slice(0, 3),
@@ -136,7 +150,12 @@ const ChatSettingsPage: React.FC = () => {
     if (!convoLoading) {
       const chatSettings = settings?.[gid as string];
       if (chatSettings) {
-        setChatSettings(prev => ({ ...prev, ...chatSettings, isPinned: convo?.pinned || false, isArchived: convo?.archived || false }));
+        setChatSettings((prev) => ({
+          ...prev,
+          ...chatSettings,
+          isPinned: convo?.pinned || false,
+          isArchived: convo?.archived || false,
+        }));
       }
     }
   }, [gid, convoLoading, settings]);
@@ -210,7 +229,10 @@ const ChatSettingsPage: React.FC = () => {
         <Card className="mx-auto mt-2 max-w-md rounded-lg border bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-900">
           <CardHeader className="flex flex-col items-center justify-center p-4">
             <div className="relative mb-2">
-              <Avatar className="size-24 border-2 border-white shadow-md dark:border-black" data-src={convo?.displayPicture}>
+              <Avatar
+                className="size-24 border-2 border-white shadow-md dark:border-black"
+                data-src={convo?.displayPicture}
+              >
                 <AvatarFallback className="capitalize text-xl">
                   {convo?.name?.slice(0, 2).toUpperCase() || ""}
                 </AvatarFallback>
@@ -228,13 +250,17 @@ const ChatSettingsPage: React.FC = () => {
                 </div>
               )}
             </div>
-            <h2 className="mt-2 mb-0 text-lg font-bold text-gray-900 dark:text-slate-100">{convo?.name}</h2>
+            <h2 className="mt-2 mb-0 text-lg font-bold text-gray-900 dark:text-slate-100">
+              {convo?.name}
+            </h2>
             <span className="mt-1 inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-zinc-800 dark:text-gray-400">
               Group ID: {convo?.id}
             </span>
           </CardHeader>
           <CardContent className="pb-4">
-            <p className="mb-1 text-center text-sm text-gray-500 dark:text-slate-400">{convo?.description || <span className="italic text-gray-400">No description</span>}</p>
+            <p className="mb-1 text-center text-sm text-gray-500 dark:text-slate-400">
+              {convo?.description || <span className="italic text-gray-400">No description</span>}
+            </p>
             <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
               <span className="rounded bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
                 {convo?.participants.length} members
@@ -245,11 +271,15 @@ const ChatSettingsPage: React.FC = () => {
             </div>
             <div className="mt-2 flex flex-col items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
               <div>
-                <span className="font-medium text-gray-500 dark:text-slate-400">Date created: </span>
+                <span className="font-medium text-gray-500 dark:text-slate-400">
+                  Date created:{" "}
+                </span>
                 {Time(convo?.timestamp)}
               </div>
               <div>
-                <span className="font-medium text-gray-500 dark:text-slate-400">Last updated: </span>
+                <span className="font-medium text-gray-500 dark:text-slate-400">
+                  Last updated:{" "}
+                </span>
                 {Time(convo?.lastUpdated)}
               </div>
             </div>
@@ -259,7 +289,9 @@ const ChatSettingsPage: React.FC = () => {
         {/* Media, Docs, and Links Sneak Peek */}
         <div className="space-y-3 rounded-lg border bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Media, Links & Docs</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Media, Links & Docs
+            </h3>
             <button
               onClick={() => router.push(`/chats/group/${gid}/media`)}
               className="flex items-center gap-1 text-xs text-brand hover:underline"
@@ -281,7 +313,7 @@ const ChatSettingsPage: React.FC = () => {
                   const [type] = attachment.type?.split("/") || [];
                   const isImage = type === "image";
                   const isVideo = type === "video";
-                  
+
                   return (
                     <div
                       key={index}
@@ -295,10 +327,7 @@ const ChatSettingsPage: React.FC = () => {
                         />
                       ) : isVideo && attachment.url ? (
                         <>
-                          <video
-                            src={attachment.url}
-                            className="size-full object-cover"
-                          />
+                          <video src={attachment.url} className="size-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                             <div className="rounded-full bg-black/50 p-1">
                               <svg
@@ -333,7 +362,9 @@ const ChatSettingsPage: React.FC = () => {
                     className="flex items-center gap-2 rounded bg-white p-2 text-xs dark:bg-zinc-800"
                   >
                     <FileText size={16} className="text-brand" />
-                    <span className="truncate text-gray-700 dark:text-gray-300">{attachment.name}</span>
+                    <span className="truncate text-gray-700 dark:text-gray-300">
+                      {attachment.name}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -361,13 +392,20 @@ const ChatSettingsPage: React.FC = () => {
             </div>
           )}
 
-          {previewData.media.length === 0 && previewData.docs.length === 0 && previewData.links.length === 0 && (
-            <p className="text-center text-xs text-gray-500 dark:text-gray-400">No media, links, or documents yet</p>
-          )}
+          {previewData.media.length === 0 &&
+            previewData.docs.length === 0 &&
+            previewData.links.length === 0 && (
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                No media, links, or documents yet
+              </p>
+            )}
         </div>
 
         <div className="flex items-center justify-between">
-          <label htmlFor="mute" className="flex items-center gap-2 text-gray-700 dark:text-slate-200">
+          <label
+            htmlFor="mute"
+            className="flex items-center gap-2 text-gray-700 dark:text-slate-200"
+          >
             <Bell className="size-4" />
             Notifications
           </label>
@@ -378,7 +416,10 @@ const ChatSettingsPage: React.FC = () => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="pin" className="flex items-center gap-2 text-gray-700 dark:text-slate-200">
+          <label
+            htmlFor="pin"
+            className="flex items-center gap-2 text-gray-700 dark:text-slate-200"
+          >
             <Pin className="size-4" />
             Pin
           </label>
@@ -389,7 +430,10 @@ const ChatSettingsPage: React.FC = () => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <label htmlFor="archive" className="flex items-center gap-2 text-gray-700 dark:text-slate-200">
+          <label
+            htmlFor="archive"
+            className="flex items-center gap-2 text-gray-700 dark:text-slate-200"
+          >
             <Archive className="size-4" />
             Archive
           </label>

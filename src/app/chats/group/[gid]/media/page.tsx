@@ -15,12 +15,7 @@ import { RootState } from "@/redux/store";
 import { saveAs } from "file-saver";
 import ImageDiv from "@/components/imageDiv";
 import VideoDiv from "@/templates/videoDiv";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Params {
   gid?: string;
@@ -50,7 +45,7 @@ const groupByDate = <T extends { message: MessageAttributes }>(
   items: T[]
 ): Array<{ date: string; items: T[]; timestamp: string }> => {
   const grouped = new Map<string, { items: T[]; timestamp: string }>();
-  
+
   items.forEach((item) => {
     const date = formatDateForGrouping(item.message.timestamp);
     if (!grouped.has(date)) {
@@ -58,7 +53,7 @@ const groupByDate = <T extends { message: MessageAttributes }>(
     }
     grouped.get(date)!.items.push(item);
   });
-  
+
   // Convert to array and sort by timestamp (most recent first)
   return Array.from(grouped.entries())
     .map(([date, data]) => ({ date, items: data.items, timestamp: data.timestamp }))
@@ -72,20 +67,20 @@ const MediaPage: React.FC = () => {
   const navigate = useNavigateWithHistory();
   const params = useParams() as Params;
   const { gid } = params;
-  const {
-    messages,
-    conversations,
-  } = useSelector((state: RootState) => state.chat);
+  const { messages, conversations } = useSelector((state: RootState) => state.chat);
   const [selectedMedia, setSelectedMedia] = useState<{ open: boolean; media: Attachment | null }>({
     open: false,
     media: null,
   });
 
-  const convo = useMemo(() => conversations?.find((c) => c.id === gid) as ConvoType, [conversations, gid]);
+  const convo = useMemo(
+    () => conversations?.find((c) => c.id === gid) as ConvoType,
+    [conversations, gid]
+  );
 
   // Filter messages for this chat and sort by timestamp (most recent first)
   const chatMessages = useMemo(() => {
-    const filtered = messages?.filter((msg) => msg.chatId === gid) as MessageAttributes[] || [];
+    const filtered = (messages?.filter((msg) => msg.chatId === gid) as MessageAttributes[]) || [];
     return filtered.sort((a, b) => {
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     });
@@ -249,10 +244,7 @@ const MediaPage: React.FC = () => {
                             />
                           ) : isVideo ? (
                             <>
-                              <video
-                                src={attachment.url}
-                                className="size-full object-cover"
-                              />
+                              <video src={attachment.url} className="size-full object-cover" />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                                 <div className="rounded-full bg-black/50 p-2">
                                   <svg
@@ -398,7 +390,10 @@ const MediaPage: React.FC = () => {
       </Tabs>
 
       {/* Media Preview Dialog */}
-      <Dialog open={selectedMedia.open} onOpenChange={(open) => setSelectedMedia({ open, media: null })}>
+      <Dialog
+        open={selectedMedia.open}
+        onOpenChange={(open) => setSelectedMedia({ open, media: null })}
+      >
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Media Preview</DialogTitle>

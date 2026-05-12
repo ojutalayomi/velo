@@ -92,11 +92,7 @@ const DirectChatMenu = () => {
   };
 
   const loadMoreDmPeople = async () => {
-    if (
-      !peoplePaging?.hasMore ||
-      isLoading ||
-      searchQuery.trim() === ""
-    ) {
+    if (!peoplePaging?.hasMore || isLoading || searchQuery.trim() === "") {
       return;
     }
     setIsLoading(true);

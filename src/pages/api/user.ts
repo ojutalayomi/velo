@@ -48,7 +48,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         $or: [{ username: UsernameOrEmail }, { email: UsernameOrEmail }],
       })) as SocialMediaUser
     );
-    
+
     if (user.isUserNull()) {
       return res.status(401).json({ error: "Invalid credentials" });
     }

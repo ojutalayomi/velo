@@ -91,7 +91,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       if (settings.showOnlineStatus) {
         socketIo.emit("activity");
       }
-    }
+    };
 
     const emitActivity = throttle(() => {
       emitActivityFunction();

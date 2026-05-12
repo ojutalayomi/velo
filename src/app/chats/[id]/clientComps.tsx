@@ -42,7 +42,6 @@ import ChatTextarea from "../ChatTextarea";
 import MessageTab from "../MessageTab";
 import { MultiSelect } from "../MultiSelect";
 
-
 type Message = {
   _id: string;
   senderId: string;
@@ -140,41 +139,47 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const Messages = useMemo(() => {
     return messages?.filter((msg) => {
       return msg.chatId === pid;
-    })
+    });
   }, [messages, pid, searchQuery]);
 
-  const getCachedData = useCallback((id: string) => {
-    const cachedData = localStorage.getItem(id);
-    if (cachedData) {
-      const parsedData = JSON.parse(cachedData);
-      if (Date.now() - parsedData.timestamp < 60000 * 5) {
-        // Cache for 5 minutes
-        return parsedData.data;
-      } else {
-        localStorage.removeItem(id);
+  const getCachedData = useCallback(
+    (id: string) => {
+      const cachedData = localStorage.getItem(id);
+      if (cachedData) {
+        const parsedData = JSON.parse(cachedData);
+        if (Date.now() - parsedData.timestamp < 60000 * 5) {
+          // Cache for 5 minutes
+          return parsedData.data;
+        } else {
+          localStorage.removeItem(id);
+        }
       }
-    }
-    return null;
-  }, [friendId]);
+      return null;
+    },
+    [friendId]
+  );
 
-  const fetchFromAPI = useCallback(async (id: string) => {
-    const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
-    if (!response.ok) {
-      // console.log();
-    }
-    const body = await response.json();
-    const arr = Array.isArray(body?.data) ? body.data : [];
-    const row = arr[0];
-    if (row?._id != null)
-      localStorage.setItem(
-        String(row._id),
-        JSON.stringify({
-          data: row,
-          timestamp: Date.now(),
-        })
-      );
-    return row;
-  }, [friendId]);
+  const fetchFromAPI = useCallback(
+    async (id: string) => {
+      const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
+      if (!response.ok) {
+        // console.log();
+      }
+      const body = await response.json();
+      const arr = Array.isArray(body?.data) ? body.data : [];
+      const row = arr[0];
+      if (row?._id != null)
+        localStorage.setItem(
+          String(row._id),
+          JSON.stringify({
+            data: row,
+            timestamp: Date.now(),
+          })
+        );
+      return row;
+    },
+    [friendId]
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -228,7 +233,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     let lastMessageId = "";
 
     try {
-      if(otherPerson.accountType === "bot") {
+      if (otherPerson.accountType === "bot") {
         setIsTextareaDisabled(true);
       }
       const isRead = friendId
@@ -295,7 +300,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           ...m,
         };
       });
-      
+
       dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
@@ -320,13 +325,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             }
             const botResponse = response.data.result;
             dispatch(addMessage(botResponse));
-            dispatch(updateConversation({
-              id: msg._id as string,
-              updates: {
-                lastMessage: botResponse.content,
-                lastUpdated: botResponse.timestamp,
-              },
-            }));
+            dispatch(
+              updateConversation({
+                id: msg._id as string,
+                updates: {
+                  lastMessage: botResponse.content,
+                  lastUpdated: botResponse.timestamp,
+                },
+              })
+            );
           } else {
             socket.emit("chatMessage", msg);
           }
@@ -424,11 +431,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   const options = [
     { id: 1, name: "View contact", action: () => router.push(`/${otherPerson.username}`) },
-    { id: 2, name: "Search", action: () => {
-      const currParams = new URLSearchParams(searchParams?.toString() || "");
-      currParams.set("search", "true");
-      router.push(`/chats/${pid}?${currParams.toString()}`, { scroll: false });
-    } },
+    {
+      id: 2,
+      name: "Search",
+      action: () => {
+        const currParams = new URLSearchParams(searchParams?.toString() || "");
+        currParams.set("search", "true");
+        router.push(`/chats/${pid}?${currParams.toString()}`, { scroll: false });
+      },
+    },
     { id: 3, name: "Mute notifications", action: () => console.log("Mute notifications") },
     { id: 4, name: "Wallpaper", action: () => console.log("Wallpaper") },
     {
@@ -512,7 +523,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       setSearchResults([]);
       return;
     }
-    setSearchResults(Messages.filter((message) => message.content.toLowerCase().includes(searchQuery.toLowerCase())));
+    setSearchResults(
+      Messages.filter((message) =>
+        message.content.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
   }, [searchQuery, Messages]);
 
   return (
@@ -529,7 +544,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 size="lg"
               />
-              {(load && !otherPerson._id) ? (
+              {load && !otherPerson._id ? (
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
                 <div>
@@ -549,7 +564,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {(callHooks && otherPerson?.accountType === "bot") && (
+              {callHooks && otherPerson?.accountType === "bot" && (
                 <CallButton
                   roomId={pid}
                   targetUserId={friendId}
@@ -621,16 +636,23 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             >
               Clear
             </button>
-            <div className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}>
+            <div
+              className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
+            >
               <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
                 {searchResults.length > 0 ? (
                   searchResults.map((result) => (
-                    <MessageTab key={result._id} message={result} setQuote={setQuote} onClick={() => {
-                      setSearchQuery("");
-                      setSearchFocus(false);
-                      openSearchBar(false);
-                      router.replace(`/chats/${result.chatId}#${result._id}`, { scroll: true });
-                    }} />
+                    <MessageTab
+                      key={result._id}
+                      message={result}
+                      setQuote={setQuote}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchFocus(false);
+                        openSearchBar(false);
+                        router.replace(`/chats/${result.chatId}#${result._id}`, { scroll: true });
+                      }}
+                    />
                   ))
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">

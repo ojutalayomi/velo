@@ -35,19 +35,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Statuser } from "@/components/VerificationComponent";
 import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
-import {
-  deleteMessage,
-  updateMessage,
-  updateConversation,
-} from "@/redux/chatSlice";
+import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 
 import { MediaCollage } from "./FilesView";
 import { ReactionsInfo } from "./ReactionsInfo";
-
-
 
 type Message = {
   _id: string;
@@ -286,7 +280,13 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
           <div
             className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
           >
-            {message.attachments.length ? <MediaCollage media={message.attachments as (Attachment & { uploadedAt: string })[]} /> : <></>}
+            {message.attachments.length ? (
+              <MediaCollage
+                media={message.attachments as (Attachment & { uploadedAt: string })[]}
+              />
+            ) : (
+              <></>
+            )}
 
             {/* Message Bubble */}
             <div
@@ -299,19 +299,20 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
               onContextMenu={handleContextMenu1}
             >
               {/* Sender name for other users */}
-              {(senderId !== userdata._id && message.chatType === "Group") && (
+              {senderId !== userdata._id && message.chatType === "Group" && (
                 <div className="flex items-center justify-between gap-1 mr-4">
                   <div className="flex items-center gap-1">
                     <Avatar className="mt-1 size-8">
                       <AvatarImage src={displayPicture} alt={sender} />
-                      <AvatarFallback className="border-2 border-white dark:border-black text-xs">{sender?.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="border-2 border-white dark:border-black text-xs">
+                        {sender?.slice(0, 2)}
+                      </AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {sender}
                     </span>
                     {verified && <Statuser className="size-4" />}
                   </div>
-                  
                 </div>
               )}
 
@@ -331,7 +332,9 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                   return (
                     <>
                       {message.messageType === "Markdown" ? (
-                        <div className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}>
+                        <div
+                          className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}
+                        >
                           <Markdown>{contentToDisplay}</Markdown>
                         </div>
                       ) : (
@@ -366,7 +369,6 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                 <div className="after:content-[ • ] dark:after:text-slate-200">{time}</div>
                 {senderId === userdata._id && renderStatusIcon(message.status)}
               </div>
-
             </div>
           </div>
 
@@ -388,7 +390,6 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
         {message.messageType === "Markdown" && (
           <Options options={optionss} open={open} setOpen={setOpen} />
         )}
-
       </div>
       {rectionInfoDisplay && (
         <ReactionsInfo message={message} setReactionInfoDisplay={setReactionInfoDisplay} />
@@ -501,7 +502,9 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
           >
             {quotedMessageId?.sender?.name || ""}
           </span>
-          <span className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}>
+          <span
+            className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}
+          >
             {quotedMessageId?.content}
           </span>
         </div>

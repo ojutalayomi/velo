@@ -150,9 +150,7 @@ export default function Profile({
             followers: typeof prev.followers === "number" ? prev.followers + 1 : prev.followers,
           }));
           setPostCards((prev) =>
-            prev.map((post) =>
-              post.UserId === profileId ? { ...post, IsFollowing: true } : post
-            )
+            prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: true } : post))
           );
         } else {
           setProfileData((prev) => ({
@@ -164,9 +162,7 @@ export default function Profile({
                 : prev.followers,
           }));
           setPostCards((prev) =>
-            prev.map((post) =>
-              post.UserId === profileId ? { ...post, IsFollowing: false } : post
-            )
+            prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: false } : post))
           );
         }
       }

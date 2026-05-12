@@ -6,7 +6,6 @@ import React from "react";
 
 import { WhatsApp, X } from "@/components/icons";
 
-
 export const metadata: Metadata = {
   title: "Accounts | Velo",
   description: "Sign Up, Login into your account today.",

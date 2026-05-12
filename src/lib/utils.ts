@@ -26,7 +26,11 @@ export function userIdString(id: unknown): string {
     const oid = (id as { $oid?: unknown }).$oid;
     if (typeof oid === "string") return oid;
   }
-  if (typeof id === "object" && id !== null && typeof (id as { toString?: () => string }).toString === "function") {
+  if (
+    typeof id === "object" &&
+    id !== null &&
+    typeof (id as { toString?: () => string }).toString === "function"
+  ) {
     const s = (id as { toString: () => string }).toString();
     if (s && s !== "[object Object]") return s;
   }
@@ -193,4 +197,3 @@ export function updateLiveTime(
 
   return liveTime;
 }
-

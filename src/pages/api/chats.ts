@@ -3,11 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
 import { UserSchema } from "@/lib/class/User";
-import {
-  DEFAULT_MESSAGE_LIMIT,
-  pagingMeta,
-  parsePaging,
-} from "@/lib/apiPagination";
+import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
 import { getSocketInstance } from "@/lib/socket";
 import {
@@ -585,21 +581,21 @@ export const chatRepository = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
-  
+
   // Improved cookie extraction
   const rawCookie = req.cookies.velo_12;
   if (!rawCookie) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  
+
   // Clean the cookie value - only remove quotes if they exist at the beginning/end
   const cookie = rawCookie.replace(/^"|"$/g, "");
-  
+
   // Additional validation
   if (!cookie || cookie.trim() === "") {
     return res.status(401).json({ error: "Invalid authentication token" });
   }
-  
+
   const payload = (await verifyToken(cookie)) as unknown as Payload;
   if (!payload) {
     return res.status(401).json({ error: "Invalid or expired token" });

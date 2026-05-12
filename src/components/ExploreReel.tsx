@@ -139,7 +139,11 @@ function ReelSlide({
         {post.Image.map((media, i) => {
           const isImg = isImageUrl(media);
           return (
-            <div key={i} data-index={i} className="relative size-full min-w-full snap-start overflow-hidden">
+            <div
+              key={i}
+              data-index={i}
+              className="relative size-full min-w-full snap-start overflow-hidden"
+            >
               {isImg ? (
                 <img src={media} alt="" className="absolute inset-0 size-full object-contain" />
               ) : (

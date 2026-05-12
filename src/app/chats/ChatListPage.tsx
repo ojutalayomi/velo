@@ -31,9 +31,6 @@ import { updateConversation, deleteConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 
-
-
-
 type FilteredChatsProps = {
   filteredChats: () => Array<ConvoType>;
   className?: string;
@@ -142,12 +139,13 @@ const Card: React.FC<Props> = ({ chat }) => {
           });
           setIsDeleted(true);
           break;
-        case option.name.toLowerCase().includes("read"): {
-          const unread = isUnread ? 1 : 0;
-          socket.emit("updateConversation", {
-            id: chat.id,
-            updates: { unreadCount: unread, userId: userdata._id },
-          });
+        case option.name.toLowerCase().includes("read"):
+          {
+            const unread = isUnread ? 1 : 0;
+            socket.emit("updateConversation", {
+              id: chat.id,
+              updates: { unreadCount: unread, userId: userdata._id },
+            });
           }
           setIsUnread(!isUnread);
           break;
@@ -274,7 +272,8 @@ const Card: React.FC<Props> = ({ chat }) => {
               e.preventDefault();
               e.stopPropagation();
               fullscreen();
-            }}>
+            }}
+          >
             <AvatarFallback>{(chat.name ?? "????").slice(0, 2)}</AvatarFallback>
             <AvatarImage
               src={chat.displayPicture}
@@ -343,15 +342,17 @@ const Card: React.FC<Props> = ({ chat }) => {
           <DialogContent className="flex flex-col items-center justify-center">
             <Avatar className="size-64">
               <AvatarImage
-              src={chat.displayPicture}
-              alt={chat.name}
-              className="size-64 rounded-full object-cover dark:border-slate-200"
+                src={chat.displayPicture}
+                alt={chat.name}
+                className="size-64 rounded-full object-cover dark:border-slate-200"
               />
               <AvatarFallback className="text-6xl capitalize">
                 {chat.name?.slice(0, 2)}
               </AvatarFallback>
             </Avatar>
-            <DialogTitle className="flex items-center gap-1">{chat.name}{" "}{chat.verified && <Statuser className="size-4 flex-shrink-0" />}</DialogTitle>
+            <DialogTitle className="flex items-center gap-1">
+              {chat.name} {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
+            </DialogTitle>
             <DialogDescription className="flex items-center gap-2">
               <span className="flex items-center gap-1 rounded-full bg-brand p-2 text-white">
                 <MessageSquareText className="size-8 flex-shrink-0" />

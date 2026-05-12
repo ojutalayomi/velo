@@ -10,9 +10,9 @@ import {
   BadgePlus,
   Mail,
   Settings,
-  MessageSquarePlus,
   Home,
   Search,
+  Bookmark,
 } from "lucide-react";
 import {
   Drawer,
@@ -189,11 +189,11 @@ const Root: React.FC<BottombarProps> = ({
                   )}
                   <div
                     className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === "feedback" ? "active" : ""}`}
-                    data-route="feedback"
-                    onClick={() => handleClick("feedback")}
+                    data-route="bookmarks"
+                    onClick={() => handleClick("bookmarks")}
                   >
-                    <MessageSquarePlus size={25} />
-                    <div className="feedback rt">Feedback</div>
+                    <Bookmark size={25} />
+                    <div className="bookmarks rt">Bookmarks</div>
                   </div>
                 </div>
                 <DrawerFooter>

@@ -42,7 +42,7 @@ export default function Profile({
   const [postsPagination, setPostsPagination] = useState(initialPagination);
   const [postsLoadingMore, setPostsLoadingMore] = useState(false);
 
-  const viewedProfileKey = `${userIdString(pd._id)}:${pd.username ?? ""}`;
+  const viewedProfileKey = `${pd._id}:${pd.username ?? ""}`;
 
   useEffect(() => {
     setProfileData(pd);
@@ -59,9 +59,9 @@ export default function Profile({
       following?: boolean;
       timestamp?: string;
     }) => {
-      const followedId = userIdString(data.followedDetails._id);
-      const followerId = userIdString(data.followerDetails._id);
-      const me = userIdString(userdata._id);
+      const followedId = data.followedDetails._id;
+      const followerId = data.followerDetails._id;
+      const me = userdata._id;
       const relationshipActive =
         typeof data.following === "boolean"
           ? data.following
@@ -69,7 +69,7 @@ export default function Profile({
 
       // Both followed and follower can receive this; only update UI when it matches this page / role.
       setProfileData((prev) => {
-        if (userIdString(prev._id) !== followedId) return prev;
+        if (prev._id !== followedId) return prev;
         return {
           ...prev,
           ...(data.followedDetails.followers != null
@@ -83,7 +83,7 @@ export default function Profile({
       if (followerId === me) {
         setPostCards((prev) =>
           prev.map((post) =>
-            userIdString(post.UserId) === followedId ? { ...post, IsFollowing: relationshipActive } : post
+            post.UserId === followedId ? { ...post, IsFollowing: relationshipActive } : post
           )
         );
       }
@@ -149,7 +149,7 @@ export default function Profile({
         }),
       });
       if (res.ok) {
-        const profileId = userIdString(profileData._id);
+        const profileId = profileData._id;
         if (follow) {
           setProfileData((prev) => ({
             ...prev,
@@ -158,7 +158,7 @@ export default function Profile({
           }));
           setPostCards((prev) =>
             prev.map((post) =>
-              userIdString(post.UserId) === profileId ? { ...post, IsFollowing: true } : post
+              post.UserId === profileId ? { ...post, IsFollowing: true } : post
             )
           );
         } else {
@@ -172,7 +172,7 @@ export default function Profile({
           }));
           setPostCards((prev) =>
             prev.map((post) =>
-              userIdString(post.UserId) === profileId ? { ...post, IsFollowing: false } : post
+              post.UserId === profileId ? { ...post, IsFollowing: false } : post
             )
           );
         }

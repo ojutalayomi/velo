@@ -503,7 +503,7 @@ export default function ExploreReel() {
       {/* fixed chrome — outside the scroll container so it never scrolls away */}
       <button
         onClick={() => router.back()}
-        className="fixed left-4 top-4 z-50 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
+        className="fixed ml-2 top-4 z-50 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
         aria-label="Go back"
       >
         <ArrowLeft size={22} />

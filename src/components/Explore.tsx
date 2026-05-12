@@ -18,6 +18,7 @@ import type { PostSchema } from "@/lib/types/type";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
+import { Input } from "./ui/input";
 
 // ─── media-type helper (mirrors mediaSlides.tsx logic) ───────────────────────
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|tiff?|avif)([-_]\w+)?$/i;
@@ -241,10 +242,10 @@ const Explore = () => {
           <ImageContent userdata={userdata} dpOnly />
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
+            <Input
               type="text"
-              placeholder="Search"
-              className="w-full bg-gray-100 dark:bg-zinc-900 dark:shadow-sm dark:shadow-slate-200 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
+              placeholder="Search people"
+              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
             />
           </div>
           <button

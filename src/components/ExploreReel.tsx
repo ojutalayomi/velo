@@ -2,11 +2,24 @@
 import { ArrowLeft, Bookmark, Heart, MessageCircle, Share2, Volume2, VolumeX } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
 import { getExplorePostsCache, setExplorePostsCache } from "@/lib/explorePostsCache";
+import { submitFollowUpdate } from "@/lib/followApi";
 import { fetchExplorePosts } from "@/lib/getStatus";
+import {
+  postPermalinkPath,
+  sharePostLink,
+  togglePostBookmark,
+  togglePostLike,
+} from "@/lib/postSocialActions";
 import type { PostSchema } from "@/lib/types/type";
+import { useAppDispatch } from "@/redux/hooks";
+import { updatePost } from "@/redux/postsSlice";
 
+import ShareButton from "./ShareButton";
 import { renderTextWithLinks } from "./RenderTextWithLinks";
 import { Statuser } from "./VerificationComponent";
 
@@ -57,11 +70,25 @@ function ReelSlide({
   isActive,
   muted,
   onToggleMute,
+  currentUserId,
+  onToggleLike,
+  onToggleBookmark,
+  onToggleFollow,
+  onOpenComments,
+  onShareCommitted,
+  hasAccount,
 }: {
   post: PostSchema;
   isActive: boolean;
   muted: boolean;
   onToggleMute: () => void;
+  currentUserId?: string;
+  onToggleLike: (post: PostSchema) => void;
+  onToggleBookmark: (post: PostSchema) => void;
+  onToggleFollow: (post: PostSchema) => void;
+  onOpenComments: (post: PostSchema) => void;
+  onShareCommitted: (postId: string, updates: Partial<PostSchema>) => void;
+  hasAccount: boolean;
 }) {
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [activeMediaType, setActiveMediaType] = useState<"image" | "video">("image");
@@ -178,9 +205,18 @@ function ReelSlide({
               {post?.Verified && <Statuser className="size-4" />}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              @{post.Username ? post.Username : "useranme"}
+              @{post.Username ? post.Username : "username"}
             </p>
           </div>
+          {(!currentUserId || String(post.UserId) !== String(currentUserId)) && (
+            <button
+              type="button"
+              onClick={() => onToggleFollow(post)}
+              className="ml-auto shrink-0 cursor-pointer rounded-full border border-white/40 px-2 py-1 text-nowrap text-sm text-white transition-all hover:border-brand hover:text-brand"
+            >
+              {post.IsFollowing ? "Following" : "Follow +"}
+            </button>
+          )}
         </div>
         {post.Caption ? (
           <p className="line-clamp-3 text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
@@ -195,9 +231,37 @@ function ReelSlide({
           icon={<Heart size={28} fill={post.Liked ? "currentColor" : "none"} strokeWidth={1.8} />}
           count={post.NoOfLikes}
           active={post.Liked}
+          onClick={() => onToggleLike(post)}
         />
-        <ActionBtn icon={<MessageCircle size={28} strokeWidth={1.8} />} count={post.NoOfComment} />
-        <ActionBtn icon={<Share2 size={28} strokeWidth={1.8} />} count={post.NoOfShares} />
+        <ActionBtn
+          icon={<MessageCircle size={28} strokeWidth={1.8} />}
+          count={post.NoOfComment}
+          onClick={() => onOpenComments(post)}
+        />
+        {hasAccount ? (
+          <ShareButton post={post} onShareCommitted={onShareCommitted}>
+            <div className="flex cursor-pointer flex-col items-center gap-1 text-white">
+              <span className="drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                <Share2 size={28} strokeWidth={1.8} className={post.Shared ? "text-brand" : ""} />
+              </span>
+              <span className="text-xs font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                {formatNo(post.NoOfShares)}
+              </span>
+            </div>
+          </ShareButton>
+        ) : (
+          <ActionBtn
+            icon={<Share2 size={28} strokeWidth={1.8} />}
+            count={post.NoOfShares}
+            onClick={async () => {
+              const canShare = typeof navigator !== "undefined" && Boolean(navigator.share);
+              await sharePostLink(post);
+              if (!canShare) {
+                toast.success("Link copied");
+              }
+            }}
+          />
+        )}
         <ActionBtn
           icon={
             <Bookmark
@@ -208,6 +272,7 @@ function ReelSlide({
           }
           count={post.NoOfBookmarks}
           active={post.Bookmarked}
+          onClick={() => onToggleBookmark(post)}
         />
       </div>
     </div>
@@ -218,6 +283,9 @@ function ReelSlide({
 export default function ExploreReel() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const socket = useSocket();
+  const { userdata } = useUser();
   const start = searchParams?.get("start") ?? null;
 
   const [posts, setPosts] = useState<PostSchema[]>([]);
@@ -231,6 +299,98 @@ export default function ExploreReel() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const patchPostInStateAndCache = useCallback((updated: PostSchema) => {
+    setPosts((prev) => {
+      const nextList = prev.map((p) => (p.PostID === updated.PostID ? updated : p));
+      const c = getExplorePostsCache();
+      if (c) {
+        setExplorePostsCache({ posts: nextList, pagination: c.pagination }, { merge: true });
+      }
+      return nextList;
+    });
+  }, []);
+
+  const patchPostFieldsInStateAndCache = useCallback(
+    (postId: string, updates: Partial<PostSchema>) => {
+      setPosts((prev) => {
+        const nextList = prev.map((p) => (p.PostID === postId ? { ...p, ...updates } : p));
+        const c = getExplorePostsCache();
+        if (c) {
+          setExplorePostsCache({ posts: nextList, pagination: c.pagination }, { merge: true });
+        }
+        return nextList;
+      });
+    },
+    []
+  );
+
+  const onOpenComments = useCallback(
+    (post: PostSchema) => {
+      router.push(postPermalinkPath(post));
+    },
+    [router]
+  );
+
+  const requireAuth = useCallback(() => {
+    if (!userdata._id) {
+      router.push("/accounts/login");
+      return false;
+    }
+    return true;
+  }, [userdata._id, router]);
+
+  const onToggleLike = useCallback(
+    (post: PostSchema) => {
+      if (!requireAuth()) return;
+      const { next, emit } = togglePostLike(post);
+      dispatch(
+        updatePost({ id: post.PostID, updates: { NoOfLikes: next.NoOfLikes, Liked: next.Liked } })
+      );
+      socket?.emit("reactToPost", emit);
+      patchPostInStateAndCache(next);
+    },
+    [requireAuth, dispatch, socket, patchPostInStateAndCache]
+  );
+
+  const onToggleBookmark = useCallback(
+    (post: PostSchema) => {
+      if (!requireAuth()) return;
+      const { next, emit } = togglePostBookmark(post);
+      dispatch(
+        updatePost({
+          id: post.PostID,
+          updates: { NoOfBookmarks: next.NoOfBookmarks, Bookmarked: next.Bookmarked },
+        })
+      );
+      socket?.emit("reactToPost", emit);
+      patchPostInStateAndCache(next);
+    },
+    [requireAuth, dispatch, socket, patchPostInStateAndCache]
+  );
+
+  const onToggleFollow = useCallback(
+    async (post: PostSchema) => {
+      if (!requireAuth()) return;
+      const follow = !post.IsFollowing;
+      try {
+        const res = await submitFollowUpdate({
+          followerId: String(userdata._id),
+          followedId: String(post.UserId),
+          follow,
+        });
+        if (res.ok) {
+          const next = { ...post, IsFollowing: follow };
+          dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: follow } }));
+          patchPostInStateAndCache(next);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Error", { description: "Failed to follow user" });
+      }
+    },
+    [requireAuth, userdata._id, dispatch, patchPostInStateAndCache]
+  );
 
   // initial fetch
   useEffect(() => {
@@ -306,7 +466,7 @@ export default function ExploreReel() {
       setPosts((prev) => {
         const seen = new Set(prev.map((p) => String(p.PostID ?? p._id)));
         const merged = [...prev, ...data.filter((p) => !seen.has(String(p.PostID ?? p._id)))];
-        setExplorePostsCache({ posts: merged, pagination });
+        setExplorePostsCache({ posts: merged, pagination }, { merge: true });
         return merged;
       });
       setNextSkip(pagination.skip + pagination.limit);
@@ -364,6 +524,13 @@ export default function ExploreReel() {
               isActive={activeIndex === i}
               muted={muted}
               onToggleMute={() => setMuted((m) => !m)}
+              currentUserId={userdata._id}
+              onToggleLike={onToggleLike}
+              onToggleBookmark={onToggleBookmark}
+              onToggleFollow={onToggleFollow}
+              onOpenComments={onOpenComments}
+              onShareCommitted={patchPostFieldsInStateAndCache}
+              hasAccount={Boolean(userdata._id)}
             />
           </div>
         ))}

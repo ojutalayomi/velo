@@ -44,9 +44,12 @@ interface Option {
 export default function ShareButton({
   children,
   post,
+  onShareCommitted,
 }: {
   children: ReactNode;
   post?: PostSchema;
+  /** Called after repost / undo repost Redux updates so hosts (e.g. Explore reel) can sync local lists. */
+  onShareCommitted?: (postId: string, updates: Partial<PostSchema>) => void;
 }) {
   const { userdata } = useUser();
   const dispatch = useAppDispatch();
@@ -114,6 +117,7 @@ export default function ShareButton({
                 type: "repost",
                 post: post,
               });
+              onShareCommitted?.(post.PostID, { NoOfShares: post.NoOfShares + 1, Shared: true });
             },
           },
         ]
@@ -133,6 +137,10 @@ export default function ShareButton({
               socket?.emit("reactToPost(share)", {
                 action: "unshare",
                 post: post,
+              });
+              onShareCommitted?.(post.PostID, {
+                NoOfShares: Math.max(0, post.NoOfShares - 1),
+                Shared: false,
               });
             },
           },

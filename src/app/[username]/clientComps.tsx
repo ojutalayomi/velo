@@ -10,6 +10,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "sonner";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
+import { submitFollowUpdate } from "@/lib/followApi";
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { userIdString } from "@/lib/utils";
@@ -124,7 +125,7 @@ export default function Profile({
     });
 
     return () => {
-      
+      socket.off("followNotification", handleFollowNotification);
     };
   }, [socket, userdata._id, viewedProfileKey]);
 
@@ -135,18 +136,10 @@ export default function Profile({
   const handleFollow = async (follow: boolean) => {
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/follow`, {
-        method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          followerId: userdata._id,
-          followedId: profileData._id,
-          time: new Date().toISOString(),
-          follow,
-        }),
+      const res = await submitFollowUpdate({
+        followerId: String(userdata._id),
+        followedId: String(profileData._id),
+        follow,
       });
       if (res.ok) {
         const profileId = profileData._id;

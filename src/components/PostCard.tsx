@@ -43,7 +43,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "sonner";
+import { submitFollowUpdate } from "@/lib/followApi";
 import { getPost } from "@/lib/getStatus";
+import { togglePostBookmark, togglePostLike } from "@/lib/postSocialActions";
 import { PostSchema } from "@/lib/types/type";
 import { useAppDispatch } from "@/redux/hooks";
 import { deletePost, updatePost } from "@/redux/postsSlice";
@@ -161,83 +163,39 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     }
 
     if (clicked === "liked") {
-      if (data.Liked) {
-        setData({ ...data, NoOfLikes: data.NoOfLikes - 1, Liked: false });
-        dispatch(
-          updatePost({ id: data.PostID, updates: { NoOfLikes: data.NoOfLikes - 1, Liked: false } })
-        );
-
-        socket?.emit("reactToPost", {
-          type: "unlike",
-          key: "NoOfLikes",
-          value: "dec",
-          postId: data.PostID,
-        });
-      } else {
-        setData({ ...data, NoOfLikes: data.NoOfLikes + 1, Liked: true });
-        dispatch(
-          updatePost({ id: data.PostID, updates: { NoOfLikes: data.NoOfLikes + 1, Liked: true } })
-        );
-
-        socket?.emit("reactToPost", {
-          type: "like",
-          key: "NoOfLikes",
-          value: "inc",
-          postId: data.PostID,
-        });
-      }
+      const { next, emit } = togglePostLike(data);
+      setData(next);
+      dispatch(
+        updatePost({ id: data.PostID, updates: { NoOfLikes: next.NoOfLikes, Liked: next.Liked } })
+      );
+      socket?.emit("reactToPost", emit);
+      return;
     }
 
     if (clicked === "bookmarked") {
-      if (data.Bookmarked) {
-        setData({ ...data, NoOfBookmarks: data.NoOfBookmarks - 1, Bookmarked: false });
-        dispatch(
-          updatePost({
-            id: data.PostID,
-            updates: { NoOfBookmarks: data.NoOfBookmarks - 1, Bookmarked: false },
-          })
-        );
-
-        socket?.emit("reactToPost", {
-          type: "unbookmark",
-          key: "NoOfBookmarks",
-          value: "dec",
-          postId: data.PostID,
-        });
-      } else {
-        setData({ ...data, NoOfBookmarks: data.NoOfBookmarks + 1, Bookmarked: true });
-        dispatch(
-          updatePost({
-            id: data.PostID,
-            updates: { NoOfBookmarks: data.NoOfBookmarks + 1, Bookmarked: true },
-          })
-        );
-
-        socket?.emit("reactToPost", {
-          type: "bookmark",
-          key: "NoOfBookmarks",
-          value: "inc",
-          postId: data.PostID,
-        });
-      }
+      const { next, emit } = togglePostBookmark(data);
+      setData(next);
+      dispatch(
+        updatePost({
+          id: data.PostID,
+          updates: { NoOfBookmarks: next.NoOfBookmarks, Bookmarked: next.Bookmarked },
+        })
+      );
+      socket?.emit("reactToPost", emit);
     }
   };
 
   const handleFollow = async (follow: boolean) => {
     try {
-      const res = await fetch(`/api/follow`, {
-        method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          followerId: userdata._id,
-          followedId: data.UserId,
-          time: new Date().toISOString(),
-          follow,
-        }),
+      const res = await submitFollowUpdate({
+        followerId: String(userdata._id),
+        followedId: String(data.UserId),
+        follow,
       });
+      if (res.ok) {
+        setData((prev) => ({ ...prev, IsFollowing: follow }));
+        dispatch(updatePost({ id: data.PostID, updates: { IsFollowing: follow } }));
+      }
     } catch (error) {
       console.error(error);
       toast.error("Error", {

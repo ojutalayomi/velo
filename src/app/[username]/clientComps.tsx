@@ -124,7 +124,7 @@ export default function Profile({
     });
 
     return () => {
-      socket.off("followNotification", handleFollowNotification);
+      
     };
   }, [socket, userdata._id, viewedProfileKey]);
 

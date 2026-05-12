@@ -24,6 +24,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "backfill:bookmarks": "npx --yes tsx src/scripts/backfill-bookmark-search-text.ts",
     "migration": "node ./playground/play.js"
   },
   "dependencies": {

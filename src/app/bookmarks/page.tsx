@@ -17,6 +17,13 @@ import { cn } from "@/lib/utils";
 const DEBOUNCE_MS = 320;
 const PAGE_LIMIT = 20;
 
+type FetchBookmarksOpts = {
+  append: boolean;
+  q: string;
+  /** Bookmark `_id` hex from previous `pagination.nextCursor` (omit for first page). */
+  cursor: string | null;
+};
+
 export default function BookmarksPage() {
   const router = useRouter();
   const navigate = useNavigateWithHistory();
@@ -26,6 +33,7 @@ export default function BookmarksPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [items, setItems] = useState<PostSchema[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -36,42 +44,50 @@ export default function BookmarksPage() {
     return () => window.clearTimeout(t);
   }, [searchInput]);
 
-  const fetchBookmarks = useCallback(
-    async (append: boolean, currentItems: PostSchema[], q: string) => {
-      const skip = append ? currentItems.length : 0;
-      const url = `/api/bookmarks?skip=${skip}&limit=${PAGE_LIMIT}&q=${encodeURIComponent(q)}`;
-      if (append) setLoadingMore(true);
-      else setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(url, { credentials: "include", cache: "no-store" });
-        if (res.status === 401) {
-          router.push("/accounts/login");
-          return;
-        }
-        if (!res.ok) {
-          setError("Could not load bookmarks.");
-          if (!append) setItems([]);
-          return;
-        }
-        const body = (await res.json()) as {
-          data?: PostSchema[];
-          pagination?: PaginationMeta;
-        };
-        const chunk = body.data ?? [];
-        const nextPage = body.pagination ?? null;
-        setPagination(nextPage);
-        setItems((prev) => (append ? [...prev, ...chunk] : chunk));
-      } catch {
-        setError("Something went wrong.");
-        if (!append) setItems([]);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
+  const fetchBookmarks = useCallback(async (opts: FetchBookmarksOpts) => {
+    const params = new URLSearchParams();
+    params.set("limit", String(PAGE_LIMIT));
+    if (opts.q) params.set("q", opts.q);
+    if (opts.append && opts.cursor) params.set("cursor", opts.cursor);
+
+    const url = `/api/bookmarks?${params.toString()}`;
+    if (opts.append) setLoadingMore(true);
+    else setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(url, { credentials: "include", cache: "no-store" });
+      if (res.status === 401) {
+        router.push("/accounts/login");
+        return;
       }
-    },
-    [router]
-  );
+      if (!res.ok) {
+        setError("Could not load bookmarks.");
+        if (!opts.append) {
+          setItems([]);
+          setNextCursor(null);
+        }
+        return;
+      }
+      const body = (await res.json()) as {
+        data?: PostSchema[];
+        pagination?: PaginationMeta;
+      };
+      const chunk = body.data ?? [];
+      const nextPage = body.pagination ?? null;
+      setPagination(nextPage);
+      setNextCursor(nextPage?.nextCursor ?? null);
+      setItems((prev) => (opts.append ? [...prev, ...chunk] : chunk));
+    } catch {
+      setError("Something went wrong.");
+      if (!opts.append) {
+        setItems([]);
+        setNextCursor(null);
+      }
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [router]);
 
   useEffect(() => {
     if (userLoading) return;
@@ -79,11 +95,12 @@ export default function BookmarksPage() {
       router.push("/accounts/login");
       return;
     }
-    void fetchBookmarks(false, [], debouncedSearch);
+    void fetchBookmarks({ append: false, q: debouncedSearch, cursor: null });
   }, [debouncedSearch, userdata._id, userLoading, fetchBookmarks, router]);
 
   const loadMore = () => {
-    void fetchBookmarks(true, items, debouncedSearch);
+    if (!nextCursor) return;
+    void fetchBookmarks({ append: true, q: debouncedSearch, cursor: nextCursor });
   };
 
   const hasMore = Boolean(pagination?.hasMore);
@@ -141,7 +158,11 @@ export default function BookmarksPage() {
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
             {error}
             <div className="mt-3">
-              <Button variant="outline" size="sm" onClick={() => void fetchBookmarks(false, [], debouncedSearch)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void fetchBookmarks({ append: false, q: debouncedSearch, cursor: null })}
+              >
                 Try again
               </Button>
             </div>
@@ -188,7 +209,12 @@ export default function BookmarksPage() {
 
         {hasMore && items.length > 0 ? (
           <div className="mt-8 flex justify-center">
-            <Button variant="outline" className="rounded-full px-8" disabled={loadingMore} onClick={loadMore}>
+            <Button
+              variant="outline"
+              className="rounded-full px-8"
+              disabled={loadingMore || !nextCursor}
+              onClick={loadMore}
+            >
               {loadingMore ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />

@@ -2,22 +2,25 @@ import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
-import { pagingMeta, parsePaging } from "@/lib/apiPagination";
+import { pagingMeta } from "@/lib/apiPagination";
 import { addInteractionFlags } from "@/lib/apiUtils";
+import { ensurePostBookmarkIndexes } from "@/lib/bookmarkIndexes";
+import { sanitizeMongoTextSearch } from "@/lib/bookmarkSearch";
 import { MongoDBClient } from "@/lib/mongodb";
-import type { Payload, PostBookmarkSchema, PostSchema } from "@/lib/types/type";
+import type { Payload, PostSchema } from "@/lib/types/type";
 
 const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 50;
 
-function matchesQuery(post: PostSchema, q: string) {
-  const needle = q.trim().toLowerCase();
-  if (!needle) return true;
-  const terms = needle.split(/\s+/).filter(Boolean);
-  const hay = [post.Caption ?? "", post.Username ?? "", post.NameOfPoster ?? "", post.PostID ?? ""]
-    .join(" ")
-    .toLowerCase();
-  return terms.every((t) => hay.includes(t));
+function parseBookmarksLimit(req: NextApiRequest): number {
+  const raw = req.query.limit;
+  if (raw === undefined || raw === "") return DEFAULT_LIMIT;
+  const n = parseInt(String(Array.isArray(raw) ? raw[0] : raw), 10);
+  if (Number.isNaN(n) || n < 1) return DEFAULT_LIMIT;
+  return Math.min(n, MAX_LIMIT);
 }
+
+type BookmarkAggRow = { _id: ObjectId; post: PostSchema };
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -32,59 +35,92 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     const userId = String(payload._id);
-    const { limit: pageLimit, skip } = parsePaging(req, {
-      defaultLimit: DEFAULT_LIMIT,
-      maxLimit: 50,
-    });
+    const limit = parseBookmarksLimit(req);
 
-    const rawQ = req.query.q;
-    const q = String(Array.isArray(rawQ) ? rawQ[0] : rawQ ?? "").trim();
-
-    const db = await new MongoDBClient().init();
-    const bookmarksCol = db.postsBookmarks();
-
-    const allBookmarks = await bookmarksCol
-      .find({ userId })
-      .sort({ _id: -1 })
-      .toArray();
-
-    const postIds = [...new Set(allBookmarks.map((b: PostBookmarkSchema) => String(b.postId)))];
-
-    if (postIds.length === 0) {
-      return res.json({
-        data: [] as PostSchema[],
-        pagination: pagingMeta(skip, pageLimit, false),
-      });
-    }
-
-    const [fromPosts, fromShares, fromComments] = await Promise.all([
-      db.posts().find({ PostID: { $in: postIds } }).toArray(),
-      db.postsShares().find({ PostID: { $in: postIds } }).toArray(),
-      db.postsComments().find({ PostID: { $in: postIds } }).toArray(),
-    ]);
-
-    const byPostId = new Map<string, PostSchema>();
-    for (const doc of [...fromPosts, ...fromShares, ...fromComments]) {
-      const p = doc as unknown as PostSchema;
-      if (p.PostID) byPostId.set(p.PostID, p);
-    }
-
-    const ordered: PostSchema[] = [];
-    for (const b of allBookmarks) {
-      const pid = String(b.postId);
-      const post = byPostId.get(pid);
-      if (post && matchesQuery(post, q)) {
-        ordered.push(post);
+    const rawCursor = req.query.cursor;
+    const cursorStr = rawCursor ? String(Array.isArray(rawCursor) ? rawCursor[0] : rawCursor) : "";
+    let cursorOid: ObjectId | null = null;
+    if (cursorStr) {
+      try {
+        cursorOid = new ObjectId(cursorStr);
+      } catch {
+        return res.status(400).json({ message: "Invalid cursor" });
       }
     }
 
-    const fetchEnd = skip + pageLimit + 1;
-    const window = ordered.slice(skip, fetchEnd);
-    const hasMore = window.length > pageLimit;
-    const pagePosts = window.slice(0, pageLimit) as unknown as PostSchema[];
+    const qRaw = String(Array.isArray(req.query.q) ? req.query.q[0] : req.query.q ?? "").trim();
+    const qSanitized = sanitizeMongoTextSearch(qRaw);
+
+    const db = await new MongoDBClient().init();
+    const bookmarksCol = db.postsBookmarks();
+    await ensurePostBookmarkIndexes(bookmarksCol);
+
+    const match: Record<string, unknown> = { userId };
+    if (cursorOid) {
+      match._id = { $lt: cursorOid };
+    }
+    if (qSanitized) {
+      match.$text = { $search: qSanitized };
+    }
+
+    const pipeline = [
+      { $match: match },
+      {
+        $lookup: {
+          from: "Posts",
+          localField: "postId",
+          foreignField: "PostID",
+          as: "_fromPosts",
+        },
+      },
+      {
+        $lookup: {
+          from: "Posts_Shares",
+          localField: "postId",
+          foreignField: "PostID",
+          as: "_fromShares",
+        },
+      },
+      {
+        $lookup: {
+          from: "Posts_Comments",
+          localField: "postId",
+          foreignField: "PostID",
+          as: "_fromComments",
+        },
+      },
+      {
+        $set: {
+          post: {
+            $arrayElemAt: [
+              { $concatArrays: ["$_fromPosts", "$_fromShares", "$_fromComments"] },
+              0,
+            ],
+          },
+        },
+      },
+      { $match: { post: { $ne: null } } },
+      { $sort: { _id: -1 } },
+      { $limit: limit + 1 },
+      {
+        $project: {
+          _id: 1,
+          post: 1,
+        },
+      },
+    ];
+
+    const rows = (await bookmarksCol.aggregate(pipeline).toArray()) as unknown as BookmarkAggRow[];
+
+    const hasMore = rows.length > limit;
+    const pageRows = rows.slice(0, limit);
+    const pagePosts = pageRows.map((r) => r.post as PostSchema);
+
+    const nextCursor =
+      hasMore && pageRows.length > 0 ? String(pageRows[pageRows.length - 1]._id) : null;
 
     const user = await db.users().findOne({ _id: new ObjectId(userId) });
-    if (user) {
+    if (user && pagePosts.length > 0) {
       await addInteractionFlags(db, pagePosts as any, userId);
     }
 
@@ -94,7 +130,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     return res.json({
       data: pagePosts,
-      pagination: pagingMeta(skip, pageLimit, hasMore),
+      pagination: pagingMeta(0, limit, hasMore, nextCursor),
     });
   } catch (error) {
     console.error("Error fetching bookmarks:", error);

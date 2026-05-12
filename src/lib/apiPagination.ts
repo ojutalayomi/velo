@@ -10,6 +10,8 @@ export type PaginationMeta = {
   limit: number;
   skip: number;
   hasMore: boolean;
+  /** Opaque cursor for cursor-based APIs (e.g. bookmark `_id` hex). */
+  nextCursor?: string | null;
 };
 
 export function parsePaging(
@@ -56,6 +58,15 @@ export function parsePaging(
   return { limit, skip };
 }
 
-export function pagingMeta(skip: number, limit: number, hasMore: boolean): PaginationMeta {
-  return { skip, limit, hasMore };
+export function pagingMeta(
+  skip: number,
+  limit: number,
+  hasMore: boolean,
+  nextCursor?: string | null
+): PaginationMeta {
+  const meta: PaginationMeta = { skip, limit, hasMore };
+  if (nextCursor !== undefined) {
+    meta.nextCursor = nextCursor;
+  }
+  return meta;
 }

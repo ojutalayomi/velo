@@ -469,6 +469,8 @@ export interface PostInfo {
   _id: ObjectId;
   postId: string;
   userId: string;
+  /** Denormalized for MongoDB `$text` on Posts_Bookmarks (set on bookmark + backfill). */
+  searchText?: string;
 }
 
 export type PostBookmarkSchema = PostInfo;

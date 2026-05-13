@@ -234,7 +234,7 @@ const Explore = () => {
       className="bg-white h-full min-h-screen overflow-auto dark:bg-neutral-950"
     >
       {/* Header */}
-      <header className="sticky top-0 bg-white dark:bg-neutral-900 dark:border-black-200 border-b border-gray-300 z-10">
+      <header className="sticky top-0 bg-white dark:bg-neutral-900 dark:border-black-200 p-2 border-gray-300 z-10">
         <div className="max-w-screen-sm mx-auto flex gap-2 items-center">
           <div className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow hover:bg-accent" onClick={() => router.push("/home")} aria-label="Back to home">
             <ArrowLeft size={18}/>

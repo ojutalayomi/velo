@@ -174,8 +174,8 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
   const retry = () => setReloadTick((t) => t + 1);
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-      <header className="sticky top-0 z-20 border-b border-zinc-200/80 bg-[#f4f6f8]/90 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/90">
+    <div className="h-screen overflow-auto text-zinc-900 dark:text-zinc-50">
+      <header className="sticky top-0 z-20 border-b border-zinc-200/80 backdrop-blur-md dark:border-zinc-800">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <button
             type="button"

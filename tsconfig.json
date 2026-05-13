@@ -31,5 +31,5 @@
     "src/app/api/auth/[auth0]",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "playground"]
+  "exclude": ["node_modules", "playground", "src/scripts"]
 }

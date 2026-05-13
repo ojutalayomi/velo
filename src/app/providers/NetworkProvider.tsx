@@ -35,11 +35,12 @@ export default function NetworkProvider({ children }: { children: React.ReactNod
           toast.success("Back Online", {
             description: "Your internet connection has been restored",
           });
-        } else {
-          toast.error("Offline", {
-            description: "You are currently offline",
-          });
-        }
+        } 
+        // else {
+        //   toast.error("Offline", {
+        //     description: "You are currently offline",
+        //   });
+        // }
       }
     }
 

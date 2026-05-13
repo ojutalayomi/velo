@@ -38,10 +38,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 }
 
 async function fetchExplorePosts(db: MongoDBClient, skip: number, limit: number) {
-  const database = await db.getDb();
   const fetchLimit = limit + 1;
 
-  const cursor = database.collection("Posts").aggregate([
+  const cursor = db.posts().aggregate([
     {
       $unionWith: {
         coll: "Posts_Shares",

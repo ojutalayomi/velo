@@ -29,8 +29,8 @@ export const renderTextWithLinks = (text: string) => {
       return (
         <Link
           key={`cashtag-${i}`}
-          href={`/search?q=${encodeURIComponent(part.slice(1))}?src=cashtag_click`}
-          className="text-blue-500 transition-all duration-150 hover:underline"
+          href={`/search?q=${encodeURIComponent(part.slice(1))}&src=cashtag_click`}
+          className="text-brand transition-all duration-150 hover:underline"
           onClick={(e) => {
             e.stopPropagation();
             console.log(`Cashtag clicked: ${part}`);
@@ -45,7 +45,7 @@ export const renderTextWithLinks = (text: string) => {
         <Link
           key={`mention-${i}`}
           href={`/${encodeURIComponent(part.slice(1))}?src=mention_click`}
-          className="text-blue-500 transition-all duration-150 hover:underline"
+          className="text-brand transition-all duration-150 hover:underline"
           onClick={(e) => {
             e.stopPropagation();
             console.log(`Mention clicked: ${part}`);

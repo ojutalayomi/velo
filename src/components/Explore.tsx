@@ -1,12 +1,10 @@
 "use client";
-import { Search, Play, Layers, RefreshCw, Settings2 } from "lucide-react";
+import { Search, Play, Layers, RefreshCw, Settings2, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { usePosts } from "@/app/providers/PostsProvider";
-import { useUser } from "@/app/providers/UserProvider";
-import ImageContent from "@/components/imageContent";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import {
   clearExplorePostsCache,
@@ -81,7 +79,6 @@ function ExploreCell({ post, onClick }: { post: PostSchema; onClick: (postId: st
 
 // ─── main component ───────────────────────────────────────────────────────────
 const Explore = () => {
-  const { userdata } = useUser();
   const { success, loadMoreAvatars, avatarsHasMore, avatarsLoadingMore, setReload } = usePosts();
   const router = useRouter();
 
@@ -237,9 +234,11 @@ const Explore = () => {
       className="bg-white h-full min-h-screen overflow-auto dark:bg-neutral-950"
     >
       {/* Header */}
-      <header className="sticky top-0 bg-white dark:bg-neutral-900 dark:border-black-200 border-b border-gray-300 p-2 z-10">
+      <header className="sticky top-0 bg-white dark:bg-neutral-900 dark:border-black-200 border-b border-gray-300 z-10">
         <div className="max-w-screen-sm mx-auto flex gap-2 items-center">
-          <ImageContent userdata={userdata} dpOnly />
+          <div className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow hover:bg-accent" onClick={() => router.push("/home")} aria-label="Back to home">
+            <ArrowLeft size={18}/>
+          </div>
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <Input

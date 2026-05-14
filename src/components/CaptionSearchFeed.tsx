@@ -168,14 +168,14 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
     e.preventDefault();
     const q = searchInput.trim();
     if (!q) return;
-    router.push(`/search?q=${encodeURIComponent(q)}`);
+    router.push(`/${props.variant}?q=${encodeURIComponent(q)}`);
   };
 
   const retry = () => setReloadTick((t) => t + 1);
 
   return (
     <div className="h-screen overflow-auto text-zinc-900 dark:text-zinc-50">
-      <header className="sticky top-0 z-20 border-b border-zinc-200/80 backdrop-blur-md dark:border-zinc-800">
+      <header className="sticky top-0 z-[1] border-b border-zinc-200/80 backdrop-blur-md dark:border-zinc-800">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <button
             type="button"
@@ -192,26 +192,24 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
             </p>
           </div>
         </div>
-        {props.variant === "search" ? (
-          <div className="mx-auto max-w-2xl px-4 pb-4">
-            <form onSubmit={submitSearch} className="relative">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
-                aria-hidden
-              />
-              <Input
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search captions…"
-                className={cn(
-                  "h-11 rounded-full border-zinc-200 bg-white pl-10 pr-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900",
-                  "placeholder:text-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-400/30 dark:focus-visible:ring-zinc-500/30"
-                )}
-                aria-label="Search posts"
-              />
-            </form>
-          </div>
-        ) : null}
+        <div className="mx-auto max-w-2xl px-4 pb-4">
+          <form onSubmit={submitSearch} className="relative">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
+              aria-hidden
+            />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search captions…"
+              className={cn(
+                "h-11 rounded-full border-zinc-200 bg-white pl-10 pr-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900",
+                "placeholder:text-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-400/30 dark:focus-visible:ring-zinc-500/30"
+              )}
+              aria-label="Search posts"
+            />
+          </form>
+        </div>
       </header>
 
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-2">

@@ -51,7 +51,12 @@ const PostPreview: React.FC = () => {
   const [postLoading, setPostLoading] = useState<boolean>(true);
   const [postError, setPostError] = useState<string | null>(null);
   const [currentPost, setCurrentPost] = useState<PostSchema | null>(null);
-  const [replyText, setReplyText] = useState("");
+  const replyDraftRef = useRef("");
+  const replyDraftPostIdRef = useRef(id);
+  if (replyDraftPostIdRef.current !== id) {
+    replyDraftRef.current = "";
+    replyDraftPostIdRef.current = id;
+  }
 
   const fetchPost = useCallback(async () => {
     try {
@@ -142,10 +147,11 @@ const PostPreview: React.FC = () => {
     }
   };
 
-  const handleComment = () => {
-    if (!post || !id || !userdata._id || !socket) return;
+  const handleComment = useCallback(
+    (caption: string): boolean => {
+      if (!post || !id || !userdata._id || !socket) return false;
+      if (!caption.trim()) return false;
 
-    if (replyText.trim()) {
       const Post: PostSchema = {
         _id: "",
         UserId: "",
@@ -154,7 +160,7 @@ const PostPreview: React.FC = () => {
         Verified: false,
         TimeOfPost: new Date().toISOString(),
         Visibility: "everyone",
-        Caption: replyText,
+        Caption: caption,
         Image: [""],
         IsFollowing: false,
         NoOfLikes: 0,
@@ -172,9 +178,10 @@ const PostPreview: React.FC = () => {
         ParentId: post ? post.PostID : "",
       };
       socket.emit("post", Post);
-      setReplyText("");
-    }
-  };
+      return true;
+    },
+    [post, id, userdata._id, socket]
+  );
 
   const handleBookmark = () => {
     if (!post || !id || !userdata._id) return;
@@ -281,7 +288,7 @@ const PostPreview: React.FC = () => {
         </div>
 
         {/* Controls */}
-        <div className="p-4">
+        <div className="p-4 md:hidden">
           {/* Action buttons */}
           <div className="flex justify-around items-center">
             <button
@@ -323,16 +330,16 @@ const PostPreview: React.FC = () => {
         {/* Reply input */}
         <ReplyTextArea
           className="md:hidden"
-          replyText={replyText}
-          setReplyText={setReplyText}
+          draftRef={replyDraftRef}
+          postId={id ?? ""}
+          placement="mobile"
           handleComment={handleComment}
         />
       </div>
       <RightSideBar
         id={id || ""}
         currentPost={currentPost}
-        replyText={replyText}
-        setReplyText={setReplyText}
+        draftRef={replyDraftRef}
         handleComment={handleComment}
         className="flex-none w-1/2 md:w-2/5 lg:w-1/3"
       />
@@ -346,17 +353,15 @@ const RightSideBar = ({
   className,
   currentPost,
   id,
-  replyText,
-  setReplyText,
+  draftRef,
   handleComment,
   ...props
 }: {
   className?: string;
   currentPost: PostSchema | null;
   id: string;
-  replyText: string;
-  setReplyText: React.Dispatch<React.SetStateAction<string>>;
-  handleComment: () => void;
+  draftRef: React.MutableRefObject<string>;
+  handleComment: (caption: string) => boolean;
   props?: HTMLDivElement;
 }) => {
   const { userdata } = useUser();
@@ -487,8 +492,9 @@ const RightSideBar = ({
 
         {/* Reply input */}
         <ReplyTextArea
-          replyText={replyText}
-          setReplyText={setReplyText}
+          draftRef={draftRef}
+          postId={id}
+          placement="sidebar"
           handleComment={handleComment}
         />
 
@@ -531,17 +537,36 @@ const RightSideBar = ({
 
 function ReplyTextArea({
   className,
-  replyText,
-  setReplyText,
+  draftRef,
+  postId,
+  placement,
   handleComment,
 }: {
   className?: string;
-  replyText: string;
-  setReplyText: React.Dispatch<React.SetStateAction<string>>;
-  handleComment: () => void;
+  draftRef: React.MutableRefObject<string>;
+  postId: string;
+  placement: "mobile" | "sidebar";
+  handleComment: (caption: string) => boolean;
 }) {
+  const [replyText, setReplyText] = useState(() => draftRef.current);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [txtButton, setTxtButton] = useState(false);
+
+  useEffect(() => {
+    setReplyText(draftRef.current);
+  }, [postId, draftRef]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const syncFromRef = () => {
+      const desktop = mq.matches;
+      const active = placement === "sidebar" ? desktop : !desktop;
+      if (active) setReplyText(draftRef.current);
+    };
+    syncFromRef();
+    mq.addEventListener("change", syncFromRef);
+    return () => mq.removeEventListener("change", syncFromRef);
+  }, [placement, draftRef]);
 
   useEffect(() => {
     const handleInput = () => {
@@ -570,12 +595,21 @@ function ReplyTextArea({
       <textarea
         ref={textAreaRef}
         value={replyText}
-        onChange={(e) => setReplyText(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          draftRef.current = v;
+          setReplyText(v);
+        }}
         placeholder="Send your reply"
         className="flex-grow max-h-[100px] text-sm focus:border-b focus:border-brand resize-none bg-transparent border-none focus:outline-none dark:text-white mr-2"
       />
       <Button
-        onClick={handleComment}
+        onClick={() => {
+          if (handleComment(replyText)) {
+            draftRef.current = "";
+            setReplyText("");
+          }
+        }}
         className="bg-brand text-white text-sm px-2 py-1 rounded-full disabled:opacity-50"
         disabled={!replyText.trim()}
       >

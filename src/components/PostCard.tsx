@@ -479,10 +479,13 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                 <span>{formatNo(data.NoOfComment)}</span>
                 <span>{data.NoOfComment > 0 ? "Comment" : "Comments"}</span>
               </div>
-              <div className="flex flex-row items-center gap-1">
+              <Link
+                href={`/${data.Username}/posts/${data.PostID}/shares?tab=reposts`}
+                className="flex flex-row items-center gap-1 text-brand hover:underline"
+              >
                 <span>{formatNo(data.NoOfShares)}</span>
                 <span>{data.NoOfShares > 0 ? "Share" : "Shares"}</span>
-              </div>
+              </Link>
               <div className="flex flex-row items-center gap-1">
                 <span>{formatNo(data.NoOfBookmarks)}</span>
                 <span>{data.NoOfBookmarks > 0 ? "Bookmark" : "Bookmarks"}</span>

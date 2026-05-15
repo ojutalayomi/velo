@@ -1,5 +1,6 @@
 "use client";
 import { ArrowLeft, Cake, Check, Link, Plus, Pin, Loader2 } from "lucide-react";
+import NextLink from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -335,10 +336,18 @@ export default function Profile({
           </div>
           {/* Stats */}
           <div className="flex gap-6 text-gray-600 dark:text-gray-400">
-            <span>
+            <NextLink
+              href={`/${profileData.username}/connections?tab=followers`}
+              className="hover:underline"
+            >
               {profileData.followers ?? 0} follower{profileData.followers === 1 ? "" : "s"}
-            </span>
-            <span>{profileData.following ?? 0} following</span>
+            </NextLink>
+            <NextLink
+              href={`/${profileData.username}/connections?tab=following`}
+              className="hover:underline"
+            >
+              {profileData.following ?? 0} following
+            </NextLink>
             <span>
               {postCount} post
               {postCount === 1 ? "" : "s"}

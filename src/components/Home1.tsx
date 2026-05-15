@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { usePosts } from "@/app/providers/PostsProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import PostCard from "@/components/PostCard";
+import StatusTray from "@/components/status/StatusTray";
 import { RootState } from "@/redux/store";
 
 import { Skeleton } from "./ui/skeleton";
@@ -210,6 +211,8 @@ const Homepage: React.FC = () => {
           ))}
         </div>
       </header>
+
+      <StatusTray />
 
       <div className="h3 dark:!text-slate-200">
         <h3>Connect with friends and the world around you on noow.</h3>

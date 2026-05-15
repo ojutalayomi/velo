@@ -15,6 +15,7 @@ import {
   ReadReceipt,
   UserSettings,
 } from "./types/type";
+import { StatusSchema, StatusViewerSchema } from "./types/status";
 
 export interface FollowersSchema {
   followerId: string;
@@ -276,6 +277,14 @@ export class MongoDBClient {
    */
   files() {
     return this.db.collection<AttachmentSchema>("Files");
+  }
+
+  statuses() {
+    return this.db.collection<StatusSchema>("Statuses");
+  }
+
+  statusViewers() {
+    return this.db.collection<StatusViewerSchema>("Status_Viewers");
   }
 }
 

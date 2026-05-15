@@ -48,13 +48,13 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
   const [reloadTick, setReloadTick] = useState(0);
   const nextSkipRef = useRef(0);
 
-  const [searchInput, setSearchInput] = useState(
-    props.variant === "search" ? props.queryFromUrl : ""
-  );
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
     if (props.variant === "search") {
       setSearchInput(props.queryFromUrl);
+    } else if (props.variant === "hashtag") {
+      setSearchInput(props.tag.trim());
     }
   }, [props]);
 

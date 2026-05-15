@@ -8,6 +8,7 @@ import postsReducer from "./postsSlice";
 import utilReducer from "./utilsSlice";
 import routeReducer from "./routeSlice";
 import followingFeedReducer from "./followingFeedSlice";
+import statusReducer from "./statusSlice";
 import { useDispatch as useReduxDispatch } from "react-redux";
 
 // Define RootState and AppDispatch types
@@ -25,6 +26,7 @@ export const store = configureStore({
     utils: utilReducer,
     route: routeReducer,
     followingFeed: followingFeedReducer,
+    status: statusReducer,
   },
 });
 

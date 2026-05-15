@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import NetworkProvider from "./providers/NetworkProvider";
 import PostsProvider from "./providers/PostsProvider";
 import SocketProvider, { useSocket } from "./providers/SocketProvider";
+import StatusProvider from "./providers/StatusProvider";
 import ThemeProvider from "./providers/ThemeProvider";
 import UserProvider from "./providers/UserProvider";
 
@@ -27,10 +28,12 @@ const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
           <SocketProvider>
             <WithCallProvider>
               <PostsProvider>
-                <ThemeProvider>
-                  {children}
-                  <Toaster />
-                </ThemeProvider>
+                <StatusProvider>
+                  <ThemeProvider>
+                    {children}
+                    <Toaster />
+                  </ThemeProvider>
+                </StatusProvider>
               </PostsProvider>
             </WithCallProvider>
           </SocketProvider>

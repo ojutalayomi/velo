@@ -1,5 +1,5 @@
 "use client";
-import { Search, Play, Layers, RefreshCw, Settings2, ArrowLeft } from "lucide-react";
+import { Play, Layers, RefreshCw, Settings2, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -14,9 +14,10 @@ import {
 import { fetchExplorePosts } from "@/lib/getStatus";
 import type { PostSchema } from "@/lib/types/type";
 
+import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
+
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
-import { Input } from "./ui/input";
 
 // ─── media-type helper (mirrors mediaSlides.tsx logic) ───────────────────────
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|tiff?|avif)([-_]\w+)?$/i;
@@ -239,14 +240,7 @@ const Explore = () => {
           <div className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow hover:bg-accent" onClick={() => router.push("/home")} aria-label="Back to home">
             <ArrowLeft size={18}/>
           </div>
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <Input
-              type="text"
-              placeholder="Search people"
-              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
-            />
-          </div>
+          <ExploreSearchPanel variant="explore" className="flex-1" />
           <button
             type="button"
             onClick={() => hardReloadExplore()}

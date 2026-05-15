@@ -25,6 +25,7 @@ import { addPost, setPostPreview, updatePost } from "@/redux/postsSlice";
 import { useSocket } from "@/app/providers/SocketProvider";
 import ShareButton from "./ShareButton";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import PostAnalytics from "./PostAnalytics";
 
 interface Params {
   username?: string;
@@ -261,6 +262,7 @@ const PostPreview: React.FC = () => {
 
   return (
     <div className="fixed flex top-0 left-0 z-50 bg-gray-50 dark:bg-black dark:text-white h-screen w-screen">
+      {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
       <div className="flex flex-1 flex-col h-full">
         {/* Top bar */}
         <div className="flex justify-between p-4">

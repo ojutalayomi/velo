@@ -1,6 +1,5 @@
 "use client";
 import { ObjectId } from "bson";
-import { Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -9,8 +8,8 @@ import { useSelector } from "react-redux";
 import { useUser } from "@/app/providers/UserProvider";
 import { Footer } from "@/components/Footer";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
+import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { axiosApi } from "@/lib/api";
 import { SocialMediaUser } from "@/lib/class/User";
 import { cn } from "@/lib/utils";
@@ -64,17 +63,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
       <div className="mx-auto max-h-full max-w-md space-y-2 overflow-auto">
         {/* Search Bar */}
         <div className="sticky top-0 w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
-              size={18}
-            />
-            <Input
-              type="text"
-              placeholder="Search people"
-              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
-            />
-          </div>
+          <ExploreSearchPanel variant="sidebar" className="w-full" />
         </div>
 
         {/* User Profile */}

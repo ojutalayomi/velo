@@ -22,6 +22,7 @@ import { updatePost } from "@/redux/postsSlice";
 import ShareButton from "./ShareButton";
 import { renderTextWithLinks } from "./RenderTextWithLinks";
 import { Statuser } from "./VerificationComponent";
+import PostAnalytics from "./PostAnalytics";
 
 // ── media helpers ──────────────────────────────────────────────────────────────
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|tiff?|avif)([-_]\w+)?$/i;
@@ -90,6 +91,7 @@ function ReelSlide({
   onShareCommitted: (postId: string, updates: Partial<PostSchema>) => void;
   hasAccount: boolean;
 }) {
+  const { userdata } = useUser();
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [activeMediaType, setActiveMediaType] = useState<"image" | "video">("image");
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -129,6 +131,7 @@ function ReelSlide({
 
   return (
     <div className="relative size-full overflow-hidden bg-black">
+      {post.PostID && <PostAnalytics postId={post.PostID as string} userId={userdata._id} />}
       {/* horizontal media carousel */}
       <div
         ref={carouselRef}

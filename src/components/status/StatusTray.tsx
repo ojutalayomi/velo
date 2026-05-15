@@ -34,6 +34,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 const STATUS_DURATION_MS = 6000;
+const MAX_STATUS_FILES = 10;
+const MAX_STATUS_FILE_SIZE = 10 * 1024 * 1024;
 
 const StatusTray = () => {
   const dispatch = useAppDispatch();
@@ -59,7 +61,7 @@ const StatusTray = () => {
 
   return (
     <section className="border-b border-border bg-gray-50 px-3 py-3 dark:bg-zinc-900">
-      <div className="flex gap-3 overflow-x-auto pb-1">
+      <div className="flex gap-3 overflow-x-auto p-1">
         <button
           type="button"
           onClick={() => (myGroup ? setViewerStart({ groupIndex: 0, statusIndex: 0 }) : setComposerOpen(true))}
@@ -67,7 +69,7 @@ const StatusTray = () => {
         >
           <div className="relative">
             <StatusAvatar group={myGroup} fallback={userdata.firstname || userdata.username || "V"} />
-            <span className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full border-2 border-gray-50 bg-brand text-white dark:border-zinc-900">
+            <span className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full border-2 border-gray-50 bg-brand text-white dark:border-zinc-900" onClick={(e) => { e.stopPropagation(); setComposerOpen(true); }}>
               <Plus className="size-3.5" />
             </span>
           </div>
@@ -133,65 +135,104 @@ const StatusComposer = ({
 }) => {
   const dispatch = useAppDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [caption, setCaption] = useState("");
   const [posting, setPosting] = useState(false);
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
+  const previewItems = useMemo(
+    () =>
+      files.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    [files]
+  );
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewItems.forEach((item) => URL.revokeObjectURL(item.url));
     };
-  }, [previewUrl]);
+  }, [previewItems]);
 
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
+    const selected = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!selected) return;
-    if (!selected.type.startsWith("image/") && !selected.type.startsWith("video/")) {
-      toast.error("Choose an image or video");
+    if (!selected.length) return;
+
+    const nextFiles = [...files];
+    const remainingSlots = MAX_STATUS_FILES - nextFiles.length;
+    if (remainingSlots <= 0) {
+      toast.error(`You can share up to ${MAX_STATUS_FILES} status items at once`);
       return;
     }
-    if (selected.size > 10 * 1024 * 1024) {
-      toast.error("Status media must be 10MB or less");
-      return;
+
+    const accepted = selected.slice(0, remainingSlots).filter((item) => {
+      if (!item.type.startsWith("image/") && !item.type.startsWith("video/")) {
+        toast.error(`${item.name} is not an image or video`);
+        return false;
+      }
+      if (item.size > MAX_STATUS_FILE_SIZE) {
+        toast.error(`${item.name} must be 10MB or less`);
+        return false;
+      }
+      return true;
+    });
+
+    if (selected.length > remainingSlots) {
+      toast.warning(`Only ${remainingSlots} more status item${remainingSlots === 1 ? "" : "s"} can be added`);
     }
-    setFile(selected);
+
+    if (accepted.length) {
+      setFiles([...nextFiles, ...accepted]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const resetComposer = () => {
+    setFiles([]);
+    setCaption("");
+  };
+
+  const uploadStatusFile = async (file: File) => {
+    const presign = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type,
+        bucketName: "post-s",
+      }),
+    });
+    if (!presign.ok) throw new Error(`Failed to prepare ${file.name}`);
+    const { url, fields } = await presign.json();
+    const formData = new FormData();
+    Object.keys(fields).forEach((key) => formData.append(key, fields[key]));
+    formData.append("file", file);
+    const upload = await fetch(url, { method: "POST", body: formData });
+    if (!upload.ok) throw new Error(`Failed to upload ${file.name}`);
+
+    const [group] = await createStatus({
+      mediaUrl: url + fields.key,
+      mediaKey: fields.key,
+      mediaType: file.type.startsWith("video/") ? "video" : "image",
+      caption,
+      visibility: "followers",
+    });
+    if (group) dispatch(upsertStatusGroup(group));
   };
 
   const submit = async () => {
-    if (!file) return;
+    if (!files.length) return;
     setPosting(true);
     try {
-      const presign = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          bucketName: "post-s",
-        }),
-      });
-      if (!presign.ok) throw new Error("Failed to prepare upload");
-      const { url, fields } = await presign.json();
-      const formData = new FormData();
-      Object.keys(fields).forEach((key) => formData.append(key, fields[key]));
-      formData.append("file", file);
-      const upload = await fetch(url, { method: "POST", body: formData });
-      if (!upload.ok) throw new Error("Failed to upload media");
-
-      const [group] = await createStatus({
-        mediaUrl: url + fields.key,
-        mediaKey: fields.key,
-        mediaType: file.type.startsWith("video/") ? "video" : "image",
-        caption,
-        visibility: "followers",
-      });
-      if (group) dispatch(upsertStatusGroup(group));
-      setFile(null);
-      setCaption("");
+      for (const item of files) {
+        await uploadStatusFile(item);
+      }
+      resetComposer();
       onOpenChange(false);
-      toast.success("Status added");
+      toast.success(`${files.length} status item${files.length === 1 ? "" : "s"} added`);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
@@ -199,17 +240,27 @@ const StatusComposer = ({
     }
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && !posting) {
+      resetComposer();
+    }
+    onOpenChange(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Add status</DialogTitle>
-          <DialogDescription>Share an image or video with your followers for 24 hours.</DialogDescription>
+          <DialogDescription>
+            Share up to {MAX_STATUS_FILES} images or videos with your followers for 24 hours.
+          </DialogDescription>
         </DialogHeader>
         <input
           ref={inputRef}
           type="file"
           accept="image/*,video/*"
+          multiple
           className="hidden"
           onChange={handleFile}
         />
@@ -218,11 +269,11 @@ const StatusComposer = ({
           onClick={() => inputRef.current?.click()}
           className="flex min-h-56 items-center justify-center overflow-hidden rounded-md border border-dashed border-border bg-muted/40"
         >
-          {file ? (
-            file.type.startsWith("video/") ? (
-              <video src={previewUrl} className="max-h-80 w-full object-contain" controls />
+          {previewItems[0] ? (
+            previewItems[0].file.type.startsWith("video/") ? (
+              <video src={previewItems[0].url} className="max-h-80 w-full object-contain" controls />
             ) : (
-              <img src={previewUrl} alt="" className="max-h-80 w-full object-contain" />
+              <img src={previewItems[0].url} alt="" className="max-h-80 w-full object-contain" />
             )
           ) : (
             <span className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
@@ -231,6 +282,37 @@ const StatusComposer = ({
             </span>
           )}
         </button>
+        {previewItems.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {previewItems.map((item, index) => (
+              <div key={`${item.file.name}-${item.file.lastModified}-${index}`} className="relative size-16 shrink-0 overflow-hidden rounded-md border border-border">
+                {item.file.type.startsWith("video/") ? (
+                  <video src={item.url} className="size-full object-cover" muted />
+                ) : (
+                  <img src={item.url} alt="" className="size-full object-cover" />
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeFile(index)}
+                  className="absolute right-1 top-1 rounded-full bg-black/70 p-0.5 text-white"
+                  aria-label={`Remove ${item.file.name}`}
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+            {files.length < MAX_STATUS_FILES && (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="flex size-16 shrink-0 items-center justify-center rounded-md border border-dashed border-border text-muted-foreground"
+                aria-label="Add more media"
+              >
+                <Plus className="size-5" />
+              </button>
+            )}
+          </div>
+        )}
         <Textarea
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
@@ -238,12 +320,12 @@ const StatusComposer = ({
           placeholder="Add a caption"
         />
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={posting}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={posting}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={!file || posting} className="gap-2">
+          <Button onClick={submit} disabled={!files.length || posting} className="gap-2">
             {posting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            Share
+            Share {files.length > 1 ? files.length : ""}
           </Button>
         </div>
       </DialogContent>

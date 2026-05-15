@@ -429,7 +429,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                     />
                   </Avatar>
                 </div>
-                <div className={`w-[90%] ${data?.Image.length > 0 ? "grid" : ""}`}>
+                <div className="w-[90%] grid gap-1">
                   <div className="col-span-2 flex flex-wrap items-center text-sm">
                     <span className="mr-1 truncate font-bold dark:text-white">
                       {originalPost.NameOfPoster}

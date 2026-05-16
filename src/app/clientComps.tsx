@@ -44,7 +44,7 @@ import {
 } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
-import { addPost, deletePost, updatePost, updatePosts } from "@/redux/postsSlice";
+import { addPost, updatePost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
 
@@ -116,7 +116,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     [conversations]
   );
 
-  const handleChat = useCallback(
+  const handleNewChat = useCallback(
     (data: NewChat_) => {
       const uid = data.requestId;
       const participant = data.chat.participants.find((p) => p.userId === uid);
@@ -259,7 +259,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       }
     );
     socket.on("newChat", (data: NewChat_) => {
-      handleChat(data);
+      handleNewChat(data);
       socket.emit("joinChat", { chatId: data.chat._id });
     });
     // New invite event to trigger call confirmation
@@ -325,26 +325,6 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
           status: true,
           message: data.message,
         });
-      }
-    );
-    socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
-      dispatch(deletePost(data.postId));
-    });
-    socket.on(
-      "updatePost",
-      (data: {
-        excludeUserId: string;
-        postId: string;
-        update: Partial<PostSchema>;
-        type: string;
-      }) => {
-        dispatch(updatePost({ id: data.postId, updates: data.update }));
-        // if(data.excludeUserId !== userdata._id) {
-        //     setDisplayAnnouncement({
-        //         status: true,
-        //         message: `New ${data.type}`
-        //     })
-        // }
       }
     );
     socket.on("newPost", (data: { excludeUser: string; blog: PostSchema }) => {
@@ -451,13 +431,11 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("userTyping", handleTyping);
       socket.off("userStopTyping", handleStopTyping);
       socket.off("lastActive");
-      socket.off("newChat", handleChat);
+      socket.off("newChat", handleNewChat);
       socket.off("offer");
       socket.off("post_response");
       socket.off("delete_post_response");
       socket.off("post_reaction_reponse");
-      socket.off("deletePost");
-      socket.off("updatePost");
       socket.off("newPost");
       socket.off("followNotification");
       socket.off("conversationUpdated");
@@ -466,7 +444,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("reactionUpdated");
       socket.off("chatError");
     };
-  }, [socket, handleChatMessage, handleChat, handleTyping, handleStopTyping, conversations]);
+  }, [socket, handleChatMessage, handleNewChat, handleTyping, handleStopTyping, conversations]);
 
   const setActiveRoute = useCallback((route: string) => {
     setActiveRouteState(route);

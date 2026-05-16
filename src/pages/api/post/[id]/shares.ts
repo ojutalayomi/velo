@@ -1,8 +1,10 @@
+import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { addInteractionFlags } from "@/lib/apiUtils";
 import { MAX_API_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
+import { SocialMediaUser, UserSchema } from "@/lib/class/User";
 import { MongoDBClient } from "@/lib/mongodb";
 import type { Payload, PostSchema } from "@/lib/types/type";
 
@@ -84,6 +86,42 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     const hasMore = rawShares.length > pageLimit;
     const posts = rawShares.slice(0, pageLimit) as PostSchema[];
+
+    if (shareType === "repost") {
+      const userIds = posts.map((post) => post.UserId).filter((id) => ObjectId.isValid(id));
+      const hydratedUsers = userIds.length
+        ? ((await db
+            .users()
+            .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
+            .toArray()) as UserSchema[])
+        : [];
+      const usersById = new Map(hydratedUsers.map((user) => [user._id.toString(), user]));
+      const orderedUsers = posts
+        .map((post) => usersById.get(post.UserId))
+        .filter((user): user is UserSchema => Boolean(user));
+      const safeUsers = orderedUsers.map((user) => new SocialMediaUser(user).getClientSafeData());
+      const safeUserIds = safeUsers.map((user) => user._id.toString());
+      const followedByViewer =
+        payload?._id && safeUserIds.length
+          ? await db
+              .followers()
+              .find({
+                followerId: payload._id,
+                followedId: { $in: safeUserIds.filter((id) => id !== payload._id) },
+              })
+              .toArray()
+          : [];
+      const followedByViewerIds = new Set(followedByViewer.map((row) => row.followedId));
+
+      return res.status(200).json({
+        data: safeUsers.map((user) => ({
+          ...user,
+          isFollowing:
+            payload?._id !== user._id.toString() && followedByViewerIds.has(user._id.toString()),
+        })),
+        pagination: pagingMeta(skip, pageLimit, hasMore),
+      });
+    }
 
     if (payload?._id && posts.length) {
       await addInteractionFlags(db, posts, payload._id);

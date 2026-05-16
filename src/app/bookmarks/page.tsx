@@ -107,7 +107,7 @@ export default function BookmarksPage() {
   const showEmpty = !loading && !error && items.length === 0;
 
   return (
-    <div className="h-screen text-zinc-900 dark:text-zinc-50">
+    <div className="h-screen overflow-auto text-zinc-900 dark:text-zinc-50">
       <header className="sticky top-0 z-[1] border-b border-zinc-200/80 backdrop-blur-md dark:border-zinc-800">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <button

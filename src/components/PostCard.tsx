@@ -68,6 +68,22 @@ interface Option {
   onClick: () => void;
 }
 
+type DeletePostEvent = {
+  excludeUser?: string;
+  postId: string;
+  type?: string;
+};
+
+type UpdatePostEvent = {
+  excludeUserId?: string;
+  postId: string;
+  update: Partial<PostSchema>;
+  type?: string;
+};
+
+const isPostMatch = (post: Partial<PostSchema> | null | undefined, postId: string) =>
+  post?._id === postId || post?.PostID === postId;
+
 const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
@@ -132,6 +148,52 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       }
     })();
   }, [postData]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDeletePost = (event: DeletePostEvent) => {
+      const deletesPassedPost = isPostMatch(postData, event.postId);
+      const deletesRenderedPost = isPostMatch(data, event.postId);
+      const deletesOriginalPost = isPostMatch(originalPost, event.postId);
+
+      if (deletesOriginalPost) {
+        setOriginalPost(null);
+      }
+
+      if (deletesPassedPost || deletesRenderedPost || deletesOriginalPost) {
+        dispatch(deletePost(event.postId));
+      }
+    };
+
+    const handleUpdatePost = (event: UpdatePostEvent) => {
+      const updatesRenderedPost = isPostMatch(data, event.postId);
+      const updatesOriginalPost = isPostMatch(originalPost, event.postId);
+      const updatesPassedPost = isPostMatch(postData, event.postId);
+
+      setData((prev) => {
+        if (!isPostMatch(prev, event.postId)) return prev;
+        return { ...prev, ...event.update };
+      });
+
+      setOriginalPost((prev) => {
+        if (!prev || !isPostMatch(prev, event.postId)) return prev;
+        return { ...prev, ...event.update };
+      });
+
+      if (updatesRenderedPost || updatesOriginalPost || updatesPassedPost) {
+        dispatch(updatePost({ id: event.postId, updates: event.update }));
+      }
+    };
+
+    socket.on("deletePost", handleDeletePost);
+    socket.on("updatePost", handleUpdatePost);
+
+    return () => {
+      socket.off("deletePost", handleDeletePost);
+      socket.off("updatePost", handleUpdatePost);
+    };
+  }, [data, dispatch, originalPost, postData, socket]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -323,7 +385,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   return (
     <div className="pre-blog" id={data.PostID.slice(0, -4)}>
       <div
-        className="blog !dark:shadow-bar-dark select-none shadow-md dark:bg-zinc-900 dark:text-slate-200"
+        className="blog !dark:shadow-bar-dark border-b-2 select-none shadow-md dark:bg-zinc-900 dark:text-slate-200"
         data-id={data.PostID}
       >
         {postType === "repost" && (
@@ -403,67 +465,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         )}
         {/* Post Card */}
         {originalPost && (
-          <div
-            role="link"
-            tabIndex={0}
-            className="cursor-pointer rounded-xl border border-gray-800 p-4"
-            onClick={() =>
-              handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`)
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`);
-              }
-            }}
-          >
-            <div>
-              <div className="flex items-start space-x-1">
-                <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
-                  <Avatar className="size-8">
-                    <AvatarFallback>{originalPost.NameOfPoster.slice(0, 2)}</AvatarFallback>
-                    <AvatarImage
-                      className="pdp cursor-pointer"
-                      alt="blogger"
-                      src={originalPost.DisplayPicture}
-                    />
-                  </Avatar>
-                </div>
-                <div className="w-[90%] grid gap-1">
-                  <div className="col-span-2 flex flex-wrap items-center text-sm">
-                    <span className="mr-1 truncate font-bold dark:text-white">
-                      {originalPost.NameOfPoster}
-                    </span>
-                    {originalPost.Verified && (
-                      <svg className="size-4 fill-current text-brand" viewBox="0 0 24 24">
-                        <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z" />
-                      </svg>
-                    )}
-                    <span className="ml-1 text-gray-500">
-                      @{originalPost.Username} · {time1}
-                    </span>
-                  </div>
-                  {/* <div className="text-gray-500 text-sm mb-2">Replying to @NintendoAmerica</div> */}
-                  {originalPost?.Caption ? (
-                    <p
-                      className={`mb-2 text-sm dark:text-white ${originalPost.Image.length > 0 ? "" : "col-span-2"} whitespace-pre-wrap`}
-                    >
-                      {originalPost.Caption.length > 250
-                        ? renderTextWithLinks(originalPost.Caption.substring(0, 250)) + "..."
-                        : renderTextWithLinks(originalPost.Caption)}
-                    </p>
-                  ) : null}
-                  {/* {showMore} */}
-                  {originalPost.Image.length > 0 && (
-                    <MediaSlide
-                      className={`overflow-auto rounded-lg ${!(originalPost?.Caption?.length > 0) ? "col-span-2" : ""}`}
-                      postData={originalPost}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <QuotedPostCard handleActivePost={handleActivePost} originalPost={originalPost} time1={time1} />
         )}
         {containsPost ? (
           <>
@@ -602,6 +604,68 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
 
 export default PostCard;
 
+function QuotedPostCard({handleActivePost, originalPost, time1}: {handleActivePost: (route: string) => void, originalPost: PostSchema, time1: string}) {
+  return (
+    <div
+      role="link"
+      tabIndex={0}
+      className="cursor-pointer rounded-xl border border-gray-800 p-4"
+      onClick={() => handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`);
+        }
+      } }
+    >
+      <div>
+        <div className="flex items-start space-x-1">
+          <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
+            <Avatar className="size-8">
+              <AvatarFallback>{originalPost.NameOfPoster.slice(0, 2)}</AvatarFallback>
+              <AvatarImage
+                className="pdp cursor-pointer"
+                alt="blogger"
+                src={originalPost.DisplayPicture} />
+            </Avatar>
+          </div>
+          <div className="w-[90%] grid gap-1">
+            <div className="col-span-2 flex flex-wrap items-center text-sm">
+              <span className="mr-1 truncate font-bold dark:text-white">
+                {originalPost.NameOfPoster}
+              </span>
+              {originalPost.Verified && (
+                <svg className="size-4 fill-current text-brand" viewBox="0 0 24 24">
+                  <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z" />
+                </svg>
+              )}
+              <span className="ml-1 text-gray-500">
+                @{originalPost.Username} · {time1}
+              </span>
+            </div>
+            {/* <div className="text-gray-500 text-sm mb-2">Replying to @NintendoAmerica</div> */}
+            {originalPost?.Caption ? (
+              <p
+                className={`mb-2 text-sm dark:text-white ${originalPost.Image.length > 0 ? "" : "col-span-2"} whitespace-pre-wrap`}
+              >
+                {originalPost.Caption.length > 250
+                  ? renderTextWithLinks(originalPost.Caption.substring(0, 250)) + "..."
+                  : renderTextWithLinks(originalPost.Caption)}
+              </p>
+            ) : null}
+            {/* {showMore} */}
+            {originalPost.Image.length > 0 && (
+              <MediaSlide
+                className={`overflow-auto rounded-lg ${!(originalPost?.Caption?.length > 0) ? "col-span-2" : ""}`}
+                postData={originalPost} />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Options({
   options,
   open,
@@ -687,7 +751,7 @@ function Options({
 
 export function RenderLoadingPlaceholder() {
   return (
-    <div className="m-4 flex cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
+    <div className="flex cursor-progress flex-col space-y-3 bg-white p-4 shadow-md dark:bg-zinc-900">
       <div className="flex items-center justify-start gap-2">
         <Skeleton className="size-10 rounded-full" />
         <div className="flex flex-col space-y-2">

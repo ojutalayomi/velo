@@ -28,9 +28,7 @@
   width: 100%;
 }
 .pre-blog .blog {
-  border-radius: 10px;
   box-shadow: 0px 0px 1px 0px black;
-  margin: 10px;
   padding: 20px;
 }
 .pre-blog .blog::after {
@@ -41,7 +39,7 @@
   width: 100%;
   height: 100%;
   -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
+          backdrop-filter: blur(5px);
   z-index: -1;
 }
 .pre-blog .blog .a_tag {
@@ -150,8 +148,7 @@
   fill: none;
   stroke: hsla(234, 29%, 20%, 0.993);
 }
-.pre-blog .blog .blogger-details .blog-top-right .pre-ellipsis .ellipsis-dropdown p:hover,
-.pre-blog .blog .blogger-details .blog-top-right .pre-ellipsis .ellipsis-dropdown p::after {
+.pre-blog .blog .blogger-details .blog-top-right .pre-ellipsis .ellipsis-dropdown p:hover, .pre-blog .blog .blogger-details .blog-top-right .pre-ellipsis .ellipsis-dropdown p::after {
   background: rgba(0, 0, 0, 0.1882352941);
 }
 .pre-blog .blog .blog-contents {
@@ -171,7 +168,7 @@
 .pre-blog .blog abbr {
   text-decoration: none;
 }
-.pre-blog .blog pre[class*="language-"] {
+.pre-blog .blog pre[class*=language-] {
   border-radius: 10px;
 }
 .pre-blog .blog .grid-set {
@@ -225,7 +222,6 @@
   flex-direction: row;
   justify-content: space-between;
   margin: 10px 0;
-  padding: 0 10px;
 }
 .pre-blog .blog .reaction-panel .blog-foot {
   gap: 4px;
@@ -322,8 +318,7 @@
   margin: 5px 10px;
   padding: 10px 20px;
 }
-#postpage .commentSection .commentHeader,
-#postpage .commentSection .noComments {
+#postpage .commentSection .commentHeader, #postpage .commentSection .noComments {
   margin-top: 10px;
   text-align: center;
 }
@@ -337,7 +332,7 @@
   flex-direction: row;
   justify-content: space-between;
   -webkit-backdrop-filter: blur(75px);
-  backdrop-filter: blur(75px);
+          backdrop-filter: blur(75px);
   bottom: 0;
   box-shadow: 0px 0px 1px 0px black;
   gap: 10px;
@@ -363,8 +358,7 @@
 .commentBar .commentBarContent:focus-within textarea {
   border-bottom: 1px solid #ff6257;
 }
-.commentBar .commentBarContent:focus-within .smile-emoji,
-.commentBar .commentBarContent:focus-within .upload-emoji {
+.commentBar .commentBarContent:focus-within .smile-emoji, .commentBar .commentBarContent:focus-within .upload-emoji {
   display: block;
 }
 .commentBar .commentBarContent textarea {
@@ -389,14 +383,13 @@
   height: 30px;
   width: 30px;
 }
-.commentBar .commentBarContent .smile-emoji,
-.commentBar .commentBarContent .upload-emoji {
+.commentBar .commentBarContent .smile-emoji, .commentBar .commentBarContent .upload-emoji {
   display: none;
 }
 
 nav {
   -webkit-backdrop-filter: blur(75px);
-  backdrop-filter: blur(75px);
+          backdrop-filter: blur(75px);
   box-shadow: 0px 0px 1px 0px black;
   position: sticky;
   top: 0;
@@ -496,10 +489,10 @@ body .username {
 body .loader {
   animation: spin 2s linear infinite;
   border: 5px dotted #0b173d;
-  border-bottom-color: #34a853;
-  border-left-color: #fbbc05;
-  border-right-color: #4285f4;
-  border-top-color: #eb4335;
+  border-bottom-color: #34A853;
+  border-left-color: #FBBC05;
+  border-right-color: #4285F4;
+  border-top-color: #EB4335;
   border-radius: 50%;
   display: none;
   height: 25px;
@@ -514,8 +507,7 @@ body .loader {
     transform: rotate(360deg);
   }
 }
-body .show,
-body .load {
+body .show, body .load {
   display: inline;
 }
 body .hiddenn {
@@ -572,15 +564,14 @@ body #root {
 body #root .h-hide {
   display: none;
 }
-body #root #detail,
-body #root #pre-home {
+body #root #detail, body #root #pre-home {
   flex: 1;
   height: 100%;
   overflow: hidden;
 }
 body #root #sidebar {
   -webkit-backdrop-filter: blur(75px);
-  backdrop-filter: blur(75px);
+          backdrop-filter: blur(75px);
   box-shadow: 0px 20px 20px 0px rgba(0, 0, 0, 0.2);
   height: 100%;
   overflow: visible;
@@ -712,7 +703,7 @@ body #root #bottombar .ellipsis-popup {
 }
 body #root #bottombar #more {
   -webkit-backdrop-filter: blur(75px);
-  backdrop-filter: blur(75px);
+          backdrop-filter: blur(75px);
   border-radius: 20px 20px 0 0;
   bottom: 0;
   padding: 0.5em 1em;
@@ -749,7 +740,7 @@ body #root #bottombar #content {
   flex-direction: row;
   justify-content: space-evenly;
   -webkit-backdrop-filter: blur(75px);
-  backdrop-filter: blur(75px);
+          backdrop-filter: blur(75px);
   bottom: 0;
   box-shadow: 0px 20px 20px 0px rgba(0, 0, 0, 0.2);
   overflow: auto;
@@ -784,4 +775,4 @@ body #root #bottombar #content .bottombar .bottombar-icon img {
 body #root #bottombar #content .bottombar .bottombar-icon svg {
   height: 22px;
   width: 22px;
-} /*# sourceMappingURL=style.css.map */
+}/*# sourceMappingURL=style.css.map */

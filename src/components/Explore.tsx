@@ -80,7 +80,7 @@ function ExploreCell({ post, onClick }: { post: PostSchema; onClick: (postId: st
 
 // ─── main component ───────────────────────────────────────────────────────────
 const Explore = () => {
-  const { success, loadMoreAvatars, avatarsHasMore, avatarsLoadingMore, setReload } = usePosts();
+  const { success, setReload } = usePosts();
   const router = useRouter();
 
   const [posts, setPosts] = useState<PostSchema[]>([]);
@@ -89,19 +89,13 @@ const Explore = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [nextSkip, setNextSkip] = useState(0);
-  /** When set, status strip uses this until cleared (cache hydrate or explicit refresh). */
-  const [statusStripOverride, setStatusStripOverride] = useState<string[] | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const statusStripRef = useRef<HTMLDivElement>(null);
   const lastExplorePaginationRef = useRef<PaginationMeta | null>(null);
-
-  const statusAvatars = statusStripOverride ?? success ?? [];
 
   const hardReloadExplore = useCallback(() => {
     clearExplorePostsCache();
-    setStatusStripOverride(null);
     setReload((x) => !x);
     setError(null);
     setLoading(true);
@@ -131,11 +125,6 @@ const Explore = () => {
       setNextSkip(cached.pagination.skip + cached.pagination.limit);
       setHasMore(cached.pagination.hasMore);
       lastExplorePaginationRef.current = cached.pagination;
-      if (cached.statusUrls?.length) {
-        setStatusStripOverride(cached.statusUrls);
-      } else {
-        setStatusStripOverride(null);
-      }
       setLoading(false);
       setError(null);
       return;
@@ -215,20 +204,6 @@ const Explore = () => {
     return () => observer.disconnect();
   }, [loadMore]);
 
-  // avatar strip pagination
-  useEffect(() => {
-    const strip = statusStripRef.current;
-    if (!strip) return;
-    const onScroll = () => {
-      const nearEnd = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 24;
-      if (nearEnd && avatarsHasMore && !avatarsLoadingMore) {
-        loadMoreAvatars();
-      }
-    };
-    strip.addEventListener("scroll", onScroll, { passive: true });
-    return () => strip.removeEventListener("scroll", onScroll);
-  }, [avatarsHasMore, avatarsLoadingMore, loadMoreAvatars]);
-
   return (
     <div
       ref={containerRef}
@@ -254,37 +229,6 @@ const Explore = () => {
           </div>
         </div>
       </header>
-
-      {/* Avatar strip */}
-      <div className="pre-status pl-2 m-2 overflow-x-auto" ref={statusStripRef}>
-        <div className="status p-2 flex flex-nowrap items-center justify-start gap-4 w-max min-h-[52px]">
-          {loading &&
-            !statusAvatars.length &&
-            Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton
-                key={"uidg" + i}
-                className="size-10 shrink-0 rounded-full ring-4 ring-brand"
-              />
-            ))}
-          {!loading &&
-            statusAvatars.length > 0 &&
-            statusAvatars.map((status, index) => (
-              <Avatar
-                key={`${status}-${index}`}
-                className="status-child shrink-0 border-4 border-transparent size-16 ring-4 ring-brand"
-              >
-                <AvatarImage src={status} />
-                <AvatarFallback>
-                  <Image src="/default.jpeg" alt="avatar" width={64} height={64} />
-                </AvatarFallback>
-              </Avatar>
-            ))}
-          {avatarsLoadingMore && (
-            <Skeleton className="size-10 shrink-0 rounded-full ring-4 ring-brand" />
-          )}
-          {!loading && error && <RefreshCw size={30} />}
-        </div>
-      </div>
 
       {/* Explore Grid */}
       <main className="max-w-screen-sm mx-auto p-1">

@@ -142,7 +142,7 @@ export default function ConnectionsClient({
       : `@${username} is not following anyone yet.`;
 
   return (
-    <div className="h-screen max-h-screen w-full overflow-auto dark:bg-black">
+    <div className="h-screen max-h-screen w-full overflow-auto">
       <div className="sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg">
         <button
           type="button"
@@ -158,7 +158,7 @@ export default function ConnectionsClient({
         </Link>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full backdrop-blur-lg">
         <TabsList className="grid h-12 w-full grid-cols-2 rounded-none border-b border-gray-200 bg-transparent p-0 text-gray-600 dark:border-gray-800 dark:text-gray-400">
           <TabsTrigger
             value="followers"

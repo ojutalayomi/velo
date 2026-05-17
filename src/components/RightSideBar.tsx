@@ -55,7 +55,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   return (
     <div
       className={cn(
-        `${pathname?.includes("/accounts") || pathname?.includes("/chats") ? "!hidden" : ""} min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
+        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") ? "!hidden" : ""} min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
         className
       )}
       {...props}

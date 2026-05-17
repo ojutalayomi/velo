@@ -311,7 +311,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       "post_reaction_response",
       (data: { message: string; success: boolean; postId: string; reaction: ReactionType }) => {
         // alert(data.message);
-        if (data.success) return;
+        // if (data.success) return;
         dispatch(
           updatePost({
             id: data.postId,

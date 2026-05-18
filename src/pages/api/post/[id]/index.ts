@@ -74,7 +74,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         .json({ error: "Oops! Post not found. You can search for other things." });
     } catch (err) {
       console.error("Error: ", err);
-      res.status(500).json({ error: err });
+      res.status(500).json({ error: "Internal server error." });
     }
   } else {
     res.status(405).json({ message: "Method Not Allowed" });

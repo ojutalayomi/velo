@@ -31,7 +31,7 @@ import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { PostSchema } from "@/lib/types/type";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
-import MediaSlide from "@/templates/mediaSlides";
+import ThreadsSlide from "@/templates/ThreadSlides";
 import { updateLiveTime } from "@/templates/PostProps";
 
 import CropMediaInterface from "./CropMediaInterface";
@@ -564,7 +564,7 @@ function MiniPostCard({
           ) : null}
           {/* {showMore} */}
           {post.Image.length > 0 && type !== "comment" && (
-            <MediaSlide
+            <ThreadsSlide
               className={`overflow-auto rounded-lg ${!post.Caption.length ? "col-span-2" : ""}`}
               postData={post}
             />

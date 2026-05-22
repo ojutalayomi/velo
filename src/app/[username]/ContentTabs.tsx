@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { RootState } from "@/redux/store";
-import MediaSlide from "@/templates/mediaSlides";
+import ThreadsSlide from "@/templates/ThreadSlides";
 
 type ID = "comment" | "post" | "share" | "media" | "bookmark";
 // Tab sections
@@ -132,7 +132,7 @@ export default function ContentSection({
                         {filteredPosts.map((post, index) => {
                           if (tab.id === "media") {
                             return (
-                              <MediaSlide
+                              <ThreadsSlide
                                 className="aspect-square"
                                 postData={post}
                                 isLink

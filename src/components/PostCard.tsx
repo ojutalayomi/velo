@@ -54,7 +54,7 @@ import { RootState } from "@/redux/store";
 import PostMaker from "./PostMaker";
 import ShareButton from "./ShareButton";
 import { Skeleton } from "./ui/skeleton";
-import MediaSlide from "../templates/mediaSlides";
+import ThreadsSlide from "../templates/ThreadSlides";
 import { Post, formatNo, timeFormatter, updateLiveTime } from "../templates/PostProps";
 
 type PostComponentProps = {
@@ -457,7 +457,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         </div>
         {/* {showMore} */}
         {data?.Image.length > 0 && showMedia && (
-          <MediaSlide
+          <ThreadsSlide
             postData={data}
             className={`${containsPost ? "" : "max-h-96"} ${data?.Image.length > 0 ? "mb-2 overflow-hidden rounded-xl" : ""}`}
             isLink
@@ -655,7 +655,7 @@ function QuotedPostCard({handleActivePost, originalPost, time1}: {handleActivePo
             ) : null}
             {/* {showMore} */}
             {originalPost.Image.length > 0 && (
-              <MediaSlide
+              <ThreadsSlide
                 className={`overflow-auto rounded-lg ${!(originalPost?.Caption?.length > 0) ? "col-span-2" : ""}`}
                 postData={originalPost} />
             )}

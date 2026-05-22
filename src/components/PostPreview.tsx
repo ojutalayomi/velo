@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import SwiperCore from "swiper";
 import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Bookmark } from "lucide-react";
-import { Comments, formatNo, Post } from "@/templates/PostProps";
+import { Comments, formatNo } from "@/templates/PostProps";
 import { PostSchema } from "@/lib/types/type";
 import type { PaginationMeta } from "@/lib/apiPagination";
 
 import { fetchCommentsPage, getPost } from "../lib/getStatus";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
-import MediaSlide from "@/templates/mediaSlides";
 import { Search } from "lucide-react";
 import { useUser } from "@/app/providers/UserProvider";
 import ImageContent from "@/components/imageContent";
@@ -26,6 +25,7 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import ShareButton from "./ShareButton";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import PostAnalytics from "./PostAnalytics";
+import MediaSlides from "@/templates/mediaSlides";
 
 interface Params {
   username?: string;
@@ -278,7 +278,7 @@ const PostPreview: React.FC = () => {
               <div className="loader size-7 show"></div>
             </div>
           ) : post ? (
-            <MediaSlide className="w-full h-full" postData={post || {}} />
+            <MediaSlides className="w-full h-full" postData={post || {}} />
           ) : (
             postError && (
               <div className="flex flex-col items-center justify-center w-full h-full">

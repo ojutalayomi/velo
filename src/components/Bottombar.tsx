@@ -144,7 +144,7 @@ const Root: React.FC<BottombarProps> = ({
             )}
             {/* <div>Chats</div> */}
           </div>
-          {loading ? (
+          {!loading ? (
             <Drawer open={open} onOpenChange={setOpen}>
               <DrawerTrigger>
                 <Avatar>

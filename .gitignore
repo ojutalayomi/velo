@@ -1,5 +1,6 @@
 *
 !.gitignore
+!ojutalayomi-react-textarea-enhanced-1.4.0.tgz
 !src/
 !src/**
 !velo/

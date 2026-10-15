@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Button } from "./ui/button";
 import Image from "next/image";
-import { signIn, signOut } from "next-auth/react";
+import { signIn } from "next-auth/react";
 
 const Wrapper = ({
   auth,
@@ -12,131 +12,88 @@ const Wrapper = ({
   header?: ReactNode;
   body: ReactNode;
 }) => {
-  const handleClick = (provider: string) => {
-    signIn(provider);
-  };
-
   return (
-    <div className="flex w-full max-w-lg flex-col items-stretch justify-center gap-2 rounded-lg p-4 sm:shadow-xl sm:backdrop-blur">
-      <div className="flex items-center justify-center sm:hidden">
-        <Image
-          src="/velo11.png"
-          className="-ml-5 -mr-2 size-10"
-          height={100}
-          width={70}
-          alt="brand logo"
-        />
-        <abbr className="mt-1 !text-3xl font-bold" title="Velo is?">
-          elo
-        </abbr>
-      </div>
-      {header}
-      <div className="flex flex-col gap-2 ">
-        {auth ? (
-          <div className="flex items-center justify-center gap-2 px-2">
-            <Button
-              onClick={() => handleClick("google")}
-              className="google flex w-full items-center justify-center gap-2 rounded-lg bg-transparent p-2 text-black shadow hover:bg-primary/10 dark:bg-black dark:text-white dark:hover:bg-primary/90"
-              disabled={!auth}
-            >
-              <svg
-                className="size-5"
-                viewBox="-0.5 0 48 48"
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
-                xmlnsXlink="http://www.w3.org/1999/xlink"
-                fill="#000000"
-              >
-                <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-                <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
-                <g id="SVGRepo_iconCarrier">
-                  {" "}
-                  <title>Google-color</title> <desc>Created with Sketch.</desc> <defs> </defs>{" "}
-                  <g id="Icons" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-                    {" "}
-                    <g id="Color-" transform="translate(-401.000000, -860.000000)">
-                      {" "}
-                      <g id="Google" transform="translate(401.000000, 860.000000)">
-                        {" "}
-                        <path
-                          d="M9.82727273,24 C9.82727273,22.4757333 10.0804318,21.0144 10.5322727,19.6437333 L2.62345455,13.6042667 C1.08206818,16.7338667 0.213636364,20.2602667 0.213636364,24 C0.213636364,27.7365333 1.081,31.2608 2.62025,34.3882667 L10.5247955,28.3370667 C10.0772273,26.9728 9.82727273,25.5168 9.82727273,24"
-                          id="Fill-1"
-                          fill="#FBBC05"
-                        >
-                          {" "}
-                        </path>{" "}
-                        <path
-                          d="M23.7136364,10.1333333 C27.025,10.1333333 30.0159091,11.3066667 32.3659091,13.2266667 L39.2022727,6.4 C35.0363636,2.77333333 29.6954545,0.533333333 23.7136364,0.533333333 C14.4268636,0.533333333 6.44540909,5.84426667 2.62345455,13.6042667 L10.5322727,19.6437333 C12.3545909,14.112 17.5491591,10.1333333 23.7136364,10.1333333"
-                          id="Fill-2"
-                          fill="#EB4335"
-                        >
-                          {" "}
-                        </path>{" "}
-                        <path
-                          d="M23.7136364,37.8666667 C17.5491591,37.8666667 12.3545909,33.888 10.5322727,28.3562667 L2.62345455,34.3946667 C6.44540909,42.1557333 14.4268636,47.4666667 23.7136364,47.4666667 C29.4455,47.4666667 34.9177955,45.4314667 39.0249545,41.6181333 L31.5177727,35.8144 C29.3995682,37.1488 26.7323182,37.8666667 23.7136364,37.8666667"
-                          id="Fill-3"
-                          fill="#34A853"
-                        >
-                          {" "}
-                        </path>{" "}
-                        <path
-                          d="M46.1454545,24 C46.1454545,22.6133333 45.9318182,21.12 45.6113636,19.7333333 L23.7136364,19.7333333 L23.7136364,28.8 L36.3181818,28.8 C35.6879545,31.8912 33.9724545,34.2677333 31.5177727,35.8144 L39.0249545,41.6181333 C43.3393409,37.6138667 46.1454545,31.6490667 46.1454545,24"
-                          id="Fill-4"
-                          fill="#4285F4"
-                        >
-                          {" "}
-                        </path>{" "}
-                      </g>{" "}
-                    </g>{" "}
-                  </g>{" "}
-                </g>
-              </svg>
-              <b className="font-semibold">Google</b>
-            </Button>
-            <Button
-              onClick={() => handleClick("facebook")}
-              className="facebook hidden w-full items-center justify-center gap-2 rounded-lg bg-transparent p-2 text-black shadow hover:bg-primary/10 dark:bg-black dark:text-white dark:hover:bg-primary/90"
-              disabled
-            >
-              <svg
-                className="size-5"
-                viewBox="0 0 48 48"
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
-                xmlnsXlink="http://www.w3.org/1999/xlink"
-                fill="#000000"
-              >
-                <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-                <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
-                <g id="SVGRepo_iconCarrier">
-                  {" "}
-                  <title>Facebook-color</title> <desc>Created with Sketch.</desc> <defs> </defs>{" "}
-                  <g id="Icons" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-                    {" "}
-                    <g id="Color-" transform="translate(-200.000000, -160.000000)" fill="#4460A0">
-                      {" "}
-                      <path
-                        d="M225.638355,208 L202.649232,208 C201.185673,208 200,206.813592 200,205.350603 L200,162.649211 C200,161.18585 201.185859,160 202.649232,160 L245.350955,160 C246.813955,160 248,161.18585 248,162.649211 L248,205.350603 C248,206.813778 246.813769,208 245.350955,208 L233.119305,208 L233.119305,189.411755 L239.358521,189.411755 L240.292755,182.167586 L233.119305,182.167586 L233.119305,177.542641 C233.119305,175.445287 233.701712,174.01601 236.70929,174.01601 L240.545311,174.014333 L240.545311,167.535091 C239.881886,167.446808 237.604784,167.24957 234.955552,167.24957 C229.424834,167.24957 225.638355,170.625526 225.638355,176.825209 L225.638355,182.167586 L219.383122,182.167586 L219.383122,189.411755 L225.638355,189.411755 L225.638355,208 L225.638355,208 Z"
-                        id="Facebook"
-                      >
-                        {" "}
-                      </path>{" "}
-                    </g>{" "}
-                  </g>{" "}
-                </g>
-              </svg>
-              <b className="font-semibold">Facebook</b>
-            </Button>
-          </div>
-        ) : null}
-        <div className="flex items-center justify-center gap-2">
-          <hr className="w-1/3" />
-          <div className="flex-1">Or {auth?.toLowerCase()}</div>
-          <hr className="w-1/3" />
+    <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border/50 bg-white shadow-2xl dark:border-white/[0.08] dark:bg-zinc-900">
+      {/* Brand accent strip */}
+      <div className="h-1 w-full bg-gradient-to-r from-brand/40 via-brand to-brand/40" />
+
+      <div className="flex flex-col gap-6 px-7 py-8">
+        {/* Logo — always visible so mobile users see branding */}
+        <div className="flex sm:hidden items-center justify-center gap-0.5">
+          <Image
+            src="/velo11.png"
+            className="-mr-3 size-10 drop-shadow-sm"
+            height={100}
+            width={70}
+            alt="Velo logo"
+          />
+          <span className="text-[2rem] font-bold leading-none tracking-tight">elo</span>
         </div>
-        {body}
+
+        {/* Slot: page-level heading / subtitle / nav link */}
+        {header && <div className="flex flex-col gap-1.5">{header}</div>}
+
+        <div className="flex flex-col gap-4">
+          {/* OAuth */}
+          {auth ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => signIn("google")}
+                className="h-11 w-full gap-3 border-border/70 text-sm font-medium
+                           transition-all duration-200
+                           hover:border-brand/50 hover:bg-brand/5 hover:text-foreground
+                           dark:hover:bg-brand/10"
+              >
+                <GoogleIcon />
+                Continue with Google
+              </Button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <hr className="flex-1 border-border/50" />
+                <span className="text-[0.7rem] font-semibold uppercase tracking-widest text-muted-foreground">
+                  or {auth.toLowerCase()} with email
+                </span>
+                <hr className="flex-1 border-border/50" />
+              </div>
+            </>
+          ) : null}
+
+          {/* Slot: form */}
+          {body}
+        </div>
       </div>
     </div>
   );
 };
+
+const GoogleIcon = () => (
+  <svg
+    className="size-5 shrink-0"
+    viewBox="-0.5 0 48 48"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <g fill="none" fillRule="evenodd">
+      <path
+        d="M9.827 24c0-1.524.253-2.986.705-4.356L2.623 13.604A23.3 23.3 0 0 0 .214 24c0 3.736.867 7.261 2.406 10.388l7.905-6.051A13.17 13.17 0 0 1 9.827 24"
+        fill="#FBBC05"
+      />
+      <path
+        d="M23.714 10.133c3.311 0 6.302 1.174 8.652 3.094L39.202 6.4C35.036 2.773 29.695.533 23.714.533c-9.287 0-17.268 5.311-21.09 13.071l7.909 6.04c1.822-5.532 7.017-9.511 13.181-9.511"
+        fill="#EB4335"
+      />
+      <path
+        d="M23.714 37.867c-6.165 0-11.36-3.979-13.182-9.511l-7.908 6.038c3.821 7.761 11.802 13.072 21.09 13.072 5.732 0 11.204-2.035 15.311-5.848l-7.507-5.804c-2.118 1.334-4.785 2.053-7.804 2.053"
+        fill="#34A853"
+      />
+      <path
+        d="M46.145 24c0-1.387-.186-2.877-.506-4.267H23.714v9.067h12.604c-.63 3.091-2.346 5.468-4.8 7.014l7.507 5.805C43.339 37.614 46.145 31.65 46.145 24"
+        fill="#4285F4"
+      />
+    </g>
+  </svg>
+);
+
 export default Wrapper;

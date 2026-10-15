@@ -114,21 +114,20 @@ const Login: React.FC = () => {
     <Wrapper
       auth="Sign in"
       header={
-        <div className="flex flex-col gap-2">
-          <h1 className="mb-2 text-center text-2xl font-bold">Sign in to your account today.</h1>
-          <h2>
-            Don&apos;t have an account?
-            <Link className="text-brand transition-all hover:underline" href="/accounts/signup">
-              {" "}
-              Sign Up
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-bold tracking-tight">Welcome back</h1>
+          <p className="text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link className="font-medium text-brand transition-colors hover:underline" href="/accounts/signup">
+              Sign up
             </Link>
-          </h2>
+          </p>
         </div>
       }
       body={
-        <form className="space-y-2 p-2" onSubmit={handleSubmit}>
-          <div className="flex flex-col justify-between gap-2">
-            <label className="text-start font-semibold">Username or Email</label>
+        <form className="space-y-3" onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-1.5">
+            {/*<label className="text-sm font-medium">Username or Email</label>*/}
             <Input
               className="input1 font-semibold"
               type="text"
@@ -142,8 +141,8 @@ const Login: React.FC = () => {
             />
             {errors.UsernameOrEmail && <div className="warning">{errors.UsernameOrEmail}</div>}
           </div>
-          <div className="flex flex-col justify-between gap-2">
-            <label className="text-start font-semibold">Password</label>
+          <div className="flex flex-col gap-1.5">
+            {/*<label className="text-sm font-medium">Password</label>*/}
             <div className="relative">
               <Input
                 className="font-semibold"
@@ -159,23 +158,22 @@ const Login: React.FC = () => {
               <FontAwesomeIcon
                 onClick={() => setIsEye(!isEye)}
                 icon={isEye ? "eye-slash" : "eye"}
-                className="icon-eye absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-400"
-                size="lg"
+                className="icon-eye absolute right-4 top-1/2 -translate-y-1/2 transform text-gray-400"
               />
             </div>
             {errors.password && <div className="warning">{errors.password}</div>}
             {error && <div className="warning">{error}</div>}
           </div>
-          <div className="forgot-password">
+          <div className="flex justify-end">
             <Link
-              className="text-brand transition-all hover:underline"
+              className="text-xs text-muted-foreground transition-colors hover:text-brand"
               href="/accounts/forgot-password"
             >
-              Forgot Password?
+              Forgot password?
             </Link>
           </div>
           <Button
-            className="w-full rounded-lg bg-brand p-2 font-semibold text-white shadow"
+            className="h-10 w-full bg-brand font-semibold text-white shadow-sm hover:bg-brand/90 active:scale-[0.98] transition-all"
             disabled={loading}
           >
             {loading ? (

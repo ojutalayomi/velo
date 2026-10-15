@@ -39,12 +39,12 @@ const First: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-2">
-        <label
+        {/*<label
           className="text-start font-semibold after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base"
           htmlFor="firstname"
         >
           Firstname
-        </label>
+        </label>*/}
         <Input
           className="font-semibold"
           type="text"
@@ -59,12 +59,12 @@ const First: React.FC = () => {
         {errors.firstname && <div className="warning">{errors.firstname}</div>}
       </div>
       <div className="flex flex-col justify-between gap-2">
-        <label
+        {/*<label
           className="text-start font-semibold after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base"
           htmlFor="lastname"
         >
           Lastname
-        </label>
+        </label>*/}
         <Input
           className="font-semibold"
           type="text"

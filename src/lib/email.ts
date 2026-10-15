@@ -64,9 +64,9 @@ function generateEmailHtml({
   </style>
 </head>
 <body>
-  <div class="success-message">
+  <div class=" success-message">
     ${imageSrc ? `<img alt="${escapeHtml(imageAlt)}" style="${escapeHtml(style)}" src="${escapeHtml(imageSrc)}">` : ""}
-    <div class="success-message-content" style="flex-direction: column;">
+    <div class=" success-message-content" style="flex-direction: column;">
       <h1>Dear ${escapeHtml(firstname)} ${escapeHtml(lastname)},</h1>
       ${heading ? `<h2>${escapeHtml(heading)}</h2>` : ""}
       ${message ? `<h4>${escapeHtml(message)}</h4>` : ""}
@@ -84,7 +84,7 @@ function generateEmailHtml({
     </div>
   </div>
   <div class="attribution">
-    Coded by <a style="text-decoration: none;" href="https://x.com/ojutalayomi">Ayomide Ojutalayo</a>.
+    Developed by <a style="text-decoration: none;" href="https://ojutalayo.tech">Ayomide Ojutalayo</a>.
   </div>
 </body>
 </html>`;

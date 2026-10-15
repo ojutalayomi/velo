@@ -103,7 +103,7 @@ const Comps: React.FC = () => {
       header={
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold text-center">Sign Up</h1>
-          <h2>
+          <h2 className="text-center">
             Already have an account?
             <Link className="text-brand hover:underline transition-all" href="/accounts/login">
               {" "}
@@ -128,7 +128,7 @@ const Comps: React.FC = () => {
           })()}
           <div className="forgot-password">
             <Link
-              className="text-brand hover:underline transition-all"
+              className="text-xs text-muted-foreground transition-colors hover:text-brand"
               href="/accounts/forgot-password"
             >
               Forgot Password?

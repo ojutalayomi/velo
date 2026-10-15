@@ -430,7 +430,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   }, [searchParams, searchQuery]);
 
   const options = [
-    { id: 1, name: "View contact", action: () => router.push(`/${otherPerson.username}`) },
+    { id: 1, name: "View contact", action: () => router.push(`/chats/${pid}/settings`) },
     {
       id: 2,
       name: "Search",

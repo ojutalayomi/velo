@@ -93,7 +93,7 @@ const sendSignInEmail = async (
     subject: "Sign-in Successful", // Subject line
     html: template({
       subject: "Sign-in Successful",
-      heading: "You have successfully signed in to Noow App!",
+      heading: "You have successfully signed in to Velo App!",
       message: `I hope you enjoy your time on our app. You signed in at ${time}.`,
       firstname,
       lastname,

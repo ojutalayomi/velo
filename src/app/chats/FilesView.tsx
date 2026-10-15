@@ -1,49 +1,69 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable tailwindcss/no-custom-classname */
 /* eslint-disable @next/next/no-img-element */
 import { saveAs } from "file-saver";
-import { ChevronDown, ChevronUp, Download, File, Share } from "lucide-react";
+import { Download, FileText, Share } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import { DocCard } from "@/components/DocCard";
 import ImageDiv from "@/components/imageDiv";
 import {
   Carousel,
+  CarouselApi,
   CarouselContent,
   CarouselItem,
-  CarouselPrevious,
   CarouselNext,
-  CarouselApi,
+  CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Attachment } from "@/lib/types/type";
+import { cn, formatFileSize, updateLiveTime } from "@/lib/utils";
 import VideoDiv from "@/templates/videoDiv";
-import { updateLiveTime } from "@/lib/utils";
 
 const downloadFile = (url: string, filename: string) => {
   saveAs(url, filename);
 };
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+// Resolve a friendly extension label + theme from a MIME subtype.
+const fileMeta = (subtype?: string) => {
+  if (!subtype) return { label: "FILE", icon: "text-gray-500", chip: "bg-gray-500/10" };
+
+  let ext = subtype;
+  if (subtype.startsWith("vnd.openxmlformats-officedocument.wordprocessingml")) ext = "docx";
+  else if (subtype.startsWith("vnd.openxmlformats-officedocument.spreadsheetml")) ext = "xlsx";
+  else if (subtype.startsWith("vnd.openxmlformats-officedocument.presentationml")) ext = "pptx";
+  else if (subtype.includes(".")) ext = subtype.split(".").pop() || subtype;
+
+  const label = ext.toUpperCase();
+
+  switch (ext) {
+    case "pdf":
+      return { label, icon: "text-red-500", chip: "bg-red-500/10" };
+    case "doc":
+    case "docx":
+      return { label, icon: "text-blue-500", chip: "bg-blue-500/10" };
+    case "xls":
+    case "xlsx":
+    case "csv":
+      return { label, icon: "text-green-500", chip: "bg-green-500/10" };
+    case "ppt":
+    case "pptx":
+      return { label, icon: "text-orange-500", chip: "bg-orange-500/10" };
+    case "zip":
+    case "rar":
+    case "7z":
+      return { label, icon: "text-amber-500", chip: "bg-amber-500/10" };
+    default:
+      return { label, icon: "text-gray-500", chip: "bg-gray-500/10" };
+  }
 };
 
 export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: string })[] }) => {
@@ -51,150 +71,102 @@ export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: str
   const mediaLength = media.length;
   const moreThanFour = mediaLength > 4;
   const excess = mediaLength - 4;
-  const mediaType = media.map((m) => m.type.split("/")[0])[0];
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const fileColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "pdf":
-        return "red-500";
-      case "doc":
-      case "docx":
-        return "blue-500";
-      case "xls":
-      case "xlsx":
-      case "csv":
-        return "green-500";
-      case "ppt":
-      case "pptx":
-        return "orange-500";
-      case "jpg":
-      case "jpeg":
-      case "png":
-      case "gif":
-        return "purple-500";
-      case "mp4":
-      case "avi":
-      case "mov":
-        return "pink-500";
-      case "mp3":
-      case "wav":
-        return "yellow-500";
-      default:
-        return "gray-500";
-    }
-  };
+  const mediaType = media.map((m) => m.type?.split("/")[0])[0];
+  const isImage = mediaType === "image";
 
   return (
-    <div
-      className={`w-full ${mediaType === "image" ? "bg-gray-100" : "bg-transparent"} overflow-hidden rounded-lg shadow-lg dark:bg-zinc-800`}
-    >
-      {/* <div className="p-2 text-xs flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-pink-400">~Dara🤫</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400">+234 708 933 73</span>
-        </div>
-      </div> */}
+    <div className="w-full overflow-hidden rounded-xl">
       <MediaDialog files={media} mediaDialog={mediaDialog} toggleMediaDialog={toggleMediaDialog} />
-      {mediaType === "image" ? (
-        <div className="grid grid-cols-2 gap-2 p-2 text-xs">
+
+      {isImage ? (
+        <div className={cn("grid gap-1.5", mediaLength === 1 ? "grid-cols-1" : "grid-cols-2")}>
           {media.map((m, key) => {
             if (moreThanFour && key > 2) return null;
+
+            const single = mediaLength === 1;
+            const wideThird = key === 2 && mediaLength === 3;
+
             return (
-              <div
+              <button
+                type="button"
                 key={m.name}
                 onClick={() => toggleMediaDialog({ open: true, index: key })}
-                className={`${key === 2 && mediaLength === 3 ? "col-span-2 row-span-1 aspect-video" : "aspect-square"} ${mediaLength === 1 && "col-span-2"} group relative cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300`}
+                className={cn(
+                  "group relative cursor-pointer overflow-hidden rounded-xl bg-gray-100 transition hover:ring-2 hover:ring-brand/60 dark:bg-neutral-800",
+                  single ? "aspect-video" : wideThird ? "col-span-2 aspect-video" : "aspect-square"
+                )}
               >
                 <img src={m.url} alt={m.name} className="size-full object-cover" />
-                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">
+                <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-sm">
                   {updateLiveTime("chat-time", m.uploadedAt)}
-                </div>
-              </div>
+                </span>
+              </button>
             );
           })}
+
           {moreThanFour && (
-            <div onClick={() => toggleMediaDialog({ open: true, index: 3 })} className="relative">
-              <div className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-white transition hover:ring-2 hover:ring-gray-300">
-                <img src={media[3].url} alt={media[3].name} className="size-full object-cover" />
-                <div className="absolute bottom-2 right-2 dark:bg-black/70 bg-white px-2 py-1 rounded dark:text-white text-xs">
-                  {updateLiveTime("chat-time", media[3].uploadedAt)}
-                </div>
-              </div>
-              <div className="group absolute inset-0 flex aspect-square items-center justify-center rounded-lg text-2xl font-light text-gray-400 backdrop-blur-sm transition hover:bg-gray-700">
+            <button
+              type="button"
+              onClick={() => toggleMediaDialog({ open: true, index: 3 })}
+              className="relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-gray-100 transition hover:ring-2 hover:ring-brand/60 dark:bg-neutral-800"
+            >
+              <img src={media[3].url} alt={media[3].name} className="size-full object-cover" />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-semibold text-white backdrop-blur-sm">
                 +{excess}
               </div>
-            </div>
+            </button>
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-2 p-1">
+        <div className="flex flex-col gap-2">
           {media.map((m) => {
-            const type = m.type.split("/")[1];
-            const type1 = () => {
-              if (type === "vnd.openxmlformats-officedocument.wordprocessingml.document") {
-                return "docx";
-              } else if (type === "vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
-                return "xlxs";
-              }
-              return type;
-            };
-            const clr = fileColor(type1());
+            const [, subtype] = m.type?.split("/") || [];
+            const { label, icon, chip } = fileMeta(subtype);
+
             return (
               <div
                 key={m.name}
-                // onClick={() => toggleMediaDialog({open: true, index: key})}
-                className={`group flex items-center gap-2 overflow-hidden rounded-lg bg-gray-100 p-2 text-xs shadow-lg transition hover:ring-1 hover:ring-gray-300 dark:bg-neutral-950`}
+                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700/70"
               >
                 <div
-                  aria-label={m.name}
-                  className="relative flex aspect-square items-center justify-center rounded-lg p-2 shadow-md dark:bg-zinc-800"
+                  className={cn(
+                    "relative flex size-11 shrink-0 items-center justify-center rounded-lg",
+                    chip
+                  )}
                 >
-                  <div
-                    className={`text-${clr} absolute bg-gray-100 -right-1.5 top-0 rounded-lg border p-1 text-xs dark:bg-neutral-950`}
-                  >
-                    {type1()?.toUpperCase()}
-                  </div>
-                  <File className={`text-${clr}`} size={40} />
+                  <FileText className={icon} size={22} />
+                  <span className="absolute -right-1.5 -top-1.5 rounded-md border border-gray-200 bg-white px-1 text-[9px] font-semibold text-gray-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-300">
+                    {label}
+                  </span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-gray-400">{m.name}</span>
-                  <div className="flex items-center gap-2">
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {m.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                     {m.size && (
-                      <span className="text-xs text-gray-500">{formatFileSize(m.size)}</span>
+                      <>
+                        <span>{formatFileSize(m.size)}</span>
+                        <span>•</span>
+                      </>
                     )}
-                    {"•"}
-                    <span className="text-xs text-gray-500">
-                      {updateLiveTime("chat-time", m.uploadedAt)}
-                    </span>
+                    <span>{updateLiveTime("chat-time", m.uploadedAt)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-                    <DropdownMenuTrigger asChild>
-                      {isDropdownOpen ? (
-                        <ChevronDown className="text-gray-400" />
-                      ) : (
-                        <ChevronUp className="text-gray-400" />
-                      )}
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="mr-2 w-auto p-2">
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-3 rounded p-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          downloadFile(m.url || "", m.name);
-                        }}
-                      >
-                        <Download size={16} className="text-gray-400" />
-                        <span className="text-gray-400">Download</span>
-                      </button>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Download file"
+                  className="shrink-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    downloadFile(m.url || "", m.name);
+                  }}
+                >
+                  <Download size={16} />
+                </Button>
               </div>
             );
           })}
@@ -219,9 +191,10 @@ const MediaDialog = ({
   >;
 }) => {
   const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(1);
   const [count, setCount] = useState(0);
-  const [showControls, setShowControls] = useState(false);
+  const showControls = files.length > 1;
+  const activeFile = files[current - 1];
 
   useEffect(() => {
     if (!api) return;
@@ -229,109 +202,87 @@ const MediaDialog = ({
   }, [api, mediaDialog.index]);
 
   useEffect(() => {
-    if (!api) {
-      return;
-    }
+    if (!api) return;
 
-    // Update count and current slide position
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
 
-    // Listen for slide changes
     api.on("select", () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
   }, [api]);
 
-  // Only show controls if there are multiple media items
-  useEffect(() => {
-    if (files.length > 1) {
-      setShowControls(true);
-    }
-  }, [files]);
-
   return (
     <Dialog
       open={mediaDialog.open}
-      onOpenChange={() => {
-        if (mediaDialog) {
-          toggleMediaDialog({ ...mediaDialog, open: !mediaDialog });
-        }
-      }}
+      onOpenChange={(open) => toggleMediaDialog((prev) => ({ ...prev, open }))}
     >
-      <DialogTrigger className="hidden"></DialogTrigger>
-      <DialogContent className="flex h-screen w-screen max-w-none flex-col justify-evenly gap-0 border-none bg-transparent backdrop-blur-xl">
+      <DialogTrigger className="hidden" />
+      <DialogContent className="flex h-screen w-screen max-w-none flex-col justify-between gap-0 border-none bg-black/80 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle className="text-white">Preview</DialogTitle>
-          <DialogDescription className="text-sm font-medium text-white">
-            Files ({current}/{count})
+          <DialogTitle className="truncate pr-6 text-white">{activeFile?.name || "Preview"}</DialogTitle>
+          <DialogDescription className="text-xs font-medium text-gray-400">
+            {current} / {count}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex h-full max-h-[85%] flex-1 rounded-md shadow-xl backdrop-blur-xl">
-          {files && (
-            <Carousel setApi={setApi} className="flex max-h-full w-full flex-1 items-center">
-              <CarouselContent className="flex h-full max-h-full gap-2 sm:aspect-auto">
-                {files.map((file, key) => {
-                  const objectURL = file.url as string;
-                  const [_, fileType] = file.type.split("/");
-                  // console.log(fileType)
-                  const isImage = fileType === "png" || fileType === "jpeg" || fileType === "jpeg";
-                  const isVideo = fileType === "mp4" || fileType === "mov" || fileType === "mkv";
 
-                  return (
-                    <CarouselItem
-                      key={key + file.name}
-                      className="flex size-full items-center justify-center"
-                    >
-                      {
-                        isImage ? (
-                          <ImageDiv media={objectURL} host={false} />
-                        ) : isVideo ? (
-                          <VideoDiv media={objectURL} host={false} />
-                        ) : (
-                          <DocCard className="w-auto" file={file} />
-                        )
-                        // <></>
-                      }
-                    </CarouselItem>
-                  );
-                })}
-              </CarouselContent>
-              {showControls && (
-                <>
-                  <CarouselPrevious className="left-2 hidden sm:flex" />
-                  <CarouselNext className="right-2 hidden sm:flex" />
-                </>
-              )}
-            </Carousel>
-          )}
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <Carousel setApi={setApi} className="flex max-h-full w-full flex-1 items-center">
+            <CarouselContent className="flex h-full max-h-full items-center">
+              {files.map((file, key) => {
+                const objectURL = file.url as string;
+                const isImage = file.type?.startsWith("image/");
+                const isVideo = file.type?.startsWith("video/");
+
+                return (
+                  <CarouselItem
+                    key={key + file.name}
+                    className="flex size-full items-center justify-center"
+                  >
+                    {isImage ? (
+                      <ImageDiv media={objectURL} host={false} />
+                    ) : isVideo ? (
+                      <VideoDiv media={objectURL} host={false} />
+                    ) : (
+                      <DocCard className="w-auto" file={file} />
+                    )}
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+            {showControls && (
+              <>
+                <CarouselPrevious className="left-2 hidden border-0 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 sm:flex" />
+                <CarouselNext className="right-2 hidden border-0 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 sm:flex" />
+              </>
+            )}
+          </Carousel>
         </div>
-        <DialogFooter className="!flex-col items-center gap-2">
-          {/* Total Size Indicator */}
-          <div className="text-sm text-white dark:text-gray-600">
-            {/* Total Size: {formatFileSize(files.reduce((acc, file) => acc + file.size, 0))} */}
-          </div>
-          <div className="flex w-full flex-1 items-center justify-between gap-2 sm:max-w-96">
+
+        <DialogFooter className="items-center justify-center gap-2 sm:justify-center sm:space-x-0">
+          <div className="flex w-full items-center justify-center gap-2 sm:max-w-96">
             <button
               type="button"
-              className="group flex items-center gap-3 rounded px-2 py-3"
+              disabled={!activeFile}
+              className="group flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
               onClick={(e) => {
                 e.preventDefault();
-                downloadFile(files[current].url || "", files[current].name);
+                if (activeFile) downloadFile(activeFile.url || "", activeFile.name);
               }}
             >
-              <Download size={16} className="text-gray-400 group-hover:text-green-500" />
-              <span className="text-gray-400 group-hover:text-green-500">Download</span>
+              <Download size={16} />
+              <span>Download</span>
             </button>
             <button
               type="button"
-              className="group flex items-center gap-3 rounded px-2 py-3"
+              disabled={!activeFile}
+              className="group flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
               onClick={(e) => {
                 e.preventDefault();
               }}
             >
-              <Share size={16} className="text-gray-400 group-hover:text-green-500" />
-              <span className="text-gray-400 group-hover:text-green-500">Share</span>
+              <Share size={16} />
+              <span>Share</span>
             </button>
           </div>
         </DialogFooter>

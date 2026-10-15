@@ -197,7 +197,7 @@ const Homepage: React.FC = () => {
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors relative ${
+              className={`flex-1 py-1 text-sm font-semibold transition-colors relative ${
                 activeTab === tab
                   ? "text-foreground dark:text-slate-100"
                   : "text-muted-foreground hover:text-foreground dark:hover:text-slate-200"
@@ -215,7 +215,7 @@ const Homepage: React.FC = () => {
       <StatusTray />
 
       <div className="h3 dark:!text-slate-200">
-        <h3>Connect with friends and the world around you on noow.</h3>
+        <h3>Connect with friends and the world around you on Velo.</h3>
       </div>
 
       {/* For You Feed */}

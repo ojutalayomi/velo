@@ -289,19 +289,25 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
             )}
 
             {/* Message Bubble */}
-            <div
+            {/* <div
               className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl p-2 ${
                 senderId === userdata._id
                   ? "rounded-br-none bg-brand text-white"
                   : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
-              } text-left`}
+              } text-left`} */}
+            <div
+              className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl px-4 py-2 ${
+                senderId === userdata._id
+                  ? "rounded-br-none outline outline-1 outline-brand"
+                  : "rounded-bl-none shadow-md dark:shadow-zinc-700/50"
+              } text-left bg-gray-50 dark:bg-zinc-800/80 dark:text-white`}
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
             >
               {/* Sender name for other users */}
               {senderId !== userdata._id && message.chatType === "Group" && (
                 <div className="flex items-center justify-between gap-1 mr-4">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <Avatar className="mt-1 size-8">
                       <AvatarImage src={displayPicture} alt={sender} />
                       <AvatarFallback className="border-2 border-white dark:border-black text-xs">
@@ -333,7 +339,8 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                     <>
                       {message.messageType === "Markdown" ? (
                         <div
-                          className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}
+                          // className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}
+                          className="prose prose-sm max-w-none dark:prose-invert"
                         >
                           <Markdown>{contentToDisplay}</Markdown>
                         </div>
@@ -492,7 +499,7 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
               ? "bg-gray-100 dark:bg-zinc-700/50"
               : "bg-gray-100 dark:bg-zinc-700/50"
           }
-          border-l-4 ${senderId === userdata._id ? "border-purple-500" : "border-gray-400"}
+          border-l-4 ${senderId === userdata._id ? "border-brand" : "border-gray-400"}
           transition-all hover:bg-opacity-80
         `}
       >

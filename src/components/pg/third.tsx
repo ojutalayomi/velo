@@ -1,14 +1,11 @@
-//
+"use client";
 import React, { useEffect, useState } from "react";
-// import { Link } from 'react-router-dom';
-import { useRouter } from "next/navigation";
 import { FormData } from "./FormProps";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "../fontAwesomeLibrary";
 import {
   setError,
   setErrors,
-  handleNext,
   handlePrevious,
   updateFormData,
 } from "../../redux/signupSlice";
@@ -17,140 +14,142 @@ import { useAppDispatch } from "../../redux/hooks";
 import { useSelector } from "react-redux";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 
 const Third: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isEye, setIsEye] = useState(true);
   const dispatch = useAppDispatch();
-  const { currentStep, loading, formData, error, error1, errors } = useSelector(
+  const { loading, formData, error, errors } = useSelector(
     (state: RootState) => state.signups
   );
 
-  // const onNext = () => {
-  //   dispatch(handleNext(1));
-  // };
-
   useEffect(() => {
     return () => {
-      if (preview) {
-        URL.revokeObjectURL(preview);
-      }
+      if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);
 
   const isValidPassword = (password: string) => {
-    var re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.,\/#!$%\^&\*;:{}=\-_`~()]).{6,20}$/;
+    const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.,\/#!$%\^&\*;:{}=\-_`~()]).{6,20}$/;
     return re.test(password);
   };
 
   const onInput = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // console.log(error);
     const { name, value } = event.target;
-    // console.log(event.target);
     const newErrors: Partial<Record<keyof FormData, string>> = {};
-    if (name === "password") {
-      if (value.length > 0) {
-        if (!isValidPassword(value)) {
-          newErrors.password =
-            "Password must be 6-20 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.";
-        } else {
-          newErrors.password = "";
-        }
-        dispatch(setError(!!newErrors.password));
-      }
+    if (name === "password" && value.length > 0) {
+      newErrors.password = !isValidPassword(value)
+        ? "6–20 chars, including uppercase, lowercase, number & special character."
+        : "";
+      dispatch(setError(!!newErrors.password));
     }
     dispatch(setErrors(newErrors));
   };
 
-  const onPrevious = () => {
-    dispatch(handlePrevious(1));
-  };
+  const onPrevious = () => dispatch(handlePrevious(1));
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     dispatch(updateFormData({ [name]: value }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      dispatch(updateFormData({ file }));
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemovePhoto = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setPreview(null);
+    dispatch(updateFormData({ file: null }));
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-4">
+    <div className="space-y-5">
+      {/* ── Profile photo uploader ── */}
+      <div className="flex flex-col items-center gap-3">
+        <Input
+          id="file"
+          type="file"
+          className="hidden"
+          onChange={handleFileChange}
+          accept="image/png, image/jpeg"
+        />
+
+        {/* Avatar circle */}
         <div className="relative">
-          <Input
-            id="file"
-            type="file"
-            className="hidden"
-            onChange={(e) => {
-              const files = e.target.files;
-              if (files && files[0]) {
-                dispatch(updateFormData({ file: files[0] }));
-                const objectUrl = URL.createObjectURL(files[0]);
-                setPreview(objectUrl);
-              }
-            }}
-            accept="image/png, image/jpeg"
-          />
           <label
             htmlFor="file"
-            className="cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-brand transition-colors"
+            className="group relative flex size-28 cursor-pointer items-center justify-center"
+            aria-label="Upload profile photo"
           >
-            {preview ? (
-              <div className="relative w-32 h-32">
+            <div
+              className="size-full overflow-hidden rounded-full border-2 border-dashed border-border
+                         bg-muted transition-colors duration-200
+                         group-hover:border-brand"
+            >
+              {preview ? (
                 <img
                   src={preview}
-                  alt="Preview"
-                  className="w-full h-full object-cover rounded-lg"
+                  alt="Profile preview"
+                  className="size-full object-cover"
                 />
-                <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFile(null);
-                    setPreview(null);
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  stroke="currentColor"
-                  fill="none"
-                  viewBox="0 0 48 48"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <p className="mt-1 text-sm text-gray-600">Click to upload image</p>
-                <p className="mt-1 text-xs text-gray-500">PNG, JPG up to 10MB</p>
+              ) : (
+                <div className="flex size-full flex-col items-center justify-center gap-1.5">
+                  <Camera className="size-7 text-muted-foreground transition-colors duration-200 group-hover:text-brand" />
+                  <span className="px-2 text-center text-[10px] font-medium leading-tight text-muted-foreground">
+                    Add photo
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Hover overlay when image is loaded */}
+            {preview && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <Camera className="size-6 text-white drop-shadow" />
               </div>
             )}
           </label>
+
+          {/* Remove button */}
+          {preview && (
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              aria-label="Remove photo"
+              className="absolute -right-0.5 -top-0.5 flex size-6 items-center justify-center
+                         rounded-full bg-destructive text-destructive-foreground shadow-md
+                         transition-colors hover:bg-destructive/80"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Caption */}
+        <div className="flex flex-col items-center gap-0.5 text-center">
+          <p className="text-sm font-medium">Profile photo</p>
+          <p className="text-xs text-muted-foreground">PNG or JPG · optional · max 10 MB</p>
         </div>
       </div>
-      <div className="flex flex-col justify-between gap-2">
-        <label
-          className="text-start font-semibold after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base"
-          htmlFor="password"
-        >
+
+      {/* ── Password ── */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium" htmlFor="password">
           Password
         </label>
         <div className="relative">
           <Input
-            className="font-semibold"
-            type={isEye ? "password" : "text"}
             id="password"
             name="password"
+            type={isEye ? "password" : "text"}
             onInput={onInput}
-            placeholder="Password..."
+            placeholder="Password"
             value={formData.password}
             onChange={onInputChange}
             required
@@ -158,19 +157,31 @@ const Third: React.FC = () => {
           <FontAwesomeIcon
             onClick={() => setIsEye(!isEye)}
             icon={isEye ? "eye-slash" : "eye"}
-            className="icon-eye absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size="lg"
+            className="icon-eye absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
           />
         </div>
-        {errors.password && <div className="warning">{errors.password}</div>}
+        {errors.password && (
+          <p className="text-xs leading-snug text-destructive">{errors.password}</p>
+        )}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <Button type="button" className="bg-brand w-1/2" onClick={onPrevious}>
+
+      {/* ── Actions ── */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="bg-brand w-1/2"
+          onClick={onPrevious}
+        >
           Previous
-          <div className="loader"></div>
         </Button>
-        <Button className="bg-brand w-1/2" disabled={!formData.password || error || loading}>
-          {loading ? <div className="loader show"></div> : <span>Submit</span>}
+        <Button
+          className="h-10 w-1/2 bg-brand font-semibold text-white shadow-sm
+                     transition-all hover:bg-brand/90 active:scale-[0.98]
+                     disabled:cursor-not-allowed"
+          disabled={!formData.password || error || loading}
+        >
+          {loading ? <div className="loader show" /> : <span>Submit</span>}
         </Button>
       </div>
     </div>

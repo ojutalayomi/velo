@@ -106,8 +106,10 @@ const Root: React.FC<BottombarProps> = ({
   return (
     <>
       <div
-        className={`bg-slate-200 fixed bottom-0 left-0 right-0 tablets:hidden z-50 shadow-md rounded-t-md dark:bg-zinc-900 ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
+        className={`bg-slate-200 fixed bottom-0 left-0 right-0 tablets:hidden z-50 shadow-md rounded-t-xl dark:bg-zinc-900 ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
       >
+        {/* Brand accent strip */}
+        <div className="h-0.5 w-full bg-gradient-to-r from-brand/40 via-brand to-brand/40" />
         <div className="!shadow-none py-[10px] flex justify-evenly w-full">
           <div
             onClick={() => handleClick("home")}
@@ -142,7 +144,7 @@ const Root: React.FC<BottombarProps> = ({
             )}
             {/* <div>Chats</div> */}
           </div>
-          {!loading ? (
+          {loading ? (
             <Drawer open={open} onOpenChange={setOpen}>
               <DrawerTrigger>
                 <Avatar>
@@ -291,7 +293,7 @@ const Root: React.FC<BottombarProps> = ({
             </Drawer>
           ) : (
             <div className="flex items-center justify-center">
-              <div style={{ height: "22px", width: "22px" }} className="loader load"></div>
+              <div style={{ height: "40px", width: "40px" }} className="loader load"></div>
             </div>
           )}
         </div>

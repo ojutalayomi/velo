@@ -206,15 +206,15 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
   const showPeople = cleanQuery(query).length >= 1;
 
   const inputRing = open
-    ? "border-[#1D9BF0] ring-2 ring-[#1D9BF0]/25 dark:ring-[#1D9BF0]/30"
-    : "border-transparent focus-visible:border-[#1D9BF0] focus-visible:ring-2 focus-visible:ring-[#1D9BF0]/25";
+    ? "border-brand ring-2 ring-brand/25 dark:ring-brand/30"
+    : "border-transparent focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
   const panel = open && (
     <div
       id={listId}
       role="listbox"
       className={cn(
-        "absolute left-0 right-0 top-full z-50 mt-1 max-h-[min(70vh,420px)] overflow-auto rounded-2xl border border-zinc-700/80 bg-neutral-950 py-2 text-zinc-100 shadow-xl dark:bg-neutral-950",
+        "absolute left-0 right-0 top-full dark:bg-zinc-900 dark:text-slate-200 z-[9999] mt-1 max-h-[min(70vh,420px)] overflow-auto rounded-2xl border bg-gray-50 py-2 text-zinc-100 shadow-xl",
         "ring-1 ring-black/20"
       )}
     >
@@ -223,7 +223,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
         {recents.length > 0 ? (
           <button
             type="button"
-            className="text-sm font-medium text-[#1D9BF0] hover:underline"
+            className="text-sm font-medium text-brand hover:underline"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => clearAllRecents()}
           >
@@ -242,7 +242,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                 <div className="flex items-center gap-2 px-2">
                   <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-zinc-800/90"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 text-left hover:bg-zinc-800/90"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => goSearch(item.text)}
                   >
@@ -251,7 +251,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                   </button>
                   <button
                     type="button"
-                    className="shrink-0 rounded-full p-1.5 text-[#1D9BF0] hover:bg-zinc-800"
+                    className="shrink-0 rounded-full p-1.5 text-brand hover:bg-zinc-800"
                     aria-label="Remove from recent"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => removeRecent(item.id)}
@@ -263,7 +263,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                 <div className="flex items-center gap-2 px-2">
                   <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-zinc-800/90"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 text-left hover:bg-zinc-800/90"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => openRecentProfile(item)}
                   >
@@ -283,7 +283,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                   </button>
                   <button
                     type="button"
-                    className="shrink-0 rounded-full p-1.5 text-[#1D9BF0] hover:bg-zinc-800"
+                    className="shrink-0 rounded-full p-1.5 text-brand hover:bg-zinc-800"
                     aria-label="Remove from recent"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => removeRecent(item.id)}
@@ -315,7 +315,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                   <div className="flex items-center gap-2 px-2">
                     <button
                       type="button"
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-zinc-800/90"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 text-left hover:bg-zinc-800/90"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => openProfileFromSuggestion(user)}
                     >

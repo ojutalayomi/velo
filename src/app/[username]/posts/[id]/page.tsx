@@ -243,7 +243,7 @@ const PostContent: React.FC = () => {
   return (
     <>
       {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
-      <div className="flex size-full flex-col h-screen max-h-screen w-full overflow-auto">
+      <div className="flex size-full h-screen max-h-screen w-full flex-col overflow-auto">
         <div className="sticky top-0 z-10 flex justify-between bg-white p-1 shadow-md dark:bg-zinc-900">
           <div className="m-2 flex w-full items-center justify-between gap-2">
             <ArrowLeft size={24} className="cursor-pointer" onClick={() => navigate()} />
@@ -255,7 +255,7 @@ const PostContent: React.FC = () => {
             <Share size={24} />
           </div>
         </div>
-        <div id="postpage" className="dark:text-slate-200">
+        <div className="dark:text-slate-200">
           {loading.post ? (
             <div className="mt-4 flex w-full cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
               <div className="flex items-center justify-start gap-2">
@@ -284,7 +284,7 @@ const PostContent: React.FC = () => {
             )
           )}
 
-          <div className="commentSection">
+          <div className="text-center">
             {!errorMessage.comment ? <div className="commentHeader">Comments</div> : null}
             {loading.comment ? (
               <div className="flex h-[90%] w-full items-center justify-center">
@@ -309,7 +309,7 @@ const PostContent: React.FC = () => {
                 ) : null}
               </>
             ) : (
-              <div className="noComments">No comments yet.</div>
+              <div className="text-center">No comments yet.</div>
             )}
             {errorMessage.comment && (
               <div className="flex h-[90%] w-full items-center justify-center">

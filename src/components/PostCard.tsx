@@ -406,7 +406,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       data-id={data.PostID}
       className={cn(
         "w-full bg-white text-foreground dark:bg-zinc-900",
-        containsPost ? "m-2.5 rounded-2xl border border-border/70" : "border-b border-border/70"
+        containsPost ? "border border-border/70" : "border-b border-border/70"
       )}
     >
       <div className={cn(containsPost ? "p-4 sm:p-5" : "px-4 py-3 sm:px-5")}>
@@ -524,7 +524,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           </div>
         ) : null}
 
-        <div className="mt-1.5 flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between">
           <button
             type="button"
             aria-label={data.Liked ? "Unlike post" : "Like post"}
@@ -708,7 +708,7 @@ function Options({
             <Ellipsis className="size-[18px]" />
           </button>
         </DrawerTrigger>
-        <DrawerContent className="tablets:hidden">
+        <DrawerContent className="bg-gray-50 tablets:hidden dark:bg-zinc-900 dark:text-slate-200">
           <DrawerHeader className="text-left">
             <DrawerTitle className="text-base font-semibold">Options</DrawerTitle>
             <DrawerDescription className="mt-1 flex flex-col gap-0.5">
@@ -749,7 +749,7 @@ function Options({
             <Ellipsis className="size-[18px]" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-60 p-1.5">
+        <DropdownMenuContent align="end" className="w-60 bg-gray-50 p-1.5 dark:bg-zinc-900 dark:text-slate-200">
           {options.map(({ icon, text, onClick, destructive }, index) => (
             <DropdownMenuItem
               key={index}

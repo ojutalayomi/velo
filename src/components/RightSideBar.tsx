@@ -6,9 +6,9 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useUser } from "@/app/providers/UserProvider";
+import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
 import { Footer } from "@/components/Footer";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
-import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
 import { Button } from "@/components/ui/button";
 import { axiosApi } from "@/lib/api";
 import { SocialMediaUser } from "@/lib/class/User";
@@ -23,11 +23,14 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   const [loading, setLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<SocialMediaUser[]>([]);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
+
   useEffect(() => {
     // Only fetch if userdata._id exists to avoid running the effect twice (once with undefined, once with real id)
     if (!userdata._id) return;
 
-    setLoading(true);
+    setTimeout(() => {
+      setLoading(true);
+    }, 100);
     axiosApi("/api")
       .get("/users?getSuggestions=true&limit=10")
       .then((suggestionsRes) => {
@@ -55,19 +58,19 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   return (
     <div
       className={cn(
-        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") ? "!hidden" : ""} min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
+        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") ? "!hidden" : ""} border-l min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
         className
       )}
       {...props}
     >
       <div className="mx-auto max-h-full max-w-md space-y-2 overflow-auto">
         {/* Search Bar */}
-        <div className="sticky top-0 w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
+        <div className="sticky z-100 top-0 w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
           <ExploreSearchPanel variant="sidebar" className="w-full" />
         </div>
 
         {/* User Profile */}
-        <div className="mx-4">
+        <div className="mx-4 z-1">
           <ImageContent userdata={userdata} />
         </div>
 
@@ -99,7 +102,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
                       <AvatarFallback>{suggestion.username?.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     {onlineUsers.includes(suggestion?._id.toString()) && (
-                      <div className="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-white bg-green-500 dark:border-zinc-800"></div>
+                      <div className="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-white bg-green-500 dark:border-zinc-800" />
                     )}
                   </div>
                   <div className="flex-1 overflow-auto">

@@ -486,7 +486,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
               </Alert>
             )}
             {incomingCallId && (
-              <ConfirmCall id={incomingCallId} show={true} conversations={conversations} />
+              <ConfirmCall id={incomingCallId} show conversations={conversations} />
             )}
             {!callRoute ? (
               <Sidebar

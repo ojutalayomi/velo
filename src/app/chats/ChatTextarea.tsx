@@ -232,7 +232,7 @@ const ChatTextarea = ({
         )}
       >
         {quote.state && (
-          <div className="mx-2 mb-2 rounded-lg bg-gray-100 p-3 dark:bg-zinc-800">
+          <div className="mb-2 rounded-lg bg-gray-100 p-1 dark:bg-zinc-800">
             <div className="flex max-w-full items-center justify-between gap-1">
               <div className="flex min-w-0 items-stretch space-x-2">
                 <div

@@ -296,21 +296,21 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                   : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
               } text-left`} */}
             <div
-              className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl px-4 py-2 ${
+              className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl px-3 py-2 ${
                 senderId === userdata._id
                   ? "rounded-br-none outline outline-1 outline-brand"
                   : "rounded-bl-none shadow-md dark:shadow-zinc-700/50"
-              } text-left bg-gray-50 dark:bg-zinc-800/80 dark:text-white`}
+              } bg-gray-50 text-left dark:bg-zinc-800/80 dark:text-white`}
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
             >
               {/* Sender name for other users */}
               {senderId !== userdata._id && message.chatType === "Group" && (
-                <div className="flex items-center justify-between gap-1 mr-4">
+                <div className="mr-4 flex items-center justify-between gap-1">
                   <div className="flex items-center gap-2">
                     <Avatar className="mt-1 size-8">
                       <AvatarImage src={displayPicture} alt={sender} />
-                      <AvatarFallback className="border-2 border-white dark:border-black text-xs">
+                      <AvatarFallback className="border-2 border-white text-xs dark:border-black">
                         {sender?.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
@@ -488,7 +488,7 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
 
   return (
     <div
-      className={`m-1 flex ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
+      className={`flex ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
       onClick={handleQuoteClick}
     >
       <div

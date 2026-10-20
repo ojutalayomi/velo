@@ -1,4 +1,5 @@
 "use client";
+import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -17,7 +18,7 @@ import { fetchCommentsPage, getPost } from "@/lib/getStatus";
 import { PostSchema } from "@/lib/types/type";
 import { RootState } from "@/redux/store";
 import { Comments, Post } from "@/templates/PostProps";
-import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
+
 
 const PostContent: React.FC = () => {
   const params = useParams();
@@ -253,7 +254,7 @@ const PostContent: React.FC = () => {
         e.preventDefault(); // Prevent default for all Enter cases
 
         if (newMessage.trim().length > 0) {
-          handleSendMessage(quote.message?._id);
+          // handleSendMessage(quote.message?._id);
         }
       }
     },

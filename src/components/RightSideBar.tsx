@@ -65,17 +65,17 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
     >
       <div className="mx-auto max-h-full max-w-md space-y-2 overflow-auto">
         {/* Search Bar */}
-        <div className="sticky z-100 top-0 w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
+        <div className="sticky top-0 z-30 w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
           <ExploreSearchPanel variant="sidebar" className="w-full" />
         </div>
 
         {/* User Profile */}
-        <div className="mx-4 z-1">
+        <div className="relative z-0 mx-4">
           <ImageContent userdata={userdata} />
         </div>
 
         {/* Suggestions Section */}
-        <div className="mx-4 max-h-[70%] overflow-auto rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-800">
+        <div className="relative z-0 mx-4 max-h-[70%] overflow-auto rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-800">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Suggested for you</h2>
             <a href="#" className="text-sm text-brand transition-colors hover:text-brand/80">

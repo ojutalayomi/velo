@@ -288,7 +288,7 @@ const ChatTextarea = ({
           <Pop input={inputRef} setFileAccepts={setFileAccepts} />
           <div className="relative flex-1">
             <TextAreaBox
-              // value={newMessage}
+              value={newMessage}
               onChange={setNewMessage}
               highlightColor="#ff6257"
               id="txt"

@@ -17,6 +17,7 @@ import { fetchCommentsPage, getPost } from "@/lib/getStatus";
 import { PostSchema } from "@/lib/types/type";
 import { RootState } from "@/redux/store";
 import { Comments, Post } from "@/templates/PostProps";
+import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 
 const PostContent: React.FC = () => {
   const params = useParams();
@@ -44,6 +45,7 @@ const PostContent: React.FC = () => {
   const [commentsMessage, setCommentsMessage] = useState<Comments["message"]>();
   const [commentsPagination, setCommentsPagination] = useState<PaginationMeta | null>(null);
   const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
+  const [newMessage, setNewMessage] = useState<string>("")
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [textAreaStyle, setTextAreaStyle] = useState<string>("rounded-full");
   const [isTextAreaFocused, setIsTextAreaFocused] = useState<boolean>(false);
@@ -240,6 +242,32 @@ const PostContent: React.FC = () => {
     };
   }, [post, socket]);
 
+  // Memoize onKeyDown handler
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter") {
+        if (e.shiftKey) {
+          return; // Allow new line when Shift+Enter
+        }
+
+        e.preventDefault(); // Prevent default for all Enter cases
+
+        if (newMessage.trim().length > 0) {
+          handleSendMessage(quote.message?._id);
+        }
+      }
+    },
+    [newMessage]
+  );
+
+  // Memoize emoji picker onChange handler
+  const handleEmojiChange = useCallback(
+    (emoji: string) => {
+      setNewMessage((prev) => prev + emoji);
+    },
+    [setNewMessage]
+  );
+
   return (
     <>
       {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
@@ -329,19 +357,24 @@ const PostContent: React.FC = () => {
                 alt="User avatar"
               />
               <div className={`relative flex flex-1 ${textAreaStyle} overflow-hidden`}>
-                <textarea
+                <TextAreaBox
                   className={`max-h-28 min-h-[34px] flex-1 resize-none bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400`}
+                  value={newMessage}
+                  onChange={setNewMessage}
+                  onKeyDown={handleKeyDown}
+                  highlightColor="#ff6257"
                   ref={textAreaRef}
+                  minHeight={20}
+                  maxHeight={160}
                   placeholder="Write a comment..."
-                  rows={1}
+                  fontFamily="myCustomFont, myCustomFont Fallback"
+                  textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
                 />
                 <div
-                  className={`absolute right-3 ${isTextAreaFocused ? "bottom-0" : "top-1/2"} flex -translate-y-1/2 transform items-center gap-2 text-gray-400`}
+                  className={`absolute right-3 ${isTextAreaFocused ? "bottom-0" : "top-1/2"} flex -translate-y-1/2 transform items-center gap-4 text-gray-400`}
                 >
                   <EmojiPicker
-                    onChange={(emoji: string) =>
-                      textAreaRef.current && (textAreaRef.current.value += emoji)
-                    }
+                    onChange={handleEmojiChange}
                   >
                     <SmileIcon className="size-4 cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
                   </EmojiPicker>

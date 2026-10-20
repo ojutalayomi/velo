@@ -11,17 +11,12 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 import { useUser } from "@/app/providers/UserProvider";
-import { createStatus, deleteStatus, markStatusViewed } from "@/lib/statusApi";
-import type { StatusClient, StatusGroup } from "@/lib/types/status";
-import { useAppDispatch } from "@/redux/hooks";
-import { markViewedLocal, removeStatus, upsertStatusGroup } from "@/redux/statusSlice";
-import { RootState } from "@/redux/store";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +27,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { createStatus, deleteStatus, markStatusViewed } from "@/lib/statusApi";
+import type { StatusClient, StatusGroup } from "@/lib/types/status";
+import { useAppDispatch } from "@/redux/hooks";
+import { markViewedLocal, removeStatus, upsertStatusGroup } from "@/redux/statusSlice";
+import { RootState } from "@/redux/store";
 
 const STATUS_DURATION_MS = 6000;
 const MAX_STATUS_FILES = 10;
@@ -60,7 +60,7 @@ const StatusTray = () => {
   }
 
   return (
-    <section className="border-b border-border bg-gray-50 px-3 py-3 dark:bg-zinc-900">
+    <section className="border-b border-border bg-gray-50 p-3 dark:bg-zinc-900">
       <div className="flex gap-3 overflow-x-auto p-1">
         <button
           type="button"
@@ -134,6 +134,8 @@ const StatusComposer = ({
   onOpenChange: (open: boolean) => void;
 }) => {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { userdata } = useUser();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [caption, setCaption] = useState("");
@@ -146,6 +148,8 @@ const StatusComposer = ({
       })),
     [files]
   );
+
+  if (!userdata) router.push("/accounts/login");
 
   useEffect(() => {
     return () => {
@@ -424,7 +428,7 @@ const StatusViewer = ({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black text-white">
-      <div className="absolute left-0 right-0 top-0 z-10 p-4">
+      <div className="absolute inset-x-0 top-0 z-10 p-4">
         <div className="mb-4 flex gap-1">
           {group.statuses.map((item, index) => (
             <div key={item._id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
@@ -495,7 +499,7 @@ const StatusViewer = ({
       </button>
 
       {status.caption && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-center">
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-center">
           <p className="mx-auto max-w-xl whitespace-pre-wrap text-sm">{status.caption}</p>
         </div>
       )}

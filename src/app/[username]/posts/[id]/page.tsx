@@ -2,7 +2,7 @@
 import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -39,6 +39,9 @@ const PostContent: React.FC = () => {
     post: true,
     comment: true,
   });
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const { posts, loading: postsLoading } = useSelector((state: RootState) => state.posts);
   const [post, setPost] = useState<Post["post"]>();
   const [postMessage, setPostMessage] = useState<Post["message"]>();
@@ -284,7 +287,7 @@ const PostContent: React.FC = () => {
             <Share size={24} />
           </div>
         </div>
-        <div className="dark:text-slate-200">
+        <div className="dark:text-slate-200 flex-1">
           {loading.post ? (
             <div className="mt-4 flex w-full cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
               <div className="flex items-center justify-start gap-2">
@@ -313,8 +316,8 @@ const PostContent: React.FC = () => {
             )
           )}
 
-          <div className="text-center">
-            {!errorMessage.comment ? <div className="commentHeader">Comments</div> : null}
+          <div>
+            {!errorMessage.comment ? <div className="py-2 text-center">Comments</div> : null}
             {loading.comment ? (
               <div className="flex h-[90%] w-full items-center justify-center">
                 <Loader2 className="loader" size={30} />
@@ -348,8 +351,17 @@ const PostContent: React.FC = () => {
           </div>
         </div>
         {(!errorMessage.post || commentsMessage === "Disable Comment.") && (
-          <div className="sticky bottom-0 w-full border-t border-gray-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-black">
-            <div className="mx-auto flex max-w-3xl items-center gap-2">
+          <footer className="sticky bottom-0 w-full border-t border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
+            <div 
+            className="mx-auto flex max-w-3xl items-center gap-2"
+            onClick={() => {
+              const currParams = new URLSearchParams(searchParams?.toString() || "");
+              currParams.set("composeComment", "true");
+              currParams.set("postId", post?.PostID || "");
+              currParams.set("postType", "comment");
+              router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
+            }}
+            >
               <Image
                 src={userdata.displayPicture || "/velo11.png"}
                 className={`rounded-full object-cover ${isTextAreaFocused ? "hidden" : ""}`}
@@ -359,7 +371,7 @@ const PostContent: React.FC = () => {
               />
               <div className={`relative flex flex-1 ${textAreaStyle} overflow-hidden`}>
                 <TextAreaBox
-                  className={`max-h-28 min-h-[34px] flex-1 resize-none bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400`}
+                  className={`max-h-28 min-h-[34px] flex-1 resize-none border bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400`}
                   value={newMessage}
                   onChange={setNewMessage}
                   onKeyDown={handleKeyDown}
@@ -384,7 +396,7 @@ const PostContent: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </footer>
         )}
       </div>
     </>

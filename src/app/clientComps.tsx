@@ -456,7 +456,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
 
   return (
     <>
-      {!displayAnnouncement.status && (
+      {displayAnnouncement.status && (
         <div id="announcement" className="bg-gradient-to-r relative w-screen from-indigo-500 via-purple-500 to-pink-500 p-2 text-center text-white">
           <h1>{displayAnnouncement.message}</h1>
           <XCircle

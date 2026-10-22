@@ -168,7 +168,7 @@ export default function ShareButton({
       <DropdownMenu open={isPopoverOpen} onOpenChange={handlePopoverChange}>
         <DropdownMenuTrigger
           className={cn(
-            "!hidden blog-foot tablets:flex items-center justify-center gap-2 cursor-pointer",
+            "!hidden blog-foot !tablets:flex items-center justify-center gap-2 cursor-pointer",
             triggerClassName
           )}
         >

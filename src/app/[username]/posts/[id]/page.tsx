@@ -421,11 +421,11 @@ function SelectComponent() {
     { label: "Liked", value: "Most liked" }
   ]
   return (
-    <Select>
-      <SelectTrigger className="w-full max-w-48">
+    <Select value={items[0].value}>
+      <SelectTrigger className="w-full max-w-48 rounded-full">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="max-w-28 rounded-full">
+      <SelectContent className="max-w-28">
         <SelectGroup>
           <SelectLabel>Sort comments</SelectLabel>
           {items.map((item) => (

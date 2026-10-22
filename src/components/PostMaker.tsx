@@ -502,7 +502,7 @@ function PostMakerClient({
                   onClick={handlePost}
                   className="my-2 w-full transform rounded-full bg-brand px-6 py-2 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-brand/60 tablets:my-0 tablets:w-auto"
                 >
-                  {isPosting ? "Posting..." : "Post"}
+                  {isPosting ? "Sending..." : (type === "post" ? "Post" : type === "comment" ? "Reply" : "Repost")}
                   {isPosting && <Loader2 className="ml-2 animate-spin" size={16} />}
                 </Button>
               </div>

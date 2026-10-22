@@ -1,18 +1,19 @@
 "use client";
-import { useState, useRef, ChangeEvent, useEffect } from "react";
+import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Camera, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
-import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { updateUserData } from "@/redux/userSlice";
-import { useDispatch } from "react-redux";
+
 
 export default function EditProfile() {
   const dispatch = useDispatch();
@@ -38,14 +39,16 @@ export default function EditProfile() {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setFormData({
-      name: userdata.name || "",
-      bio: userdata.bio || "",
-      location: userdata.location || "",
-      website: userdata.website || "",
-      displayPicture: userdata.displayPicture || "",
-      coverPhoto: userdata.coverPhoto || "",
-    });
+    setTimeout(() => {
+      setFormData({
+        name: userdata.name || "",
+        bio: userdata.bio || "",
+        location: userdata.location || "",
+        website: userdata.website || "",
+        displayPicture: userdata.displayPicture || "",
+        coverPhoto: userdata.coverPhoto || "",
+      });
+    }, 100)
   }, [userdata]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -66,7 +69,7 @@ export default function EditProfile() {
         body: JSON.stringify({
           filename: file.name,
           contentType: file.type,
-          bucketName: "profile-display-images",
+          bucketName: type === "displayPicture" ? "profile-display-images" : "profile-banner-images",
         }),
       });
 
@@ -153,24 +156,24 @@ export default function EditProfile() {
   };
 
   return (
-    <div className="w-full flex-1 h-screen max-h-screen dark:bg-black overflow-auto">
-      <div className="flex backdrop-blur-lg top-0 sticky gap-4 items-center z-10 w-full px-3 py-2">
-        <ArrowLeft onClick={() => navigate()} className="cursor-pointer size-6" />
+    <div className="h-screen max-h-screen w-full flex-1 overflow-auto dark:bg-black">
+      <div className="sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg">
+        <ArrowLeft onClick={() => navigate()} className="size-6 cursor-pointer" />
         <h1 className="text-xl font-bold">Edit Profile</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* Cover Photo */}
-        <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-800 mb-16">
+        <div className="relative mb-16 h-48 w-full bg-gray-200 dark:bg-gray-800">
           <Avatar
-            className="h-full w-full object-cover rounded-none"
+            className="size-full rounded-none object-cover"
             data-s3-url={formData.coverPhoto || userdata.coverPhoto}
           >
             <AvatarImage
-              className="w-full h-full rounded-none object-cover aspect-auto"
+              className="aspect-auto size-full rounded-none object-cover"
               src={formData.coverPhoto || userdata.coverPhoto}
             />
-            <AvatarFallback className="w-full h-full rounded-none">
+            <AvatarFallback className="size-full rounded-none">
               {userdata.firstname?.[0]}
               {userdata.lastname?.[0]}
             </AvatarFallback>
@@ -178,7 +181,7 @@ export default function EditProfile() {
           <Button
             type="button"
             variant="ghost"
-            className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
+            className="absolute inset-0 flex size-full items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
             onClick={() => coverInputRef.current?.click()}
           >
             <Camera className="size-6" />
@@ -193,9 +196,9 @@ export default function EditProfile() {
 
           {/* Profile Picture */}
           <div className="absolute -bottom-12 left-4">
-            <div className="relative w-24 h-24">
+            <div className="relative size-24">
               <Avatar
-                className="w-24 h-24 border-4 border-white dark:border-black"
+                className="size-24 border-4 border-white dark:border-black"
                 data-s3-url={formData.displayPicture || userdata.displayPicture}
               >
                 <AvatarImage src={formData.displayPicture || userdata.displayPicture} />
@@ -207,7 +210,7 @@ export default function EditProfile() {
               <Button
                 type="button"
                 variant="ghost"
-                className="absolute inset-0 h-full rounded-full flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
+                className="absolute inset-0 flex h-full items-center justify-center rounded-full bg-black/30 opacity-0 hover:opacity-100"
                 onClick={() => dpInputRef.current?.click()}
               >
                 <Camera className="size-5" />
@@ -272,7 +275,7 @@ export default function EditProfile() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
                 Saving...
               </>
             ) : (

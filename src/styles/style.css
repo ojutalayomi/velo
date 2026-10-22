@@ -572,7 +572,6 @@ body #root #detail, body #root #pre-home {
 body #root #sidebar {
   -webkit-backdrop-filter: blur(75px);
           backdrop-filter: blur(75px);
-  box-shadow: 0px 20px 20px 0px rgba(0, 0, 0, 0.2);
   height: 100%;
   overflow: visible;
   position: relative;

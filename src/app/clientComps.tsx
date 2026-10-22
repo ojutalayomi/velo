@@ -52,7 +52,7 @@ import Error from "./error";
 import VideoChat from "../components/CallPage";
 import { useNetwork } from "./providers/NetworkProvider";
 
-const ClientComponents = ({ children }: ClientComponentsProps) => {
+const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
   const { deletedConversations } = useSelector((state: RootState) => state.chat);
@@ -457,7 +457,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
   return (
     <>
       {displayAnnouncement.status && (
-        <div id="announcement" className="relative w-screen bg-brand p-2 text-center text-white">
+        <div id="announcement" className="bg-gradient-to-r relative w-screen from-indigo-500 via-purple-500 to-pink-500 p-2 text-center text-white">
           <h1>{displayAnnouncement.message}</h1>
           <XCircle
             className="absolute right-3 top-1/2 -translate-y-1/2 transform cursor-pointer"
@@ -486,7 +486,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
               </Alert>
             )}
             {incomingCallId && (
-              <ConfirmCall id={incomingCallId} show={true} conversations={conversations} />
+              <ConfirmCall id={incomingCallId} show conversations={conversations} />
             )}
             {!callRoute ? (
               <Sidebar
@@ -521,4 +521,4 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     </>
   );
 };
-export default ClientComponents;
+export default RootClientComponents;

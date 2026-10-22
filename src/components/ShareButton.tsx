@@ -1,26 +1,17 @@
-import { useSocket } from "@/app/providers/SocketProvider";
-import { useUser } from "@/app/providers/UserProvider";
-import { useGlobalFileStorage } from "@/hooks/useFileStorage";
-import { updateLiveTime } from "@/lib/utils";
-import { updatePost } from "@/redux/postsSlice";
-import { PostSchema } from "@/lib/types/type";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "./ui/dropdown-menu";
 import {
   Repeat2,
   PenLine,
-  X,
-  Paintbrush,
-  CircleAlert,
-  Images,
-  CircleCheck,
-  ChartBarDecreasing,
-  Smile,
-  Clock4,
-  MapPin,
-  Loader2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { ReactNode, useState, useRef, useEffect, ChangeEvent } from "react";
+import { ReactNode, useState } from "react";
+
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
+import { PostSchema } from "@/lib/types/type";
+import { cn } from "@/lib/utils";
+import { useAppDispatch } from "@/redux/hooks";
+import { updatePost } from "@/redux/postsSlice";
+
+import PostMaker from "./PostMaker";
 import { Button } from "./ui/button";
 import {
   DrawerTrigger,
@@ -32,8 +23,7 @@ import {
   DrawerClose,
   Drawer,
 } from "./ui/drawer";
-import PostMaker from "./PostMaker";
-import { useAppDispatch } from "@/redux/hooks";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "./ui/dropdown-menu";
 
 interface Option {
   icon: React.ReactNode;
@@ -45,57 +35,21 @@ export default function ShareButton({
   children,
   post,
   onShareCommitted,
+  triggerClassName,
 }: {
   children: ReactNode;
   post?: PostSchema;
   /** Called after repost / undo repost Redux updates so hosts (e.g. Explore reel) can sync local lists. */
   onShareCommitted?: (postId: string, updates: Partial<PostSchema>) => void;
+  triggerClassName?: string;
 }) {
   const { userdata } = useUser();
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const socket = useSocket();
-  const { files, clearFiles, setFiles } = useGlobalFileStorage();
-  const [visibility, setVisibility] = useState("everyone");
-  const [errors, setErrors] = useState([""]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [txtButton, setTxtButton] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [text, setText] = useState("");
-  const [time, setTime] = useState("");
-  const [isPosting, setIsPosting] = useState(false);
-  const textLimit = 400;
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!post) return;
-
-    const interval = setInterval(() => {
-      setTime(updateLiveTime("getlivetime", post.TimeOfPost));
-    }, 1000);
-    return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [post?.TimeOfPost]);
-
-  const handleImageClick = (file: File) => {
-    setFullscreenImage(URL.createObjectURL(file));
-  };
-
-  const closeFullscreen = () => {
-    setFullscreenImage(null);
-  };
-
-  const handleInput = () => {
-    const textArea = textAreaRef.current;
-    if (textArea) {
-      textArea.style.height = "auto";
-      textArea.style.height = `${textArea.scrollHeight}px`;
-      setTxtButton(textArea.value.trim() !== "");
-    }
-  };
 
   const options: Option[] = [
     ...(!post?.Shared
@@ -115,7 +69,7 @@ export default function ShareButton({
               socket.emit("reactToPost(share)", {
                 action: "share",
                 type: "repost",
-                post: post,
+                post,
               });
               onShareCommitted?.(post.PostID, { NoOfShares: post.NoOfShares + 1, Shared: true });
             },
@@ -136,7 +90,7 @@ export default function ShareButton({
 
               socket?.emit("reactToPost(share)", {
                 action: "unshare",
-                post: post,
+                post,
               });
               onShareCommitted?.(post.PostID, {
                 NoOfShares: Math.max(0, post.NoOfShares - 1),
@@ -169,14 +123,19 @@ export default function ShareButton({
 
   if (!userdata._id)
     return (
-      <div className="flex items-center justify-center gap-2 cursor-not-allowed">{children}</div>
+      <div className="flex cursor-not-allowed items-center justify-center gap-2">{children}</div>
     );
 
   return (
     <>
       {/* Mobile view */}
       <Drawer open={isDrawerOpen} onOpenChange={handleDrawerChange}>
-        <DrawerTrigger className="tablets:hidden blog-foot flex items-center justify-center gap-2 cursor-pointer">
+        <DrawerTrigger
+          className={cn(
+            "tablets:hidden blog-foot flex items-center justify-center gap-2 cursor-pointer",
+            triggerClassName
+          )}
+        >
           {children}
         </DrawerTrigger>
         <DrawerContent className="tablets:hidden">
@@ -187,7 +146,7 @@ export default function ShareButton({
                 return (
                   <span
                     key={index}
-                    className="flex gap-1 items-center cursor-pointer w-full"
+                    className="flex w-full cursor-pointer items-center gap-1"
                     onClick={onClick}
                   >
                     {icon}
@@ -207,15 +166,20 @@ export default function ShareButton({
 
       {/* Desktop view */}
       <DropdownMenu open={isPopoverOpen} onOpenChange={handlePopoverChange}>
-        <DropdownMenuTrigger className="hidden blog-foot tablets:flex items-center justify-center gap-2 cursor-pointer">
+        <DropdownMenuTrigger
+          className={cn(
+            "!hidden blog-foot !tablets:flex items-center justify-center gap-2 cursor-pointer",
+            triggerClassName
+          )}
+        >
           {children}
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-white hidden tablets:block dark:bg-zinc-800 w-auto space-y-2 mt-1 mr-2 p-2 rounded-md shadow-lg">
+        <DropdownMenuContent className="mr-2 mt-1 hidden w-auto space-y-2 rounded-md bg-white p-2 shadow-lg tablets:block dark:bg-zinc-800">
           {options.map(({ icon, text, onClick }, index) => {
             return (
               <Button
                 key={index}
-                className="flex gap-1 items-center cursor-pointer w-full bg-white dark:bg-zinc-900 text-black dark:text-white hover:bg-white/90 dark:hover:bg-zinc-900/90"
+                className="flex w-full cursor-pointer items-center gap-1 bg-white text-black hover:bg-white/90 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-900/90"
                 onClick={onClick}
               >
                 {icon}

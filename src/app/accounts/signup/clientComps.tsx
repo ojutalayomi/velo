@@ -55,6 +55,9 @@ const Comps: React.FC = () => {
             contentType: formData.file.type,
             bucketName: "profile-display-images",
           }),
+          headers: {
+            "Content-Type": "application/json",
+          }
         });
 
         if (!response.ok) {
@@ -80,8 +83,6 @@ const Comps: React.FC = () => {
         } else {
           dispatch(updateFormData({ file: null, displayPicture: url + fields.key }));
         }
-      } else {
-        throw new Error("File must be uploaded before submitting the form");
       }
 
       const response = await SubmitForm(formData);

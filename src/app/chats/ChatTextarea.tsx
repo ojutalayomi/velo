@@ -1,3 +1,4 @@
+import { TextAreaBox, Details } from "@ojutalayomi/react-textarea-enhanced";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import {
   X,
@@ -24,7 +25,7 @@ import {
   useState,
 } from "react";
 import { useSelector } from "react-redux";
-import { TextAreaBox, Details } from "@ojutalayomi/react-textarea-enhanced";
+import { toast } from "sonner";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";
@@ -51,7 +52,6 @@ import {
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
@@ -173,12 +173,6 @@ const ChatTextarea = ({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter") {
-        if (e.shiftKey) {
-          return; // Allow new line when Shift+Enter
-        }
-
-        e.preventDefault(); // Prevent default for all Enter cases
-
         if (newMessage.trim().length > 0) {
           handleSendMessage(quote.message?._id);
           dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
@@ -232,7 +226,7 @@ const ChatTextarea = ({
         )}
       >
         {quote.state && (
-          <div className="mx-2 mb-2 rounded-lg bg-gray-100 p-3 dark:bg-zinc-800">
+          <div className="mb-2 rounded-lg bg-gray-100 p-1 dark:bg-zinc-800">
             <div className="flex max-w-full items-center justify-between gap-1">
               <div className="flex min-w-0 items-stretch space-x-2">
                 <div
@@ -288,13 +282,13 @@ const ChatTextarea = ({
           <Pop input={inputRef} setFileAccepts={setFileAccepts} />
           <div className="relative flex-1">
             <TextAreaBox
-              // value={newMessage}
+              value={newMessage}
               onChange={setNewMessage}
               highlightColor="#ff6257"
               id="txt"
               placeholder="Type a message..."
               minHeight={20}
-              maxHeight={160}
+              // maxHeight={160}
               ref={textAreaRef}
               getDetails={handleGetDetails}
               onKeyDown={handleKeyDown}

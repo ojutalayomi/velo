@@ -1,25 +1,13 @@
 import {
   Repeat2,
   PenLine,
-  X,
-  Paintbrush,
-  CircleAlert,
-  Images,
-  CircleCheck,
-  ChartBarDecreasing,
-  Smile,
-  Clock4,
-  MapPin,
-  Loader2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { ReactNode, useState, useRef, useEffect, ChangeEvent } from "react";
+import { ReactNode, useState } from "react";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { PostSchema } from "@/lib/types/type";
-import { cn, updateLiveTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { updatePost } from "@/redux/postsSlice";
 
@@ -57,49 +45,11 @@ export default function ShareButton({
 }) {
   const { userdata } = useUser();
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const socket = useSocket();
-  const { files, clearFiles, setFiles } = useGlobalFileStorage();
-  const [visibility, setVisibility] = useState("everyone");
-  const [errors, setErrors] = useState([""]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [txtButton, setTxtButton] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [text, setText] = useState("");
-  const [time, setTime] = useState("");
-  const [isPosting, setIsPosting] = useState(false);
-  const textLimit = 400;
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!post) return;
-
-    const interval = setInterval(() => {
-      setTime(updateLiveTime("getlivetime", post.TimeOfPost));
-    }, 1000);
-    return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [post?.TimeOfPost]);
-
-  const handleImageClick = (file: File) => {
-    setFullscreenImage(URL.createObjectURL(file));
-  };
-
-  const closeFullscreen = () => {
-    setFullscreenImage(null);
-  };
-
-  const handleInput = () => {
-    const textArea = textAreaRef.current;
-    if (textArea) {
-      textArea.style.height = "auto";
-      textArea.style.height = `${textArea.scrollHeight}px`;
-      setTxtButton(textArea.value.trim() !== "");
-    }
-  };
 
   const options: Option[] = [
     ...(!post?.Shared
@@ -218,7 +168,7 @@ export default function ShareButton({
       <DropdownMenu open={isPopoverOpen} onOpenChange={handlePopoverChange}>
         <DropdownMenuTrigger
           className={cn(
-            "hidden blog-foot tablets:flex items-center justify-center gap-2 cursor-pointer",
+            "!hidden blog-foot tablets:flex items-center justify-center gap-2 cursor-pointer",
             triggerClassName
           )}
         >

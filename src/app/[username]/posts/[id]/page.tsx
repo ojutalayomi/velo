@@ -18,6 +18,7 @@ import { fetchCommentsPage, getPost } from "@/lib/getStatus";
 import { PostSchema } from "@/lib/types/type";
 import { RootState } from "@/redux/store";
 import { Comments, Post } from "@/templates/PostProps";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const PostContent: React.FC = () => {
@@ -287,7 +288,7 @@ const PostContent: React.FC = () => {
             <Share size={24} />
           </div>
         </div>
-        <div className="dark:text-slate-200 flex-1">
+        <div className="flex-1 dark:text-slate-200">
           {loading.post ? (
             <div className="mt-4 flex w-full cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
               <div className="flex items-center justify-start gap-2">
@@ -317,7 +318,15 @@ const PostContent: React.FC = () => {
           )}
 
           <div>
-            {!errorMessage.comment ? <div className="py-2 text-center">Comments</div> : null}
+            {!errorMessage.comment ? 
+            <div className="flex items-center justify-end border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
+              <SelectComponent />
+              <div
+              onClick={() => {
+                if (pathname) router.push(pathname+'/shares', { scroll: false });
+              }}
+              >View quotes &gt;</div>
+            </div> : null}
             {loading.comment ? (
               <div className="flex h-[90%] w-full items-center justify-center">
                 <Loader2 className="loader" size={30} />
@@ -403,3 +412,28 @@ const PostContent: React.FC = () => {
   );
 };
 export default PostContent;
+
+function SelectComponent() {
+  const items = [
+    { label: "Recent", value: "Most recent" },
+    { label: "Relevant", value: "Most relevant" },
+    { label: "Liked", value: "Most liked" }
+  ]
+  return (
+    <Select>
+      <SelectTrigger className="w-full max-w-48">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup className="max-w-28">
+          <SelectLabel>Sort comments</SelectLabel>
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}

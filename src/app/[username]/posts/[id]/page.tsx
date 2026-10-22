@@ -19,6 +19,7 @@ import { PostSchema } from "@/lib/types/type";
 import { RootState } from "@/redux/store";
 import { Comments, Post } from "@/templates/PostProps";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Link from "next/link";
 
 
 const PostContent: React.FC = () => {
@@ -319,13 +320,13 @@ const PostContent: React.FC = () => {
 
           <div>
             {!errorMessage.comment ? 
-            <div className="flex items-center justify-end border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
+            <div className="flex items-center justify-between border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
               <SelectComponent />
-              <div
-              onClick={() => {
-                if (pathname) router.push(pathname+'/shares', { scroll: false });
-              }}
-              >View quotes &gt;</div>
+              <Link
+              href={pathname+'/shares'}
+              >
+                View quotes &gt;
+              </Link>
             </div> : null}
             {loading.comment ? (
               <div className="flex h-[90%] w-full items-center justify-center">
@@ -359,7 +360,7 @@ const PostContent: React.FC = () => {
             )}
           </div>
         </div>
-        {(!errorMessage.post || commentsMessage === "Disable Comment.") && (
+        {(!errorMessage.post || !userdata._id || commentsMessage === "Disable Comment.") && (
           <footer className="sticky bottom-0 w-full border-t border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
             <div 
             className="mx-auto flex max-w-3xl items-center gap-2"
@@ -424,8 +425,8 @@ function SelectComponent() {
       <SelectTrigger className="w-full max-w-48">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
-        <SelectGroup className="max-w-28">
+      <SelectContent className="max-w-28 rounded-full">
+        <SelectGroup>
           <SelectLabel>Sort comments</SelectLabel>
           {items.map((item) => (
             <SelectItem key={item.value} value={item.value}>

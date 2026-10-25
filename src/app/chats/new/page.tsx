@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -14,13 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { Chat } from "@/lib/class/Chat";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
+import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { Attachment, ChatType, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { timeFormatter as timeFormatterUtils } from "@/lib/utils";
@@ -238,10 +239,10 @@ const ChatPage = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
+          body: S3UploadBody({
             filename: groupDisplayPicture.name,
             contentType: groupDisplayPicture.type,
-            bucketName: "profile-display-images",
+            bucketName: BUCKETNAME.PROFILE,
           }),
         });
 
@@ -636,7 +637,7 @@ const ChatPage = () => {
             )}
           </div>
         </div>
-        <div className="my-4 flex-1"></div>
+        <div className="my-4 flex-1" />
       </div>
 
       <ChatTextarea

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { RootState } from "@/redux/store";
 import { updateUserData } from "@/redux/userSlice";
 
@@ -66,10 +67,10 @@ export default function EditProfile() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
+        body: S3UploadBody({
           filename: file.name,
           contentType: file.type,
-          bucketName: type === "displayPicture" ? "profile-display-images" : "profile-banner-images",
+          bucketName: type === "displayPicture" ? BUCKETNAME.PROFILE : BUCKETNAME.BANNER,
         }),
       });
 

@@ -1,20 +1,23 @@
 "use client";
-import React, { ReactNode, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { setLoading, setError1, setSuccess, updateFormData } from "@/redux/signupSlice";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import SubmitForm from "@/components/pg/submitButton";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
+
+import { useSocket } from "@/app/providers/SocketProvider";
+import Wrapper from "@/components/AccountComponentWrapper";
 import First from "@/components/pg/first";
 import Second from "@/components/pg/second";
+import SubmitForm from "@/components/pg/submitButton";
 import Third from "@/components/pg/third";
-import Wrapper from "@/components/AccountComponentWrapper";
-import { setUserData } from "@/redux/userSlice";
+import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { fetchChats } from "@/redux/chatSlice";
-import { useSocket } from "@/app/providers/SocketProvider";
-import { toast } from "sonner";
+import { useAppDispatch } from "@/redux/hooks";
+import { setLoading, setError1, setSuccess, updateFormData } from "@/redux/signupSlice";
+import { RootState } from "@/redux/store";
+import { setUserData } from "@/redux/userSlice";
+
 
 const Comps: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -23,7 +26,7 @@ const Comps: React.FC = () => {
   const searchParams = useSearchParams();
   const backTo = searchParams?.get("backto");
   const userData = useSelector((state: RootState) => state.user.userdata);
-  const { currentStep, loading, formData, success, error, error1 } = useSelector(
+  const { currentStep, formData, success } = useSelector(
     (state: RootState) => state.signups
   );
 
@@ -50,10 +53,10 @@ const Comps: React.FC = () => {
       if (formData.file && formData.file.name && formData.file.type) {
         const response = await fetch("/api/upload", {
           method: "POST",
-          body: JSON.stringify({
+          body: S3UploadBody({
             filename: formData.file.name,
             contentType: formData.file.type,
-            bucketName: "profile-display-images",
+            bucketName: BUCKETNAME.PROFILE,
           }),
           headers: {
             "Content-Type": "application/json",
@@ -103,10 +106,10 @@ const Comps: React.FC = () => {
       auth="Sign up"
       header={
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold text-center">Sign Up</h1>
+          <h1 className="text-center text-2xl font-bold">Sign Up</h1>
           <h2 className="text-center">
             Already have an account?
-            <Link className="text-brand hover:underline transition-all" href="/accounts/login">
+            <Link className="text-brand transition-all hover:underline" href="/accounts/login">
               {" "}
               Log In
             </Link>

@@ -214,10 +214,6 @@ const Homepage: React.FC = () => {
 
       <StatusTray />
 
-      <div className="h3 dark:!text-slate-200">
-        <h3>Connect with friends and the world around you on Velo.</h3>
-      </div>
-
       {/* For You Feed */}
       {activeTab === "forYou" && (
         <>

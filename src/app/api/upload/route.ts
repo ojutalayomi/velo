@@ -1,6 +1,7 @@
-import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { S3Client } from "@aws-sdk/client-s3";
+import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { NextResponse } from "next/server";
+
 import { timeFormatter } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const { filename, contentType: fileType, bucketName } = body;
 
     const client = new S3Client({
-      region: "us-east-1",
+      region: process.env.AWS_REGION,
       credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ || "",
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",

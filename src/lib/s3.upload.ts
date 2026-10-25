@@ -17,17 +17,16 @@ const s3Client = new S3Client({
 function timeFormatter1(time: string) {
   // console.log(time)
   // Split the input date into its components
-  const [datePart, timePart] = time.split(", ");
-  let [month, day, year] = datePart.split("/");
-  const [hour, minute, second] = timePart.split(":");
-  if (parseInt(day) < 10) {
-    day = "0" + day;
+  const [ddmmyyyy] = time.split(", ");
+  let [dd, mm, yyyy] = ddmmyyyy.split("/");
+  if (parseInt(dd) < 10) {
+    dd = "0" + dd;
   }
-  if (parseInt(month) < 10) {
-    month = "0" + month;
+  if (parseInt(mm) < 10) {
+    mm = "0" + mm;
   }
   // Create a new Date object with the components
-  const formattedDate = year + "/" + month + "/" + day;
+  const formattedDate = yyyy + "/" + mm + "/" + dd;
   // console.log(formattedDateString);
   return formattedDate;
 }

@@ -30,6 +30,7 @@ import { useUser } from "@/app/providers/UserProvider";
 import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { PostSchema } from "@/lib/types/type";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { updateLiveTime } from "@/templates/PostProps";
@@ -76,25 +77,21 @@ function PostMakerClient({
   const socket = useSocket();
   const { files, clearFiles, setFiles } = useGlobalFileStorage();
   const [visibility, setVisibility] = useState("everyone");
-  const [errors, setErrors] = useState([""]);
+  // const [errors, setErrors] = useState([""]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [txtButton, setTxtButton] = useState(true);
   const [text, setText] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const textLimit = userdata.verified ? 10000 : 1000; // 10000 for verified users, 1000 for others
+  const isButtonDisabled = text.length > textLimit || (!files.length && !text.length);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    setTxtButton(text.length > textLimit || (!files.length && !text.length));
-  }, [files.length, text.length, textLimit]);
 
   const buttons = [
     {
       id: "media",
       icon: Images,
       label: "Add Images or Videos",
-      action: () => imageInputRef?.current?.click(),
+      action: () => null,
       disable: false
     },
     {
@@ -173,7 +170,7 @@ function PostMakerClient({
 
     // Update state
     if (validationErrors.length > 0) {
-      setErrors(validationErrors);
+      // setErrors(validationErrors);
       validationErrors.forEach((error) =>
         toast.warning("Warning", {
           description: error,
@@ -203,10 +200,10 @@ function PostMakerClient({
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
+              body: S3UploadBody({
                 filename: file!.name,
                 contentType: file!.type,
-                bucketName: "post-s",
+                bucketName: BUCKETNAME.ARTICLE,
               }),
             });
 
@@ -482,7 +479,7 @@ function PostMakerClient({
                           </EmojiPicker>
                         ) : (
                           <button
-                            onClick={button.action}
+                            onClick={button.id === "media" ? () => imageInputRef?.current?.click() : button.action}
                             disabled={button.disable}
                             className={`group rounded-full p-2 transition-all duration-200 ${button.disable ? "pointer-events-none text-brand/15" : " text-brand"} hover:bg-brand/90`}
                           >
@@ -498,7 +495,7 @@ function PostMakerClient({
                 </div>
 
                 <Button
-                  disabled={txtButton}
+                  disabled={isButtonDisabled}
                   onClick={handlePost}
                   className="my-2 w-full transform rounded-full bg-brand px-6 py-2 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-brand/60 tablets:my-0 tablets:w-auto"
                 >
@@ -581,7 +578,7 @@ function MiniPostCard({
   );
 }
 
-function SignInPrompt({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SignInPrompt({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const { userdata } = useUser();
 

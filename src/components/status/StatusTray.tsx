@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { createStatus, deleteStatus, markStatusViewed } from "@/lib/statusApi";
+import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import type { StatusClient, StatusGroup } from "@/lib/types/status";
 import { useAppDispatch } from "@/redux/hooks";
 import { markViewedLocal, removeStatus, upsertStatusGroup } from "@/redux/statusSlice";
@@ -202,11 +203,13 @@ const StatusComposer = ({
   const uploadStatusFile = async (file: File) => {
     const presign = await fetch("/api/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      headers: {
+        "Content-Type": "application/json" 
+      },
+      body: S3UploadBody({
         filename: file.name,
         contentType: file.type,
-        bucketName: "post-s",
+        bucketName: BUCKETNAME.ARTICLE,
       }),
     });
     if (!presign.ok) throw new Error(`Failed to prepare ${file.name}`);
@@ -425,6 +428,8 @@ const StatusViewer = ({
       toast.error((error as Error).message);
     }
   };
+
+  if (!userdata._id) <></>
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black text-white">

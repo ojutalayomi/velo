@@ -1,31 +1,36 @@
+import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Search, Bookmark } from "lucide-react";
+import { useRouter, useParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import SwiperCore from "swiper";
-import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Bookmark } from "lucide-react";
-import { Comments, formatNo } from "@/templates/PostProps";
-import { PostSchema } from "@/lib/types/type";
-import type { PaginationMeta } from "@/lib/apiPagination";
-
-import { fetchCommentsPage, getPost } from "../lib/getStatus";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
-import { Search } from "lucide-react";
-import { useUser } from "@/app/providers/UserProvider";
-import ImageContent from "@/components/imageContent";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Footer } from "@/components/Footer";
-import { cn, generateRandomToken } from "@/lib/utils";
-import PostCard from "@/components/PostCard";
-import { Skeleton } from "./ui/skeleton";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { addPost, setPostPreview, updatePost } from "@/redux/postsSlice";
+import { toast } from "sonner";
+import SwiperCore from "swiper";
+
 import { useSocket } from "@/app/providers/SocketProvider";
-import ShareButton from "./ShareButton";
+import { useUser } from "@/app/providers/UserProvider";
+import { Footer } from "@/components/Footer";
+import ImageContent from "@/components/imageContent";
+import PostCard from "@/components/PostCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
-import PostAnalytics from "./PostAnalytics";
+import type { PaginationMeta } from "@/lib/apiPagination";
+import { PostSchema } from "@/lib/types/type";
+import { cn, generateRandomToken } from "@/lib/utils";
+import { useAppDispatch } from "@/redux/hooks";
+import { addPost, updatePost } from "@/redux/postsSlice";
+import { RootState } from "@/redux/store";
 import MediaSlides from "@/templates/mediaSlides";
+import { Comments, formatNo } from "@/templates/PostProps";
+
+import PostAnalytics from "./PostAnalytics";
+import ShareButton from "./ShareButton";
+import { fetchCommentsPage, getPost } from "../lib/getStatus";
+import { Skeleton } from "./ui/skeleton";
+
+
+
+
+
 
 interface Params {
   username?: string;
@@ -40,7 +45,6 @@ const PostPreview: React.FC = () => {
   const { username, id, index } = params;
   const dispatch = useAppDispatch();
   const socket = useSocket();
-  const { message } = useSelector((state: RootState) => state.posts.postPreview);
   const { posts, loading } = useSelector((state: RootState) => state.posts);
   const post = posts.find((post) => post.PostID === id) as PostSchema;
   const [toFetch, setToFetch] = useState<boolean>(true);
@@ -54,6 +58,7 @@ const PostPreview: React.FC = () => {
   const [currentPost, setCurrentPost] = useState<PostSchema | null>(null);
   const replyDraftRef = useRef("");
   const replyDraftPostIdRef = useRef(id);
+  
   if (replyDraftPostIdRef.current !== id) {
     replyDraftRef.current = "";
     replyDraftPostIdRef.current = id;
@@ -109,7 +114,7 @@ const PostPreview: React.FC = () => {
     if (swiper) {
       if (swiper.activeIndex !== indexInt) {
         setToFetch(false);
-        router.push(
+        router.replace(
           `/${currentPost?.Username}/posts/${currentPost?.PostID}/photo/${swiper.activeIndex}`
         );
       }
@@ -120,7 +125,7 @@ const PostPreview: React.FC = () => {
     if (!post || !id || !userdata._id) return;
 
     if (post.Liked) {
-      dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes - 1, Liked: false } }));
+      dispatch(updatePost({ id, updates: { NoOfLikes: post.NoOfLikes - 1, Liked: false } }));
       socket?.emit("reactToPost", {
         type: "unlike",
         key: "NoOfLikes",
@@ -128,7 +133,7 @@ const PostPreview: React.FC = () => {
         postId: id,
       });
     } else {
-      dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes + 1, Liked: true } }));
+      dispatch(updatePost({ id, updates: { NoOfLikes: post.NoOfLikes + 1, Liked: true } }));
       socket?.emit("reactToPost", {
         type: "like",
         key: "NoOfLikes",
@@ -142,9 +147,9 @@ const PostPreview: React.FC = () => {
     if (!post || !id || !userdata._id) return;
 
     if (currentPost?.Shared) {
-      dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares - 1, Shared: false } }));
+      dispatch(updatePost({ id, updates: { NoOfShares: post.NoOfShares - 1, Shared: false } }));
     } else {
-      dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares + 1, Shared: true } }));
+      dispatch(updatePost({ id, updates: { NoOfShares: post.NoOfShares + 1, Shared: true } }));
     }
   };
 
@@ -190,7 +195,7 @@ const PostPreview: React.FC = () => {
     if (currentPost?.Bookmarked) {
       dispatch(
         updatePost({
-          id: id,
+          id,
           updates: { NoOfBookmarks: post.NoOfBookmarks - 1, Bookmarked: false },
         })
       );
@@ -202,7 +207,7 @@ const PostPreview: React.FC = () => {
       });
     } else {
       dispatch(
-        updatePost({ id: id, updates: { NoOfBookmarks: post.NoOfBookmarks + 1, Bookmarked: true } })
+        updatePost({ id, updates: { NoOfBookmarks: post.NoOfBookmarks + 1, Bookmarked: true } })
       );
       socket?.emit("reactToPost", {
         type: "bookmark",
@@ -261,9 +266,9 @@ const PostPreview: React.FC = () => {
   }, [socket]);
 
   return (
-    <div className="fixed flex top-0 left-0 z-50 bg-gray-50 dark:bg-black dark:text-white h-screen w-screen">
+    <div className="fixed left-0 top-0 z-50 flex h-screen w-screen bg-gray-50 dark:bg-black dark:text-white">
       {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
-      <div className="flex flex-1 flex-col h-full">
+      <div className="flex h-full flex-1 flex-col">
         {/* Top bar */}
         <div className="flex justify-between p-4">
           <ArrowLeft size={24} className="cursor-pointer" onClick={() => navigate()} />
@@ -274,14 +279,14 @@ const PostPreview: React.FC = () => {
         {/* Video content (placeholder) */}
         <div className="flex-1">
           {postLoading ? (
-            <div className="flex items-center justify-center w-full h-full">
-              <div className="loader size-7 show"></div>
+            <div className="flex size-full items-center justify-center">
+              <div className="loader show size-7" />
             </div>
           ) : post ? (
-            <MediaSlides className="w-full h-full" postData={post || {}} />
+            <MediaSlides className="size-full" postData={post || {}} />
           ) : (
             postError && (
-              <div className="flex flex-col items-center justify-center w-full h-full">
+              <div className="flex size-full flex-col items-center justify-center">
                 <RefreshCw className="cursor-pointer" size={30} onClick={() => setReload(true)} />
                 <h1>Reload</h1>
               </div>
@@ -292,9 +297,9 @@ const PostPreview: React.FC = () => {
         {/* Controls */}
         <div className="p-4 md:hidden">
           {/* Action buttons */}
-          <div className="flex justify-around items-center">
+          <div className="flex items-center justify-around">
             <button
-              className="text-gray-400 flex items-center"
+              className="flex items-center text-gray-400"
               onClick={() => {
                 // console.log('Open comments')
                 router.push(`/${currentPost?.Username}/posts/${currentPost?.PostID}`);
@@ -305,7 +310,7 @@ const PostPreview: React.FC = () => {
             </button>
             <ShareButton post={post}>
               <span
-                className={`text-gray-400 flex items-center ${currentPost?.Shared ? "text-green-500" : ""}`}
+                className={`flex items-center text-gray-400 ${currentPost?.Shared ? "text-green-500" : ""}`}
                 onClick={handleReshare}
               >
                 <Repeat2 size={24} />
@@ -343,7 +348,7 @@ const PostPreview: React.FC = () => {
         currentPost={currentPost}
         draftRef={replyDraftRef}
         handleComment={handleComment}
-        className="flex-none w-1/2 md:w-2/5 lg:w-1/3"
+        className="w-1/2 flex-none md:w-2/5 lg:w-1/3"
       />
     </div>
   );
@@ -362,7 +367,7 @@ const RightSideBar = ({
   className?: string;
   currentPost: PostSchema | null;
   id: string;
-  draftRef: React.MutableRefObject<string>;
+  draftRef: React.RefObject<string>;
   handleComment: (caption: string) => boolean;
   props?: HTMLDivElement;
 }) => {
@@ -383,6 +388,7 @@ const RightSideBar = ({
       setCommentsPagination(commentsResponse.pagination);
     } catch (err) {
       setError((err as Error).message);
+      toast.error(error)
     } finally {
       setLoading(false);
     }
@@ -408,9 +414,7 @@ const RightSideBar = ({
     }
   }, [id, commentsLoadingMore, commentsPagination, commentKeyInner]);
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
+  fetchData();
 
   useEffect(() => {
     if (!socket || !currentPost) return;
@@ -469,18 +473,18 @@ const RightSideBar = ({
       )}
       {...props}
     >
-      <div className="max-h-full mx-auto overflow-auto space-y-2">
+      <div className="mx-auto max-h-full space-y-2 overflow-auto">
         {/* Search Bar */}
-        <div className="dark:bg-zinc-900 bg-gray-50 px-4 py-2 w-full">
+        <div className="w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
               size={18}
             />
             <Input
               type="text"
               placeholder="Search people"
-              className="w-full bg-white dark:bg-zinc-800 border-0 shadow-sm rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-brand/20"
+              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
             />
           </div>
         </div>
@@ -511,7 +515,7 @@ const RightSideBar = ({
                 <button
                   type="button"
                   disabled={commentsLoadingMore}
-                  onClick={() => void loadMoreCommentsSidebar()}
+                  onClick={() => loadMoreCommentsSidebar()}
                   className="rounded-full border border-gray-200 px-3 py-1.5 text-xs dark:border-zinc-600"
                 >
                   {commentsLoadingMore ? "Loading…" : "Load older comments"}
@@ -520,8 +524,8 @@ const RightSideBar = ({
             ) : null}
           </>
         ) : (
-          <div className="flex items-center justify-center w-full h-full">
-            <div className="loader size-7 show"></div>
+          <div className="flex size-full items-center justify-center">
+            <div className="loader show size-7" />
           </div>
         )}
 
@@ -545,12 +549,12 @@ function ReplyTextArea({
   handleComment,
 }: {
   className?: string;
-  draftRef: React.MutableRefObject<string>;
+  draftRef: React.RefObject<string>;
   postId: string;
   placement: "mobile" | "sidebar";
   handleComment: (caption: string) => boolean;
 }) {
-  const [replyText, setReplyText] = useState(() => draftRef.current);
+  const [replyText, setReplyText] = useState("");
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [txtButton, setTxtButton] = useState(false);
 
@@ -603,7 +607,7 @@ function ReplyTextArea({
           setReplyText(v);
         }}
         placeholder="Send your reply"
-        className="flex-grow max-h-[100px] text-sm focus:border-b focus:border-brand resize-none bg-transparent border-none focus:outline-none dark:text-white mr-2"
+        className="mr-2 max-h-[100px] flex-grow resize-none border-none bg-transparent text-sm focus:border-b focus:border-brand focus:outline-none dark:text-white"
       />
       <Button
         onClick={() => {
@@ -612,7 +616,7 @@ function ReplyTextArea({
             setReplyText("");
           }
         }}
-        className="bg-brand text-white text-sm px-2 py-1 rounded-full disabled:opacity-50"
+        className="rounded-full bg-brand px-2 py-1 text-sm text-white disabled:opacity-50"
         disabled={!replyText.trim()}
       >
         Reply
@@ -623,7 +627,7 @@ function ReplyTextArea({
 
 function RenderLoadingPlaceholder() {
   return (
-    <div className="flex flex-col space-y-3 cursor-progress m-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
+    <div className="m-4 flex cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
       <div className="flex items-center justify-start gap-2">
         <Skeleton className="size-10 rounded-full" />
         <div className="flex flex-col space-y-2">

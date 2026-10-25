@@ -59,6 +59,9 @@ const StatusTray = () => {
       </div>
     );
   }
+  
+
+  if (!userdata._id) return <></>
 
   return (
     <section className="border-b border-border bg-gray-50 p-3 dark:bg-zinc-900">
@@ -428,8 +431,6 @@ const StatusViewer = ({
       toast.error((error as Error).message);
     }
   };
-
-  if (!userdata._id) <></>
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black text-white">

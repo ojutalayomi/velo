@@ -286,7 +286,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   };
 
   const options: Option[] = [
-    ...(data.UserId !== userdata._id
+    ...(userdata._id && data.UserId !== userdata._id
       ? [
           {
             icon: data.IsFollowing ? <UserRoundMinus size={18} /> : <UserRoundPlus size={18} />,
@@ -350,7 +350,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         }
       },
     },
-    ...(data.UserId === userdata._id
+    ...(userdata._id && data.UserId === userdata._id
       ? [
           {
             icon: <Delete size={18} />,
@@ -366,7 +366,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           },
         ]
       : []),
-    ...(data.UserId !== userdata._id
+    ...(userdata._id && data.UserId !== userdata._id
       ? [
           {
             icon: <MessageCircleX size={18} />,
@@ -552,13 +552,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
               role="button"
               tabIndex={0}
               className={cn(actionBase, "hover:text-sky-500")}
-              onClick={() => {
-                const currParams = new URLSearchParams(searchParams?.toString() || "");
-                currParams.set("composeComment", "true");
-                currParams.set("postId", data.PostID);
-                currParams.set("postType", "comment");
-                router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
-              }}
             >
               <span className={cn(actionIconWrap, "group-hover:bg-sky-500/10")}>
                 <MessageCircle className="size-[19px]" />
@@ -573,7 +566,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
 
           <ShareButton
             post={data}
-            triggerClassName={cn(actionBase, "hover:text-emerald-600", data.Shared && "text-brand")}
+            triggerClassName={cn(actionBase.replace('flex', ''), "hover:text-emerald-600", data.Shared && "text-brand")}
           >
             <span className={cn(actionIconWrap, "group-hover:bg-emerald-500/10")}>
               <Repeat2 className={cn("size-[19px]", data.Shared && "text-brand")} />
@@ -681,6 +674,7 @@ function Options({
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const { userdata } = useUser();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -695,6 +689,8 @@ function Options({
     setIsPopoverOpen(open);
     setOpen(open);
   };
+
+  if (!userdata._id) return <></>
 
   return (
     <>

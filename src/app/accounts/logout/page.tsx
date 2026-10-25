@@ -23,6 +23,7 @@ export default function Logout() {
         setMessage("Logged out successfully");
         setLogout(true);
         router.refresh();
+        router.push("/accounts/login");
       } else {
         router.push("/accounts/login");
         setMessage("Failed to log out");

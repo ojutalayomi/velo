@@ -478,7 +478,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         </div>
 
         {data?.Image.length > 0 && showMedia && (
-          <ThreadsSlide postData={data} className="mt-3" isLink />
+          <ThreadsSlide postData={data} className="mt-3 max-w-md" isLink />
         )}
 
         {originalPost && (
@@ -627,7 +627,7 @@ function QuotedPostCard({
     <div
       role="link"
       tabIndex={0}
-      className="mt-3 cursor-pointer rounded-2xl border border-border/70 p-3 transition-colors duration-150 ease-out-expo hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:p-4"
+      className="mt-3 max-w-md cursor-pointer rounded-2xl border border-border/70 p-3 transition-colors duration-150 ease-out-expo hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:p-4"
       onClick={() => handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -657,7 +657,7 @@ function QuotedPostCard({
             </p>
           ) : null}
           {originalPost.Image.length > 0 && (
-            <ThreadsSlide className="mt-2" postData={originalPost} />
+            <ThreadsSlide className="mt-2 max-w-sm" postData={originalPost} />
           )}
         </div>
       </div>

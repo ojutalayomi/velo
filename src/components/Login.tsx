@@ -2,14 +2,11 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./fontAwesomeLibrary";
-import { useSelector } from "react-redux";
 
-import { useSocket } from "@/app/providers/SocketProvider";
-import { fetchChats } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
-import { RootState } from "@/redux/store";
+import { setSuccess } from "@/redux/signupSlice";
 import { setUserData } from "@/redux/userSlice";
 
 import Wrapper from "./AccountComponentWrapper";
@@ -32,28 +29,12 @@ const Login: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const backTo = searchParams?.get("backto");
-  const userData = useSelector((state: RootState) => state.user.userdata);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isEye, setIsEye] = useState(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
-  const socket = useSocket();
-
-  useEffect(() => {
-    if (success) router.push(backTo || "/home");
-    const fetchData = async () => {
-      await fetchChats(dispatch);
-    };
-    fetchData();
-    if (socket) {
-      socket.on("connect", () => {
-        // console.log('Connected to server');
-        socket.emit("register", userData._id);
-      });
-    }
-  }, [success, router, backTo, dispatch, socket, userData]);
+  const [loginSuccess, setLoginSuccess] = useState<boolean>(false);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -102,7 +83,9 @@ const Login: React.FC = () => {
     try {
       const msg = await SignInComponent(formData);
       dispatch(setUserData(msg));
-      setSuccess(true);
+      setLoginSuccess(true);
+      dispatch(setSuccess(true));
+      router.push(backTo || "/home")
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -173,12 +156,12 @@ const Login: React.FC = () => {
             </Link>
           </div>
           <Button
-            className="h-10 w-full bg-brand font-semibold text-white shadow-sm hover:bg-brand/90 active:scale-[0.98] transition-all"
+            className="h-10 w-full bg-brand font-semibold text-white shadow-sm transition-all hover:bg-brand/90 active:scale-[0.98]"
             disabled={loading}
           >
             {loading ? (
-              <div className="loader show"></div>
-            ) : success ? (
+              <div className="loader show" />
+            ) : loginSuccess ? (
               <span>Success!</span>
             ) : (
               <span>Continue</span>

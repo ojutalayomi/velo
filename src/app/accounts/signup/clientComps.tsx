@@ -1,18 +1,16 @@
 "use client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
-import { useSocket } from "@/app/providers/SocketProvider";
 import Wrapper from "@/components/AccountComponentWrapper";
 import First from "@/components/pg/first";
 import Second from "@/components/pg/second";
 import SubmitForm from "@/components/pg/submitButton";
 import Third from "@/components/pg/third";
 import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
-import { fetchChats } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { setLoading, setError1, setSuccess, updateFormData } from "@/redux/signupSlice";
 import { RootState } from "@/redux/store";
@@ -22,27 +20,11 @@ import { setUserData } from "@/redux/userSlice";
 const Comps: React.FC = () => {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const socket = useSocket();
   const searchParams = useSearchParams();
   const backTo = searchParams?.get("backto");
-  const userData = useSelector((state: RootState) => state.user.userdata);
-  const { currentStep, formData, success } = useSelector(
+  const { currentStep, formData } = useSelector(
     (state: RootState) => state.signups
   );
-
-  useEffect(() => {
-    if (success) router.push(backTo || "/home");
-    const fetchData = async () => {
-      await fetchChats(dispatch);
-    };
-    fetchData();
-    if (socket) {
-      socket.on("connect", () => {
-        // console.log('Connected to server');
-        socket.emit("register", userData._id);
-      });
-    }
-  }, [success, router, backTo, dispatch, socket, userData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +73,7 @@ const Comps: React.FC = () => {
       const response = await SubmitForm(formData);
       dispatch(setUserData(response));
       dispatch(setSuccess(true));
+      router.push(backTo || "/home");
     } catch (error: any) {
       dispatch(setError1(error.message));
       toast.error("Error", {

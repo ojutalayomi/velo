@@ -1,9 +1,12 @@
 "use client";
-import { WifiOff, XCircle } from "lucide-react";
+import { Megaphone, WifiOff, X, XCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
+
 import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
+
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -17,7 +20,6 @@ import RightSideBar from "@/components/RightSideBar";
 import Sidebar from "@/components/Sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import UserPhoto from "@/components/UserPhoto";
-import { toast } from "sonner";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { FileStorageProvider } from "@/hooks/useFileStorage";
 import {
@@ -37,13 +39,13 @@ import {
   updateConversation,
   addMessage,
   addSetting,
-  fetchChats,
   addConversation,
   updateMessage,
   updateMessageReactions,
+  fetchChats,
 } from "@/redux/chatSlice";
-import { useAppDispatch } from "@/redux/hooks";
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
+import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
@@ -101,7 +103,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     setLoad(false);
     if (pathname?.includes("/chats/")) setActiveRouteState("chats");
   }, [pathname, setActiveRouteState]);
-
+  
   useEffect(() => {
     async function fetchData() {
       await fetchChats(dispatch);
@@ -457,13 +459,36 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   return (
     <>
       {displayAnnouncement.status && (
-        <div id="announcement" className="bg-gradient-to-r relative w-screen from-indigo-500 via-purple-500 to-pink-500 p-2 text-center text-white">
-          <h1>{displayAnnouncement.message}</h1>
-          <XCircle
-            className="absolute right-3 top-1/2 -translate-y-1/2 transform cursor-pointer"
-            size={20}
-            onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
-          />
+        <div
+          id="announcement"
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-x-0 top-4 z-[999] flex justify-center px-4"
+        >
+          <div className="pointer-events-auto relative flex w-full max-w-2xl items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-black/50 py-2.5 pl-3 pr-2 text-slate-50 shadow-lg shadow-black/20 backdrop-blur">
+            {/* Gradient accent line along the bottom edge */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-brand via-purple-500 to-pink-500"
+            />
+      
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand via-purple-500 to-pink-500">
+              <Megaphone size={14} className="text-white" aria-hidden="true" />
+            </span>
+      
+            <p className="min-w-0 flex-1 text-sm font-medium leading-snug">
+              {displayAnnouncement.message}
+            </p>
+      
+            <button
+              type="button"
+              aria-label="Dismiss announcement"
+              onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
+              className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       )}
       <div id="root" className="overflow-hidden">

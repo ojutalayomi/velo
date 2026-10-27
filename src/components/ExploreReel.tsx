@@ -10,7 +10,6 @@ import { getExplorePostsCache, setExplorePostsCache } from "@/lib/explorePostsCa
 import { submitFollowUpdate } from "@/lib/followApi";
 import { fetchExplorePosts } from "@/lib/getStatus";
 import {
-  postPermalinkPath,
   sharePostLink,
   togglePostBookmark,
   togglePostLike,
@@ -19,10 +18,11 @@ import type { PostSchema } from "@/lib/types/type";
 import { useAppDispatch } from "@/redux/hooks";
 import { updatePost } from "@/redux/postsSlice";
 
-import ShareButton from "./ShareButton";
-import { renderTextWithLinks } from "./RenderTextWithLinks";
-import { Statuser } from "./VerificationComponent";
+import CommentsDrawer from "./CommentsDrawer";
 import PostAnalytics from "./PostAnalytics";
+import { renderTextWithLinks } from "./RenderTextWithLinks";
+import ShareButton from "./ShareButton";
+import { Statuser } from "./VerificationComponent";
 
 // ── media helpers ──────────────────────────────────────────────────────────────
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|tiff?|avif)([-_]\w+)?$/i;
@@ -96,6 +96,15 @@ function ReelSlide({
   const [activeMediaType, setActiveMediaType] = useState<"image" | "video">("image");
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const [showHeart, setShowHeart] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const heartTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const likedRef = useRef(post.Liked);
+  likedRef.current = post.Liked;
+
+  const LONG_PRESS_MS = 500;
+  const MOVE_TOLERANCE = 10; // px of finger movement before it counts as a scroll
 
   useEffect(() => {
     setActiveMediaType(isImageUrl(post.Image[activeMediaIndex]) ? "image" : "video");
@@ -122,6 +131,40 @@ function ReelSlide({
     });
   }, [muted]);
 
+  const cancelPress = () => {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressStart.current = null;
+  };
+
+  const handlePressStart = (e: React.PointerEvent) => {
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    pressTimer.current = window.setTimeout(() => {
+      pressTimer.current = null;
+      navigator.vibrate?.(15);
+      setShowHeart(true);
+      if (heartTimer.current) window.clearTimeout(heartTimer.current);
+      heartTimer.current = window.setTimeout(() => setShowHeart(false), 700);
+      if (!likedRef.current) onToggleLike(post);
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePressMove = (e: React.PointerEvent) => {
+    const s = pressStart.current;
+    if (!s) return;
+    if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > MOVE_TOLERANCE) cancelPress();
+  };
+
+  // clear timers on unmount
+  useEffect(
+    () => () => {
+      if (pressTimer.current) window.clearTimeout(pressTimer.current);
+      if (heartTimer.current) window.clearTimeout(heartTimer.current);
+    },
+    []
+  );
+
+
   const handleCarouselScroll = () => {
     const el = carouselRef.current;
     if (!el) return;
@@ -131,11 +174,20 @@ function ReelSlide({
 
   return (
     <div className="relative size-full overflow-hidden bg-black">
-      {post.PostID && <PostAnalytics postId={post.PostID as string} userId={userdata._id} />}
+      {isActive && post.PostID && (
+          <PostAnalytics postId={post.PostID as string} userId={userdata._id} />
+        )
+      }
       {/* horizontal media carousel */}
       <div
         ref={carouselRef}
         onScroll={handleCarouselScroll}
+        onPointerDown={handlePressStart}
+        onPointerMove={handlePressMove}
+        onPointerUp={cancelPress}
+        onPointerCancel={cancelPress}
+        onPointerLeave={cancelPress}
+        onContextMenu={(e) => e.preventDefault()}
         className="flex size-full snap-x snap-mandatory overflow-x-scroll"
         style={{ scrollbarWidth: "none" }}
       >
@@ -165,6 +217,17 @@ function ReelSlide({
             </div>
           );
         })}
+      </div>
+
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <Heart
+          size={96}
+          fill="currentColor"
+          strokeWidth={0}
+          className={`text-white drop-shadow-lg transition-all duration-300 ease-out ${
+            showHeart ? "scale-100 opacity-100" : "scale-50 opacity-0"
+          }`}
+        />
       </div>
 
       {/* dot indicators for multi-media posts */}
@@ -219,7 +282,7 @@ function ReelSlide({
             <button
               type="button"
               onClick={() => onToggleFollow(post)}
-              className="ml-auto shrink-0 cursor-pointer rounded-full border border-white/40 px-2 py-1 text-nowrap text-sm text-white transition-all hover:border-brand hover:text-brand"
+              className="ml-auto shrink-0 cursor-pointer text-nowrap rounded-full border border-white/40 px-2 py-1 text-sm text-white transition-all hover:border-brand hover:text-brand"
             >
               {post.IsFollowing ? "Following" : "Follow +"}
             </button>
@@ -296,6 +359,7 @@ export default function ExploreReel() {
   const start = searchParams?.get("start") ?? null;
 
   const [posts, setPosts] = useState<PostSchema[]>([]);
+  const [commentPost, setCommentPost] = useState<PostSchema | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -334,9 +398,9 @@ export default function ExploreReel() {
 
   const onOpenComments = useCallback(
     (post: PostSchema) => {
-      router.push(postPermalinkPath(post));
+      setCommentPost(post);
     },
-    [router]
+    []
   );
 
   const requireAuth = useCallback(() => {
@@ -506,7 +570,7 @@ export default function ExploreReel() {
       {/* fixed chrome — outside the scroll container so it never scrolls away */}
       <button
         onClick={() => router.back()}
-        className="fixed ml-2 top-4 z-50 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
+        className="fixed top-4 z-50 ml-2 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
         aria-label="Go back"
       >
         <ArrowLeft size={22} />
@@ -541,7 +605,6 @@ export default function ExploreReel() {
             />
           </div>
         ))}
-
         {/* loading-more spinner as a snap slide */}
         {loadingMore && (
           <div className="flex h-screen w-full snap-start items-center justify-center bg-black">
@@ -549,6 +612,7 @@ export default function ExploreReel() {
           </div>
         )}
       </div>
+      <CommentsDrawer post={commentPost} onClose={() => setCommentPost(null)} />
     </>
   );
 }

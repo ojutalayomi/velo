@@ -22,14 +22,17 @@ export default function Logout() {
       if (response.ok) {
         setMessage("Logged out successfully");
         setLogout(true);
+        router.refresh();
         router.push("/accounts/login");
       } else {
+        router.push("/accounts/login");
         setMessage("Failed to log out");
         setLogout(true);
       }
     };
     logout();
   }, [router]);
+  
   const handleClick = () => {
     router.push("/accounts/login");
   };
@@ -46,7 +49,7 @@ export default function Logout() {
           {message === "Failed to log out" && (
             <button
               onClick={handleClick}
-              className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-lg hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+              className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-white hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <span>Log in</span>
               <LogIn size={20} />

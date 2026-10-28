@@ -206,24 +206,24 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
   const showPeople = cleanQuery(query).length >= 1;
 
   const inputRing = open
-    ? "border-[#1D9BF0] ring-2 ring-[#1D9BF0]/25 dark:ring-[#1D9BF0]/30"
-    : "border-transparent focus-visible:border-[#1D9BF0] focus-visible:ring-2 focus-visible:ring-[#1D9BF0]/25";
+    ? "border-brand ring-2 ring-brand/25 dark:ring-brand/30"
+    : "border-transparent focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/25";
 
   const panel = open && (
     <div
       id={listId}
       role="listbox"
       className={cn(
-        "absolute left-0 right-0 top-full z-50 mt-1 max-h-[min(70vh,420px)] overflow-auto rounded-2xl border border-zinc-700/80 bg-neutral-950 py-2 text-zinc-100 shadow-xl dark:bg-neutral-950",
+        "absolute left-0 right-0 top-full dark:bg-zinc-900 dark:text-slate-200 z-[9999] mt-1 max-h-[min(70vh,420px)] overflow-auto rounded-2xl border bg-gray-50 py-2 text-zinc-100 shadow-xl",
         "ring-1 ring-black/20"
       )}
     >
       <div className="flex items-center justify-between px-3 pb-2 pt-1">
-        <span className="text-sm font-semibold text-zinc-50">Recent</span>
+        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Recent</span>
         {recents.length > 0 ? (
           <button
             type="button"
-            className="text-sm font-medium text-[#1D9BF0] hover:underline"
+            className="text-sm font-medium text-brand hover:underline"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => clearAllRecents()}
           >
@@ -235,23 +235,23 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
       {recents.length === 0 ? (
         <p className="px-3 pb-2 text-xs text-zinc-500">No recent searches yet.</p>
       ) : (
-        <ul className="border-b border-zinc-800 pb-2">
+        <ul className="border-b border-zinc-200 pb-2 dark:border-zinc-800">
           {recents.map((item) => (
             <li key={item.id}>
               {item.kind === "query" ? (
                 <div className="flex items-center gap-2 px-2">
                   <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-zinc-800/90"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 text-left hover:bg-zinc-200/80 dark:hover:bg-zinc-800/90"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => goSearch(item.text)}
                   >
                     <Search className="size-4 shrink-0 text-zinc-500" aria-hidden />
-                    <span className="truncate text-sm text-zinc-100">{item.text}</span>
+                    <span className="truncate text-sm text-zinc-900 dark:text-zinc-100">{item.text}</span>
                   </button>
                   <button
                     type="button"
-                    className="shrink-0 rounded-full p-1.5 text-[#1D9BF0] hover:bg-zinc-800"
+                    className="shrink-0 rounded-full p-1.5 text-brand hover:bg-zinc-200 dark:hover:bg-zinc-800"
                     aria-label="Remove from recent"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => removeRecent(item.id)}
@@ -263,7 +263,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                 <div className="flex items-center gap-2 px-2">
                   <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-zinc-800/90"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 text-left hover:bg-zinc-200/80 dark:hover:bg-zinc-800/90"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => openRecentProfile(item)}
                   >
@@ -275,7 +275,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                     </Avatar>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1">
-                        <span className="truncate font-semibold text-zinc-50">{item.name}</span>
+                        <span className="truncate font-semibold text-zinc-900 dark:text-zinc-50">{item.name}</span>
                         {item.verified ? <Statuser className="size-4 shrink-0" /> : null}
                       </span>
                       <span className="block truncate text-sm text-zinc-500">@{item.username}</span>
@@ -283,7 +283,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                   </button>
                   <button
                     type="button"
-                    className="shrink-0 rounded-full p-1.5 text-[#1D9BF0] hover:bg-zinc-800"
+                    className="shrink-0 rounded-full p-1.5 text-brand hover:bg-zinc-200 dark:hover:bg-zinc-800"
                     aria-label="Remove from recent"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => removeRecent(item.id)}
@@ -315,19 +315,19 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
                   <div className="flex items-center gap-2 px-2">
                     <button
                       type="button"
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-zinc-800/90"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 text-left hover:bg-zinc-200/80 dark:hover:bg-zinc-800/90"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => openProfileFromSuggestion(user)}
                     >
                       <Avatar className="size-9 shrink-0">
                         <AvatarImage src={user.displayPicture} alt="" />
-                        <AvatarFallback className="text-xs">
+                        <AvatarFallback className="text-xs text-zinc-900 dark:text-zinc-50">
                           {user.username?.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1">
-                          <span className="truncate font-semibold text-zinc-50">
+                          <span className="truncate font-semibold text-zinc-900 dark:text-zinc-50">
                             {user.name || user.username}
                           </span>
                           {user.verified ? <Statuser className="size-4 shrink-0" /> : null}
@@ -377,8 +377,8 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
               }
             }}
             className={cn(
-              "w-full rounded-full border-2 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition-colors",
-              "dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500",
+              "w-full rounded-full focus-visible:ring-none border-2 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition-colors",
+              "dark:bg-zinc-800 dark:text-z  inc-100 dark:placeholder:text-zinc-500",
               "placeholder:text-gray-400",
               inputRing
             )}

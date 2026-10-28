@@ -1,5 +1,7 @@
-import { PostSchema } from "@/lib/types/type";
 import moment from "moment";
+
+import { PostSchema } from "@/lib/types/type";
+
 
 export interface Post {
   post: PostSchema;

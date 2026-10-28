@@ -79,6 +79,11 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
     []
   );
 
+  // Extract primitive values to use safely as direct dependencies
+  const variant = props.variant;
+  const tag = props.variant === "hashtag" ? props.tag.trim() : undefined;
+  const queryFromUrl = props.variant === "search" ? props.queryFromUrl.trim() : undefined;
+
   useEffect(() => {
     const url = buildFetchUrl(props, 0);
     if (!url) {
@@ -118,7 +123,17 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
           data?: PostSchema[];
           pagination?: PaginationMeta;
         };
-        parseAndApply(body, false);
+        
+        // Inline or securely handle parseAndApply logic here to avoid function dependency loops
+        const chunk = body.data ?? [];
+        const page = body.pagination ?? null;
+        setPagination(page);
+        if (page) {
+          nextSkipRef.current = page.skip + page.limit;
+        } else {
+          nextSkipRef.current = chunk.length;
+        }
+        setItems(chunk);
       } catch {
         if (!cancelled) {
           setError("Something went wrong.");
@@ -134,7 +149,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
     return () => {
       cancelled = true;
     };
-  }, [listKey, reloadTick, parseAndApply]);
+  }, [variant, tag, queryFromUrl, reloadTick]);
 
   const loadMore = useCallback(async () => {
     const url = buildFetchUrl(props, nextSkipRef.current);
@@ -168,7 +183,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
     e.preventDefault();
     const q = searchInput.trim();
     if (!q) return;
-    router.push(`/${props.variant}?q=${encodeURIComponent(q)}`);
+    router.push(`/${props.variant}/${encodeURIComponent(q)}`);
   };
 
   const retry = () => setReloadTick((t) => t + 1);
@@ -212,7 +227,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 pb-16 pt-2">
+      <main className="mx-auto max-w-2xl pb-16">
         {props.variant === "search" && !props.queryFromUrl.trim() ? (
           <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/60 px-6 py-16 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -249,10 +264,10 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
         ) : null}
 
         {!loading && items.length > 0 ? (
-          <ul className="flex flex-col gap-6">
+          <ul className="flex flex-col">
             {items.map((post) => (
               <li key={post.PostID ?? post._id}>
-                <div className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="overflow-hidden border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                   <PostCard postData={post} />
                 </div>
               </li>

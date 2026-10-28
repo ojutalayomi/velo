@@ -94,12 +94,12 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
                   className="group flex items-center justify-between gap-3"
                 >
                   <div className="relative">
-                    <Avatar>
+                    <Avatar className="shadow-xl">
                       <AvatarImage
                         src={suggestion.displayPicture}
                         className="rounded-full object-cover"
                       />
-                      <AvatarFallback>{suggestion.username?.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="outline">{suggestion.username?.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     {onlineUsers.includes(suggestion?._id.toString()) && (
                       <div className="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-white bg-green-500 dark:border-zinc-800" />

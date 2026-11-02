@@ -1,31 +1,37 @@
+import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Search, Bookmark } from "lucide-react";
+import { useRouter, useParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import SwiperCore from "swiper";
-import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Bookmark } from "lucide-react";
-import { Comments, formatNo } from "@/templates/PostProps";
-import { PostSchema } from "@/lib/types/type";
-import type { PaginationMeta } from "@/lib/apiPagination";
-
-import { fetchCommentsPage, getPost } from "../lib/getStatus";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
-import { Search } from "lucide-react";
-import { useUser } from "@/app/providers/UserProvider";
-import ImageContent from "@/components/imageContent";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Footer } from "@/components/Footer";
-import { cn, generateRandomToken } from "@/lib/utils";
-import PostCard from "@/components/PostCard";
-import { Skeleton } from "./ui/skeleton";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { useAppDispatch } from "@/redux/hooks";
-import { addPost, setPostPreview, updatePost } from "@/redux/postsSlice";
+import { toast } from "sonner";
+import SwiperCore from "swiper";
+
 import { useSocket } from "@/app/providers/SocketProvider";
-import ShareButton from "./ShareButton";
+import { useUser } from "@/app/providers/UserProvider";
+import { Footer } from "@/components/Footer";
+import ImageContent from "@/components/imageContent";
+import PostCard from "@/components/PostCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
-import PostAnalytics from "./PostAnalytics";
+import type { PaginationMeta } from "@/lib/apiPagination";
+import { PostSchema } from "@/lib/types/type";
+import { cn } from "@/lib/utils";
+import { useAppDispatch } from "@/redux/hooks";
+import { addPost, updatePost } from "@/redux/postsSlice";
+import { RootState } from "@/redux/store";
 import MediaSlides from "@/templates/mediaSlides";
+import { Comments, formatNo } from "@/templates/PostProps";
+
+import PostAnalytics from "./PostAnalytics";
+import ShareButton from "./ShareButton";
+import { fetchCommentsPage, getPost } from "../lib/getStatus";
+import { Skeleton } from "./ui/skeleton";
+import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
+
+
+
+
+
 
 interface Params {
   username?: string;
@@ -40,7 +46,6 @@ const PostPreview: React.FC = () => {
   const { username, id, index } = params;
   const dispatch = useAppDispatch();
   const socket = useSocket();
-  const { message } = useSelector((state: RootState) => state.posts.postPreview);
   const { posts, loading } = useSelector((state: RootState) => state.posts);
   const post = posts.find((post) => post.PostID === id) as PostSchema;
   const [toFetch, setToFetch] = useState<boolean>(true);
@@ -52,11 +57,14 @@ const PostPreview: React.FC = () => {
   const [postLoading, setPostLoading] = useState<boolean>(true);
   const [postError, setPostError] = useState<string | null>(null);
   const [currentPost, setCurrentPost] = useState<PostSchema | null>(null);
-  const replyDraftRef = useRef("");
-  const replyDraftPostIdRef = useRef(id);
-  if (replyDraftPostIdRef.current !== id) {
-    replyDraftRef.current = "";
-    replyDraftPostIdRef.current = id;
+  // Single source of truth for the reply text, shared by the mobile and sidebar inputs.
+  const [replyText, setReplyText] = useState("");
+  const [replyPostId, setReplyPostId] = useState(id);
+  
+  // Navigating to a different post clears the draft (adjusting state during render, no ref needed).
+  if (replyPostId !== id) {
+    setReplyPostId(id);
+    setReplyText("");
   }
 
   const fetchPost = useCallback(async () => {
@@ -109,7 +117,7 @@ const PostPreview: React.FC = () => {
     if (swiper) {
       if (swiper.activeIndex !== indexInt) {
         setToFetch(false);
-        router.push(
+        router.replace(
           `/${currentPost?.Username}/posts/${currentPost?.PostID}/photo/${swiper.activeIndex}`
         );
       }
@@ -120,7 +128,7 @@ const PostPreview: React.FC = () => {
     if (!post || !id || !userdata._id) return;
 
     if (post.Liked) {
-      dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes - 1, Liked: false } }));
+      dispatch(updatePost({ id, updates: { NoOfLikes: post.NoOfLikes - 1, Liked: false } }));
       socket?.emit("reactToPost", {
         type: "unlike",
         key: "NoOfLikes",
@@ -128,7 +136,7 @@ const PostPreview: React.FC = () => {
         postId: id,
       });
     } else {
-      dispatch(updatePost({ id: id, updates: { NoOfLikes: post.NoOfLikes + 1, Liked: true } }));
+      dispatch(updatePost({ id, updates: { NoOfLikes: post.NoOfLikes + 1, Liked: true } }));
       socket?.emit("reactToPost", {
         type: "like",
         key: "NoOfLikes",
@@ -142,9 +150,9 @@ const PostPreview: React.FC = () => {
     if (!post || !id || !userdata._id) return;
 
     if (currentPost?.Shared) {
-      dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares - 1, Shared: false } }));
+      dispatch(updatePost({ id, updates: { NoOfShares: post.NoOfShares - 1, Shared: false } }));
     } else {
-      dispatch(updatePost({ id: id, updates: { NoOfShares: post.NoOfShares + 1, Shared: true } }));
+      dispatch(updatePost({ id, updates: { NoOfShares: post.NoOfShares + 1, Shared: true } }));
     }
   };
 
@@ -190,7 +198,7 @@ const PostPreview: React.FC = () => {
     if (currentPost?.Bookmarked) {
       dispatch(
         updatePost({
-          id: id,
+          id,
           updates: { NoOfBookmarks: post.NoOfBookmarks - 1, Bookmarked: false },
         })
       );
@@ -202,7 +210,7 @@ const PostPreview: React.FC = () => {
       });
     } else {
       dispatch(
-        updatePost({ id: id, updates: { NoOfBookmarks: post.NoOfBookmarks + 1, Bookmarked: true } })
+        updatePost({ id, updates: { NoOfBookmarks: post.NoOfBookmarks + 1, Bookmarked: true } })
       );
       socket?.emit("reactToPost", {
         type: "bookmark",
@@ -219,51 +227,52 @@ const PostPreview: React.FC = () => {
     }
   }, [indexInt, swiper]);
 
+  const hasCurrentPost = !!currentPost;
+
   useEffect(() => {
-    if (!socket || !currentPost) return;
-    socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
+    if (!socket || !hasCurrentPost) return;
+
+    const onDeletePost = (data: { excludeUser: string; postId: string; type: string }) => {
       if (!data.postId) return;
-      if (posts.find((post) => post.PostID === data.postId)) {
-        setCurrentPost((prevPost) => {
-          if (prevPost && prevPost._id === data.postId) {
-            const update: Partial<PostSchema> = {
+      if (!posts.some((p) => p.PostID === data.postId)) return;
+      setCurrentPost((prev) =>
+        prev && prev._id === data.postId
+          ? {
+              ...prev,
               Image: [],
-              Caption: `${prevPost.Type.toUpperCase()} deleted this post.`,
+              Caption: `${prev.Type.toUpperCase()} deleted this post.`,
               WhoCanComment: "none",
-            };
-            prevPost = { ...prevPost, ...update };
-            return prevPost;
-          }
-          return prevPost;
-        });
-      }
-    });
-    socket.on(
-      "updatePost",
-      (data: {
-        excludeUserId: string;
-        postId: string;
-        update: Partial<PostSchema>;
-        type: string;
-      }) => {
-        if (!data.postId) return;
-        if (posts.find((post) => post.PostID === data.postId)) {
-          setCurrentPost((prevPost) => {
-            if (prevPost && prevPost._id === data.postId) {
-              prevPost = { ...prevPost, ...data.update };
-              return prevPost;
             }
-            return prevPost;
-          });
-        }
-      }
-    );
-  }, [socket]);
+          : prev
+      );
+    };
+
+    const onUpdatePost = (data: {
+      excludeUserId: string;
+      postId: string;
+      update: Partial<PostSchema>;
+      type: string;
+    }) => {
+      if (!data.postId) return;
+      if (!posts.some((p) => p.PostID === data.postId)) return;
+      setCurrentPost((prev) =>
+        prev && prev._id === data.postId ? { ...prev, ...data.update } : prev
+      );
+    };
+
+    socket.on("deletePost", onDeletePost);
+    socket.on("updatePost", onUpdatePost);
+
+    return () => {
+      socket.off("deletePost", onDeletePost);
+      socket.off("updatePost", onUpdatePost);
+    };
+  }, [socket, hasCurrentPost, posts]);
 
   return (
-    <div className="fixed flex top-0 left-0 z-50 bg-gray-50 dark:bg-black dark:text-white h-screen w-screen">
+    <div className="fixed left-0 top-0 z-50 flex h-screen w-screen bg-gray-50 dark:bg-black dark:text-white">
       {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
-      <div className="flex flex-1 flex-col h-full">
+      <div className="flex h-full flex-1 flex-col">
         {/* Top bar */}
         <div className="flex justify-between p-4">
           <ArrowLeft size={24} className="cursor-pointer" onClick={() => navigate()} />
@@ -274,14 +283,14 @@ const PostPreview: React.FC = () => {
         {/* Video content (placeholder) */}
         <div className="flex-1">
           {postLoading ? (
-            <div className="flex items-center justify-center w-full h-full">
-              <div className="loader size-7 show"></div>
+            <div className="flex size-full items-center justify-center">
+              <div className="loader show size-7" />
             </div>
           ) : post ? (
-            <MediaSlides className="w-full h-full" postData={post || {}} />
+            <MediaSlides className="size-full" postData={post || {}} />
           ) : (
             postError && (
-              <div className="flex flex-col items-center justify-center w-full h-full">
+              <div className="flex size-full flex-col items-center justify-center">
                 <RefreshCw className="cursor-pointer" size={30} onClick={() => setReload(true)} />
                 <h1>Reload</h1>
               </div>
@@ -292,9 +301,9 @@ const PostPreview: React.FC = () => {
         {/* Controls */}
         <div className="p-4 md:hidden">
           {/* Action buttons */}
-          <div className="flex justify-around items-center">
+          <div className="flex items-center justify-around">
             <button
-              className="text-gray-400 flex items-center"
+              className="flex items-center text-gray-400"
               onClick={() => {
                 // console.log('Open comments')
                 router.push(`/${currentPost?.Username}/posts/${currentPost?.PostID}`);
@@ -305,7 +314,7 @@ const PostPreview: React.FC = () => {
             </button>
             <ShareButton post={post}>
               <span
-                className={`text-gray-400 flex items-center ${currentPost?.Shared ? "text-green-500" : ""}`}
+                className={`flex items-center text-gray-400 ${currentPost?.Shared ? "text-green-500" : ""}`}
                 onClick={handleReshare}
               >
                 <Repeat2 size={24} />
@@ -332,18 +341,18 @@ const PostPreview: React.FC = () => {
         {/* Reply input */}
         <ReplyTextArea
           className="md:hidden"
-          draftRef={replyDraftRef}
-          postId={id ?? ""}
-          placement="mobile"
+          value={replyText}
+          onChange={setReplyText}
           handleComment={handleComment}
         />
       </div>
       <RightSideBar
         id={id || ""}
         currentPost={currentPost}
-        draftRef={replyDraftRef}
+        replyText={replyText}
+        onReplyTextChange={setReplyText}
         handleComment={handleComment}
-        className="flex-none w-1/2 md:w-2/5 lg:w-1/3"
+        className="w-1/2 flex-none md:w-2/5 lg:w-1/3"
       />
     </div>
   );
@@ -355,14 +364,16 @@ const RightSideBar = ({
   className,
   currentPost,
   id,
-  draftRef,
+  replyText,
+  onReplyTextChange,
   handleComment,
   ...props
 }: {
   className?: string;
   currentPost: PostSchema | null;
   id: string;
-  draftRef: React.MutableRefObject<string>;
+  replyText: string;
+  onReplyTextChange: (value: string) => void;
   handleComment: (caption: string) => boolean;
   props?: HTMLDivElement;
 }) => {
@@ -373,16 +384,28 @@ const RightSideBar = ({
   const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // Track mount status to prevent updates on unmounted components
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
+      if (!isMountedRef.current) return;
       const commentsResponse = await fetchCommentsPage(id, 0);
       setComments(commentsResponse.data);
       setCommentsPagination(commentsResponse.pagination);
     } catch (err) {
-      setError((err as Error).message);
+      const message = (err as Error).message;
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -410,56 +433,45 @@ const RightSideBar = ({
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [])
+
+  const hasCurrentPost = !!currentPost;
 
   useEffect(() => {
-    if (!socket || !currentPost) return;
-    socket.on("newComment", (data: { excludeUser: string; blog: PostSchema }) => {
-      setComments((prevComments) => {
-        if (prevComments) {
-          return [data.blog, ...prevComments];
-        }
-        return [data.blog];
-      });
-    });
-    socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
-      // console.log(data)
+    if (!socket || !hasCurrentPost) return;
+
+    const onNewComment = (data: { excludeUser: string; blog: PostSchema }) => {
+      setComments((prev) => (prev ? [data.blog, ...prev] : [data.blog]));
+    };
+
+    const onDeletePost = (data: { excludeUser: string; postId: string; type: string }) => {
       if (!data.postId) return;
-      setComments((prevComments) => {
-        if (prevComments) {
-          return prevComments.filter((comment) => comment._id !== data.postId);
-        }
-      });
-    });
-    socket.on(
-      "updatePost",
-      (data: {
-        excludeUserId: string;
-        postId: string;
-        update: Partial<PostSchema>;
-        type: string;
-      }) => {
-        // console.log(data)
-        if (!data.postId) return;
-        setComments((prevComments) => {
-          if (prevComments) {
-            const index = prevComments.findIndex((post) => post.PostID === data.postId);
-            if (index !== -1) {
-              prevComments[index] = { ...prevComments[index], ...data.update };
-              return prevComments;
-            }
-          }
-          return prevComments;
-        });
-      }
-    );
+      setComments((prev) => (prev ? prev.filter((c) => c._id !== data.postId) : prev));
+    };
+
+    const onUpdatePost = (data: {
+      excludeUserId: string;
+      postId: string;
+      update: Partial<PostSchema>;
+      type: string;
+    }) => {
+      if (!data.postId) return;
+      // Build a new array/object so React sees the change.
+      setComments((prev) =>
+        prev ? prev.map((c) => (c.PostID === data.postId ? { ...c, ...data.update } : c)) : prev
+      );
+    };
+
+    socket.on("newComment", onNewComment);
+    socket.on("deletePost", onDeletePost);
+    socket.on("updatePost", onUpdatePost);
 
     return () => {
-      socket.off("newComment");
-      // socket.off('deletePost');
-      // socket.off('updatePost');
+      socket.off("newComment", onNewComment);
+      socket.off("deletePost", onDeletePost);
+      socket.off("updatePost", onUpdatePost);
     };
-  }, [socket]);
+  }, [socket, hasCurrentPost]);
 
   return (
     <div
@@ -469,34 +481,33 @@ const RightSideBar = ({
       )}
       {...props}
     >
-      <div className="max-h-full mx-auto overflow-auto space-y-2">
+      <div className="mx-auto max-h-full space-y-2 overflow-auto">
         {/* Search Bar */}
-        <div className="dark:bg-zinc-900 bg-gray-50 px-4 py-2 w-full">
+        {/* <div className="w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
               size={18}
             />
             <Input
               type="text"
               placeholder="Search people"
-              className="w-full bg-white dark:bg-zinc-800 border-0 shadow-sm rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-brand/20"
+              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
             />
           </div>
-        </div>
+        </div> */}
 
         {/* Post Section */}
         {currentPost ? (
-          <PostCard key={generateRandomToken(10)} showMedia={false} postData={currentPost} />
+          <PostCard key={commentKeyInner(currentPost)} showMedia={false} postData={currentPost} />
         ) : (
           <RenderLoadingPlaceholder />
         )}
 
         {/* Reply input */}
         <ReplyTextArea
-          draftRef={draftRef}
-          postId={id}
-          placement="sidebar"
+          value={replyText}
+          onChange={onReplyTextChange}
           handleComment={handleComment}
         />
 
@@ -504,14 +515,14 @@ const RightSideBar = ({
         {comments && !loading ? (
           <>
             {comments.map((comment) => (
-              <PostCard key={generateRandomToken(10)} postData={comment} />
+              <PostCard key={commentKeyInner(comment)} postData={comment} />
             ))}
             {commentsPagination?.hasMore ? (
               <div className="flex justify-center py-3">
                 <button
                   type="button"
                   disabled={commentsLoadingMore}
-                  onClick={() => void loadMoreCommentsSidebar()}
+                  onClick={() => loadMoreCommentsSidebar()}
                   className="rounded-full border border-gray-200 px-3 py-1.5 text-xs dark:border-zinc-600"
                 >
                   {commentsLoadingMore ? "Loading…" : "Load older comments"}
@@ -520,8 +531,8 @@ const RightSideBar = ({
             ) : null}
           </>
         ) : (
-          <div className="flex items-center justify-center w-full h-full">
-            <div className="loader size-7 show"></div>
+          <div className="flex size-full items-center justify-center">
+            <div className="loader show size-7" />
           </div>
         )}
 
@@ -537,83 +548,68 @@ const RightSideBar = ({
   );
 };
 
+/**
+ * Controlled reply box. Both the mobile and sidebar instances are always mounted
+ * (one is hidden by CSS) and receive the same `value`, so they never drift apart.
+ */
 function ReplyTextArea({
   className,
-  draftRef,
-  postId,
-  placement,
+  value,
+  onChange,
   handleComment,
 }: {
   className?: string;
-  draftRef: React.MutableRefObject<string>;
-  postId: string;
-  placement: "mobile" | "sidebar";
+  value: string;
+  onChange: (value: string) => void;
   handleComment: (caption: string) => boolean;
 }) {
-  const [replyText, setReplyText] = useState(() => draftRef.current);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [txtButton, setTxtButton] = useState(false);
 
+  // Auto-grow whenever the shared value changes, and again when a hidden copy
+  // becomes visible (a display:none textarea measures 0 until it is shown).
   useEffect(() => {
-    setReplyText(draftRef.current);
-  }, [postId, draftRef]);
+    const el = textAreaRef.current;
+    if (!el) return;
 
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const syncFromRef = () => {
-      const desktop = mq.matches;
-      const active = placement === "sidebar" ? desktop : !desktop;
-      if (active) setReplyText(draftRef.current);
+    const resize = () => {
+      el.style.height = "38px";
+      el.style.height = `${Math.max(38, el.scrollHeight)}px`;
     };
-    syncFromRef();
-    mq.addEventListener("change", syncFromRef);
-    return () => mq.removeEventListener("change", syncFromRef);
-  }, [placement, draftRef]);
+    resize();
 
-  useEffect(() => {
-    const handleInput = () => {
-      const textArea = textAreaRef.current;
-      if (textArea) {
-        textArea.style.height = "38px";
-        textArea.style.height = `${textArea.scrollHeight}px`;
-        if (textArea.innerHTML !== "") setTxtButton(true);
-        else setTxtButton(false);
-      }
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(resize);
+    });
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
     };
-
-    const textArea = textAreaRef.current;
-    if (textArea) {
-      textArea.addEventListener("input", handleInput);
-      return () => {
-        textArea.removeEventListener("input", handleInput);
-      };
-    }
-  }, []);
+  }, [value]);
 
   return (
     <div
-      className={cn("flex items-center p-4 bg-white dark:bg-zinc-900 dark:text-white", className)}
+      className={cn("flex flex-col gap-2 items-end p-4 bg-white dark:bg-zinc-900 dark:text-white", className)}
     >
-      <textarea
+      <TextAreaBox
         ref={textAreaRef}
-        value={replyText}
-        onChange={(e) => {
-          const v = e.target.value;
-          draftRef.current = v;
-          setReplyText(v);
-        }}
+        charLimit={250}
+        maxHeight={300}
+        value={value}
+        onChange={(e) => onChange(e)}
         placeholder="Send your reply"
-        className="flex-grow max-h-[100px] text-sm focus:border-b focus:border-brand resize-none bg-transparent border-none focus:outline-none dark:text-white mr-2"
+        highlightColor="#ff6257"
+        className="max-h-[100px] w-full flex-grow resize-none border-none bg-transparent p-2 text-sm focus:border-b focus:border-brand focus:outline-none dark:text-white"
       />
       <Button
         onClick={() => {
-          if (handleComment(replyText)) {
-            draftRef.current = "";
-            setReplyText("");
-          }
+          if (handleComment(value)) onChange("");
         }}
-        className="bg-brand text-white text-sm px-2 py-1 rounded-full disabled:opacity-50"
-        disabled={!replyText.trim()}
+        className="rounded-full bg-brand px-2 py-1 text-sm text-white disabled:opacity-50"
+        disabled={!value.trim()}
       >
         Reply
       </Button>
@@ -623,7 +619,7 @@ function ReplyTextArea({
 
 function RenderLoadingPlaceholder() {
   return (
-    <div className="flex flex-col space-y-3 cursor-progress m-4 rounded-xl p-4 bg-white dark:bg-zinc-900 shadow-md">
+    <div className="m-4 flex cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
       <div className="flex items-center justify-start gap-2">
         <Skeleton className="size-10 rounded-full" />
         <div className="flex flex-col space-y-2">

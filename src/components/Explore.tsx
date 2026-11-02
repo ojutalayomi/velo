@@ -1,6 +1,7 @@
 "use client";
 import { Play, Layers, RefreshCw, Settings2, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
@@ -232,6 +233,12 @@ const Explore = () => {
 
       {/* Explore Grid */}
       <main className="max-w-screen-sm mx-auto p-1">
+        <Link
+          href="/trending"
+          className="mb-2 block rounded-lg bg-brand/10 px-4 py-3 text-sm font-medium text-brand hover:bg-brand/20"
+        >
+          Discover trending conversations →
+        </Link>
         <div className="grid grid-cols-3 tablets:grid-cols-4 tablets1:grid-cols-5 gap-1">
           {loading ? (
             <GridSkeletons count={18} />

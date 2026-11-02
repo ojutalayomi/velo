@@ -1,3 +1,4 @@
+import { TextAreaBox, Details } from "@ojutalayomi/react-textarea-enhanced";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import {
   X,
@@ -24,7 +25,7 @@ import {
   useState,
 } from "react";
 import { useSelector } from "react-redux";
-import { TextAreaBox, Details } from "@ojutalayomi/react-textarea-enhanced";
+import { toast } from "sonner";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";
@@ -51,8 +52,9 @@ import {
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { useMentionPicker } from "@/hooks/useMentionPicker";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
@@ -74,8 +76,9 @@ interface ChatTextareaProps {
   quote: QuoteProp;
   newMessage: string;
   disabled?: boolean;
+  chatId?: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
-  handleSendMessage: (messageId: string) => void;
+  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
   handleTyping?: () => void;
   closeQuote: () => void;
 }
@@ -84,6 +87,7 @@ const ChatTextarea = ({
   quote,
   newMessage,
   disabled,
+  chatId,
   setNewMessage,
   handleSendMessage,
   handleTyping,
@@ -93,6 +97,8 @@ const ChatTextarea = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } =
+    useMentionPicker(chatId ?? null, newMessage, textAreaRef);
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);
@@ -101,6 +107,14 @@ const ChatTextarea = ({
   const [expanded, setExpanded] = useState<boolean>(false);
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
+
+  const handleSendWithMentions = useCallback(
+    (messageId: string) => {
+      handleSendMessage(messageId, mentions);
+      clearMentions();
+    },
+    [handleSendMessage, mentions, clearMentions]
+  );
 
   // Memoize handleInput to use details parameter instead of state
   const handleInput = useCallback((details: Details) => {
@@ -173,19 +187,13 @@ const ChatTextarea = ({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter") {
-        if (e.shiftKey) {
-          return; // Allow new line when Shift+Enter
-        }
-
-        e.preventDefault(); // Prevent default for all Enter cases
-
         if (newMessage.trim().length > 0) {
-          handleSendMessage(quote.message?._id);
+          handleSendWithMentions(quote.message?._id);
           dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
         }
       }
     },
-    [newMessage, handleSendMessage, quote.message?._id, dispatch]
+    [newMessage, handleSendWithMentions, quote.message?._id, dispatch]
   );
 
   // Memoize className to prevent re-renders
@@ -217,8 +225,8 @@ const ChatTextarea = ({
 
   // Memoize send button handler
   const handleSendClick = useCallback(() => {
-    handleSendMessage(quote.message?._id);
-  }, [handleSendMessage, quote.message?._id]);
+    handleSendWithMentions(quote.message?._id);
+  }, [handleSendWithMentions, quote.message?._id]);
 
   const urls = extractUrls(newMessage);
   const firstUrl = urls[0];
@@ -232,7 +240,7 @@ const ChatTextarea = ({
         )}
       >
         {quote.state && (
-          <div className="mx-2 mb-2 rounded-lg bg-gray-100 p-3 dark:bg-zinc-800">
+          <div className="mb-2 rounded-lg bg-gray-100 p-1 dark:bg-zinc-800">
             <div className="flex max-w-full items-center justify-between gap-1">
               <div className="flex min-w-0 items-stretch space-x-2">
                 <div
@@ -279,7 +287,7 @@ const ChatTextarea = ({
             newMessage={newMessage}
             setNewMessage={setNewMessage}
             handleTyping={handleTyping}
-            handleSendMessage={handleSendMessage}
+            handleSendMessage={handleSendWithMentions}
             setFileAccepts={setFileAccepts}
           />
         )}
@@ -287,14 +295,51 @@ const ChatTextarea = ({
         <div className="flex items-end justify-between gap-2">
           <Pop input={inputRef} setFileAccepts={setFileAccepts} />
           <div className="relative flex-1">
+            {/* Mention picker */}
+            {showPicker && (
+              <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                {isFetching ? (
+                  <div className="p-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Loading members…
+                  </div>
+                ) : filteredParticipants.length === 0 ? (
+                  <div className="p-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No members found
+                  </div>
+                ) : (
+                  <ul>
+                    {filteredParticipants.map((p) => (
+                      <li
+                        key={p.userId}
+                        className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // prevent textarea blur on click
+                          const updated = selectMention(p);
+                          setNewMessage(updated);
+                        }}
+                      >
+                        <Avatar className="size-7">
+                          <AvatarImage src={p.displayPicture} alt={p.name} />
+                          <AvatarFallback className="text-xs">{p.name.slice(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium dark:text-white">{p.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{p.username}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             <TextAreaBox
-              // value={newMessage}
+              value={newMessage}
               onChange={setNewMessage}
               highlightColor="#ff6257"
               id="txt"
               placeholder="Type a message..."
               minHeight={20}
-              maxHeight={160}
+              // maxHeight={160}
               ref={textAreaRef}
               getDetails={handleGetDetails}
               onKeyDown={handleKeyDown}
@@ -413,7 +458,7 @@ interface UploadDialogProps {
   newMessage: string;
   setNewMessage: Dispatch<SetStateAction<string>>;
   handleTyping?: () => void;
-  handleSendMessage: (messageId: string) => void;
+  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
   setFileAccepts: Dispatch<SetStateAction<string>>;
 }
 

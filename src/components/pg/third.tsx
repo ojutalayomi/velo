@@ -1,8 +1,12 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { FormData } from "./FormProps";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Camera, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { FormData } from "./FormProps";
 import "../fontAwesomeLibrary";
+import { useAppDispatch } from "../../redux/hooks";
 import {
   setError,
   setErrors,
@@ -10,11 +14,9 @@ import {
   updateFormData,
 } from "../../redux/signupSlice";
 import { RootState } from "../../redux/store";
-import { useAppDispatch } from "../../redux/hooks";
-import { useSelector } from "react-redux";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Camera, X } from "lucide-react";
+
 
 const Third: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
@@ -31,7 +33,7 @@ const Third: React.FC = () => {
   }, [preview]);
 
   const isValidPassword = (password: string) => {
-    const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.,\/#!$%\^&\*;:{}=\-_`~()]).{6,20}$/;
+    const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.,/#!$%^&*;:{}=_-`~()]).{6,20}$/;
     return re.test(password);
   };
 

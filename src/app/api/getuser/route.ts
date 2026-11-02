@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
 import { ObjectId } from "mongodb";
+import { NextRequest, NextResponse } from "next/server";
+
+import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 
 interface Payload {
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
           name: 1,
           email: 1,
           username: 1,
+          coverPhoto: 1,
           displayPicture: 1,
           verified: 1,
           userId: 1,

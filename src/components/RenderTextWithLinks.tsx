@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const hashtagMentionTokenOrUrlRegex = /([#@\\$]\w+|https?:\/\/[^\s]+|www\.[^\s]+)/g;
 
-export const renderTextWithLinks = (text: string) => {
+export const renderTextWithLinks = (text: string, validMentionUsernames?: string[]) => {
   const safeText = text || "";
 
   const parts = safeText.split(hashtagMentionTokenOrUrlRegex);
@@ -41,14 +41,21 @@ export const renderTextWithLinks = (text: string) => {
       );
     } else if (/^@\w+/.test(part)) {
       // Mention link
+      const username = part.slice(1);
+      const isConfirmed = validMentionUsernames?.some(
+        (u) => u.toLowerCase() === username.toLowerCase()
+      );
       return (
         <Link
           key={`mention-${i}`}
-          href={`/${encodeURIComponent(part.slice(1))}?src=mention_click`}
-          className="text-brand transition-all duration-150 hover:underline"
+          href={`/${encodeURIComponent(username)}?src=mention_click`}
+          className={
+            isConfirmed
+              ? "font-semibold text-brand bg-brand/10 rounded px-0.5 transition-all duration-150 hover:underline"
+              : "text-brand transition-all duration-150 hover:underline"
+          }
           onClick={(e) => {
             e.stopPropagation();
-            console.log(`Mention clicked: ${part}`);
           }}
         >
           {part}

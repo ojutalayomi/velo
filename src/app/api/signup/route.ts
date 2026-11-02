@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       ) {
         // Email is confirmed, prevent account creation
 
-        return NextResponse.json({ error: "Email is already confirmed." }, { status: 403 });
+        return NextResponse.json({ error: "An account with this email already exists." }, { status: 403 });
       }
 
       // Check if the account has exceeded the sign-up limit
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         // Return an error response indicating that sign-ups are not allowed for this account
 
         return NextResponse.json(
-          { error: "Sign-ups are not allowed for this account." },
+          { error: "You have been barred from creating an account. Contact support to make complaints" },
           { status: 409 }
         );
       }
@@ -102,12 +102,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ message: "Confirmation email sent." }, { status: 200 });
       } else {
         let error = {};
-        if (result.username === username) error = "Username is already in use";
+        if (result.username === username) error = "Username is not available.";
 
-        if (result.email === email) error = "Email is already in use";
+        if (result.email === email) error = "Email is not available";
 
         if (result.username === username && result.email === email)
-          error = "Both Email and Username are in use";
+          error = "Both Email and Username can't be used.";
         // console.log(error);
 
         return NextResponse.json({ error }, { status: 409 });

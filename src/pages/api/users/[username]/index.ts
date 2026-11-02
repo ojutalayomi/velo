@@ -22,7 +22,19 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       const followers = db.followers();
 
       // Find user
-      const user = await users.findOne({ username });
+      const user = await users.findOne(
+        { username },
+        {
+          projection: {
+            password: 0,
+            confirmationToken: 0,
+            resetToken: 0,
+            resetTokenExpiry: 0,
+            loginToken: 0,
+            lastResetAttempt: 0
+          },
+        }
+      );
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -39,18 +51,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         }
       }
 
-      // Remove sensitive information
-      const {
-        password,
-        confirmationToken,
-        resetToken,
-        resetTokenExpiry,
-        loginToken,
-        ...sanitizedUser
-      } = user;
-      delete sanitizedUser.lastResetAttempt;
-
-      return res.status(200).json(sanitizedUser);
+      return res.status(200).json(user);
     } catch (error) {
       console.error("Error:", error);
       return res.status(500).json({ message: "Internal Server Error" });

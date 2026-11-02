@@ -199,7 +199,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
   }, [otherIds, gid, socket, userdata._id]);
 
-  const handleSendMessage = async (id: string) => {
+  const handleSendMessage = async (id: string, mentions?: { userId: string; username: string }[]) => {
     if (newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
@@ -231,6 +231,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         attachments: [] as Attachment[],
         quotedMessageId: id,
         status: "sending" as msgStatus,
+        mentions: mentions ?? [],
       });
 
       // Read and process all files
@@ -262,6 +263,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
 
       const msgCopy = { ...msg };
+      msgCopy.mentions = mentions ?? [];
       msgCopy.attachments = msgCopy.attachments.map((m, index) => {
         const objectURL = URL.createObjectURL(attachments[index]);
         return {
@@ -700,6 +702,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         <ChatTextarea
           quote={quote}
           newMessage={newMessage}
+          chatId={gid}
           setNewMessage={setNewMessage}
           handleSendMessage={handleSendMessage}
           handleTyping={handleTyping}

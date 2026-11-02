@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { verifyToken } from "@/lib/auth";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
+import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 import type { Payload, PostSchema } from "@/lib/types/type";
 

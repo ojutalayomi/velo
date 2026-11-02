@@ -217,6 +217,24 @@ export type AttachmentSchema = {
   uploadedAt: string;
 };
 
+export type Mention = {
+  userId: string;
+  username: string;
+};
+
+export type MentionNotification = {
+  messageId: string;
+  chatId: string;
+  chatType: ChatType;
+  mentionedBy: {
+    userId: string;
+    username: string;
+    displayPicture: string;
+  };
+  content: string;
+  timestamp: string;
+};
+
 export interface Message {
   _id?: ObjectId | string;
   chatId: string;
@@ -237,6 +255,7 @@ export interface Message {
   attachments: (Attachment | string)[];
   quotedMessageId: string;
   status: msgStatus;
+  mentions?: Mention[];
 }
 
 export interface MessageAttributes extends Message {

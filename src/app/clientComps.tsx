@@ -1,9 +1,12 @@
 "use client";
-import { WifiOff, XCircle } from "lucide-react";
+import { Megaphone, WifiOff, X, XCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
+
 import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
+
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -17,7 +20,6 @@ import RightSideBar from "@/components/RightSideBar";
 import Sidebar from "@/components/Sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import UserPhoto from "@/components/UserPhoto";
-import { toast } from "sonner";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { FileStorageProvider } from "@/hooks/useFileStorage";
 import {
@@ -37,13 +39,13 @@ import {
   updateConversation,
   addMessage,
   addSetting,
-  fetchChats,
   addConversation,
   updateMessage,
   updateMessageReactions,
+  fetchChats,
 } from "@/redux/chatSlice";
-import { useAppDispatch } from "@/redux/hooks";
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
+import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
@@ -51,8 +53,9 @@ import { RootState } from "@/redux/store";
 import Error from "./error";
 import VideoChat from "../components/CallPage";
 import { useNetwork } from "./providers/NetworkProvider";
+import { Button } from "@/components/ui/button";
 
-const ClientComponents = ({ children }: ClientComponentsProps) => {
+const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
   const { deletedConversations } = useSelector((state: RootState) => state.chat);
@@ -101,7 +104,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     setLoad(false);
     if (pathname?.includes("/chats/")) setActiveRouteState("chats");
   }, [pathname, setActiveRouteState]);
-
+  
   useEffect(() => {
     async function fetchData() {
       await fetchChats(dispatch);
@@ -426,6 +429,32 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       );
     });
 
+    socket.on(
+      "mentionNotification",
+      (data: {
+        messageId: string;
+        chatId: string;
+        chatType: string;
+        mentionedBy: { userId: string; username: string; displayPicture: string };
+        content: string;
+        timestamp: string;
+      }) => {
+        toast(`@${data.mentionedBy.username} mentioned you`, {
+          description: data.content.length > 80 ? data.content.slice(0, 80) + "\u2026" : data.content,
+          action: {
+            label: "View",
+            onClick: () => {
+              if (data.chatType === "Group") {
+                window.location.href = `/chats/group/${data.chatId}`;
+              } else {
+                window.location.href = `/chats/${data.chatId}`;
+              }
+            },
+          },
+        });
+      }
+    );
+
     return () => {
       socket.off("newMessage", handleChatMessage);
       socket.off("userTyping", handleTyping);
@@ -442,6 +471,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("reactionAdded");
       socket.off("reactionRemoved");
       socket.off("reactionUpdated");
+      socket.off("mentionNotification");
       socket.off("chatError");
     };
   }, [socket, handleChatMessage, handleNewChat, handleTyping, handleStopTyping, conversations]);
@@ -457,13 +487,63 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
   return (
     <>
       {displayAnnouncement.status && (
-        <div id="announcement" className="relative w-screen bg-brand p-2 text-center text-white">
-          <h1>{displayAnnouncement.message}</h1>
-          <XCircle
-            className="absolute right-3 top-1/2 -translate-y-1/2 transform cursor-pointer"
-            size={20}
-            onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
-          />
+        <div
+          id="announcement"
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-x-0 top-4 z-[999] flex justify-center px-4"
+        >
+          <div className="shadow-sxs relative isolate flex w-full items-center justify-center overflow-hidden rounded-sm border border-primary/20 bg-brand px-4 py-2 tracking-tight">
+            <div
+              aria-hidden="true"
+              className="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
+            >
+              <div
+                style={{
+                  clipPath:
+                    'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
+                }}
+                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+              />
+            </div>
+
+            <div
+              aria-hidden="true"
+              className="absolute left-[max(45rem,calc(50%+8rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
+            >
+              <div
+                style={{
+                  clipPath:
+                    'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
+                }}
+                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+              />
+            </div>
+
+            <div className="relative z-10 flex-col items-center space-y-2 text-sm sm:flex sm:flex-row sm:gap-3 sm:space-y-0">
+              <div className="text-md flex items-center gap-3 font-medium text-foreground">
+                {displayAnnouncement.message}
+              </div>
+
+              {/* <div className="group flex items-center gap-3">
+                <div className="hidden size-1 rounded-full bg-primary sm:block" />
+
+                <Button className="tetx-shadow-sm rounded-sm border border-white/20 bg-white/30 text-foreground shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-2px_5px_rgba(0,0,0,0.1),0_8px_20px_rgba(0,0,0,0.1)] dark:border-white/20 dark:bg-white/10 dark:shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),inset_0_-2px_4px_rgba(0,0,0,0.3),0_8px_20px_rgba(0,0,0,0.25)]">
+                  See what’s new
+                  <HiArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Button>
+              </div> */}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
+              className="absolute right-2 rounded-lg text-foreground hover:bg-transparent hover:text-foreground/70 dark:hover:bg-transparent"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
       )}
       <div id="root" className="overflow-hidden">
@@ -486,7 +566,7 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
               </Alert>
             )}
             {incomingCallId && (
-              <ConfirmCall id={incomingCallId} show={true} conversations={conversations} />
+              <ConfirmCall id={incomingCallId} show conversations={conversations} />
             )}
             {!callRoute ? (
               <Sidebar
@@ -521,4 +601,4 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     </>
   );
 };
-export default ClientComponents;
+export default RootClientComponents;

@@ -3,18 +3,17 @@ import { ArrowLeft, Cake, Check, Link, Plus, Pin, Loader2 } from "lucide-react";
 import NextLink from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "sonner";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { submitFollowUpdate } from "@/lib/followApi";
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
-import { userIdString } from "@/lib/utils";
 import { timeFormatter } from "@/templates/PostProps";
 
 import ContentSection from "./ContentTabs";
@@ -45,12 +44,6 @@ export default function Profile({
   const [postsLoadingMore, setPostsLoadingMore] = useState(false);
 
   const viewedProfileKey = `${pd._id}:${pd.username ?? ""}`;
-
-  useEffect(() => {
-    setProfileData(pd);
-    setPostCards(profilePostCards);
-    setPostsPagination(initialPagination);
-  }, [viewedProfileKey, pd, profilePostCards, initialPagination]);
 
   useEffect(() => {
     if (!socket) return;
@@ -208,7 +201,7 @@ export default function Profile({
   const postCount = postCards.filter((post) => post.Type === "post").length;
 
   return (
-    <div className="h-screen max-h-screen overflow-auto w-full dark:bg-black">
+    <div className="h-screen max-h-screen w-full overflow-auto dark:bg-black">
       <div
         className={`sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg`}
       >
@@ -263,8 +256,14 @@ export default function Profile({
             username={profileData.username}
             profileId={profileData._id as unknown as string}
           />
+          {(profileData._id !== userdata._id && !profileData.isPrivate) && (<Button
+            onClick={() => router.push(`/chats/new?otherId=${profileData._id}`)}
+            className="rounded-full bg-brand/90 px-4 py-2 text-white hover:bg-brand/80"
+          >
+            Message
+          </Button>)}
           <div className="overflow-hidden rounded-full border-2 border-white dark:border-black">
-            {(profileData._id as unknown as string) === userdata._id ? (
+            {profileData._id === userdata._id ? (
               <Button
                 onClick={() => router.push(`/${profileData.username}/edit`)}
                 className="rounded-full bg-brand/90 px-4 py-2 text-white hover:bg-brand/80"

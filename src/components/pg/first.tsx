@@ -1,12 +1,13 @@
 "use client";
-import React from "react";
 import { useRouter } from "next/navigation";
+import React from "react";
+
 import { FormProps, FormData } from "./FormProps";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setErrors, handleNext, handlePrevious, updateFormData } from "../../redux/signupSlice";
 import { RootState } from "../../redux/store";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 const First: React.FC = () => {
   const navigate = useRouter().push;

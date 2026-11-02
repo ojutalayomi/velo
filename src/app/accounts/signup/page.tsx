@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+
 import Comps from "./clientComps";
 
 export default function SignupPage() {

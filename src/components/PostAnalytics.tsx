@@ -1,136 +1,120 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+
+import { PostAnalyticsSession } from "@/lib/postAnalytics";
+import {
+  createPostAnalyticsTransport,
+  resolvePostAnalyticsTarget,
+} from "@/lib/postAnalyticsClient";
 
 interface PostAnalyticsProps {
   postId: string;
+  /** Used only to reset an exposure on identity changes; identity is resolved on the server. */
   userId?: string;
 }
 
-interface AnalyticsData {
-  postId: string;
-  event: "view" | "scroll" | "time" | "engagement";
-  metadata?: {
-    scrollDepth?: number;
-    timeOnPage?: number;
-    referrer?: string;
-    userAgent?: string;
-  };
-}
-
 export default function PostAnalytics({ postId, userId }: PostAnalyticsProps) {
-  const [scrollDepth, setScrollDepth] = useState(0);
-  const [timeOnPage, setTimeOnPage] = useState(0);
-  const startTimeRef = useRef<number>(Date.now());
-  const viewTrackedRef = useRef<boolean>(false);
-  const scrollTrackedRef = useRef<Set<number>>(new Set());
-  const timeTrackedRef = useRef<Set<number>>(new Set());
+  const markerRef = useRef<HTMLSpanElement>(null);
 
-  // Track initial view
   useEffect(() => {
-    if (!viewTrackedRef.current && postId) {
-      viewTrackedRef.current = true;
-      trackEvent({
+    const marker = markerRef.current;
+    if (
+      !postId ||
+      !marker ||
+      typeof IntersectionObserver === "undefined" ||
+      !globalThis.crypto?.randomUUID
+    )
+      return;
+
+    const transport = createPostAnalyticsTransport();
+    const makeSession = () =>
+      new PostAnalyticsSession(
         postId,
-        event: "view",
-        metadata: {
-          referrer: document.referrer,
-          userAgent: navigator.userAgent,
+        crypto.randomUUID(),
+        transport.deliver,
+        () => crypto.randomUUID(),
+        performance.now()
+      );
+    let session = makeSession();
+    let target: Element | null = null;
+    let exposed = false;
+    let observer: IntersectionObserver | null = null;
+    let stopped = false;
+    const update = () =>
+      session.setExposure(
+        !stopped && exposed && document.visibilityState === "visible",
+        performance.now()
+      );
+    const resolveTarget = () => {
+      const next = resolvePostAnalyticsTarget(marker, postId);
+      if (next === target) return;
+      observer?.disconnect();
+      exposed = false;
+      update();
+      target = next;
+      if (!target) return;
+      const observedTarget = target;
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (target !== observedTarget || stopped) return;
+          // Process every transition: a batched leave/re-enter must break continuity.
+          for (const entry of entries) {
+            exposed = entry.isIntersecting && entry.intersectionRatio >= 0.5;
+            update();
+          }
         },
-      });
-    }
-  }, [postId]);
-
-  // Track scroll depth
-  useEffect(() => {
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const scrollableHeight = documentHeight - windowHeight;
-      const currentScrollDepth =
-        scrollableHeight > 0 ? Math.round((scrollTop / scrollableHeight) * 100) : 0;
-
-      setScrollDepth(currentScrollDepth);
-
-      // Track scroll milestones (25%, 50%, 75%, 100%)
-      const milestones = [25, 50, 75, 100];
-      milestones.forEach((milestone) => {
-        if (currentScrollDepth >= milestone && !scrollTrackedRef.current.has(milestone)) {
-          scrollTrackedRef.current.add(milestone);
-          trackEvent({
-            postId,
-            event: "scroll",
-            metadata: {
-              scrollDepth: milestone,
-            },
-          });
-        }
-      });
+        { threshold: [0, 0.5, 1] }
+      );
+      observer.observe(target);
     };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [postId]);
-
-  // Track time on page
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      setTimeOnPage(elapsed);
-
-      // Track time milestones (10s, 30s, 60s, 120s)
-      const milestones = [10, 30, 60, 120];
-      milestones.forEach((milestone) => {
-        if (elapsed >= milestone && !timeTrackedRef.current.has(milestone)) {
-          timeTrackedRef.current.add(milestone);
-          trackEvent({
-            postId,
-            event: "time",
-            metadata: {
-              timeOnPage: milestone,
-            },
-          });
-        }
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [postId]);
-
-  // Track final engagement metrics on unmount
-  useEffect(() => {
+    resolveTarget();
+    // Loading content can replace placeholders after this tracker mounts.
+    const mutations = new MutationObserver(resolveTarget);
+    if (marker.parentElement) {
+      mutations.observe(marker.parentElement, { childList: true, subtree: true });
+    }
+    const interval = window.setInterval(() => {
+      // Visibility transitions are also handled immediately, not just at this cadence.
+      if (document.visibilityState !== "visible") update();
+      session.tick(performance.now());
+    }, 100);
+    const finalize = () => {
+      if (stopped) return;
+      stopped = true;
+      transport.flush();
+      session.finalize(performance.now());
+    };
+    const restore = (event: PageTransitionEvent) => {
+      if (!event.persisted || !stopped) return;
+      // A bfcache restoration is a new exposure, not a continuation of a finalized one.
+      session = makeSession();
+      stopped = false;
+      exposed = false;
+      observer?.disconnect();
+      target = null;
+      resolveTarget();
+    };
+    document.addEventListener("visibilitychange", update);
+    window.addEventListener("pagehide", finalize);
+    window.addEventListener("pageshow", restore);
     return () => {
-      const finalTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      if (finalTime > 5) {
-        // Only track if user spent more than 5 seconds
-        trackEvent({
-          postId,
-          event: "engagement",
-          metadata: {
-            scrollDepth,
-            timeOnPage: finalTime,
-          },
-        });
-      }
+      window.clearInterval(interval);
+      mutations.disconnect();
+      observer?.disconnect();
+      document.removeEventListener("visibilitychange", update);
+      window.removeEventListener("pagehide", finalize);
+      window.removeEventListener("pageshow", restore);
+      finalize();
     };
-  }, [postId, scrollDepth]);
+  }, [postId, userId]);
 
-  const trackEvent = async (data: AnalyticsData) => {
-    try {
-      await fetch("/api/analytics/track", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-    } catch (error) {
-      // Silently fail - analytics shouldn't break the app
-      console.error("Failed to track analytics:", error);
-    }
-  };
-
-  // This component doesn't render anything
-  return null;
+  return (
+    <span
+      ref={markerRef}
+      data-post-analytics-marker=""
+      aria-hidden="true"
+      style={{ display: "none" }}
+    />
+  );
 }

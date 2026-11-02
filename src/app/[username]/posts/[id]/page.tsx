@@ -1,7 +1,8 @@
 "use client";
+import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -17,6 +18,9 @@ import { fetchCommentsPage, getPost } from "@/lib/getStatus";
 import { PostSchema } from "@/lib/types/type";
 import { RootState } from "@/redux/store";
 import { Comments, Post } from "@/templates/PostProps";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Link from "next/link";
+
 
 const PostContent: React.FC = () => {
   const params = useParams();
@@ -37,6 +41,9 @@ const PostContent: React.FC = () => {
     post: true,
     comment: true,
   });
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const { posts, loading: postsLoading } = useSelector((state: RootState) => state.posts);
   const [post, setPost] = useState<Post["post"]>();
   const [postMessage, setPostMessage] = useState<Post["message"]>();
@@ -44,6 +51,7 @@ const PostContent: React.FC = () => {
   const [commentsMessage, setCommentsMessage] = useState<Comments["message"]>();
   const [commentsPagination, setCommentsPagination] = useState<PaginationMeta | null>(null);
   const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
+  const [newMessage, setNewMessage] = useState<string>("")
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [textAreaStyle, setTextAreaStyle] = useState<string>("rounded-full");
   const [isTextAreaFocused, setIsTextAreaFocused] = useState<boolean>(false);
@@ -240,10 +248,36 @@ const PostContent: React.FC = () => {
     };
   }, [post, socket]);
 
+  // Memoize onKeyDown handler
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter") {
+        if (e.shiftKey) {
+          return; // Allow new line when Shift+Enter
+        }
+
+        e.preventDefault(); // Prevent default for all Enter cases
+
+        if (newMessage.trim().length > 0) {
+          // handleSendMessage(quote.message?._id);
+        }
+      }
+    },
+    [newMessage]
+  );
+
+  // Memoize emoji picker onChange handler
+  const handleEmojiChange = useCallback(
+    (emoji: string) => {
+      setNewMessage((prev) => prev + emoji);
+    },
+    [setNewMessage]
+  );
+
   return (
     <>
       {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
-      <div className="flex size-full flex-col h-screen max-h-screen w-full overflow-auto">
+      <div className="flex size-full h-screen max-h-screen w-full flex-col overflow-auto">
         <div className="sticky top-0 z-10 flex justify-between bg-white p-1 shadow-md dark:bg-zinc-900">
           <div className="m-2 flex w-full items-center justify-between gap-2">
             <ArrowLeft size={24} className="cursor-pointer" onClick={() => navigate()} />
@@ -255,7 +289,7 @@ const PostContent: React.FC = () => {
             <Share size={24} />
           </div>
         </div>
-        <div id="postpage" className="dark:text-slate-200">
+        <div className="flex-1 dark:text-slate-200">
           {loading.post ? (
             <div className="mt-4 flex w-full cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
               <div className="flex items-center justify-start gap-2">
@@ -284,8 +318,16 @@ const PostContent: React.FC = () => {
             )
           )}
 
-          <div className="commentSection">
-            {!errorMessage.comment ? <div className="commentHeader">Comments</div> : null}
+          <div>
+            {!errorMessage.comment ? 
+            <div className="flex items-center justify-between border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
+              <SelectComponent />
+              <Link
+              href={pathname+'/shares'}
+              >
+                View quotes &gt;
+              </Link>
+            </div> : null}
             {loading.comment ? (
               <div className="flex h-[90%] w-full items-center justify-center">
                 <Loader2 className="loader" size={30} />
@@ -309,7 +351,7 @@ const PostContent: React.FC = () => {
                 ) : null}
               </>
             ) : (
-              <div className="noComments">No comments yet.</div>
+              <div className="text-center">No comments yet.</div>
             )}
             {errorMessage.comment && (
               <div className="flex h-[90%] w-full items-center justify-center">
@@ -318,9 +360,18 @@ const PostContent: React.FC = () => {
             )}
           </div>
         </div>
-        {(!errorMessage.post || commentsMessage === "Disable Comment.") && (
-          <div className="sticky bottom-0 w-full border-t border-gray-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-black">
-            <div className="mx-auto flex max-w-3xl items-center gap-2">
+        {(!errorMessage.post || !userdata._id || commentsMessage === "Disable Comment.") && (
+          <footer className="sticky bottom-0 w-full border-t border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
+            <div 
+            className="mx-auto flex max-w-3xl items-center gap-2"
+            onClick={() => {
+              const currParams = new URLSearchParams(searchParams?.toString() || "");
+              currParams.set("composeComment", "true");
+              currParams.set("postId", post?.PostID || "");
+              currParams.set("postType", "comment");
+              router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
+            }}
+            >
               <Image
                 src={userdata.displayPicture || "/velo11.png"}
                 className={`rounded-full object-cover ${isTextAreaFocused ? "hidden" : ""}`}
@@ -329,19 +380,24 @@ const PostContent: React.FC = () => {
                 alt="User avatar"
               />
               <div className={`relative flex flex-1 ${textAreaStyle} overflow-hidden`}>
-                <textarea
-                  className={`max-h-28 min-h-[34px] flex-1 resize-none bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400`}
+                <TextAreaBox
+                  className={`max-h-28 min-h-[34px] flex-1 resize-none border bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400`}
+                  value={newMessage}
+                  onChange={setNewMessage}
+                  onKeyDown={handleKeyDown}
+                  highlightColor="#ff6257"
                   ref={textAreaRef}
+                  minHeight={20}
+                  maxHeight={160}
                   placeholder="Write a comment..."
-                  rows={1}
+                  fontFamily="myCustomFont, myCustomFont Fallback"
+                  textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
                 />
                 <div
-                  className={`absolute right-3 ${isTextAreaFocused ? "bottom-0" : "top-1/2"} flex -translate-y-1/2 transform items-center gap-2 text-gray-400`}
+                  className={`absolute right-3 ${isTextAreaFocused ? "bottom-0" : "top-1/2"} flex -translate-y-1/2 transform items-center gap-4 text-gray-400`}
                 >
                   <EmojiPicker
-                    onChange={(emoji: string) =>
-                      textAreaRef.current && (textAreaRef.current.value += emoji)
-                    }
+                    onChange={handleEmojiChange}
                   >
                     <SmileIcon className="size-4 cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
                   </EmojiPicker>
@@ -350,10 +406,35 @@ const PostContent: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </footer>
         )}
       </div>
     </>
   );
 };
 export default PostContent;
+
+function SelectComponent() {
+  const items = [
+    { label: "Recent", value: "Most recent" },
+    { label: "Relevant", value: "Most relevant" },
+    { label: "Liked", value: "Most liked" }
+  ]
+  return (
+    <Select value={items[0].value}>
+      <SelectTrigger className="w-full max-w-48 rounded-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="max-w-28">
+        <SelectGroup>
+          <SelectLabel>Sort comments</SelectLabel>
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}

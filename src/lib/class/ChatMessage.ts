@@ -1,6 +1,7 @@
 import {
   Attachment,
   ChatType,
+  Mention,
   MessageAttributes,
   MessageType,
   msgStatus,
@@ -31,6 +32,7 @@ export class ChatMessage implements MessageAttributes {
   public attachments: Attachment[];
   public quotedMessageId: string;
   public status: msgStatus;
+  public mentions: Mention[];
 
   // constructor to force use of factory methods
   constructor(data: MessageAttributes) {
@@ -48,6 +50,7 @@ export class ChatMessage implements MessageAttributes {
     this.quotedMessageId = data.quotedMessageId;
     this.status = data.status;
     this.chatType = data.chatType;
+    this.mentions = data.mentions ?? [];
   }
 
   public toMessageAttributes(): MessageAttributes {
@@ -65,6 +68,7 @@ export class ChatMessage implements MessageAttributes {
       quotedMessageId: this.quotedMessageId,
       status: this.status,
       chatType: this.chatType,
+      mentions: this.mentions,
     };
   }
 

@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import { useUser } from "@/app/providers/UserProvider";
 import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
 import { Footer } from "@/components/Footer";
+import TrendingTopics from "@/components/TrendingTopics";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
 import { Button } from "@/components/ui/button";
 import { axiosApi } from "@/lib/api";
@@ -130,22 +131,8 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
         </div>
 
         {/* Trends Section */}
-        <div className="relative z-0 mx-4 max-h-[70%] overflow-auto rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-800">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Trending</h2>
-            <a href="#" className="text-sm text-brand transition-colors hover:text-brand/80">
-              See All
-            </a>
-          </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 overflow-auto">
-                  <div>
-                    <p className="truncate text-sm font-medium">Trending</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="relative z-0 mx-4">
+          <TrendingTopics />
         </div>
 
         {/* Footer */}

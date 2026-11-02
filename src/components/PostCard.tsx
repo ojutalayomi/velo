@@ -404,6 +404,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     <article
       id={data.PostID.slice(0, -4)}
       data-id={data.PostID}
+      data-post-analytics-id={postData.PostID}
       className={cn(
         "w-full bg-white text-foreground dark:bg-zinc-900",
         containsPost ? "border border-border/70" : "border-b border-border/70"

@@ -7,6 +7,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchCommentsPage } from "@/lib/getStatus";
 import { PostSchema } from "@/lib/types/type";
 
+import { renderTextWithLinks } from "./RenderTextWithLinks";
+import { Statuser } from "./VerificationComponent";
+import { useUser } from "@/app/providers/UserProvider";
+
 const PAGE_SIZE = 20;
 const CLOSE_MS = 200;
 
@@ -50,15 +54,20 @@ function CommentRow({ comment }: { comment: PostSchema }) {
 
 export default function CommentsDrawer({
   post,
+  showCaption,
   onClose,
+  onToggleFollow,
   footer,
 }: {
   /** The post whose comments to show. Pass null to keep the drawer closed. */
   post: PostSchema | null;
+  showCaption: boolean;
   onClose: () => void;
+  onToggleFollow: () => void;
   /** Optional slot for a comment composer pinned to the bottom of the drawer. */
   footer?: React.ReactNode;
 }) {
+  const { userdata } = useUser();
   const [visible, setVisible] = useState(false);
   const [comments, setComments] = useState<PostSchema[]>([]);
   const [loading, setLoading] = useState(false);
@@ -176,8 +185,14 @@ export default function CommentsDrawer({
         <div className="relative flex shrink-0 flex-col items-center border-b border-gray-200 px-4 pb-3 pt-2 dark:border-neutral-800">
           <div className="mb-2 h-1 w-10 rounded-full bg-gray-300 dark:bg-neutral-700" />
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Comments
-            {post.NoOfComment > 0 ? ` · ${post.NoOfComment}` : ""}
+            {
+              showCaption ? 
+              post.NameOfPoster : 
+              <>
+              Comments
+              {post.NoOfComment > 0 ? ` · ${post.NoOfComment}` : ""}
+              </>
+            }
           </h2>
           <button
             type="button"
@@ -190,6 +205,42 @@ export default function CommentsDrawer({
         </div>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          
+        {showCaption && (
+          <div className="p-2 text-white">
+            <div className="mb-2 flex items-center gap-2">
+              <div
+                className="size-9 shrink-0 rounded-full bg-cover bg-center ring-2 ring-white"
+                style={{ backgroundImage: `url(${post.DisplayPicture || "/default.jpeg"})` }}
+              />
+              <div>
+                <p className="flex items-center gap-1 text-sm font-bold text-slate-200 dark:text-slate-200">
+                  {post.NameOfPoster ? post.NameOfPoster : ""}
+                  {post?.Verified && <Statuser className="size-4" />}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  @{post.Username ? post.Username : "username"}
+                </p>
+              </div>
+              {(!userdata._id || String(post.UserId) !== String(userdata._id)) && (
+                <button
+                  type="button"
+                  onClick={() => onToggleFollow()}
+                  className="ml-auto shrink-0 cursor-pointer text-nowrap rounded-full border border-white/40 px-2 py-1 text-sm text-white transition-all hover:border-brand hover:text-brand"
+                >
+                  {post.IsFollowing ? "Following" : "Follow +"}
+                </button>
+              )}
+            </div>
+            {post.Caption ? (
+              <p 
+              className="line-clamp-3 cursor-pointer text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+              >
+                {renderTextWithLinks(post.Caption)}
+              </p>
+            ) : null}
+          </div>
+        )}
           {commentsDisabled ? (
             <p className="px-4 py-10 text-center text-sm text-gray-500">
               Comments are turned off for this post.

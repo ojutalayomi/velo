@@ -1,84 +1,90 @@
-import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
-import { Payload } from "@/lib/types/type";
+import { parsePostAnalyticsEvent, postAnalyticsEventKey } from "@/lib/postAnalytics";
+import {
+  canReadAnalyticsPost,
+  consumePostAnalyticsRate,
+  ensurePostAnalyticsIndexes,
+  isDuplicateAnalyticsError,
+  isSameOriginAnalyticsRequest,
+  postAnalyticsRateKey,
+} from "@/lib/postAnalyticsServer";
 
-export interface PostAnalytics {
-  _id?: ObjectId;
-  postId: string;
-  userId?: string;
-  event: "view" | "scroll" | "time" | "engagement";
-  metadata?: {
-    scrollDepth?: number;
-    timeOnPage?: number;
-    referrer?: string;
-    userAgent?: string;
-    timestamp?: string;
-  };
-  createdAt: string;
-}
+export const config = { api: { bodyParser: { sizeLimit: "4kb" } } };
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
+  if (!isSameOriginAnalyticsRequest(req)) {
+    return res.status(403).json({ error: "Same-origin requests required" });
+  }
+  if (req.headers["content-type"]?.split(";")[0].trim() !== "application/json") {
+    return res.status(415).json({ error: "JSON required" });
+  }
+  const event = parsePostAnalyticsEvent(req.body);
+  if (!event) return res.status(400).json({ error: "Invalid analytics event" });
 
   try {
-    const cookie = decodeURIComponent(req.cookies.velo_12 ? req.cookies.velo_12 : "").replace(
-      /"/g,
-      ""
-    );
-    const payload = cookie ? ((await verifyToken(cookie)) as unknown as Payload) : null;
-
-    const { postId, event, metadata } = req.body;
-
-    if (!postId || !event) {
-      return res.status(400).json({ error: "Post ID and event are required" });
-    }
-
-    const db = await new MongoDBClient().init();
-
-    // Verify post exists
-    const post = await db.posts().findOne({ PostID: postId });
-    if (!post) {
-      // Check other collections
-      const comment = await db.postsComments().findOne({ PostID: postId });
-      const share = await db.postsShares().findOne({ PostID: postId });
-
-      if (!comment && !share) {
-        return res.status(404).json({ error: "Post not found" });
+    let userId: string | undefined;
+    const cookie = req.cookies.velo_12;
+    if (cookie) {
+      let token: string;
+      try {
+        token = decodeURIComponent(cookie).replace(/"/g, "");
+      } catch {
+        return res.status(401).json({ error: "Invalid session" });
       }
+      const payload = await verifyToken(token);
+      if (!payload || typeof payload._id !== "string" || !/^[a-f0-9]{24}$/i.test(payload._id)) {
+        return res.status(401).json({ error: "Invalid session" });
+      }
+      userId = payload._id;
     }
 
-    // Create analytics entry
-    const analyticsEntry: PostAnalytics = {
-      postId,
-      userId: payload?._id || undefined,
-      event,
-      metadata: {
-        ...metadata,
-        referrer: req.headers.referer,
-        userAgent: req.headers["user-agent"],
-        timestamp: new Date().toISOString(),
-      },
-      createdAt: new Date().toISOString(),
-    };
-
-    // Store analytics in database
-    const analyticsCollection = db.postsAnalytics();
-    await analyticsCollection.insertOne(analyticsEntry);
-
-    // For view events, update post view count (optional - can be done via aggregation)
-    if (event === "view") {
-      // You could increment a view count field here if needed
-      // For now, we'll just track it in analytics
+    const now = new Date();
+    const rateKey = postAnalyticsRateKey(req, userId, now);
+    const db = await new MongoDBClient().init();
+    const mongo = await db.getDb();
+    await ensurePostAnalyticsIndexes(mongo);
+    const permitted = await consumePostAnalyticsRate(
+      mongo.collection("Post_Analytics_RateLimits"),
+      rateKey,
+      now
+    );
+    if (!permitted) {
+      res.setHeader("Retry-After", "60");
+      return res.status(429).json({ error: "Analytics rate limit exceeded" });
     }
 
-    return res.status(200).json({ success: true, analytics: analyticsEntry });
-  } catch (error) {
-    console.error("Error tracking analytics:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    const post =
+      (await db.posts().findOne({ PostID: event.postId })) ||
+      (await db.postsComments().findOne({ PostID: event.postId })) ||
+      (await db.postsShares().findOne({ PostID: event.postId }));
+    // Use the same response for missing and inaccessible posts.
+    if (!post || !(await canReadAnalyticsPost(db, post, userId))) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    try {
+      await db.postsAnalytics().insertOne({
+        ...event,
+        ...(userId ? { userId } : {}),
+        eventKey: postAnalyticsEventKey(event),
+        createdAt: now.toISOString(),
+      });
+    } catch (error) {
+      if (!isDuplicateAnalyticsError(error)) throw error;
+      return res.status(200).json({ success: true, duplicate: true });
+    }
+    return res.status(200).json({ success: true });
+  } catch {
+    // Do not log request payloads, cookies, IPs, or browser headers.
+    console.error("Post analytics unavailable");
+    return res.status(503).json({ error: "Analytics temporarily unavailable" });
   }
 }

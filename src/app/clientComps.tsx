@@ -53,6 +53,7 @@ import { RootState } from "@/redux/store";
 import Error from "./error";
 import VideoChat from "../components/CallPage";
 import { useNetwork } from "./providers/NetworkProvider";
+import { Button } from "@/components/ui/button";
 
 const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
@@ -465,29 +466,56 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
           aria-live="polite"
           className="pointer-events-none fixed inset-x-0 top-4 z-[999] flex justify-center px-4"
         >
-          <div className="pointer-events-auto relative flex w-full max-w-2xl items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-black/50 py-2.5 pl-3 pr-2 text-slate-50 shadow-lg shadow-black/20 backdrop-blur">
-            {/* Gradient accent line along the bottom edge */}
+          <div className="shadow-sxs relative isolate flex w-full items-center justify-center overflow-hidden rounded-sm border border-primary/20 bg-brand px-4 py-2 tracking-tight">
             <div
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-brand via-purple-500 to-pink-500"
-            />
-      
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand via-purple-500 to-pink-500">
-              <Megaphone size={14} className="text-white" aria-hidden="true" />
-            </span>
-      
-            <p className="min-w-0 flex-1 text-sm font-medium leading-snug">
-              {displayAnnouncement.message}
-            </p>
-      
-            <button
-              type="button"
-              aria-label="Dismiss announcement"
-              onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
-              className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+              className="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
             >
-              <X size={16} />
-            </button>
+              <div
+                style={{
+                  clipPath:
+                    'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
+                }}
+                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+              />
+            </div>
+
+            <div
+              aria-hidden="true"
+              className="absolute left-[max(45rem,calc(50%+8rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
+            >
+              <div
+                style={{
+                  clipPath:
+                    'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
+                }}
+                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+              />
+            </div>
+
+            <div className="relative z-10 flex-col items-center space-y-2 text-sm sm:flex sm:flex-row sm:gap-3 sm:space-y-0">
+              <div className="text-md flex items-center gap-3 font-medium text-foreground">
+                {displayAnnouncement.message}
+              </div>
+
+              {/* <div className="group flex items-center gap-3">
+                <div className="hidden size-1 rounded-full bg-primary sm:block" />
+
+                <Button className="tetx-shadow-sm rounded-sm border border-white/20 bg-white/30 text-foreground shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-2px_5px_rgba(0,0,0,0.1),0_8px_20px_rgba(0,0,0,0.1)] dark:border-white/20 dark:bg-white/10 dark:shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),inset_0_-2px_4px_rgba(0,0,0,0.3),0_8px_20px_rgba(0,0,0,0.25)]">
+                  See what’s new
+                  <HiArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Button>
+              </div> */}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
+              className="absolute right-2 rounded-lg text-foreground hover:bg-transparent hover:text-foreground/70 dark:hover:bg-transparent"
+            >
+              <X className="size-4" />
+            </Button>
           </div>
         </div>
       )}

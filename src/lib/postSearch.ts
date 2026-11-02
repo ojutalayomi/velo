@@ -1,4 +1,4 @@
-import { MongoDBClient } from "@/lib/mongodb";
+import type { MongoDBClient } from "@/lib/mongodb";
 import type { PostSchema } from "@/lib/types/type";
 
 /** Escape user input for safe use inside a MongoDB `$regex` pattern. */
@@ -10,14 +10,15 @@ export type CaptionSearchKind = "hashtag" | "text";
 
 /**
  * Build a case-insensitive regex for caption search.
- * - `hashtag`: match literal `#tag` as a token (word boundary after tag).
+ * - `hashtag`: match a complete ASCII #\w+ token, never a tag prefix.
  * - `text`: substring match (escaped).
  */
 export function buildCaptionRegex(kind: CaptionSearchKind, raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (kind === "hashtag") {
-    return `#${escapeRegex(trimmed)}\\b`;
+    if (!/^[A-Za-z0-9_]+$/.test(trimmed)) return null;
+    return `#${escapeRegex(trimmed)}(?![A-Za-z0-9_])`;
   }
   return escapeRegex(trimmed);
 }
@@ -36,21 +37,24 @@ export async function fetchPostsByCaptionMatch(
     return { posts: [], hasMore: false };
   }
 
-  const database = await new MongoDBClient().init();
   const fetchLimit = opts.limit + 1;
-
-  const cursor = database.posts().aggregate([
-    { $unionWith: { coll: "Posts_Shares", pipeline: [] } },
-    { $unionWith: { coll: "Posts_Comments", pipeline: [] } },
-    {
-      $match: {
-        Caption: { $regex: pattern, $options: "i" },
-      },
+  const publicMatch = {
+    $match: {
+      Visibility: "everyone",
+      Caption: { $regex: pattern, $options: "i" },
     },
-    { $sort: { TimeOfPost: -1 } },
-    { $skip: opts.skip },
-    { $limit: fetchLimit },
-  ]);
+  };
+
+  const cursor = db
+    .posts()
+    .aggregate([
+      publicMatch,
+      { $unionWith: { coll: "Posts_Shares", pipeline: [publicMatch] } },
+      { $unionWith: { coll: "Posts_Comments", pipeline: [publicMatch] } },
+      { $sort: { TimeOfPost: -1 } },
+      { $skip: opts.skip },
+      { $limit: fetchLimit },
+    ]);
 
   const batch = await cursor.toArray();
   const hasMore = batch.length > opts.limit;

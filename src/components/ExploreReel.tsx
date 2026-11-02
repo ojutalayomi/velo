@@ -1,7 +1,7 @@
 "use client";
 import { ArrowLeft, Bookmark, Heart, MessageCircle, Share2, Volume2, VolumeX } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -71,6 +71,7 @@ function ReelSlide({
   isActive,
   muted,
   onToggleMute,
+  onShowCaption,
   currentUserId,
   onToggleLike,
   onToggleBookmark,
@@ -83,6 +84,7 @@ function ReelSlide({
   isActive: boolean;
   muted: boolean;
   onToggleMute: () => void;
+  onShowCaption: Dispatch<SetStateAction<boolean>>;
   currentUserId?: string;
   onToggleLike: (post: PostSchema) => void;
   onToggleBookmark: (post: PostSchema) => void;
@@ -289,7 +291,13 @@ function ReelSlide({
           )}
         </div>
         {post.Caption ? (
-          <p className="line-clamp-3 text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+          <p 
+          className="line-clamp-3 cursor-pointer text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]" 
+          onClick={() => {
+            onShowCaption(true);
+            onOpenComments(post)
+          }}
+          >
             {renderTextWithLinks(post.Caption)}
           </p>
         ) : null}
@@ -359,6 +367,7 @@ export default function ExploreReel() {
   const start = searchParams?.get("start") ?? null;
 
   const [posts, setPosts] = useState<PostSchema[]>([]);
+  const [showCaption, setShowCaption] = useState(false);
   const [commentPost, setCommentPost] = useState<PostSchema | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -398,6 +407,7 @@ export default function ExploreReel() {
 
   const onOpenComments = useCallback(
     (post: PostSchema) => {
+      setShowCaption(false);
       setCommentPost(post);
     },
     []
@@ -597,6 +607,7 @@ export default function ExploreReel() {
               onToggleMute={() => setMuted((m) => !m)}
               currentUserId={userdata._id}
               onToggleLike={onToggleLike}
+              onShowCaption={setShowCaption}
               onToggleBookmark={onToggleBookmark}
               onToggleFollow={onToggleFollow}
               onOpenComments={onOpenComments}
@@ -612,7 +623,15 @@ export default function ExploreReel() {
           </div>
         )}
       </div>
-      <CommentsDrawer post={commentPost} onClose={() => setCommentPost(null)} />
+      <CommentsDrawer 
+        post={commentPost}
+        showCaption={showCaption} 
+        onClose={() => setCommentPost(null)}
+        onToggleFollow={() => onToggleFollow(posts.find(p => p.PostID === commentPost?.ParentId)!)}
+        footer={
+          <>Velo</>
+        }
+      />
     </>
   );
 }

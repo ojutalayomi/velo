@@ -429,6 +429,32 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       );
     });
 
+    socket.on(
+      "mentionNotification",
+      (data: {
+        messageId: string;
+        chatId: string;
+        chatType: string;
+        mentionedBy: { userId: string; username: string; displayPicture: string };
+        content: string;
+        timestamp: string;
+      }) => {
+        toast(`@${data.mentionedBy.username} mentioned you`, {
+          description: data.content.length > 80 ? data.content.slice(0, 80) + "\u2026" : data.content,
+          action: {
+            label: "View",
+            onClick: () => {
+              if (data.chatType === "Group") {
+                window.location.href = `/chats/group/${data.chatId}`;
+              } else {
+                window.location.href = `/chats/${data.chatId}`;
+              }
+            },
+          },
+        });
+      }
+    );
+
     return () => {
       socket.off("newMessage", handleChatMessage);
       socket.off("userTyping", handleTyping);
@@ -445,6 +471,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("reactionAdded");
       socket.off("reactionRemoved");
       socket.off("reactionUpdated");
+      socket.off("mentionNotification");
       socket.off("chatError");
     };
   }, [socket, handleChatMessage, handleNewChat, handleTyping, handleStopTyping, conversations]);

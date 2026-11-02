@@ -294,6 +294,35 @@ export const chatRepository = {
     }
   },
 
+  getParticipants: async (
+    req: NextApiRequest,
+    res: NextApiResponse
+  ) => {
+    try {
+      const { chatId } = req.query;
+      if (!chatId || typeof chatId !== 'string') {
+        return res.status(400).json({ error: 'chatId is required' });
+      }
+      const participants = await db.chatParticipants().find({ chatId }).toArray();
+      const userIds = participants.map(p => new ObjectId(p.userId));
+      const users = await db.users().find({ _id: { $in: userIds } }).toArray();
+      const userMap = new Map(users.map(u => [u._id.toString(), u]));
+      const result = participants.map(p => {
+        const user = userMap.get(p.userId);
+        return {
+          userId: p.userId,
+          username: user?.username ?? '',
+          name: user?.name ?? '',
+          displayPicture: user?.displayPicture ?? '',
+        };
+      }).filter(p => p.username !== '');
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Failed to fetch participants' });
+    }
+  },
+
   createChat: async (
     req: NextApiRequest,
     res: NextApiResponse<NewChat_ | { error: string }>,
@@ -603,7 +632,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   switch (method) {
     case "GET":
-      if (req.query.id) {
+      if (req.query.participants) {
+        return chatRepository.getParticipants(req, res);
+      } else if (req.query.id) {
         return chatRepository.getChatById(req, res);
       } else {
         return chatRepository.getAllChats(req, res, payload);

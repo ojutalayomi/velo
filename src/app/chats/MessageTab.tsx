@@ -349,7 +349,10 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                           className="whitespace-pre-wrap break-words py-1 text-sm"
                           style={{ fontFamily: "inherit" }}
                         >
-                          {renderTextWithLinks(contentToDisplay)}
+                          {renderTextWithLinks(
+                            contentToDisplay,
+                            (message.mentions ?? []).map((m) => m.username)
+                          )}
                         </p>
                       )}
 

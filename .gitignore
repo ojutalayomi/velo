@@ -7,6 +7,8 @@
 !velo/**
 !public
 !public/**
+!serviceworker/
+!serviceworker/**
 !.eslintrc.json
 !next.config.mjs
 !package-lock.json

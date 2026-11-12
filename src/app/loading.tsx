@@ -11,7 +11,7 @@ export default function Loading() {
         height: "100%",
       }}
     >
-      <div style={{ height: "25px", width: "25px" }} className="loader show"></div>
+      <div style={{ height: "25px", width: "25px" }} className="loader show" />
     </div>
   );
 }

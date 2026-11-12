@@ -12,13 +12,16 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import Bottombar from "@/components/Bottombar";
 import { ConfirmCall } from "@/components/callConfirmation";
+import VideoChat from "@/components/CallPage";
 import NewChatMenu from "@/components/ComposeChat";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import MetallicPaint from "@/components/MetallicPaint";
 import PostMaker from "@/components/PostMaker";
 import PostPreview from "@/components/PostPreview";
 import RightSideBar from "@/components/RightSideBar";
 import Sidebar from "@/components/Sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import UserPhoto from "@/components/UserPhoto";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { FileStorageProvider } from "@/hooks/useFileStorage";
@@ -51,9 +54,8 @@ import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
 
 import Error from "./error";
-import VideoChat from "../components/CallPage";
+import logo from "./icon.svg";
 import { useNetwork } from "./providers/NetworkProvider";
-import { Button } from "@/components/ui/button";
 
 const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
@@ -65,7 +67,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const showPostPreview = pathname?.includes("/photo/");
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const callRoute = pathname?.startsWith("/call");
-  const { userdata } = useUser();
+  const { userdata, loading } = useUser();
   const path = pathname?.replace("/", "") || "";
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
   const [activeRoute, setActiveRouteState] = useState<string>(path);
@@ -104,7 +106,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     setLoad(false);
     if (pathname?.includes("/chats/")) setActiveRouteState("chats");
   }, [pathname, setActiveRouteState]);
-  
+
   useEffect(() => {
     async function fetchData() {
       await fetchChats(dispatch);
@@ -544,6 +546,22 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
               <X className="size-4" />
             </Button>
           </div>
+        </div>
+      )}
+      {loading && (
+        <div className="pointer-events-none fixed inset-x-0 z-[999] flex size-full justify-center backdrop-blur-xl">
+          <MetallicPaint text="Velo" edgeBend={0.9}
+            density={2.5}
+            softness={1}
+            dispersion={0}
+            distortion={0}
+            angle={100}
+            scale={0.6}
+            speed={1}
+            rotation={0}
+            mouseTilt={0.5}
+            intro
+            imageSrc={logo} />
         </div>
       )}
       <div id="root" className="overflow-hidden">

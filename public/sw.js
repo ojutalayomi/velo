@@ -1,1 +1,118 @@
-if(!self.define){let e,c={};const s=(s,a)=>(s=new URL(s+".js",a).href,c[s]||new Promise(c=>{if("document"in self){const e=document.createElement("script");e.src=s,e.onload=c,document.head.appendChild(e)}else e=s,importScripts(s),c()}).then(()=>{let e=c[s];if(!e)throw new Error(`Module ${s} didn’t register its module`);return e}));self.define=(a,t)=>{const n=e||("document"in self?document.currentScript.src:"")||location.href;if(c[n])return;let i={};const r=e=>s(e,n),f={module:{uri:n},exports:i,require:r};c[n]=Promise.all(a.map(e=>f[e]||r(e))).then(e=>(t(...e),i))}}define(["./workbox-4754cb34"],function(e){"use strict";importScripts("worker-9ffVk-r5E--Jor48pzQ20.js"),self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"/300x300.png",revision:"1b9c0d317b1168666ee7a8f5785ad9d1"},{url:"/_next/dynamic-css-manifest.json",revision:"d751713988987e9331980363e24189ce"},{url:"/_next/static/9ffVk-r5E--Jor48pzQ20/_buildManifest.js",revision:"a5487006ac3c32c7326070ca00c994a0"},{url:"/_next/static/9ffVk-r5E--Jor48pzQ20/_ssgManifest.js",revision:"b6652df95db52feb4daf4eca35380933"},{url:"/_next/static/chunks/0e5ce63c-89cd6c8f38390cd3.js",revision:"89cd6c8f38390cd3"},{url:"/_next/static/chunks/13b76428-8d5c0182a33fe2ed.js",revision:"8d5c0182a33fe2ed"},{url:"/_next/static/chunks/1423-5b2d369262f927bf.js",revision:"5b2d369262f927bf"},{url:"/_next/static/chunks/1617-d7a3a755dfb2db5d.js",revision:"d7a3a755dfb2db5d"},{url:"/_next/static/chunks/2327-4f95d28e8f39c89f.js",revision:"4f95d28e8f39c89f"},{url:"/_next/static/chunks/2363-7311dce5996be407.js",revision:"7311dce5996be407"},{url:"/_next/static/chunks/263-aca730a7ee694d75.js",revision:"aca730a7ee694d75"},{url:"/_next/static/chunks/2815-f34a32635fae48cb.js",revision:"f34a32635fae48cb"},{url:"/_next/static/chunks/335-426f3486a9d509c8.js",revision:"426f3486a9d509c8"},{url:"/_next/static/chunks/3478-63a85a3783bffbe4.js",revision:"63a85a3783bffbe4"},{url:"/_next/static/chunks/3652-7773a1dfe7f3724b.js",revision:"7773a1dfe7f3724b"},{url:"/_next/static/chunks/3794-521b158a965ff4e3.js",revision:"521b158a965ff4e3"},{url:"/_next/static/chunks/427-a06f183bb7526244.js",revision:"a06f183bb7526244"},{url:"/_next/static/chunks/4527-e7cf3af0bad426c9.js",revision:"e7cf3af0bad426c9"},{url:"/_next/static/chunks/4731-77ecbf06b7e149eb.js",revision:"77ecbf06b7e149eb"},{url:"/_next/static/chunks/4bd1b696-df4c0fb946159b6a.js",revision:"df4c0fb946159b6a"},{url:"/_next/static/chunks/5218-a08232b2dd4a881c.js",revision:"a08232b2dd4a881c"},{url:"/_next/static/chunks/5326-29a0b70c926d4555.js",revision:"29a0b70c926d4555"},{url:"/_next/static/chunks/5384-eff5d45bb978685e.js",revision:"eff5d45bb978685e"},{url:"/_next/static/chunks/5761-57202bcb4e39e82d.js",revision:"57202bcb4e39e82d"},{url:"/_next/static/chunks/6029-900fa293e9459a6e.js",revision:"900fa293e9459a6e"},{url:"/_next/static/chunks/6033-a69c0effbe8e7e65.js",revision:"a69c0effbe8e7e65"},{url:"/_next/static/chunks/6480-a2bf802fc9bbfb94.js",revision:"a2bf802fc9bbfb94"},{url:"/_next/static/chunks/69-9e8cbb743fb05761.js",revision:"9e8cbb743fb05761"},{url:"/_next/static/chunks/7324-1d14f225c4f35ace.js",revision:"1d14f225c4f35ace"},{url:"/_next/static/chunks/7540-3897008fa21ad761.js",revision:"3897008fa21ad761"},{url:"/_next/static/chunks/7612-47c4aa77b20b9d6f.js",revision:"47c4aa77b20b9d6f"},{url:"/_next/static/chunks/8367-333c3219532954f7.js",revision:"333c3219532954f7"},{url:"/_next/static/chunks/8437-34b553fdebc3c29f.js",revision:"34b553fdebc3c29f"},{url:"/_next/static/chunks/8500-f62a38ff68ab7f42.js",revision:"f62a38ff68ab7f42"},{url:"/_next/static/chunks/870fdd6f-a56743267ba30b87.js",revision:"a56743267ba30b87"},{url:"/_next/static/chunks/8713-3afe32b45d7111b2.js",revision:"3afe32b45d7111b2"},{url:"/_next/static/chunks/9112-8b9df0c5f48c4a4a.js",revision:"8b9df0c5f48c4a4a"},{url:"/_next/static/chunks/9521-465453dc71d33632.js",revision:"465453dc71d33632"},{url:"/_next/static/chunks/9552-2d8a319aa427b26f.js",revision:"2d8a319aa427b26f"},{url:"/_next/static/chunks/9807-5864fef19c79f436.js",revision:"5864fef19c79f436"},{url:"/_next/static/chunks/aaea2bcf-2ce667fb5da59410.js",revision:"2ce667fb5da59410"},{url:"/_next/static/chunks/app/%5Busername%5D/edit/page-e8b59e8c92ef9f84.js",revision:"e8b59e8c92ef9f84"},{url:"/_next/static/chunks/app/%5Busername%5D/layout-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/%5Busername%5D/not-found-74772852e4770944.js",revision:"74772852e4770944"},{url:"/_next/static/chunks/app/%5Busername%5D/page-43c045c0239f045e.js",revision:"43c045c0239f045e"},{url:"/_next/static/chunks/app/%5Busername%5D/photo/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/%5Busername%5D/photos/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/%5Busername%5D/posts/%5Bid%5D/layout-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/%5Busername%5D/posts/%5Bid%5D/page-c871e201827582cb.js",revision:"c871e201827582cb"},{url:"/_next/static/chunks/app/%5Busername%5D/posts/%5Bid%5D/photo/%5Bindex%5D/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/@modal/(.)%5Busername%5D/photo/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/@modal/(.)%5Busername%5D/posts/%5Bid%5D/photo/%5Bindex%5D/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/@modal/(.)call/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/@modal/(.)chat/compose/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/@modal/(.)compose/post/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/@modal/default-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/_not-found/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/account/personal-info/page-6256df8cb7858946.js",revision:"6256df8cb7858946"},{url:"/_next/static/chunks/app/account/privacy-security/page-60b2d5ae14dcb850.js",revision:"60b2d5ae14dcb850"},{url:"/_next/static/chunks/app/accounts/confirm-email/%5Btoken%5D/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/accounts/confirm-email/failed/page-5407f1a89c1fbb33.js",revision:"5407f1a89c1fbb33"},{url:"/_next/static/chunks/app/accounts/confirm-email/success/page-d0f74d3fd56e623d.js",revision:"d0f74d3fd56e623d"},{url:"/_next/static/chunks/app/accounts/forgot-password/page-97c5db0c5d635613.js",revision:"97c5db0c5d635613"},{url:"/_next/static/chunks/app/accounts/layout-2125e02262f56dc8.js",revision:"2125e02262f56dc8"},{url:"/_next/static/chunks/app/accounts/login/page-f37d1e90c8bc6b74.js",revision:"f37d1e90c8bc6b74"},{url:"/_next/static/chunks/app/accounts/logout/page-4902b1d5c1da6360.js",revision:"4902b1d5c1da6360"},{url:"/_next/static/chunks/app/accounts/reset-password/page-0371b757f9dbe60c.js",revision:"0371b757f9dbe60c"},{url:"/_next/static/chunks/app/accounts/signup-complete/page-b83c670b2e3ee763.js",revision:"b83c670b2e3ee763"},{url:"/_next/static/chunks/app/accounts/signup/layout-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/accounts/signup/page-8059eba66ba7d342.js",revision:"8059eba66ba7d342"},{url:"/_next/static/chunks/app/api/auth/%5B...nextauth%5D/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/api/auth/provider-consent/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/api/getuser/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/api/link-preview/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/api/logout/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/api/protected/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/api/signup/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/api/upload/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/auth/error/page-34cea272b6953519.js",revision:"34cea272b6953519"},{url:"/_next/static/chunks/app/auth/provider-consent/page-0ee395dccb5e33f2.js",revision:"0ee395dccb5e33f2"},{url:"/_next/static/chunks/app/call/page-5f91e347e7acf130.js",revision:"5f91e347e7acf130"},{url:"/_next/static/chunks/app/calling-demo/page-c3ce0799a1bb79c2.js",revision:"c3ce0799a1bb79c2"},{url:"/_next/static/chunks/app/chats/%5Bid%5D/layout-9796c469effabcf8.js",revision:"9796c469effabcf8"},{url:"/_next/static/chunks/app/chats/%5Bid%5D/page-f6e8189cc8d7814d.js",revision:"f6e8189cc8d7814d"},{url:"/_next/static/chunks/app/chats/%5Bid%5D/settings/page-4d741b72adfc4722.js",revision:"4d741b72adfc4722"},{url:"/_next/static/chunks/app/chats/compose/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/chats/group/%5Bgid%5D/layout-225c3e96efd43c05.js",revision:"225c3e96efd43c05"},{url:"/_next/static/chunks/app/chats/group/%5Bgid%5D/media/page-4e612a4577aab4af.js",revision:"4e612a4577aab4af"},{url:"/_next/static/chunks/app/chats/group/%5Bgid%5D/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/chats/group/%5Bgid%5D/settings/page-47388bf28ae2268e.js",revision:"47388bf28ae2268e"},{url:"/_next/static/chunks/app/chats/layout-7f8e2d16a632f587.js",revision:"7f8e2d16a632f587"},{url:"/_next/static/chunks/app/chats/new/page-43e41f7b72906ee3.js",revision:"43e41f7b72906ee3"},{url:"/_next/static/chunks/app/chats/page-f05b0c64075a7360.js",revision:"f05b0c64075a7360"},{url:"/_next/static/chunks/app/compose/post/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/default-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/error-ba95e35175858b6d.js",revision:"ba95e35175858b6d"},{url:"/_next/static/chunks/app/explore/page-6df11cf545b6f2cf.js",revision:"6df11cf545b6f2cf"},{url:"/_next/static/chunks/app/explore/q/page-6df11cf545b6f2cf.js",revision:"6df11cf545b6f2cf"},{url:"/_next/static/chunks/app/feedback/page-87d4fa12f3187140.js",revision:"87d4fa12f3187140"},{url:"/_next/static/chunks/app/general/page-5196cda318626684.js",revision:"5196cda318626684"},{url:"/_next/static/chunks/app/global-error-f8e200c2c374984f.js",revision:"f8e200c2c374984f"},{url:"/_next/static/chunks/app/help-support/page-7892be75f0451c25.js",revision:"7892be75f0451c25"},{url:"/_next/static/chunks/app/home/layout-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/home/page-18bd4c9a399e3a7d.js",revision:"18bd4c9a399e3a7d"},{url:"/_next/static/chunks/app/layout-cabe0cab0a21fb0e.js",revision:"cabe0cab0a21fb0e"},{url:"/_next/static/chunks/app/loading-31b56c0e88e0fed1.js",revision:"31b56c0e88e0fed1"},{url:"/_next/static/chunks/app/manifest.webmanifest/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/not-found-31d848fa703e57a9.js",revision:"31d848fa703e57a9"},{url:"/_next/static/chunks/app/notifications/page-7e271ef1f0c40812.js",revision:"7e271ef1f0c40812"},{url:"/_next/static/chunks/app/page-f4233ca32651e1e4.js",revision:"f4233ca32651e1e4"},{url:"/_next/static/chunks/app/postgres/page-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/pushNotification/page-9544daffaf11ab1d.js",revision:"9544daffaf11ab1d"},{url:"/_next/static/chunks/app/robots.txt/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/app/sitemap.xml/route-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/fcfb803e-c2a009aa48064beb.js",revision:"c2a009aa48064beb"},{url:"/_next/static/chunks/framework-dc31e9a45aaaa34d.js",revision:"dc31e9a45aaaa34d"},{url:"/_next/static/chunks/main-2a00b5f2d325e699.js",revision:"2a00b5f2d325e699"},{url:"/_next/static/chunks/main-app-506e181be8bd5675.js",revision:"506e181be8bd5675"},{url:"/_next/static/chunks/next/dist/client/components/builtin/forbidden-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/next/dist/client/components/builtin/unauthorized-c81a297cbc2f07b9.js",revision:"c81a297cbc2f07b9"},{url:"/_next/static/chunks/pages/_app-da8edfbdda445bb5.js",revision:"da8edfbdda445bb5"},{url:"/_next/static/chunks/pages/_error-b61cac18b7fa12be.js",revision:"b61cac18b7fa12be"},{url:"/_next/static/chunks/polyfills-42372ed130431b0a.js",revision:"846118c33b2c0e922d7b3a7676f81f6f"},{url:"/_next/static/chunks/webpack-43c17407fc61c632.js",revision:"43c17407fc61c632"},{url:"/_next/static/css/106211c7e984b4a5.css",revision:"106211c7e984b4a5"},{url:"/_next/static/css/157a12fcd75ad7f0.css",revision:"157a12fcd75ad7f0"},{url:"/_next/static/css/3f0bfd3728e9a03d.css",revision:"3f0bfd3728e9a03d"},{url:"/_next/static/css/a6072bf2e89fd5a6.css",revision:"a6072bf2e89fd5a6"},{url:"/_next/static/css/b7715e5b837d80ba.css",revision:"b7715e5b837d80ba"},{url:"/_next/static/media/eb5d8667c55dd7e2-s.p.ttf",revision:"6310192cd2011f527e18b1586a1245c8"},{url:"/badge.png",revision:"564a99cc4995491cd775c26e79f6ea28"},{url:"/default.jpeg",revision:"caa54b988b34be28a36aec2f1207829e"},{url:"/emails.hbs",revision:"ec2fc0473307d0625ae55aa6d0914077"},{url:"/fonts/Raleway-LightItalic.ttf",revision:"f3c1507fc3d8231fa7011d827acd214b"},{url:"/fonts/Raleway-Medium.ttf",revision:"28ea37f0eb58c57e01eed0b06fc359d6"},{url:"/fonts/Raleway-Regular.ttf",revision:"6310192cd2011f527e18b1586a1245c8"},{url:"/fonts/Raleway-SemiBold.ttf",revision:"66c9748f1e4aae2e764d5c50c05f7841"},{url:"/greybg-dark.png",revision:"90de21142f126cfd1ecb25332e8c701d"},{url:"/greybg.jpg",revision:"a0b538e2be702d8fcafc5321a43c6311"},{url:"/heart.png",revision:"9f61111962cc66e53f0c907d4fcc17cb"},{url:"/home.png",revision:"ba12db4bf951a7e43ce4918554d81db5"},{url:"/largeScreenShot_home.png",revision:"282740f4f0a17b4181dd355117727ece"},{url:"/messages.png",revision:"e4d5b2c4d733b0cf27a4071c11ad9c5e"},{url:"/mobileScreenShot_home.png",revision:"0a3e22ff06f42e252f942b5a19e01f8b"},{url:"/notifications.png",revision:"ce4468ad7db94d60ee00ad02d4c5c598"},{url:"/profile.png",revision:"4907111c2900c470379dfa35e9503f53"},{url:"/settings.png",revision:"7ba0d400446a18918ceea0cbdfaaa136"},{url:"/velo10.png",revision:"f4d3f4f9a5d7df497ebe8a0227e0b62f"},{url:"/velo11.png",revision:"ec7ef09a039dddba1a2cf2d46810c5ba"},{url:"/velo9.png",revision:"421fba9427d9671c9cac4f16f0209cbb"},{url:"/verified.svg",revision:"99678523a3b1317a387b8d8f2951fb08"},{url:"/web-app-manifest-144x144.png",revision:"28380770b36ef80c667c28b976328ba7"},{url:"/web-app-manifest-192x192.png",revision:"18f1c98ce197c78e0a0979aad24c55b7"},{url:"/web-app-manifest-512x512.png",revision:"09b14f9185fc5516fa1913addd4c9645"}],{ignoreURLParametersMatching:[]}),e.cleanupOutdatedCaches(),e.registerRoute("/",new e.NetworkFirst({cacheName:"start-url",plugins:[{cacheWillUpdate:async({request:e,response:c,event:s,state:a})=>c&&"opaqueredirect"===c.type?new Response(c.body,{status:200,statusText:"OK",headers:c.headers}):c}]}),"GET"),e.registerRoute(/^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,new e.CacheFirst({cacheName:"google-fonts-webfonts",plugins:[new e.ExpirationPlugin({maxEntries:4,maxAgeSeconds:31536e3})]}),"GET"),e.registerRoute(/^https:\/\/fonts\.(?:googleapis)\.com\/.*/i,new e.StaleWhileRevalidate({cacheName:"google-fonts-stylesheets",plugins:[new e.ExpirationPlugin({maxEntries:4,maxAgeSeconds:604800})]}),"GET"),e.registerRoute(/\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,new e.StaleWhileRevalidate({cacheName:"static-font-assets",plugins:[new e.ExpirationPlugin({maxEntries:4,maxAgeSeconds:604800})]}),"GET"),e.registerRoute(/\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,new e.StaleWhileRevalidate({cacheName:"static-image-assets",plugins:[new e.ExpirationPlugin({maxEntries:64,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/\/_next\/image\?url=.+$/i,new e.StaleWhileRevalidate({cacheName:"next-image",plugins:[new e.ExpirationPlugin({maxEntries:64,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/\.(?:mp3|wav|ogg)$/i,new e.CacheFirst({cacheName:"static-audio-assets",plugins:[new e.RangeRequestsPlugin,new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/\.(?:mp4)$/i,new e.CacheFirst({cacheName:"static-video-assets",plugins:[new e.RangeRequestsPlugin,new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/\.(?:js)$/i,new e.StaleWhileRevalidate({cacheName:"static-js-assets",plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/\.(?:css|less)$/i,new e.StaleWhileRevalidate({cacheName:"static-style-assets",plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/\/_next\/data\/.+\/.+\.json$/i,new e.StaleWhileRevalidate({cacheName:"next-data",plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(/\.(?:json|xml|csv)$/i,new e.NetworkFirst({cacheName:"static-data-assets",plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(({url:e})=>{if(!(self.origin===e.origin))return!1;const c=e.pathname;return!c.startsWith("/api/auth/")&&!!c.startsWith("/api/")},new e.NetworkFirst({cacheName:"apis",networkTimeoutSeconds:10,plugins:[new e.ExpirationPlugin({maxEntries:16,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(({url:e})=>{if(!(self.origin===e.origin))return!1;return!e.pathname.startsWith("/api/")},new e.NetworkFirst({cacheName:"others",networkTimeoutSeconds:10,plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:86400})]}),"GET"),e.registerRoute(({url:e})=>!(self.origin===e.origin),new e.NetworkFirst({cacheName:"cross-origin",networkTimeoutSeconds:10,plugins:[new e.ExpirationPlugin({maxEntries:32,maxAgeSeconds:3600})]}),"GET")});
+// Copied to public/sw.js by `npm run sync:sw` (runs before dev/build) because
+// next-pwa only runs under webpack, while this project builds with Turbopack.
+
+const DEFAULT_URL = "/notifications";
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const output = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; i += 1) {
+    output[i] = rawData.charCodeAt(i);
+  }
+
+  return output;
+}
+
+function parsePayload(data) {
+  if (!data) return {};
+
+  try {
+    return data.json();
+  } catch {
+    return { body: data.text() };
+  }
+}
+
+async function focusOrOpen(url) {
+  const targetUrl = new URL(url, self.location.origin).href;
+  const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+
+  for (const client of clientList) {
+    if (client.url === targetUrl) {
+      await client.focus();
+      return;
+    }
+  }
+
+  for (const client of clientList) {
+    try {
+      if (new URL(client.url).origin === self.location.origin) {
+        await client.focus();
+        if ("navigate" in client) await client.navigate(targetUrl);
+        return;
+      }
+    } catch {
+      // Ignore malformed client URLs.
+    }
+  }
+
+  await self.clients.openWindow(targetUrl);
+}
+
+async function resubscribe(event) {
+  try {
+    let subscription = event.newSubscription;
+
+    if (!subscription) {
+      const keyResponse = await fetch("/api/push/public-key", { cache: "no-store" });
+      if (!keyResponse.ok) return;
+
+      const { publicKey } = await keyResponse.json();
+      if (!publicKey) return;
+
+      subscription = await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+    }
+
+    await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ subscription: subscription.toJSON() }),
+    });
+  } catch (error) {
+    console.error("[push] Failed to refresh subscription:", error);
+  }
+}
+
+self.addEventListener("push", (event) => {
+  const payload = parsePayload(event.data);
+  const options = {
+    body: payload.body || "",
+    icon: payload.icon || "/notifications.png",
+    badge: payload.badge || "/badge.png",
+    tag: payload.tag,
+    data: { url: payload.url || DEFAULT_URL, ...(payload.data || {}) },
+    vibrate: [100, 50, 100],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || "Velo", options)
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  if (event.action === "close") return;
+
+  const notificationData = event.notification.data || {};
+  event.waitUntil(focusOrOpen(notificationData.url || DEFAULT_URL));
+});
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(resubscribe(event));
+});
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});

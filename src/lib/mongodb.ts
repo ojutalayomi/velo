@@ -2,6 +2,7 @@ import { Db, MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { IResult } from "ua-parser-js";
 
 import { UserSchema } from "./class/User";
+import { StatusSchema, StatusViewerSchema } from "./types/status";
 import {
   AttachmentSchema,
   ChatDataServer,
@@ -11,11 +12,11 @@ import {
   PostBookmarkSchema,
   PostLikesSchema,
   PostSchema,
+  PushSubscriptionSchema,
   Reaction,
   ReadReceipt,
   UserSettings,
 } from "./types/type";
-import { StatusSchema, StatusViewerSchema } from "./types/status";
 
 export interface FollowersSchema {
   followerId: string;
@@ -264,11 +265,11 @@ export class MongoDBClient {
   }
 
   /**
-   * Gets the subscriptions collection
-   * @returns Collection for storing subscription data
+   * Gets the push subscriptions collection
+   * @returns Collection for storing browser push subscriptions
    */
-  subscriptions() {
-    return this.db.collection("Subscriptions");
+  pushSubscriptions() {
+    return this.db.collection<PushSubscriptionSchema>("Push_Subscriptions");
   }
 
   /**

@@ -9,8 +9,22 @@ export default function Logout() {
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
-    setLogout(false);
     const logout = async () => {
+      // Best effort: detach this device from the current user's push subscriptions.
+      try {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        const subscription = await registration?.pushManager.getSubscription();
+        if (subscription) {
+          await fetch("/api/push/subscribe", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: subscription.endpoint }),
+          });
+        }
+      } catch {
+        // Push cleanup is not critical to logging out.
+      }
+
       const response = await fetch("/api/logout", {
         method: "POST",
         headers: {

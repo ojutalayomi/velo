@@ -1,6 +1,8 @@
 "use client";
+import { ArrowLeft, Bell, Heart, MessageCircle, Star, UserPlus } from "lucide-react";
 import React from "react";
-import { ArrowLeft, Heart, MessageCircle, UserPlus, Star, Bell } from "lucide-react";
+
+import PushNotificationSettings from "@/components/PushNotificationSettings";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 
 const NotificationPage: React.FC = () => {
@@ -60,35 +62,36 @@ const NotificationPage: React.FC = () => {
   };
 
   return (
-    <div className="dark:bg-zinc-900 bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
       {/* Header */}
-      <header className="bg-white dark:bg-zinc-900 p-2 flex items-center shadow-lg">
+      <header className="flex items-center bg-white p-2 shadow-lg dark:bg-zinc-900">
         <ArrowLeft
           size={24}
-          className="cursor-pointer dark:text-slate-200 text-gray-600"
+          className="cursor-pointer text-gray-600 dark:text-slate-200"
           onClick={() => navigate()}
         />
-        <h1 className="dark:text-slate-200 text-xl font-semibold ml-4">Notifications</h1>
+        <h1 className="ml-4 text-xl font-semibold dark:text-slate-200">Notifications</h1>
       </header>
 
       {/* Notification List */}
-      <main className="p-4">
+      <main className="space-y-3 p-4">
+        <PushNotificationSettings />
         {notifications.map((notification, index) => (
           <div
             key={index}
-            className={`bg-white dark:bg-zinc-900 hover:bg-slate-200 hover:dark:bg-zinc-700 cursor-pointer rounded-lg p-4 mb-3 flex items-start shadow-md dark:shadow-2xl ${notification.isNew ? "border-l-4 border-blue-500" : ""}`}
+            className={`mb-3 flex cursor-pointer items-start rounded-lg bg-white p-4 shadow-md hover:bg-slate-200 dark:bg-zinc-900 dark:shadow-2xl hover:dark:bg-zinc-700 ${notification.isNew ? "border-l-4 border-blue-500" : ""}`}
           >
             <div className="mr-3">{getIcon(notification.type)}</div>
             <div className="flex-1">
               <p className="font-medium dark:text-slate-200">
                 {notification.user}{" "}
-                <span className="dark:text-slate-500 font-normal text-gray-600">
+                <span className="font-normal text-gray-600 dark:text-slate-500">
                   {notification.content}
                 </span>
               </p>
-              <p className=" dark:text-slate-500 text-sm text-gray-500 mt-1">{notification.time}</p>
+              <p className=" mt-1 text-sm text-gray-500 dark:text-slate-500">{notification.time}</p>
             </div>
-            {notification.isNew && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+            {notification.isNew && <div className="size-2 rounded-full bg-blue-500" />}
           </div>
         ))}
       </main>

@@ -503,3 +503,19 @@ export interface UserSettings {
   showReadReceipts: boolean;
   showTypingStatus: boolean;
 }
+
+export interface PushSubscriptionKeys {
+  p256dh: string;
+  auth: string;
+}
+
+export interface PushSubscriptionSchema {
+  _id: ObjectId;
+  userId: string;
+  endpoint: string;
+  keys: PushSubscriptionKeys;
+  expirationTime: number | null;
+  userAgent: string;
+  createdAt: string;
+  updatedAt: string;
+}

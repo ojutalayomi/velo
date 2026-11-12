@@ -23,6 +23,16 @@ export async function verifyToken(token: string) {
   }
 }
 
+/** Reads the `velo_12` session cookie and returns the authenticated user id. */
+export async function getSessionUserId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = decodeURIComponent(cookieStore.get("velo_12")?.value || "").replace(/"/g, "");
+  if (!token) return null;
+
+  const payload = (await verifyToken(token)) as { _id?: unknown } | null;
+  return typeof payload?._id === "string" && payload._id ? payload._id : null;
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({

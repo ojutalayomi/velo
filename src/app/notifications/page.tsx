@@ -2,6 +2,7 @@
 import { ArrowLeft, Bell, Heart, MessageCircle, Star, UserPlus } from "lucide-react";
 import React from "react";
 
+import NotificationPreferencesCard from "@/components/NotificationPreferencesCard";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 
@@ -76,6 +77,7 @@ const NotificationPage: React.FC = () => {
       {/* Notification List */}
       <main className="space-y-3 p-4">
         <PushNotificationSettings />
+        <NotificationPreferencesCard />
         {notifications.map((notification, index) => (
           <div
             key={index}

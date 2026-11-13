@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
+
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 
@@ -34,14 +35,23 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(400).json({ error: "Invalid settings" });
   }
 
+  // Accept both bare keys and the client's `chatSettings.*` form
+  const normalized: Record<string, unknown> = {};
+  for (const [rawKey, value] of Object.entries(body)) {
+    const key = rawKey.startsWith("chatSettings.")
+      ? rawKey.slice("chatSettings.".length)
+      : rawKey;
+    normalized[key] = value;
+  }
+
   // Whitelist keys, validate values, and build dotted-path $set for a partial update
   const $set: Record<string, unknown> = {};
   for (const [key, validate] of Object.entries(SETTING_VALIDATORS)) {
-    if (!(key in body)) continue;
-    if (!validate(body[key])) {
+    if (!(key in normalized)) continue;
+    if (!validate(normalized[key])) {
       return res.status(400).json({ error: `Invalid value for ${key}` });
     }
-    $set[`chatSettings.${key}`] = body[key];
+    $set[`chatSettings.${key}`] = normalized[key];
   }
   if (Object.keys($set).length === 0) {
     return res.status(400).json({ error: "No valid settings provided" });

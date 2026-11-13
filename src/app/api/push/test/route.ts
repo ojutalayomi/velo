@@ -20,13 +20,23 @@ export async function POST() {
     title: "Velo notifications are on",
     body: "You will now receive updates even when Velo is closed.",
     url: "/notifications",
-    tag: "push-test",
+    tag: "test",
   });
+
+  if (result.sent === 0 && result.failed === 0 && result.pruned === 0 && !result.skipped) {
+    return NextResponse.json(
+      { message: "No active push subscription was found. Enable notifications and try again." },
+      { status: 404 }
+    );
+  }
 
   if (result.sent === 0) {
     return NextResponse.json(
-      { message: "No active push subscription was found for this device" },
-      { status: 404 }
+      {
+        message: "Could not deliver a test notification to this device.",
+        ...result,
+      },
+      { status: 502 }
     );
   }
 

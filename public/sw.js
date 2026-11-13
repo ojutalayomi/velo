@@ -20,14 +20,34 @@ function parsePayload(data) {
   if (!data) return {};
 
   try {
-    return data.json();
+    return data.json() || {};
   } catch {
-    return { body: data.text() };
+    try {
+      return { body: data.text() };
+    } catch {
+      return {};
+    }
   }
 }
 
+function safeUrl(value) {
+  try {
+    const url = new URL(typeof value === "string" ? value : DEFAULT_URL, self.location.origin);
+    if (url.origin !== self.location.origin) return DEFAULT_URL;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return DEFAULT_URL;
+  }
+}
+
+async function closeByTag(tag) {
+  if (!tag) return;
+  const notifications = await self.registration.getNotifications({ tag });
+  notifications.forEach((notification) => notification.close());
+}
+
 async function focusOrOpen(url) {
-  const targetUrl = new URL(url, self.location.origin).href;
+  const targetUrl = new URL(safeUrl(url), self.location.origin).href;
   const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
 
   for (const client of clientList) {
@@ -81,18 +101,31 @@ async function resubscribe(event) {
 }
 
 self.addEventListener("push", (event) => {
-  const payload = parsePayload(event.data);
-  const options = {
-    body: payload.body || "",
-    icon: payload.icon || "/notifications.png",
-    badge: payload.badge || "/badge.png",
-    tag: payload.tag,
-    data: { url: payload.url || DEFAULT_URL, ...(payload.data || {}) },
-    vibrate: [100, 50, 100],
-  };
-
   event.waitUntil(
-    self.registration.showNotification(payload.title || "Velo", options)
+    (async () => {
+      const payload = parsePayload(event.data);
+
+      if (payload.action === "close" || payload.data?.action === "close") {
+        await closeByTag(payload.tag);
+        return;
+      }
+
+      const data = payload.data && typeof payload.data === "object" ? payload.data : {};
+      const options = {
+        body: typeof payload.body === "string" ? payload.body : "",
+        icon: typeof payload.icon === "string" ? payload.icon : "/notifications.png",
+        badge: typeof payload.badge === "string" ? payload.badge : "/badge.png",
+        tag: typeof payload.tag === "string" ? payload.tag : undefined,
+        data: { ...data, url: safeUrl(payload.url) },
+        vibrate: [100, 50, 100],
+      };
+      const title = typeof payload.title === "string" && payload.title ? payload.title : "Velo";
+
+      const size = new TextEncoder().encode(JSON.stringify({ title, options })).length;
+      if (size > 4096) options.body = "";
+
+      await self.registration.showNotification(title, options);
+    })()
   );
 });
 

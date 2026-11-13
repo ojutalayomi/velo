@@ -1,6 +1,7 @@
 import { Ellipsis } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
 import { useMediaQuery } from "usehooks-ts";
 
 import {
@@ -18,7 +19,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
 import { RootState } from "@/redux/store";
 
 export default function ProfileMenu({
@@ -28,15 +28,47 @@ export default function ProfileMenu({
   username: string;
   profileId: string;
 }) {
-  const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 640px)");
   const userdata = useSelector((state: RootState) => state.user.userdata);
+  const [blocked, setBlocked] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
+  const canBlock = profileId !== userdata._id;
+
+  const refreshBlockState = async () => {
+    if (!canBlock) return;
+    try {
+      const response = await fetch("/api/blocks");
+      if (!response.ok) return;
+      const body = (await response.json()) as { blockedUserIds?: string[] };
+      setBlocked(Boolean(body.blockedUserIds?.includes(profileId)));
+    } catch {
+      // Menu still works without the current block state.
+    }
+  };
 
   const handleMute = () => {
     toast(`Muted @${username}`);
   };
-  const handleBlock = () => {
-    toast(`Blocked @${username}`);
+  const handleBlock = async () => {
+    if (blockBusy) return;
+    setBlockBusy(true);
+
+    try {
+      const response = await fetch("/api/blocks", {
+        method: blocked ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: profileId }),
+      });
+      const body = (await response.json().catch(() => null)) as { message?: string } | null;
+      if (!response.ok) throw new Error(body?.message || "Could not update block status");
+
+      setBlocked((current) => !current);
+      toast(blocked ? `Unblocked @${username}` : `Blocked @${username}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update block status");
+    } finally {
+      setBlockBusy(false);
+    }
   };
   const handleReport = () => {
     toast(`Reported @${username}`);
@@ -65,7 +97,7 @@ export default function ProfileMenu({
       >
         Copy link to profile
       </button>
-      {profileId !== userdata._id && (
+      {canBlock && (
         <>
           <hr className="my-2 border-gray-200 dark:border-gray-700" />
           <button
@@ -76,9 +108,10 @@ export default function ProfileMenu({
           </button>
           <button
             onClick={handleBlock}
-            className="w-full rounded px-3 py-2 text-left hover:bg-muted"
+            disabled={blockBusy}
+            className="w-full rounded px-3 py-2 text-left hover:bg-muted disabled:opacity-60"
           >
-            Block
+            {blocked ? "Unblock" : "Block"}
           </button>
           <button
             onClick={handleReport}
@@ -93,7 +126,11 @@ export default function ProfileMenu({
 
   if (isMobile) {
     return (
-      <Drawer>
+      <Drawer
+        onOpenChange={(open) => {
+          if (open) refreshBlockState();
+        }}
+      >
         <DrawerTrigger asChild>
           <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
             <Ellipsis className="size-6" />
@@ -112,7 +149,11 @@ export default function ProfileMenu({
 
   // Desktop: use DropdownMenu as before
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) refreshBlockState();
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
           <Ellipsis className="size-6" />
@@ -121,11 +162,13 @@ export default function ProfileMenu({
       <DropdownMenuContent>
         <DropdownMenuItem onClick={handleShare}>Share profile via…</DropdownMenuItem>
         <DropdownMenuItem onClick={handleCopyLink}>Copy link to profile</DropdownMenuItem>
-        {profileId !== userdata._id && (
+        {canBlock && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleMute}>Mute</DropdownMenuItem>
-            <DropdownMenuItem onClick={handleBlock}>Block</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleBlock} disabled={blockBusy}>
+              {blocked ? "Unblock" : "Block"}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleReport}>Report</DropdownMenuItem>
           </>
         )}

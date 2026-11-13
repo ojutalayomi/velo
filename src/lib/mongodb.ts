@@ -5,6 +5,7 @@ import { UserSchema } from "./class/User";
 import { StatusSchema, StatusViewerSchema } from "./types/status";
 import {
   AttachmentSchema,
+  BlockedUserSchema,
   ChatDataServer,
   ChatParticipant,
   ChatSettings,
@@ -270,6 +271,14 @@ export class MongoDBClient {
    */
   pushSubscriptions() {
     return this.db.collection<PushSubscriptionSchema>("Push_Subscriptions");
+  }
+
+  /**
+   * Gets users blocked by (or blocking) other users.
+   * @returns Collection for push suppression and profile block state
+   */
+  blockedUsers() {
+    return this.db.collection<BlockedUserSchema>("Blocked_Users");
   }
 
   /**

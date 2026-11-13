@@ -18,18 +18,18 @@ import { useRouter, useParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { useSocket } from "@/app/providers/SocketProvider";
 import { Switch } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Statuser } from "@/components/VerificationComponent";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
 import { ChatSettings, MessageAttributes, NewChatSettings, Attachment } from "@/lib/types/type";
-import { ConvoType, updateConversation } from "@/redux/chatSlice";
-import { RootState } from "@/redux/store";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Statuser } from "@/components/VerificationComponent";
-import { useSocket } from "@/app/providers/SocketProvider";
-import { useAppDispatch } from "@/redux/hooks";
 import { Time } from "@/lib/utils";
+import { ConvoType, updateConversation } from "@/redux/chatSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
 
 interface Params {
   gid?: string;
@@ -178,6 +178,7 @@ const ChatSettingsPage: React.FC = () => {
     if (chatSettings) {
       setChatSettings({ ...chatSettings, [field]: value });
       if (field === "isMuted") {
+        await chatSystem.updateChatSettings(gid as string, { isMuted: value });
         return;
       } else if (field === "isPinned") {
         dispatch(updateConversation({ id: gid as string, updates: { pinned: value } }));

@@ -3,6 +3,7 @@ import { ArrowLeft, Cake, Check, Link, Plus, Pin, Loader2 } from "lucide-react";
 import NextLink from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -14,6 +15,7 @@ import type { PaginationMeta } from "@/lib/apiPagination";
 import { submitFollowUpdate } from "@/lib/followApi";
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
+import { RootState } from "@/redux/store";
 import { timeFormatter } from "@/templates/PostProps";
 
 import ContentSection from "./ContentTabs";
@@ -37,11 +39,27 @@ export default function Profile({
   const { userdata } = useUser();
   const socket = useSocket();
   const navigate = useNavigateWithHistory();
+  const { conversations } = useSelector((state: RootState) => state.chat);
   const [isLoading, setIsLoading] = useState(false);
   const [profileData, setProfileData] = useState(pd);
   const [postCards, setPostCards] = useState(profilePostCards);
   const [postsPagination, setPostsPagination] = useState(initialPagination);
   const [postsLoadingMore, setPostsLoadingMore] = useState(false);
+
+  const openMessage = useCallback(() => {
+    const otherId = String(profileData._id);
+    const existingConvo = conversations.find(
+      (convo) =>
+        convo.type === "DM" &&
+        convo.participants.length === 2 &&
+        convo.participants.includes(otherId)
+    );
+    if (existingConvo) {
+      router.push(`/chats/${existingConvo.id}`);
+    } else {
+      router.push(`/chats/new?otherId=${otherId}`);
+    }
+  }, [conversations, profileData._id, router]);
 
   const viewedProfileKey = `${pd._id}:${pd.username ?? ""}`;
 
@@ -289,12 +307,14 @@ export default function Profile({
             username={profileData.username}
             profileId={profileData._id as unknown as string}
           />
-          {(profileData._id !== userdata._id && !profileData.isPrivate) && (<Button
-            onClick={() => router.push(`/chats/new?otherId=${profileData._id}`)}
-            className="rounded-full bg-brand/90 px-4 py-2 text-white hover:bg-brand/80"
-          >
-            Message
-          </Button>)}
+          {(profileData._id !== userdata._id && !profileData.isPrivate) && (
+            <Button
+              onClick={openMessage}
+              className="rounded-full bg-brand/90 px-4 py-2 text-white hover:bg-brand/80"
+            >
+              Message
+            </Button>
+          )}
           <div className="overflow-hidden rounded-full border-2 border-white dark:border-black">
             {profileData._id === userdata._id ? (
               <Button

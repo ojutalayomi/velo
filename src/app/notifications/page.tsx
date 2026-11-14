@@ -324,8 +324,8 @@ export default function NotificationPage() {
         : "You're all caught up.";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
-      <header className="flex items-center bg-white p-2 shadow-lg dark:bg-zinc-900">
+    <div className="h-screen max-h-screen w-full overflow-auto bg-gray-50 dark:bg-zinc-900">
+      <header className="sticky top-0 z-10 flex items-center bg-white p-2 shadow-lg dark:bg-zinc-900">
         <ArrowLeft
           size={24}
           className="cursor-pointer text-gray-600 dark:text-slate-200"

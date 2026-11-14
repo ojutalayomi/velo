@@ -3,9 +3,10 @@ import React, { ReactNode } from "react";
 import { Provider } from "react-redux";
 
 import { CallProvider } from "@/components/call";
+import NotificationLiveSync from "@/components/NotificationLiveSync";
+import { Toaster } from "@/components/ui/sonner";
 import { store } from "@/redux/store";
 
-import { Toaster } from "@/components/ui/sonner";
 
 import NetworkProvider from "./providers/NetworkProvider";
 import PostsProvider from "./providers/PostsProvider";
@@ -30,6 +31,7 @@ const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
               <PostsProvider>
                 <StatusProvider>
                   <ThemeProvider>
+                    <NotificationLiveSync />
                     {children}
                     <Toaster />
                   </ThemeProvider>

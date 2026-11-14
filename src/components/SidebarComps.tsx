@@ -87,6 +87,9 @@ export const SidebarItem = forwardRef<
 >(({ item, activeRoute, handleClick, userdata, isCollapsed = false, ...props }, ref) => {
   const { conversations } = useSelector((state: RootState) => state.chat);
   const i = conversations?.reduce((acc, convo) => acc + convo.unread, 0) ?? 0;
+  const notificationUnread = useSelector(
+    (state: RootState) => state.notifications.unreadCount
+  );
   const isProfile = item.route === "profile";
   const route = isProfile ? userdata.username : item.route;
   const label = isProfile ? (userdata.username ? userdata.username : "Profile") : item.label;
@@ -135,6 +138,11 @@ export const SidebarItem = forwardRef<
                     {i}
                   </div>
                 )}
+                {item.label === "Notifications" && notificationUnread > 0 && (
+                  <div className="absolute right-0 flex size-5 translate-y-[-50%] items-center justify-center rounded-full bg-brand text-xs font-bold text-white md:relative md:translate-y-0">
+                    {notificationUnread > 99 ? "99+" : notificationUnread}
+                  </div>
+                )}
               </div>
             </Link>
           ))}
@@ -167,6 +175,13 @@ export const SidebarItem = forwardRef<
               className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white ${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
             >
               {i}
+            </div>
+          )}
+          {item.label === "Notifications" && notificationUnread > 0 && (
+            <div
+              className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white ${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
+            >
+              {notificationUnread > 99 ? "99+" : notificationUnread}
             </div>
           )}
         </div>

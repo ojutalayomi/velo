@@ -1,15 +1,18 @@
 import { configureStore } from "@reduxjs/toolkit";
-import navigationReducer from "./navigationSlice";
-import signupsReducer from "./signupSlice";
-import userReducer from "./userSlice";
-import chatReducer from "./chatSlice";
-import rtcReducer from "./rtcSlice";
-import postsReducer from "./postsSlice";
-import utilReducer from "./utilsSlice";
-import routeReducer from "./routeSlice";
-import followingFeedReducer from "./followingFeedSlice";
-import statusReducer from "./statusSlice";
 import { useDispatch as useReduxDispatch } from "react-redux";
+
+import chatReducer from "./chatSlice";
+import followingFeedReducer from "./followingFeedSlice";
+import navigationReducer from "./navigationSlice";
+import notificationReducer from "./notificationSlice";
+import postsReducer from "./postsSlice";
+import routeReducer from "./routeSlice";
+import rtcReducer from "./rtcSlice";
+import signupsReducer from "./signupSlice";
+import statusReducer from "./statusSlice";
+import userReducer from "./userSlice";
+import utilReducer from "./utilsSlice";
+
 
 // Define RootState and AppDispatch types
 export type RootState = ReturnType<typeof store.getState>;
@@ -27,6 +30,7 @@ export const store = configureStore({
     route: routeReducer,
     followingFeed: followingFeedReducer,
     status: statusReducer,
+    notifications: notificationReducer,
   },
 });
 

@@ -533,6 +533,52 @@ export interface BlockedUserSchema {
   createdAt: string;
 }
 
+export type NotificationType = "like" | "comment" | "follow" | "mention";
+
+export type NotificationTarget = "post" | "comment" | "chat_message" | "user";
+
+export type NotificationTab = "all" | "mentions" | "verified";
+
+export interface NotificationActor {
+  id: string;
+  name: string;
+  username: string;
+  displayPicture: string;
+  verified: boolean;
+}
+
+export interface InAppNotificationSchema {
+  _id: ObjectId;
+  userId: string;
+  actorId: string;
+  actor: NotificationActor;
+  type: NotificationType;
+  targetType: NotificationTarget;
+  targetId: string;
+  groupKey: string;
+  dedupeKey: string;
+  url: string;
+  snippet?: string;
+  chatId?: string;
+  chatType?: string;
+  createdAt: Date;
+  readAt: Date | null;
+}
+
+export interface NotificationGroup {
+  groupKey: string;
+  type: NotificationType;
+  targetType: NotificationTarget;
+  targetId: string;
+  url: string;
+  snippet?: string;
+  latestAt: string;
+  count: number;
+  actorCount: number;
+  unread: boolean;
+  actors: NotificationActor[];
+}
+
 export interface PushSubscriptionKeys {
   p256dh: string;
   auth: string;

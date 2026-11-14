@@ -1,8 +1,4 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { useUser } from "@/app/providers/UserProvider";
 import {
   Bell,
   User,
@@ -14,6 +10,13 @@ import {
   Search,
   Bookmark,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { useUser } from "@/app/providers/UserProvider";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Drawer,
   DrawerTitle,
@@ -24,10 +27,9 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Statuser } from "./VerificationComponent";
-import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+
+import { Statuser } from "./VerificationComponent";
 
 interface BottombarProps {
   activeRoute: string;
@@ -50,6 +52,9 @@ const Root: React.FC<BottombarProps> = ({
   conversations?.map((convo) => {
     i = i + convo.unread;
   });
+  const notificationUnread = useSelector(
+    (state: RootState) => state.notifications.unreadCount
+  );
   const [isPopUp, setPopUp] = useState<boolean>(false);
   const [open, setOpen] = useState<boolean>(false);
   const router = useRouter();
@@ -106,11 +111,11 @@ const Root: React.FC<BottombarProps> = ({
   return (
     <>
       <div
-        className={`bg-slate-200 fixed bottom-0 left-0 right-0 tablets:hidden z-50 shadow-md rounded-t-xl dark:bg-zinc-900 ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
+        className={`fixed inset-x-0 bottom-0 z-50 rounded-t-xl bg-slate-200 shadow-md tablets:hidden dark:bg-zinc-900 ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
       >
         {/* Brand accent strip */}
         <div className="h-0.5 w-full bg-gradient-to-r from-brand/40 via-brand to-brand/40" />
-        <div className="!shadow-none py-[10px] flex justify-evenly w-full">
+        <div className="flex w-full justify-evenly py-[10px] !shadow-none">
           <div
             onClick={() => handleClick("home")}
             className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === "home" ? "active" : ""}`}
@@ -138,7 +143,7 @@ const Root: React.FC<BottombarProps> = ({
           >
             <Mail size={22} className="dark:stroke-tom" />
             {i > 0 && (
-              <div className="bg-brand text-white text-xs absolute right-0 transform translate-y-[-50%] translate-x-1/2 font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <div className="absolute right-0 flex size-5 translate-x-1/2 translate-y-[-50%] transform items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
                 {i}
               </div>
             )}
@@ -161,10 +166,10 @@ const Root: React.FC<BottombarProps> = ({
                 </DrawerHeader>
                 <div
                   id="more"
-                  className={`flex flex-col gap-2 left-0 px-4 font-light leading-normal`}
+                  className={`left-0 flex flex-col gap-2 px-4 font-light leading-normal`}
                 >
                   <div
-                    className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === "general" ? "active" : ""}`}
+                    className={`rout flex items-center justify-start gap-2 dark:text-slate-200 ${activeRoute === "general" ? "active" : ""}`}
                     data-route="general"
                     onClick={() => handleClick("general")}
                   >
@@ -172,16 +177,21 @@ const Root: React.FC<BottombarProps> = ({
                     <div className="text-lg">General</div>
                   </div>
                   <div
-                    className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === "notifications" ? "active" : ""}`}
+                    className={`rout flex items-center justify-start gap-2 dark:text-slate-200 ${activeRoute === "notifications" ? "active" : ""}`}
                     data-route="notifications"
                     onClick={() => handleClick("notifications")}
                   >
                     <Bell size={25} />
                     <div className="notifications rt">Notifications</div>
+                    {notificationUnread > 0 && (
+                      <div className="ml-auto flex size-5 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+                        {notificationUnread > 99 ? "99+" : notificationUnread}
+                      </div>
+                    )}
                   </div>
                   {userdata.username && (
                     <div
-                      className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === userdata.username ? "active" : ""}`}
+                      className={`rout flex items-center justify-start gap-2 dark:text-slate-200 ${activeRoute === userdata.username ? "active" : ""}`}
                       data-route={userdata.username}
                       onClick={() => handleClick(userdata.username)}
                     >
@@ -190,7 +200,7 @@ const Root: React.FC<BottombarProps> = ({
                     </div>
                   )}
                   <div
-                    className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === "feedback" ? "active" : ""}`}
+                    className={`rout flex items-center justify-start gap-2 dark:text-slate-200 ${activeRoute === "feedback" ? "active" : ""}`}
                     data-route="bookmarks"
                     onClick={() => handleClick("bookmarks")}
                   >
@@ -200,7 +210,7 @@ const Root: React.FC<BottombarProps> = ({
                 </div>
                 <DrawerFooter>
                   {!userdata._id ? (
-                    <div className="dark:text-slate-200 flex items-center justify-between">
+                    <div className="flex items-center justify-between dark:text-slate-200">
                       <p className="flex items-center">
                         <LogIn size={25} className="mr-2" />
                         <Link href="/accounts/login">Log in</Link>
@@ -234,7 +244,7 @@ const Root: React.FC<BottombarProps> = ({
                             <div
                               style={{ height: "30px", width: "30px" }}
                               className="loader load"
-                            ></div>
+                             />
                           </div>
                         )}
                       </div>
@@ -245,7 +255,7 @@ const Root: React.FC<BottombarProps> = ({
                               ? userdata.firstname + " " + userdata.lastname
                               : "John Doe"}
                           </p>
-                          {userdata.verified ? <Statuser className="size-4 ml-1" /> : null}
+                          {userdata.verified ? <Statuser className="ml-1 size-4" /> : null}
                         </div>
                         <p className="username text-xs">
                           @{userdata.username !== "" ? userdata.username : "johndoe"}
@@ -264,7 +274,7 @@ const Root: React.FC<BottombarProps> = ({
                               <path
                                 className="pathEllip dark:fill-tom"
                                 d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"
-                              ></path>
+                               />
                             </g>
                           </svg>
                         </PopoverTrigger>
@@ -293,7 +303,7 @@ const Root: React.FC<BottombarProps> = ({
             </Drawer>
           ) : (
             <div className="flex items-center justify-center">
-              <div style={{ height: "40px", width: "40px" }} className="loader load"></div>
+              <div style={{ height: "40px", width: "40px" }} className="loader load" />
             </div>
           )}
         </div>

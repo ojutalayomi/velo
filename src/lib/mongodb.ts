@@ -9,6 +9,7 @@ import {
   ChatDataServer,
   ChatParticipant,
   ChatSettings,
+  InAppNotificationSchema,
   MessageSchema,
   PostBookmarkSchema,
   PostLikesSchema,
@@ -279,6 +280,14 @@ export class MongoDBClient {
    */
   blockedUsers() {
     return this.db.collection<BlockedUserSchema>("Blocked_Users");
+  }
+
+  /**
+   * Gets the in-app notification inbox collection.
+   * @returns Collection for persisted notification events
+   */
+  notifications() {
+    return this.db.collection<InAppNotificationSchema>("Notifications");
   }
 
   /**

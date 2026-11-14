@@ -103,6 +103,26 @@ const chatSlice = createSlice({
           : convo
       );
     },
+    setTypingUser: (
+      state,
+      action: PayloadAction<{
+        chatId: string;
+        user: ConvoType["isTypingList"][number];
+      }>
+    ) => {
+      const convo = state.conversations.find((c) => c.id === action.payload.chatId);
+      if (!convo) return;
+      const { user } = action.payload;
+      const others = (convo.isTypingList ?? []).filter((entry) => entry.id !== user.id);
+      convo.isTypingList = [...others, user];
+    },
+    removeTypingUser: (state, action: PayloadAction<{ chatId: string; userId: string }>) => {
+      const convo = state.conversations.find((c) => c.id === action.payload.chatId);
+      if (!convo) return;
+      convo.isTypingList = (convo.isTypingList ?? []).filter(
+        (entry) => entry.id !== action.payload.userId
+      );
+    },
     updateMessageReactions: (state, action: PayloadAction<{ id: string; updates: Reaction }>) => {
       const { id, updates } = action.payload;
       state.messages = state.messages.map((msg) => {
@@ -235,6 +255,8 @@ export const {
   setConversations,
   addConversation,
   updateConversation,
+  setTypingUser,
+  removeTypingUser,
   updateMessageReactions,
   deleteConversation,
   setMessages,

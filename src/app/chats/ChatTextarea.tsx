@@ -79,7 +79,7 @@ interface ChatTextareaProps {
   chatId?: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
   handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
-  handleTyping?: () => void;
+  handleTyping?: (hasText?: boolean) => void;
   closeQuote: () => void;
 }
 
@@ -178,7 +178,7 @@ const ChatTextarea = ({
   const handleGetDetails = useCallback(
     (details: Details) => {
       handleInput(details);
-      handleTyping?.();
+      handleTyping?.(details.text.length > 0);
     },
     [handleTyping, handleInput]
   );
@@ -457,7 +457,7 @@ interface UploadDialogProps {
   textAreaRef: RefObject<HTMLTextAreaElement | null>;
   newMessage: string;
   setNewMessage: Dispatch<SetStateAction<string>>;
-  handleTyping?: () => void;
+  handleTyping?: (hasText?: boolean) => void;
   handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
   setFileAccepts: Dispatch<SetStateAction<string>>;
 }
@@ -731,8 +731,8 @@ const UploadDialog = ({
                 minHeight={20}
                 maxHeight={120}
                 ref={textAreaRef}
-                getDetails={() => {
-                  handleTyping?.();
+                getDetails={(details) => {
+                  handleTyping?.(details.text.length > 0);
                 }}
                 fontFamily="myCustomFont, myCustomFont Fallback"
                 onKeyDown={(e) => {

@@ -97,6 +97,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingEmitRef = useRef(0);
   const lastDateRef = useRef<string>("");
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const olderLoadThrottleRef = useRef(0);
@@ -226,6 +227,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     })();
   }, [friendId]);
 
+  const stopTypingSignal = useCallback(() => {
+    if (!socket || !pid || !friendId) return;
+    if (!typingTimeoutRef.current) return;
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+    lastTypingEmitRef.current = 0;
+    socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
+  }, [socket, pid, friendId, userdata]);
+
   const handleSendMessage = async (id: string, mentions?: { userId: string; username: string }[]) => {
     if (newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
@@ -348,6 +358,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
       // Reset the message input and attachments
       setNewMessage("");
+      stopTypingSignal();
       clearFiles();
       closeQuote();
       const txt = document.getElementById("txt");
@@ -404,20 +415,43 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     router.push("/chats");
   };
 
-  const handleTyping = () => {
-    if (!socket || !pid || !userSettings.showTypingStatus) return;
-    socket.emit("typing", { user: userdata, to: `user:${friendId}`, chatId: pid });
+  const handleTyping = (hasText: boolean = true) => {
+    if (!socket || !pid || !friendId || !userSettings.showTypingStatus) return;
+    const payload = { user: userdata, to: `user:${friendId}`, chatId: pid };
+
+    if (!hasText) {
+      stopTypingSignal();
+      return;
+    }
+
+    // Throttle the "typing" signal; the stop timer below is still refreshed on every keystroke.
+    const now = Date.now();
+    if (now - lastTypingEmitRef.current >= 1200) {
+      lastTypingEmitRef.current = now;
+      socket.emit("typing", payload);
+    }
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      if (userSettings.showTypingStatus) {
-        socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
-      }
+      typingTimeoutRef.current = null;
+      lastTypingEmitRef.current = 0;
+      socket.emit("stopTyping", payload);
     }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (!typingTimeoutRef.current) return;
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      if (socket && pid && friendId) {
+        socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
+      }
+    };
+  }, [socket, pid, friendId, userdata]);
 
   useEffect(() => {
     if (searchParams && searchParams.get("search") === "true") {

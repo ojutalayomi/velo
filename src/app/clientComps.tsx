@@ -1,7 +1,7 @@
 "use client";
 import { Megaphone, WifiOff, X, XCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
@@ -40,6 +40,8 @@ import { UserData } from "@/lib/types/user";
 import { Time } from "@/lib/utils";
 import {
   updateConversation,
+  setTypingUser,
+  removeTypingUser,
   addMessage,
   addSetting,
   addConversation,
@@ -56,6 +58,10 @@ import { RootState } from "@/redux/store";
 import Error from "./error";
 import logo from "./icon.svg";
 import { useNetwork } from "./providers/NetworkProvider";
+
+// Slightly longer than the sender's 3s stopTyping timer so the receiver only
+// clears the indicator when a stop event never arrives (tab close, network drop).
+const TYPING_INDICATOR_TTL_MS = 5000;
 
 const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
@@ -77,6 +83,11 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const { displayAnnouncement, setDisplayAnnouncement } = useAnnouncer();
   const [incomingCallId, setIncomingCallId] = useState<string | null>(null);
   const socket = useSocket();
+  const typingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const conversationsRef = useRef(conversations);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
   const routes = [
     "accounts/login",
     "accounts/signup",
@@ -114,12 +125,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     fetchData();
   }, [dispatch]);
 
-  const gt = useCallback(
-    (chatid: string) => {
-      return conversations.find((obj) => obj.id === chatid);
-    },
-    [conversations]
-  );
+  const gt = useCallback((chatid: string) => {
+    return conversationsRef.current.find((obj) => obj.id === chatid);
+  }, []);
 
   const handleNewChat = useCallback(
     (data: NewChat_) => {
@@ -194,46 +202,46 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
 
   const handleTyping = useCallback(
     (data: { user: UserData; to: string; chatId: string }) => {
-      if (data.user._id === userdata._id) return null;
-      const conversation = conversations.find((c) => c.id === data.chatId);
-      if (conversation) {
-        dispatch(
-          updateConversation({
-            id: data.chatId,
-            updates: {
-              isTypingList: [
-                ...conversation.isTypingList,
-                {
-                  id: data.user._id as string,
-                  name: data.user.name,
-                  displayPicture: data.user.displayPicture || "",
-                  username: data.user.username,
-                  isTyping: true,
-                  chatId: data.chatId,
-                },
-              ],
-            },
-          })
-        );
-      }
+      if (!data?.user?._id || data.user._id === userdata._id) return;
+      const key = `${data.chatId}:${data.user._id}`;
+
+      dispatch(
+        setTypingUser({
+          chatId: data.chatId,
+          user: {
+            id: data.user._id,
+            name: data.user.name,
+            displayPicture: data.user.displayPicture || "",
+            username: data.user.username,
+            isTyping: true,
+            chatId: data.chatId,
+          },
+        })
+      );
+
+      const existing = typingTimers.current.get(key);
+      if (existing) clearTimeout(existing);
+      typingTimers.current.set(
+        key,
+        setTimeout(() => {
+          typingTimers.current.delete(key);
+          dispatch(removeTypingUser({ chatId: data.chatId, userId: data.user._id }));
+        }, TYPING_INDICATOR_TTL_MS)
+      );
     },
     [dispatch, userdata._id]
   );
 
   const handleStopTyping = useCallback(
     (data: { user: UserData; to: string; chatId: string }) => {
-      if (data.user._id === userdata._id) return null;
-      const conversation = conversations.find((c) => c.id === data.chatId);
-      if (conversation) {
-        dispatch(
-          updateConversation({
-            id: data.chatId,
-            updates: {
-              isTypingList: conversation.isTypingList.filter((u) => u.id !== data.user._id),
-            },
-          })
-        );
-      }
+      if (!data?.user?._id || data.user._id === userdata._id) return;
+      const key = `${data.chatId}:${data.user._id}`;
+
+      const existing = typingTimers.current.get(key);
+      if (existing) clearTimeout(existing);
+      typingTimers.current.delete(key);
+
+      dispatch(removeTypingUser({ chatId: data.chatId, userId: data.user._id }));
     },
     [dispatch, userdata._id]
   );
@@ -245,7 +253,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on("userTyping", handleTyping);
     socket.on("userStopTyping", handleStopTyping);
     socket.on("lastActive", ({ userId, lastActive }) => {
-      const convo = conversations.find((c) => c.participants.includes(userId) && c.type === "DM");
+      const convo = conversationsRef.current.find(
+        (c) => c.participants.includes(userId) && c.type === "DM"
+      );
       dispatch(updateConversation({ id: convo?.id ?? "", updates: { timestamp: lastActive } }));
     });
     socket.on(
@@ -476,7 +486,15 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("mentionNotification");
       socket.off("chatError");
     };
-  }, [socket, handleChatMessage, handleNewChat, handleTyping, handleStopTyping, conversations]);
+  }, [socket, handleChatMessage, handleNewChat, handleTyping, handleStopTyping]);
+
+  useEffect(() => {
+    const timers = typingTimers.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
 
   const setActiveRoute = useCallback((route: string) => {
     setActiveRouteState(route);

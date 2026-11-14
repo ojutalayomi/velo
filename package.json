@@ -28,8 +28,9 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "backfill:bookmarks": "npx --yes tsx src/scripts/backfill-bookmark-search-text.ts",
+    "backfill:bookmarks": "npx --yes tsx --env-file=.env.local src/scripts/backfill-bookmark-search-text.ts",
     "backfill:post-counts": "npx --yes tsx --env-file=.env.local scripts/update-post-counts.ts",
+    "backfill:trends": "npx --yes tsx --env-file=.env.local src/scripts/backfill-post-trends.ts",
     "migration": "node ./playground/play.js"
   },
   "dependencies": {

@@ -566,7 +566,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
           </div>
         </div>
       )}
-      {loading && (
+      {/* {loading && (
         <div className="pointer-events-none fixed inset-x-0 z-[999] flex size-full justify-center backdrop-blur-xl">
           <MetallicPaint text="Velo" edgeBend={0.9}
             density={2.5}
@@ -581,7 +581,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             intro
             imageSrc={logo} />
         </div>
-      )}
+      )} */}
       <div id="root" className="overflow-hidden">
         <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
           <FileStorageProvider>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 /**
  * List all passkeys for the current user
@@ -15,7 +16,7 @@ export async function GET() {
     }
 
     const db = await new MongoDBClient().init();
-    const userDoc = await db.users().findOne({ userId });
+    const userDoc = await db.users().findOne({ _id: new ObjectId(userId) });
 
     if (!userDoc) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });

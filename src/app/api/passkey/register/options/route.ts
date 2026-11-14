@@ -4,6 +4,7 @@ import { getSessionUserId } from "@/lib/auth";
 import { SocialMediaUser } from "@/lib/class/User";
 import { MongoDBClient } from "@/lib/mongodb";
 import { generatePasskeyRegistrationOptions } from "@/lib/webauthn";
+import { ObjectId } from "mongodb";
 
 /**
  * Generate registration options for creating a new passkey
@@ -17,7 +18,7 @@ export async function POST() {
     }
 
     const db = await new MongoDBClient().init();
-    const userDoc = await db.users().findOne({ userId });
+    const userDoc = await db.users().findOne({ _id: new ObjectId(userId) });
 
     if (!userDoc) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });

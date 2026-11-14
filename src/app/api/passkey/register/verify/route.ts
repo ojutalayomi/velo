@@ -9,6 +9,7 @@ import {
   registrationToPasskeyCredential,
   verifyPasskeyRegistration,
 } from "@/lib/webauthn";
+import { ObjectId } from "mongodb";
 
 /**
  * Verify a passkey registration response
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await new MongoDBClient().init();
-    const userDoc = await db.users().findOne({ userId });
+    const userDoc = await db.users().findOne({ _id: new ObjectId(userId) });
 
     if (!userDoc) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });

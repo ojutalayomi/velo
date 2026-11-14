@@ -7,6 +7,7 @@ import { UAParser } from "ua-parser-js";
 
 import { MongoDBClient } from "../mongodb";
 import { ChatParticipant, ChatType, NewChatSettings } from "../types/type";
+import { PasskeyChallenge, PasskeyCredential } from "../types/passkey";
 import { User, Theme, AccountType } from "../types/user";
 
 export interface UserSchema extends User {
@@ -19,6 +20,8 @@ export interface UserSchema extends User {
   confirmationToken?: string;
   loginToken?: string;
   noOfUpdates?: number;
+  passkeys?: PasskeyCredential[];
+  passkeyChallenge?: PasskeyChallenge;
 }
 
 /**
@@ -75,6 +78,7 @@ export class SocialMediaUser implements UserSchema {
   // EXTENDED FIELD (Inferred from object context)
   public readonly accountType: AccountType = AccountType.HUMAN;
   // You could infer 'ORGANIZATION' based on 'Google Gemini' name and content
+  public passkeys: PasskeyCredential[];
 
   constructor(data: UserSchema & { accountType?: AccountType }) {
     this.isNull = data === null || data === undefined;
@@ -116,6 +120,7 @@ export class SocialMediaUser implements UserSchema {
     this.resetAttempts = data.resetAttempts || 0;
     this.providers = data.providers;
     this.signUpCount = data.signUpCount || 0;
+    this.passkeys = data.passkeys || [];
 
     // Preferences
     this.theme = data.theme ?? ("system" as Theme);

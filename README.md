@@ -8,6 +8,7 @@ A real-time chat application built with Next.js, Socket.IO, and Redux.
 - Message reactions, quoting, and link previews
 - Group chats
 - Message status (sent, delivered, read)
+- **Passkey authentication (WebAuthn)** - Sign in with biometrics or device PIN
 - Dark mode
 - Responsive UI
 
@@ -21,6 +22,7 @@ A real-time chat application built with Next.js, Socket.IO, and Redux.
 - AWS S3 (presigned uploads)
 - Web Push (VAPID)
 - NextAuth (Google, Facebook)
+- **WebAuthn/Passkeys** (@simplewebauthn)
 
 ## Prerequisites
 
@@ -61,6 +63,9 @@ Create a `.env.local` in `velo/`:
 - App URLs
   - `NEXT_PUBLIC_BASE_URL` (e.g., https://your-app.com)
   - `NEXT_PUBLIC_SOCKET_URL` (Socket server URL)
+
+- Passkey/WebAuthn
+  - `NEXT_PUBLIC_WEBAUTHN_RP_ID` (Relying Party ID - your domain, e.g., "your-app.com", use "localhost" for dev)
 
 Optional (if used by deploy):
 

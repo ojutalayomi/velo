@@ -4,6 +4,8 @@
 
 import { ObjectId } from "bson";
 
+import { PasskeyCredential } from "./passkey";
+
 /**
  * Defines the possible types of accounts.
  * Based on the JSON, we assume this is an ORGANIZATION.
@@ -58,6 +60,7 @@ export interface User {
   verified: boolean;
   website?: string;
   accountType: AccountType;
+  passkeys?: PasskeyCredential[]; // WebAuthn credentials
 }
 
 export interface UserData extends User {

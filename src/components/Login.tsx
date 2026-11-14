@@ -11,6 +11,7 @@ import { setUserData } from "@/redux/userSlice";
 
 import Wrapper from "./AccountComponentWrapper";
 import SignInComponent from "./SignInController";
+import { PasskeyButton } from "./passkey";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -167,6 +168,26 @@ const Login: React.FC = () => {
               <span>Continue</span>
             )}
           </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+
+          <PasskeyButton
+            username={formData.UsernameOrEmail || undefined}
+            onSuccess={(user) => {
+              dispatch(setUserData(user));
+              dispatch(setSuccess(true));
+              router.push(backTo || "/home");
+            }}
+            onError={(error) => setError(error)}
+            className="w-full"
+          />
         </form>
       }
     />

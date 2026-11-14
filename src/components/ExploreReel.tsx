@@ -454,18 +454,35 @@ export default function ExploreReel() {
     async (post: PostSchema) => {
       if (!requireAuth()) return;
       const follow = !post.IsFollowing;
+      const previousState = post.IsFollowing;
+      
+      // Optimistic update
+      const next = { ...post, IsFollowing: follow };
+      dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: follow } }));
+      patchPostInStateAndCache(next);
+
       try {
         const res = await submitFollowUpdate({
           followerId: String(userdata._id),
           followedId: String(post.UserId),
           follow,
         });
-        if (res.ok) {
-          const next = { ...post, IsFollowing: follow };
-          dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: follow } }));
-          patchPostInStateAndCache(next);
+        
+        if (!res.ok) {
+          // Revert optimistic update
+          const reverted = { ...post, IsFollowing: previousState };
+          dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: previousState } }));
+          patchPostInStateAndCache(reverted);
+          
+          const errorData = await res.json().catch(() => ({ message: "Failed to update follow status" }));
+          toast.error("Error", { description: errorData.message || "Failed to follow user" });
         }
       } catch (error) {
+        // Revert optimistic update on error
+        const reverted = { ...post, IsFollowing: previousState };
+        dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: previousState } }));
+        patchPostInStateAndCache(reverted);
+        
         console.error(error);
         toast.error("Error", { description: "Failed to follow user" });
       }

@@ -118,6 +118,17 @@ export default function SharesClient({
     if (!viewerId || updatingId) return;
 
     setUpdatingId(String(target._id));
+    
+    // Optimistic update
+    const previousState = target.isFollowing;
+    setItems((prev) =>
+      prev.map((item) =>
+        !isPost(item) && String(item._id) === String(target._id)
+          ? { ...item, isFollowing: follow }
+          : item
+      )
+    );
+
     try {
       const res = await submitFollowUpdate({
         followerId: viewerId,
@@ -126,19 +137,27 @@ export default function SharesClient({
       });
 
       if (!res.ok) {
+        // Revert optimistic update
+        setItems((prev) =>
+          prev.map((item) =>
+            !isPost(item) && String(item._id) === String(target._id)
+              ? { ...item, isFollowing: previousState }
+              : item
+          )
+        );
         const body = (await res.json().catch(() => ({}))) as { message?: string };
         toast.error(body.message || "Could not update follow status");
         return;
       }
-
+    } catch {
+      // Revert optimistic update on error
       setItems((prev) =>
         prev.map((item) =>
           !isPost(item) && String(item._id) === String(target._id)
-            ? { ...item, isFollowing: follow }
+            ? { ...item, isFollowing: previousState }
             : item
         )
       );
-    } catch {
       toast.error("Could not update follow status");
     } finally {
       setUpdatingId("");

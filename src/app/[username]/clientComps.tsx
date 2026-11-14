@@ -128,39 +128,72 @@ export default function Profile({
   }
 
   const handleFollow = async (follow: boolean) => {
+    // Prevent duplicate requests
+    if (isLoading) return;
+
+    // Save state before optimistic update for potential revert
+    const profileId = profileData._id;
+    const previousState = profileData.isFollowing ?? false;
+    const previousFollowers = profileData.followers;
+
     try {
       setIsLoading(true);
+      
+      // Optimistic update
+      if (follow) {
+        setProfileData((prev) => ({
+          ...prev,
+          isFollowing: true,
+          followers: typeof prev.followers === "number" ? prev.followers + 1 : prev.followers,
+        }));
+        setPostCards((prev) =>
+          prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: true } : post))
+        );
+      } else {
+        setProfileData((prev) => ({
+          ...prev,
+          isFollowing: false,
+          followers:
+            typeof prev.followers === "number" && prev.followers > 0
+              ? prev.followers - 1
+              : prev.followers,
+        }));
+        setPostCards((prev) =>
+          prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: false } : post))
+        );
+      }
+
       const res = await submitFollowUpdate({
         followerId: String(userdata._id),
         followedId: String(profileData._id),
         follow,
       });
-      if (res.ok) {
-        const profileId = profileData._id;
-        if (follow) {
-          setProfileData((prev) => ({
-            ...prev,
-            isFollowing: true,
-            followers: typeof prev.followers === "number" ? prev.followers + 1 : prev.followers,
-          }));
-          setPostCards((prev) =>
-            prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: true } : post))
-          );
-        } else {
-          setProfileData((prev) => ({
-            ...prev,
-            isFollowing: false,
-            followers:
-              typeof prev.followers === "number" && prev.followers > 0
-                ? prev.followers - 1
-                : prev.followers,
-          }));
-          setPostCards((prev) =>
-            prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: false } : post))
-          );
-        }
+      
+      if (!res.ok) {
+        // Revert optimistic update on error
+        setProfileData((prev) => ({
+          ...prev,
+          isFollowing: previousState,
+          followers: previousFollowers,
+        }));
+        setPostCards((prev) =>
+          prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: previousState } : post))
+        );
+        
+        const data = await res.json().catch(() => ({ message: "Failed to update follow status" }));
+        toast.error(data.message || "Something went wrong");
       }
     } catch (error) {
+      // Revert on network error
+      setProfileData((prev) => ({
+        ...prev,
+        isFollowing: previousState,
+        followers: previousFollowers,
+      }));
+      setPostCards((prev) =>
+        prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: previousState } : post))
+      );
+      
       console.error(error);
       toast.error("Error", {
         description: "Failed to follow user",

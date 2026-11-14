@@ -111,6 +111,15 @@ export default function ConnectionsClient({
     if (!viewerId || updatingId) return;
 
     setUpdatingId(String(target._id));
+    
+    // Optimistic update
+    const previousState = target.isFollowing;
+    setRows((prev) =>
+      prev.map((row) =>
+        String(row._id) === String(target._id) ? { ...row, isFollowing: follow } : row
+      )
+    );
+
     try {
       const res = await submitFollowUpdate({
         followerId: viewerId,
@@ -119,17 +128,23 @@ export default function ConnectionsClient({
       });
 
       if (!res.ok) {
+        // Revert optimistic update
+        setRows((prev) =>
+          prev.map((row) =>
+            String(row._id) === String(target._id) ? { ...row, isFollowing: previousState } : row
+          )
+        );
         const body = (await res.json().catch(() => ({}))) as { message?: string };
         toast.error(body.message || "Could not update follow status");
         return;
       }
-
+    } catch {
+      // Revert optimistic update on error
       setRows((prev) =>
         prev.map((row) =>
-          String(row._id) === String(target._id) ? { ...row, isFollowing: follow } : row
+          String(row._id) === String(target._id) ? { ...row, isFollowing: previousState } : row
         )
       );
-    } catch {
       toast.error("Could not update follow status");
     } finally {
       setUpdatingId("");

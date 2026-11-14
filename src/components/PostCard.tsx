@@ -261,17 +261,33 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   };
 
   const handleFollow = async (follow: boolean) => {
+    // Optimistic update
+    const previousState = data.IsFollowing;
+    setData((prev) => ({ ...prev, IsFollowing: follow }));
+    dispatch(updatePost({ id: data.PostID, updates: { IsFollowing: follow } }));
+
     try {
       const res = await submitFollowUpdate({
         followerId: String(userdata._id),
         followedId: String(data.UserId),
         follow,
       });
-      if (res.ok) {
-        setData((prev) => ({ ...prev, IsFollowing: follow }));
-        dispatch(updatePost({ id: data.PostID, updates: { IsFollowing: follow } }));
+      
+      if (!res.ok) {
+        // Revert optimistic update
+        setData((prev) => ({ ...prev, IsFollowing: previousState }));
+        dispatch(updatePost({ id: data.PostID, updates: { IsFollowing: previousState } }));
+        
+        const errorData = await res.json().catch(() => ({ message: "Failed to update follow status" }));
+        toast.error("Error", {
+          description: errorData.message || "Failed to follow user",
+        });
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setData((prev) => ({ ...prev, IsFollowing: previousState }));
+      dispatch(updatePost({ id: data.PostID, updates: { IsFollowing: previousState } }));
+      
       console.error(error);
       toast.error("Error", {
         description: "Failed to follow user",

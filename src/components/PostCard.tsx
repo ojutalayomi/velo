@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
- 
 "use client";
 import {
   Bookmark,
@@ -411,7 +409,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     },
   ];
 
-  if (!data.PostID) return <RenderLoadingPlaceholder />;
+  if (!data.PostID) return <></>;
 
   const isCaptionTruncated =
     Boolean(data.Caption) && data.Caption.length > 250 && !containsPost && !showFullCaption;

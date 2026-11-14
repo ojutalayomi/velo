@@ -570,7 +570,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     <div
       className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -600,7 +600,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {callHooks && otherPerson?.accountType === "bot" && (
+              {socket && otherPerson?.accountType !== "bot" && (
                 <CallButton
                   roomId={pid}
                   targetUserId={friendId}
@@ -673,9 +673,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               Clear
             </button>
             <div
-              className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
+              className={`absolute right-0 top-[80%] z-50 max-h-[calc(100vh-100px)] w-full overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
             >
-              <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
+              <div className="overflow-y-auto rounded-lg border-2 bg-white p-2 dark:bg-zinc-900 dark:shadow-slate-200">
                 {searchResults.length > 0 ? (
                   searchResults.map((result) => (
                     <MessageTab
@@ -691,9 +691,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                     />
                   ))
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
+                  <div className="flex h-full flex-1 flex-col items-center justify-center py-2 text-center">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-200">
                       No messages found
                     </h3>
                   </div>
@@ -820,7 +820,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             key={`typing-${convo?.isTypingList.find((i) => i.chatId === pid)?.id}`}
             className="my-2 mb-4 text-left"
           >
-            <span className="rounded-full bg-gray-100 rounded-bl-none px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
+            <span className="rounded-full rounded-bl-none bg-gray-100 px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
               {convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...
             </span>
           </div>

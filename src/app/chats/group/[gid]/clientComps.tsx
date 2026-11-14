@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -6,6 +5,7 @@ import { ChevronDown, EllipsisVertical, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "sonner";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
@@ -457,7 +456,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     <div
       className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -484,7 +483,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {callHooks && (
+              {socket && (
                 <CallButton
                   roomId={gid}
                   chatType={"Group"}
@@ -555,9 +554,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               Clear
             </button>
             <div
-              className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
+              className={`absolute right-0 top-[80%] z-50 max-h-[calc(100vh-100px)] w-full overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
             >
-              <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
+              <div className="overflow-y-auto rounded-lg border-2 bg-white p-2 dark:bg-zinc-900 dark:shadow-slate-200">
                 {searchResults.length > 0 ? (
                   searchResults.map((result) => (
                     <MessageTab
@@ -573,9 +572,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                     />
                   ))
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
+                  <div className="flex h-full flex-1 flex-col items-center justify-center py-2 text-center">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-200">
                       No messages found
                     </h3>
                   </div>
@@ -693,15 +692,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         {filteredIsTypingList?.length > 0 && (
           <div key={`typing-${filteredIsTypingList[0].id}`} className="my-2 mb-4 text-left">
             <div className="flex flex-wrap items-center justify-start gap-2">
-              <div className="rounded-full bg-gray-100 flex items-center gap-2 rounded-bl-none p-3 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-                <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2">
+              <div className="flex items-center gap-2 rounded-full rounded-bl-none bg-gray-100 p-3 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
+                <div className="flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background">
                   {filteredIsTypingList.slice(0, 3).map((i) => (
                     <Avatar
                       className="size-8 ring-4 ring-offset-background"
                       key={i.id}
                       data-src={i.displayPicture}
                     >
-                      <AvatarFallback className="capitalize size-8">
+                      <AvatarFallback className="size-8 capitalize">
                         {i.name?.slice(0, 2)}
                       </AvatarFallback>
                       <AvatarImage

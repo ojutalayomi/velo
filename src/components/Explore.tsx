@@ -89,7 +89,7 @@ const Explore = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
-  const [nextSkip, setNextSkip] = useState(0);
+  const [nextSkip, setNextSkip] = useState(20);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -100,7 +100,7 @@ const Explore = () => {
     setReload((x) => !x);
     setError(null);
     setLoading(true);
-    fetchExplorePosts(0)
+    fetchExplorePosts(0, 20)
       .then(({ data, pagination }) => {
         setPosts(data);
         setNextSkip(pagination.skip + pagination.limit);
@@ -132,7 +132,7 @@ const Explore = () => {
     }
 
     setLoading(true);
-    fetchExplorePosts(0)
+    fetchExplorePosts(0, 20)
       .then(({ data, pagination }) => {
         if (cancelled) return;
         setPosts(data);

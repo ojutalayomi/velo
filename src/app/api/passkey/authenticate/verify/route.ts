@@ -40,17 +40,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Credential not found" }, { status: 404 });
     }
 
-    // Retrieve and validate the challenge
-    let storedChallenge: any;
+    // The challenge the client actually signed is inside response.clientDataJSON.
+    const clientData = JSON.parse(
+      Buffer.from(response.response.clientDataJSON, "base64url").toString("utf8")
+    ) as { challenge: string };
+    const responseChallenge = clientData.challenge;
 
-    if (userDoc.passkeyChallenge) {
-      storedChallenge = userDoc.passkeyChallenge;
+    // Find the matching challenge, preferring the one stored on the user doc.
+    let storedChallenge: {
+      challenge: string;
+      expiresAt: number;
+      type: string;
+    } | null = null;
+    let challengeSource: "user" | "temp" | null = null;
+
+    const userChallenge = userDoc.passkeyChallenge;
+    if (
+      userChallenge &&
+      userChallenge.type === "authentication" &&
+      userChallenge.challenge === responseChallenge &&
+      userChallenge.expiresAt >= Date.now()
+    ) {
+      storedChallenge = {
+        challenge: userChallenge.challenge,
+        expiresAt: userChallenge.expiresAt,
+        type: userChallenge.type,
+      };
+      challengeSource = "user";
     } else {
       // Check temporary challenges collection for discoverable credentials
       const tempChallenge = await database
-        .collection("passkey_challenges")
+        .collection<{
+          challenge: string;
+          expiresAt: Date;
+          type: string;
+        }>("passkey_challenges")
         .findOne({
           type: "authentication",
+          challenge: responseChallenge,
           expiresAt: { $gt: new Date() },
         });
 
@@ -60,15 +87,15 @@ export async function POST(request: NextRequest) {
           expiresAt: tempChallenge.expiresAt.getTime(),
           type: tempChallenge.type,
         };
+        challengeSource = "temp";
       }
     }
 
-    if (
-      !storedChallenge ||
-      storedChallenge.type !== "authentication" ||
-      storedChallenge.expiresAt < Date.now()
-    ) {
-      return NextResponse.json({ message: "Invalid or expired challenge" }, { status: 400 });
+    if (!storedChallenge) {
+      return NextResponse.json(
+        { message: "No matching authentication challenge" },
+        { status: 400 }
+      );
     }
 
     // Verify the authentication response
@@ -90,12 +117,16 @@ export async function POST(request: NextRequest) {
           "passkeys.$.counter": verification.authenticationInfo.newCounter,
           "passkeys.$.lastUsedAt": new Date().toISOString(),
         },
-        $unset: { passkeyChallenge: "" },
       }
     );
 
-    // Clean up temporary challenge if used
-    if (!userDoc.passkeyChallenge) {
+    // Clean up the challenge that was actually used
+    if (challengeSource === "user") {
+      await db.users().updateOne(
+        { _id: userDoc._id },
+        { $unset: { passkeyChallenge: "" } }
+      );
+    } else if (challengeSource === "temp") {
       await database
         .collection("passkey_challenges")
         .deleteOne({ challenge: storedChallenge.challenge });

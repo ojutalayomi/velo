@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 import {
   Check,
@@ -308,7 +307,7 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
               {senderId !== userdata._id && message.chatType === "Group" && (
                 <div className="mr-4 flex items-center justify-between gap-1">
                   <div className="flex items-center gap-2">
-                    <Avatar className="mt-1 size-8">
+                    <Avatar className="mt-1 size-6">
                       <AvatarImage src={displayPicture} alt={sender} />
                       <AvatarFallback className="border-2 border-white text-xs dark:border-black">
                         {sender?.slice(0, 2)}
@@ -323,7 +322,7 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
               )}
 
               {/* Quote and Link Preview */}
-              {message.quotedMessageId && <Quote message={message} senderId={senderId} />}
+              {message.quotedMessageId && <QuoteComponent message={message} senderId={senderId} />}
               {firstUrl && <LinkPreview url={firstUrl} />}
 
               {/* Message Content */}
@@ -384,7 +383,7 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
 
           {/* Message Options */}
           {message.messageType !== "Markdown" && (
-            <Options options={optionss} open={open} setOpen={setOpen} />
+            <OptionsComponent options={optionss} open={open} setOpen={setOpen} />
           )}
         </div>
 
@@ -398,7 +397,7 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
         />
 
         {message.messageType === "Markdown" && (
-          <Options options={optionss} open={open} setOpen={setOpen} />
+          <OptionsComponent options={optionss} open={open} setOpen={setOpen} />
         )}
       </div>
       {rectionInfoDisplay && (
@@ -408,6 +407,7 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
   );
 };
 
+MessageTab.displayName = "MessageTab";
 export default MessageTab;
 
 const ReactionSection = ({
@@ -461,7 +461,9 @@ const ReactionSection = ({
   );
 };
 
-const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: string }) => {
+ReactionSection.displayName = "ReactionSection";
+
+const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; senderId: string }) => {
   const { userdata } = useUser();
   const messages = useSelector((state: RootState) => state.chat.messages);
 
@@ -491,7 +493,7 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
 
   return (
     <div
-      className={`flex ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
+      className={`flex ${senderId === userdata._id ? "flex-row-reverse" : "mt-2"}`}
       onClick={handleQuoteClick}
     >
       <div
@@ -523,15 +525,17 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
   );
 };
 
-function Options({
+QuoteComponent.displayName = "QuoteComponent";
+
+const OptionsComponent = ({
   options,
   open,
   setOpen,
 }: {
   options: Option[];
   open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+}) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -618,4 +622,6 @@ function Options({
       </Popover>
     </>
   );
-}
+};
+
+OptionsComponent.displayName = "OptionsComponent";

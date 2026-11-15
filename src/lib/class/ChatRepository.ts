@@ -2,6 +2,8 @@ import {
   AllChats,
   ChatAttributes,
   ChatDataClient,
+  ChatInviteMetadata,
+  ChatInvitePreview,
   ChatParticipant,
   ChatSettings,
   Err,
@@ -93,6 +95,66 @@ class ChatRepository {
     if (!response.ok) {
       const body = await response.json().catch(() => null);
       throw new Error(body?.error ?? "Failed to load members");
+    }
+    return await response.json();
+  }
+
+  async getInvite(chatId: string): Promise<ChatInviteMetadata> {
+    const response = await fetch(`/api/chats/${chatId}/invite`);
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to load the invite link");
+    }
+    return await response.json();
+  }
+
+  /** The only call that returns a usable link; it cannot be fetched again afterwards. */
+  async createInvite(
+    chatId: string,
+    options: { expiresInHours?: number; maxUses?: number | null } = {}
+  ): Promise<ChatInviteMetadata & { link: string }> {
+    const response = await fetch(`/api/chats/${chatId}/invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to create the invite link");
+    }
+    return await response.json();
+  }
+
+  async updateInvite(
+    chatId: string,
+    updates: { enabled?: boolean; expiresInHours?: number; maxUses?: number | null }
+  ): Promise<ChatInviteMetadata> {
+    const response = await fetch(`/api/chats/${chatId}/invite`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to update the invite link");
+    }
+    return await response.json();
+  }
+
+  async previewInvite(token: string): Promise<ChatInvitePreview> {
+    const response = await fetch(`/api/invites/${encodeURIComponent(token)}`);
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to load this invite");
+    }
+    return await response.json();
+  }
+
+  async joinInvite(token: string): Promise<{ chatId: string; alreadyMember: boolean }> {
+    const response = await fetch(`/api/invites/${encodeURIComponent(token)}`, { method: "POST" });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to join the group");
     }
     return await response.json();
   }

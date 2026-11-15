@@ -7,6 +7,7 @@ import {
   AttachmentSchema,
   BlockedUserSchema,
   ChatDataServer,
+  ChatInviteSchema,
   ChatParticipant,
   ChatSettings,
   InAppNotificationSchema,
@@ -240,6 +241,14 @@ export class MongoDBClient {
    */
   chats() {
     return this.db.collection<ChatDataServer>("Chats");
+  }
+
+  /**
+   * Gets the chat invite links collection
+   * @returns Collection for storing hashed group invite tokens
+   */
+  chatInvites() {
+    return this.db.collection<ChatInviteSchema>("Chat_Invites");
   }
 
   /**

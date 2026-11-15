@@ -142,6 +142,7 @@ const removeMembers = async (
   if (participants.length === 0) {
     await db.chatMessages().deleteMany({ chatId: id });
     await db.chats().deleteOne({ _id: chat._id });
+    await db.chatInvites().deleteMany({ chatId: id });
     nextAdminIds = [];
     chatDeleted = true;
   } else {

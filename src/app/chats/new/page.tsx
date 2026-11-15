@@ -379,7 +379,6 @@ const ChatPage = () => {
         groupDescription: groupDescription || "",
         groupDisplayPicture: displayPictureUrl || "",
         adminIds: [String(userdata._id)],
-        inviteLink: "",
         isPrivate: false,
         participantsImg: createParticipantsImg(),
         lastMessageId: msg._id,

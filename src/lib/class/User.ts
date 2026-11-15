@@ -268,7 +268,6 @@ export class SocialMediaUser implements UserSchema {
       verified: false,
       adminIds: [userIdStr],
       isPrivate: false,
-      inviteLink: "",
       timestamp: new Date().toISOString(),
       lastUpdated: new Date().toISOString(),
       lastMessageId: "",

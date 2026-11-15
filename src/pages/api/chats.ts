@@ -294,7 +294,6 @@ export const chatRepository = {
           groupDisplayPicture: chat.groupDisplayPicture || "",
           verified: chat.verified || false,
           adminIds: chat.adminIds || [],
-          inviteLink: chat.inviteLink || "",
           isPrivate: chat.isPrivate || false,
           timestamp: chat.timestamp
             ? new Date(chat.timestamp).toISOString()
@@ -390,7 +389,6 @@ export const chatRepository = {
         verified: false,
         adminIds: chatData.chatType === "Group" ? [payload._id] : memberIds,
         isPrivate: false,
-        inviteLink: chatData.chatType === "Group" ? `/invite/${newID.toString()}` : "",
         timestamp: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         lastMessageId: "",

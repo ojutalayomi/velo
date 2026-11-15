@@ -97,8 +97,7 @@ const ChatTextarea = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } =
-    useMentionPicker(chatId ?? null, newMessage, textAreaRef);
+  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } = useMentionPicker(chatId ?? null, newMessage, textAreaRef);
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);

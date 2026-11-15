@@ -43,7 +43,6 @@ const defaultSettings = {
   wallpaper: "",
   theme: "light",
   isPrivate: false,
-  inviteLink: "",
   members: [],
   adminIds: [],
   isBlocked: false,

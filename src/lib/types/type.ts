@@ -84,7 +84,6 @@ export interface ChatData {
   groupDisplayPicture: string;
   verified: boolean;
   adminIds: string[];
-  inviteLink: string;
   isPrivate: boolean;
   timestamp: string;
   lastMessageId: string;
@@ -105,7 +104,6 @@ export interface ChatSettings {
 
   // Specific to group chats
   isPrivate?: boolean;
-  inviteLink?: string;
   members: string[]; // List of user IDs
   adminIds?: string[]; // List of admin user IDs
 
@@ -182,6 +180,40 @@ export interface ChatParticipant {
   displayPicture: string;
   userId: string;
   chatType: ChatType;
+}
+
+/** A group's invite link. Only the sha256 hash of the token is stored. */
+export interface ChatInviteSchema {
+  _id: ObjectId;
+  chatId: string;
+  tokenHash: string;
+  enabled: boolean;
+  createdBy: string;
+  createdAt: Date;
+  expiresAt: Date;
+  maxUses: number | null;
+  uses: number;
+}
+
+export type InviteBlockReason = "not_found" | "disabled" | "expired" | "full";
+
+/** What an admin can see about an invite. Never includes the link itself. */
+export interface ChatInviteMetadata {
+  exists: boolean;
+  enabled: boolean;
+  expiresAt: string | null;
+  maxUses: number | null;
+  uses: number;
+}
+
+export interface ChatInvitePreview {
+  valid: boolean;
+  reason: InviteBlockReason | null;
+  chatId: string;
+  name: string;
+  displayPicture: string;
+  memberCount: number;
+  isMember: boolean;
 }
 
 type Globals = "-moz-initial" | "inherit" | "initial" | "revert" | "revert-layer" | "unset";

@@ -24,6 +24,7 @@ import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import AddGroupMembersDialog from "@/components/AddGroupMembersDialog";
+import GroupInviteCard from "@/components/GroupInviteCard";
 import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Switch } from "@/components/ui";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -455,6 +456,8 @@ const ChatSettingsPage: React.FC = () => {
               )}
             </SectionCard>
           </section>
+
+          {isAdmin && <GroupInviteCard chatId={gid as string} />}
 
           <section>
             <div className="mb-2 flex items-center justify-between px-2">

@@ -12,6 +12,7 @@ const mockDb = {
   chats: jest.fn(),
   chatParticipants: jest.fn(),
   chatMessages: jest.fn(),
+  chatInvites: jest.fn(),
   users: jest.fn(),
   getDb: jest.fn(),
 };
@@ -85,6 +86,7 @@ const chatsCollection = {
   deleteOne: jest.fn(),
 };
 const messagesCollection = { deleteMany: jest.fn() };
+const invitesCollection = { deleteMany: jest.fn() };
 const usersCollection = { find: jest.fn() };
 
 const makeRes = () => {
@@ -132,6 +134,7 @@ beforeEach(() => {
   mockDb.chats.mockReturnValue(chatsCollection);
   mockDb.chatParticipants.mockReturnValue(participantsCollection);
   mockDb.chatMessages.mockReturnValue(messagesCollection);
+  mockDb.chatInvites.mockReturnValue(invitesCollection);
   mockDb.users.mockReturnValue(usersCollection);
   // A fresh object per call keeps the per-client index cache from leaking between tests.
   mockDb.getDb.mockImplementation(async () => ({ client: {}, databaseName: "test" }));
@@ -139,6 +142,7 @@ beforeEach(() => {
   chatsCollection.updateOne.mockResolvedValue({ modifiedCount: 1 });
   chatsCollection.deleteOne.mockResolvedValue({ deletedCount: 1 });
   messagesCollection.deleteMany.mockResolvedValue({ deletedCount: 0 });
+  invitesCollection.deleteMany.mockResolvedValue({ deletedCount: 0 });
   setParticipants([adminRow, memberRow]);
   setUsers([newUserA, newUserB]);
 
@@ -431,6 +435,7 @@ describe("DELETE /api/chats/[id]/participants", () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(messagesCollection.deleteMany).toHaveBeenCalledWith({ chatId });
     expect(chatsCollection.deleteOne).toHaveBeenCalledWith({ _id: groupChat._id });
+    expect(invitesCollection.deleteMany).toHaveBeenCalledWith({ chatId });
     const body = res.json.mock.calls[0][0];
     expect(body.chatDeleted).toBe(true);
     expect(body.adminIds).toEqual([]);

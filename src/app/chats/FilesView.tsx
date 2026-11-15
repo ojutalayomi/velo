@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 /* eslint-disable @next/next/no-img-element */
 import { saveAs } from "file-saver";
 import { Download, FileText, Share } from "lucide-react";
@@ -66,7 +65,11 @@ const fileMeta = (subtype?: string) => {
   }
 };
 
-export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: string })[] }) => {
+type MediaCollageProps = {
+  media: (Attachment & { uploadedAt: string })[];
+};
+
+const MediaCollage = ({ media }: MediaCollageProps) => {
   const [mediaDialog, toggleMediaDialog] = useState({ open: false, index: 0 });
   const mediaLength = media.length;
   const moreThanFour = mediaLength > 4;
@@ -76,7 +79,7 @@ export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: str
 
   return (
     <div className="w-full overflow-hidden rounded-xl">
-      <MediaDialog files={media} mediaDialog={mediaDialog} toggleMediaDialog={toggleMediaDialog} />
+      <MediaDialogComponent files={media} mediaDialog={mediaDialog} toggleMediaDialog={toggleMediaDialog} />
 
       {isImage ? (
         <div className={cn("grid gap-1.5", mediaLength === 1 ? "grid-cols-1" : "grid-cols-2")}>
@@ -176,20 +179,15 @@ export const MediaCollage = ({ media }: { media: (Attachment & { uploadedAt: str
   );
 };
 
-const MediaDialog = ({
-  files,
-  mediaDialog,
-  toggleMediaDialog,
-}: {
+MediaCollage.displayName = "MediaCollage";
+
+type MediaDialogProps = {
   files: Attachment[];
   mediaDialog: { open: boolean; index: number };
-  toggleMediaDialog: React.Dispatch<
-    React.SetStateAction<{
-      open: boolean;
-      index: number;
-    }>
-  >;
-}) => {
+  toggleMediaDialog: React.Dispatch<React.SetStateAction<{ open: boolean; index: number }>>;
+};
+
+const MediaDialogComponent = ({ files, mediaDialog, toggleMediaDialog }: MediaDialogProps) => {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(1);
   const [count, setCount] = useState(0);
@@ -290,3 +288,7 @@ const MediaDialog = ({
     </Dialog>
   );
 };
+
+MediaDialogComponent.displayName = "MediaDialogComponent";
+
+export { MediaCollage, MediaDialogComponent };

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { CallButton, CallStatus, IncomingCall } from "@/components/call";
+import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -109,6 +110,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [searchFocus, setSearchFocus] = useState(false);
   const [searchResults, setSearchResults] = useState<MessageAttributes[]>([]);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -189,15 +191,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   useEffect(() => {
     fetchData();
   }, [fetchData, gid]);
-
-  useEffect(() => {
-    if (socket && gid && userdata._id) {
-      socket.on("groupAnnouncement", (data: string) => {
-        // console.log('You have joined a group chat');
-        alert("You have joined a group chat: " + data);
-      });
-    }
-  }, [otherIds, gid, socket, userdata._id]);
 
   const stopTypingSignal = useCallback(() => {
     if (!socket || !gid) return;
@@ -417,7 +410,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       action: () =>
         dispatch(updateConversation({ id: gid, updates: { archived: !convo?.archived } })),
     },
-    { id: 10, name: "Leave group", action: () => console.log("left group") },
+    { id: 10, name: "Leave group", action: () => setLeaveOpen(true) },
   ];
 
   useEffect(() => {
@@ -763,6 +756,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           }}
         />
       )}
+      <LeaveGroupDialog
+        chatId={gid}
+        groupName={convo?.name ?? "this group"}
+        userId={String(userdata._id)}
+        open={leaveOpen}
+        onOpenChange={setLeaveOpen}
+        onLeft={() => {
+          dispatch(deleteConversation(gid));
+          router.replace("/chats");
+        }}
+      />
     </div>
   );
 };

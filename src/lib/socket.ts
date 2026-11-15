@@ -36,7 +36,14 @@ export function getSocketInstance(userId: string) {
  */
 export async function emitViaSocketServer(
   userId: string,
-  event: "follow" | "unfollow" | "status:create" | "status:delete" | "status:view",
+  event:
+    | "follow"
+    | "unfollow"
+    | "status:create"
+    | "status:delete"
+    | "status:view"
+    | "chat:participantsAdded"
+    | "chat:participantsRemoved",
   payload: Record<string, unknown>,
   options?: { connectTimeoutMs?: number; ackTimeoutMs?: number }
 ): Promise<void> {

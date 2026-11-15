@@ -2,6 +2,7 @@ import {
   AllChats,
   ChatAttributes,
   ChatDataClient,
+  ChatParticipant,
   ChatSettings,
   Err,
   MessageAttributes,
@@ -44,6 +45,56 @@ class ChatRepository {
     });
     const createdChat = await response.json();
     return createdChat;
+  }
+
+  async addParticipants(
+    chatId: string,
+    userIds: string[]
+  ): Promise<{ added: ChatParticipant[]; participants: ChatParticipant[] }> {
+    const response = await fetch(`/api/chats/${chatId}/participants`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userIds }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to add members");
+    }
+    return await response.json();
+  }
+
+  async removeParticipants(
+    chatId: string,
+    userIds: string[]
+  ): Promise<{
+    removed: string[];
+    participants: ChatParticipant[];
+    adminIds: string[];
+    chatDeleted: boolean;
+  }> {
+    const response = await fetch(`/api/chats/${chatId}/participants`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userIds }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to remove members");
+    }
+    return await response.json();
+  }
+
+  async getParticipants(
+    chatId: string
+  ): Promise<{ userId: string; username: string; name: string; displayPicture: string }[]> {
+    const response = await fetch(`/api/chats?participants=true&chatId=${chatId}`);
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to load members");
+    }
+    return await response.json();
   }
 
   async updateChat(id: string, updatedAttributes: Partial<ChatAttributes>): Promise<void> {

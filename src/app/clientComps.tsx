@@ -1,6 +1,6 @@
 "use client";
 import { Megaphone, WifiOff, X, XCircle } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ import UserPhoto from "@/components/UserPhoto";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { FileStorageProvider } from "@/hooks/useFileStorage";
 import {
+  ChatParticipant,
   ClientComponentsProps,
   ConvoType,
   ConvoTypeProp,
@@ -44,6 +45,7 @@ import {
   addMessage,
   addSetting,
   addConversation,
+  deleteConversation,
   updateMessage,
   updateMessageReactions,
   fetchChats,
@@ -65,6 +67,7 @@ const TYPING_INDICATOR_TTL_MS = 5000;
 const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
+  const router = useRouter();
   const { deletedConversations } = useSelector((state: RootState) => state.chat);
   const { isOnline } = useNetwork();
   const [isClient, setIsClient] = useState(false);
@@ -259,8 +262,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     });
     socket.on(
       "chatError",
-      (data: { error: string; chatId: string; updates: Partial<ConvoType> }) => {
+      (data: { error: string; chatId?: string; updates?: Partial<ConvoType> }) => {
         toast.error(data.error);
+        if (!data.chatId || !data.updates) return;
         if (data.updates.deleted) {
           dispatch(
             addConversation(
@@ -275,6 +279,27 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on("newChat", (data: NewChat_) => {
       handleNewChat(data);
       socket.emit("joinChat", { chatId: data.chat._id });
+    });
+    socket.on(
+      "chatParticipantsUpdated",
+      (data: { chatId: string; participants: ChatParticipant[]; adminIds?: string[] }) => {
+        dispatch(
+          updateConversation({
+            id: data.chatId,
+            updates: {
+              participants: data.participants.map((p) => p.userId),
+              ...(data.adminIds ? { adminIds: data.adminIds } : {}),
+            },
+          })
+        );
+      }
+    );
+    socket.on("chatRemoved", (data: { chatId: string }) => {
+      dispatch(deleteConversation(data.chatId));
+      // Read the live location so this listener does not have to rebind on navigation.
+      if (window.location.pathname.startsWith(`/chats/group/${data.chatId}`)) {
+        router.replace("/chats");
+      }
     });
     // New invite event to trigger call confirmation
     socket.on(
@@ -475,8 +500,10 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("reactionUpdated");
       socket.off("mentionNotification");
       socket.off("chatError");
+      socket.off("chatParticipantsUpdated");
+      socket.off("chatRemoved");
     };
-  }, [socket, handleChatMessage, handleNewChat, handleTyping, handleStopTyping]);
+  }, [socket, router, handleChatMessage, handleNewChat, handleTyping, handleStopTyping]);
 
   useEffect(() => {
     const timers = typingTimers.current;

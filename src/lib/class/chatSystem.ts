@@ -33,6 +33,18 @@ class ChatSystem {
     return createdAttributes;
   }
 
+  async addParticipants(chatId: string, userIds: string[]) {
+    return await this.chatRepository.addParticipants(chatId, userIds);
+  }
+
+  async removeParticipants(chatId: string, userIds: string[]) {
+    return await this.chatRepository.removeParticipants(chatId, userIds);
+  }
+
+  async getParticipants(chatId: string) {
+    return await this.chatRepository.getParticipants(chatId);
+  }
+
   async updateChat(id: string, updatedAttributes: Partial<ChatAttributes>): Promise<void> {
     await this.chatRepository.updateChat(id, updatedAttributes);
   }

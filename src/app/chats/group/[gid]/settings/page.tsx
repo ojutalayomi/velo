@@ -11,14 +11,20 @@ import {
   Link as LinkIcon,
   ChevronRight,
   Users,
+  UserPlus,
+  UserMinus,
+  LogOut,
   ShieldCheck,
   Calendar,
 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
+import AddGroupMembersDialog from "@/components/AddGroupMembersDialog";
+import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Switch } from "@/components/ui";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Statuser } from "@/components/VerificationComponent";
@@ -27,7 +33,7 @@ import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
 import { ChatSettings, MessageAttributes, NewChatSettings, Attachment } from "@/lib/types/type";
 import { Time } from "@/lib/utils";
-import { ConvoType, updateConversation } from "@/redux/chatSlice";
+import { ConvoType, deleteConversation, updateConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 
@@ -44,6 +50,13 @@ interface CHT {
   settings: ChatSetting;
   conversations: ConvoType[];
   loading: boolean;
+}
+
+interface MemberRow {
+  userId: string;
+  username: string;
+  name: string;
+  displayPicture: string;
 }
 
 const chatRepository = new ChatRepository();
@@ -74,6 +87,11 @@ const ChatSettingsPage: React.FC = () => {
     loading: convoLoading,
   } = useSelector<RootState, CHT>((state) => state.chat);
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
+  const [addMembersOpen, setAddMembersOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const convo = useMemo(
     () => conversations?.find((c) => c.id === gid) as ConvoType,
     [conversations, gid]
@@ -81,6 +99,7 @@ const ChatSettingsPage: React.FC = () => {
   const { userdata } = useSelector((state: RootState) => state.user);
   const socket = useSocket();
   const dispatch = useAppDispatch();
+  const isAdmin = Boolean(convo?.adminIds?.includes(String(userdata._id)));
   // Extract URLs from message content
   const extractUrls = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -173,6 +192,50 @@ const ChatSettingsPage: React.FC = () => {
       }
     }
   }, [gid, convoLoading, settings]);
+
+  const memberCount = convo?.participants?.length ?? 0;
+  useEffect(() => {
+    if (!gid) return;
+    let cancelled = false;
+    chatSystem
+      .getParticipants(gid)
+      .then((rows) => {
+        if (!cancelled) setMembers(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setMembers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMembersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [gid, memberCount]);
+
+  const removeMember = async (member: MemberRow) => {
+    if (removingId) return;
+    setRemovingId(member.userId);
+    try {
+      const result = await chatSystem.removeParticipants(gid as string, [member.userId]);
+      dispatch(
+        updateConversation({
+          id: gid as string,
+          updates: {
+            participants: result.participants.map((participant) => participant.userId),
+            adminIds: result.adminIds,
+          },
+        })
+      );
+      toast.success(`${member.name || member.username} was removed from the group`);
+    } catch (error) {
+      toast.error("Could not remove member", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   const handleSettingsChange = async (field: keyof ChatSettings, value: any) => {
     if (chatSettings) {
@@ -296,6 +359,101 @@ const ChatSettingsPage: React.FC = () => {
                 Updated {Time(convo?.lastUpdated)}
               </span>
             </div>
+          </section>
+
+          <section>
+            <SectionTitle>Members</SectionTitle>
+            <SectionCard>
+              <div className="flex items-center justify-between gap-4 p-4">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="rounded-lg bg-gray-100 p-2 dark:bg-neutral-900">
+                    <Users className="text-brand" size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {convo?.participants.length} members
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {isAdmin
+                        ? "You can add or remove people"
+                        : "Only group admins can change members"}
+                    </p>
+                  </div>
+                </div>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setAddMembersOpen(true)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
+                  >
+                    <UserPlus size={16} />
+                    Add
+                  </button>
+                )}
+              </div>
+              {membersLoading ? (
+                <div className="flex justify-center p-4">
+                  <Loader2 className="size-5 animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <ul className="max-h-80 overflow-y-auto">
+                  {members.map((member) => {
+                    const memberIsAdmin = convo?.adminIds?.includes(member.userId);
+                    const isSelf = member.userId === String(userdata._id);
+                    const label = member.name || member.username;
+                    return (
+                      <li
+                        key={member.userId}
+                        className="flex items-center justify-between gap-3 px-4 py-2.5"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <Avatar className="size-9">
+                            <AvatarFallback className="text-xs">
+                              {label.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                            <AvatarImage
+                              src={member.displayPicture}
+                              alt={label}
+                              className="size-9 rounded-full object-cover"
+                            />
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                              {label}
+                              {isSelf && <span className="text-gray-400"> (you)</span>}
+                            </p>
+                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                              @{member.username}
+                            </p>
+                          </div>
+                        </div>
+                        {memberIsAdmin ? (
+                          <span className="shrink-0 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700 dark:bg-yellow-900 dark:text-yellow-100">
+                            Admin
+                          </span>
+                        ) : (
+                          isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => removeMember(member)}
+                              disabled={removingId !== null}
+                              aria-label={`Remove ${label} from the group`}
+                              className="shrink-0 rounded-md p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-red-950"
+                            >
+                              {removingId === member.userId ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <UserMinus size={16} />
+                              )}
+                            </button>
+                          )
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </SectionCard>
           </section>
 
           <section>
@@ -465,8 +623,57 @@ const ChatSettingsPage: React.FC = () => {
               </div>
             </SectionCard>
           </section>
+
+          <section>
+            <SectionCard>
+              <button
+                type="button"
+                onClick={() => setLeaveOpen(true)}
+                className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-neutral-900"
+              >
+                <div className="rounded-lg bg-red-50 p-2 dark:bg-red-950">
+                  <LogOut className="text-red-600" size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-medium text-red-600">Leave group</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Stop receiving messages from this group
+                  </p>
+                </div>
+              </button>
+            </SectionCard>
+          </section>
         </main>
       </div>
+
+      <LeaveGroupDialog
+        chatId={gid as string}
+        groupName={convo?.name ?? "this group"}
+        userId={String(userdata._id)}
+        open={leaveOpen}
+        onOpenChange={setLeaveOpen}
+        onLeft={() => {
+          dispatch(deleteConversation(gid as string));
+          router.replace("/chats");
+        }}
+      />
+
+      {isAdmin && (
+        <AddGroupMembersDialog
+          chatId={gid as string}
+          existingMemberIds={convo?.participants ?? []}
+          open={addMembersOpen}
+          onOpenChange={setAddMembersOpen}
+          onAdded={(participantIds) =>
+            dispatch(
+              updateConversation({
+                id: gid as string,
+                updates: { participants: participantIds },
+              })
+            )
+          }
+        />
+      )}
     </div>
   );
 };

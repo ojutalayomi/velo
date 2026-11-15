@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // Update the credential's counter and last used timestamp
     await db.users().updateOne(
-      { userId: user.userId, "passkeys.id": credential.id },
+      { _id: userDoc._id, "passkeys.id": credential.id },
       {
         $set: {
           "passkeys.$.counter": verification.authenticationInfo.newCounter,
@@ -102,7 +102,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Update last login
-    await db.users().updateOne({ userId: user.userId }, { $set: { lastLogin: new Date().toISOString() } });
+    await db.users().updateOne(
+      { _id: userDoc._id },
+      { $set: { lastLogin: new Date().toISOString() } }
+    );
 
     // Create session
     const userAgent = (await headers()).get("user-agent") || "";

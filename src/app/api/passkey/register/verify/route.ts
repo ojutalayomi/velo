@@ -41,12 +41,15 @@ export async function POST(request: NextRequest) {
 
     // Retrieve and validate the challenge
     const storedChallenge = userDoc.passkeyChallenge;
-    if (
-      !storedChallenge ||
-      storedChallenge.type !== "registration" ||
-      storedChallenge.expiresAt < Date.now()
-    ) {
-      return NextResponse.json({ message: "Invalid or expired challenge" }, { status: 400 });
+    if (!storedChallenge || storedChallenge.type !== "registration") {
+      return NextResponse.json(
+        { message: "No active registration challenge" },
+        { status: 400 }
+      );
+    }
+
+    if (storedChallenge.expiresAt < Date.now()) {
+      return NextResponse.json({ message: "Challenge expired" }, { status: 400 });
     }
 
     // Verify the registration response
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Add the new credential to the user's passkeys
     await db.users().updateOne(
-      { userId },
+      { _id: new ObjectId(userId) },
       {
         $push: { passkeys: credential },
         $unset: { passkeyChallenge: "" },

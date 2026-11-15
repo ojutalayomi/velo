@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
 
 import { getSessionUserId } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
@@ -25,7 +26,7 @@ export async function DELETE(request: NextRequest) {
 
     // Remove the credential from the user's passkeys array
     const result = await db.users().updateOne(
-      { userId },
+      { _id: new ObjectId(userId) },
       {
         $pull: { passkeys: { id: credentialId } },
       }

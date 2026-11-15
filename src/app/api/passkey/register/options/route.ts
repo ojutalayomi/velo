@@ -36,7 +36,7 @@ export async function POST() {
 
     // Store the challenge in the database temporarily
     await db.users().updateOne(
-      { userId },
+      { _id: new ObjectId(userId) },
       {
         $set: {
           passkeyChallenge: {

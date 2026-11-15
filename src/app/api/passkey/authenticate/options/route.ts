@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
 
 import { SocialMediaUser } from "@/lib/class/User";
 import { MongoDBClient } from "@/lib/mongodb";
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     const db = await new MongoDBClient().init();
 
     let credentials: any[] = [];
-    let userId: string | null = null;
+    let userObjectId: ObjectId | null = null;
 
     // If username is provided, find user and their credentials
     if (username) {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
       if (userDoc) {
         const user = new SocialMediaUser(userDoc);
         credentials = user.passkeys || [];
-        userId = user.userId;
+        userObjectId = user._id;
       }
     }
 
@@ -37,9 +38,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Store the challenge temporarily
-    if (userId) {
+    if (userObjectId) {
       await db.users().updateOne(
-        { userId },
+        { _id: userObjectId },
         {
           $set: {
             passkeyChallenge: {

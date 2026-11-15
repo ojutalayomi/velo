@@ -2,7 +2,11 @@
  * Client-side WebAuthn utilities using @simplewebauthn/browser
  */
 
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import {
+  startAuthentication,
+  startRegistration,
+  WebAuthnAbortService,
+} from "@simplewebauthn/browser";
 import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
@@ -113,6 +117,8 @@ export async function registerPasskey(deviceName?: string): Promise<{
   }
 }
 
+let authenticationInFlight = false;
+
 /**
  * Authenticate with a passkey
  */
@@ -121,6 +127,15 @@ export async function authenticateWithPasskey(username?: string): Promise<{
   error?: string;
   user?: any;
 }> {
+  if (authenticationInFlight) {
+    return {
+      success: false,
+      error: "Authentication is already in progress",
+    };
+  }
+
+  authenticationInFlight = true;
+
   try {
     if (!isPasskeySupported()) {
       return {
@@ -150,6 +165,7 @@ export async function authenticateWithPasskey(username?: string): Promise<{
     // Start authentication ceremony
     let authenticationResponse: AuthenticationResponseJSON;
     try {
+      WebAuthnAbortService.cancelCeremony();
       authenticationResponse = await startAuthentication({
         optionsJSON: options,
       });
@@ -192,6 +208,8 @@ export async function authenticateWithPasskey(username?: string): Promise<{
       success: false,
       error: error.message || "An unexpected error occurred",
     };
+  } finally {
+    authenticationInFlight = false;
   }
 }
 

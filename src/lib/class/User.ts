@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { serialize } from "cookie";
 import { SignJWT } from "jose";
 import { ObjectId } from "mongodb";

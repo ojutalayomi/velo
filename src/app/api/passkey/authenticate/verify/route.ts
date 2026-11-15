@@ -41,69 +41,61 @@ export async function POST(request: NextRequest) {
     }
 
     // The challenge the client actually signed is inside response.clientDataJSON.
-    const clientData = JSON.parse(
-      Buffer.from(response.response.clientDataJSON, "base64url").toString("utf8")
-    ) as { challenge: string };
-    const responseChallenge = clientData.challenge;
-
-    // Find the matching challenge, preferring the one stored on the user doc.
-    let storedChallenge: {
-      challenge: string;
-      expiresAt: number;
-      type: string;
-    } | null = null;
-    let challengeSource: "user" | "temp" | null = null;
-
-    const userChallenge = userDoc.passkeyChallenge;
-    if (
-      userChallenge &&
-      userChallenge.type === "authentication" &&
-      userChallenge.challenge === responseChallenge &&
-      userChallenge.expiresAt >= Date.now()
-    ) {
-      storedChallenge = {
-        challenge: userChallenge.challenge,
-        expiresAt: userChallenge.expiresAt,
-        type: userChallenge.type,
-      };
-      challengeSource = "user";
-    } else {
-      // Check temporary challenges collection for discoverable credentials
-      const tempChallenge = await database
-        .collection<{
-          challenge: string;
-          expiresAt: Date;
-          type: string;
-        }>("passkey_challenges")
-        .findOne({
-          type: "authentication",
-          challenge: responseChallenge,
-          expiresAt: { $gt: new Date() },
-        });
-
-      if (tempChallenge) {
-        storedChallenge = {
-          challenge: tempChallenge.challenge,
-          expiresAt: tempChallenge.expiresAt.getTime(),
-          type: tempChallenge.type,
-        };
-        challengeSource = "temp";
+    let responseChallenge: string;
+    try {
+      const clientData = JSON.parse(
+        Buffer.from(response.response.clientDataJSON, "base64url").toString("utf8")
+      ) as { challenge?: string };
+      if (!clientData.challenge) {
+        throw new Error("Challenge missing from client data");
       }
+      responseChallenge = clientData.challenge;
+    } catch {
+      return NextResponse.json({ message: "Invalid request" }, { status: 400 });
     }
 
-    if (!storedChallenge) {
+    // Challenges live in their own collection so concurrent options requests
+    // can each keep an outstanding challenge.
+    const challenges = database.collection<{
+      challenge: string;
+      expiresAt: Date;
+      type: string;
+    }>("passkey_challenges");
+
+    const stored = await challenges.findOne({
+      type: "authentication",
+      challenge: responseChallenge,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!stored) {
       return NextResponse.json(
-        { message: "No matching authentication challenge" },
+        { message: "Challenge expired, please try again" },
+        { status: 400 }
+      );
+    }
+
+    // Single use: only one request can consume it
+    const consumed = await challenges.deleteOne({ _id: stored._id });
+    if (consumed.deletedCount !== 1) {
+      return NextResponse.json(
+        { message: "Challenge already used, please try again" },
         { status: 400 }
       );
     }
 
     // Verify the authentication response
-    const verification = await verifyPasskeyAuthentication({
-      response,
-      expectedChallenge: storedChallenge.challenge,
-      credential,
-    });
+    let verification;
+    try {
+      verification = await verifyPasskeyAuthentication({
+        response,
+        expectedChallenge: stored.challenge,
+        credential,
+      });
+    } catch (err) {
+      console.error("Passkey verification rejected:", err);
+      return NextResponse.json({ message: "Verification failed" }, { status: 400 });
+    }
 
     if (!verification.verified) {
       return NextResponse.json({ message: "Verification failed" }, { status: 400 });
@@ -119,18 +111,6 @@ export async function POST(request: NextRequest) {
         },
       }
     );
-
-    // Clean up the challenge that was actually used
-    if (challengeSource === "user") {
-      await db.users().updateOne(
-        { _id: userDoc._id },
-        { $unset: { passkeyChallenge: "" } }
-      );
-    } else if (challengeSource === "temp") {
-      await database
-        .collection("passkey_challenges")
-        .deleteOne({ challenge: storedChallenge.challenge });
-    }
 
     // Update last login
     await db.users().updateOne(

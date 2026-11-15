@@ -125,6 +125,24 @@ export async function verifyPasskeyRegistration(
 }
 
 /**
+ * MongoDB returns BSON BinData as a `Binary` wrapper, not a `Uint8Array`.
+ * Normalize either form into raw bytes before handing it to WebAuthn.
+ */
+function toByteArray(value: unknown): Uint8Array<ArrayBuffer> {
+  if (value instanceof Uint8Array) return new Uint8Array(value);
+
+  const binary = value as { value?: () => Uint8Array; buffer?: unknown } | null;
+  if (binary && typeof binary.value === "function") {
+    return new Uint8Array(binary.value());
+  }
+  if (binary?.buffer instanceof Uint8Array) {
+    return new Uint8Array(binary.buffer);
+  }
+
+  throw new Error("Unsupported credential public key format");
+}
+
+/**
  * Verify an authentication response from the client
  */
 export async function verifyPasskeyAuthentication(
@@ -139,7 +157,7 @@ export async function verifyPasskeyAuthentication(
     expectedRPID: RP_ID,
     credential: {
       id: credential.id,
-      publicKey: new Uint8Array(credential.publicKey),
+      publicKey: toByteArray(credential.publicKey),
       counter: credential.counter,
       transports: credential.transports,
     },

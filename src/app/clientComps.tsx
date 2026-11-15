@@ -33,7 +33,6 @@ import {
   msgStatus,
   NewChat_,
   Reaction,
-  ReactionType,
   PostSchema,
 } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
@@ -51,7 +50,7 @@ import {
 } from "@/redux/chatSlice";
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { useAppDispatch } from "@/redux/hooks";
-import { addPost, updatePost, updatePosts } from "@/redux/postsSlice";
+import { addPost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
 
@@ -324,18 +323,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     });
     socket.on(
       "post_reaction_response",
-      (data: { message: string; success: boolean; postId: string; reaction: ReactionType }) => {
-        // alert(data.message);
-        // if (data.success) return;
-        dispatch(
-          updatePost({
-            id: data.postId,
-            updates: {
-              [`${data.reaction.key1}`]: data.reaction.key1,
-              [`${data.reaction.key2}`]: data.reaction.key2,
-            },
-          })
-        );
+      (data: { message: string; success: boolean; postId?: string; reaction?: string }) => {
+        // PostCard owns the optimistic like/bookmark state and reverts it on failure;
+        // this payload carries no counts, so only surface the message here.
         setDisplayAnnouncement({
           status: true,
           message: data.message,

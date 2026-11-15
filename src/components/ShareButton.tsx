@@ -196,6 +196,10 @@ export default function ShareButton({
         post={post}
         open={isQuoteModalOpen}
         onOpenChange={setIsQuoteModalOpen}
+        onPosted={(postedType) => {
+          if (postedType !== "quote" || !post) return;
+          onShareCommitted?.(post.PostID, { NoOfShares: post.NoOfShares + 1 });
+        }}
       />
     </>
   );

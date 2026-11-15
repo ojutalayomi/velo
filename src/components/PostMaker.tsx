@@ -60,6 +60,8 @@ interface PostMakerClientProps {
   type?: PostSchema["Type"];
   post?: PostSchema;
   onOpenChange: Dispatch<SetStateAction<boolean>>;
+  /** Called after a post/comment/quote is emitted, so hosts can update counts optimistically. */
+  onPosted?: (type: PostSchema["Type"]) => void;
 }
 
 function PostMakerClient({
@@ -68,6 +70,7 @@ function PostMakerClient({
   type = "post",
   post,
   onOpenChange,
+  onPosted,
 }: PostMakerClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -278,6 +281,7 @@ function PostMakerClient({
         };
         socket.emit("post", Post);
       }
+      onPosted?.(type);
     } catch (error: any) {
       console.log(error);
     } finally {

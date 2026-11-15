@@ -17,8 +17,8 @@ import {
   UserRoundPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ import { togglePostBookmark, togglePostLike } from "@/lib/postSocialActions";
 import { PostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
-import { deletePost, updatePost } from "@/redux/postsSlice";
+import { addPost, deletePost, updatePost } from "@/redux/postsSlice";
 import { RootState } from "@/redux/store";
 
 import PostMaker from "./PostMaker";
@@ -87,6 +87,19 @@ type UpdatePostEvent = {
 const isPostMatch = (post: Partial<PostSchema> | null | undefined, postId: string) =>
   post?._id === postId || post?.PostID === postId;
 
+/** Merge only fields the store actually knows about, preserving local-only state. */
+function mergeFreshPost(prev: PostSchema, fresh: PostSchema): PostSchema {
+  let changed = false;
+  const merged: Record<string, unknown> = { ...prev };
+  for (const [key, value] of Object.entries(fresh)) {
+    if (value !== undefined && merged[key] !== value) {
+      merged[key] = value;
+      changed = true;
+    }
+  }
+  return changed ? (merged as unknown as PostSchema) : prev;
+}
+
 const actionBase =
   "group flex select-none items-center gap-1 rounded-full text-muted-foreground outline-none duration-150 ease-out-expo motion-reduce:transition-colors motion-safe:transition-[color,transform] motion-safe:active:scale-[0.94]";
 const actionIconWrap =
@@ -96,74 +109,149 @@ const actionCount = "min-w-4 text-xs tabular-nums";
 const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const socket = useSocket();
   const { userdata } = useUser();
   const posts = useSelector((state: RootState) => state.posts.posts);
-  const [originalPost, setOriginalPost] = useState<PostSchema | null>(null);
+  const [localOriginalPost, setOriginalPost] = useState<PostSchema | null>(null);
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
-  const [postType, setPostType] = useState("blog");
-  const [open, setOpen] = useState(false);
-  const [time, setTime] = useState("");
-  const [time1, setTime1] = useState("");
+  const [, setOptionsOpen] = useState(false);
+  const [, setTick] = useState(0);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isCaptionCopied, setIsCaptionCopied] = useState(false);
   const router = useRouter();
-  const [data, setData] = useState<PostSchema>({} as PostSchema);
-  const [containsPost, setContainsPost] = useState(false);
+  const [localData, setData] = useState<PostSchema>({} as PostSchema);
+  const [isResolvingPost, setIsResolvingPost] = useState(true);
+  const [removedPostId, setRemovedPostId] = useState<string | null>(null);
   const [showFullCaption, setShowFullCaption] = useState(false);
+  const reactionSnapshotRef = useRef<PostSchema | null>(null);
+  const pendingDeleteRef = useRef<PostSchema | null>(null);
+
+  const containsPost = pathname?.includes("/posts") ?? false;
+
+  // The store is authoritative for anything another card or view updated
+  // (likes, comments, shares); merge it over the local snapshot on render.
+  const storePost = localData.PostID
+    ? posts.find((post: PostSchema) => post.PostID === localData.PostID)
+    : undefined;
+  // Recovery path: a repost whose target was not loaded yet resolves as soon
+  // as that target shows up in the store, without refetching.
+  const lateOriginalPost =
+    !localData.PostID && postData.OriginalPostId
+      ? posts.find((post: PostSchema) => post.PostID === postData.OriginalPostId)
+      : undefined;
+  const data = storePost
+    ? mergeFreshPost(localData, storePost)
+    : lateOriginalPost ?? localData;
+  const storeOriginalPost = localOriginalPost?.PostID
+    ? posts.find((post: PostSchema) => post.PostID === localOriginalPost.PostID)
+    : undefined;
+  const lateNestedOriginalPost = lateOriginalPost?.OriginalPostId
+    ? posts.find((post: PostSchema) => post.PostID === lateOriginalPost.OriginalPostId)
+    : undefined;
+  const originalPost =
+    localOriginalPost && storeOriginalPost
+      ? mergeFreshPost(localOriginalPost, storeOriginalPost)
+      : localOriginalPost ?? lateNestedOriginalPost ?? null;
+  const time = data.TimeOfPost ? updateLiveTime("getlivetime", data.TimeOfPost) : "";
+  const time1 = originalPost?.TimeOfPost
+    ? updateLiveTime("getlivetime", originalPost.TimeOfPost)
+    : "";
+
+  const latestRef = useRef({ data, originalPost, postData });
+  useEffect(() => {
+    latestRef.current = { data, originalPost, postData };
+  });
 
   useEffect(() => {
-    setTimeout(() => {
-      setContainsPost(window.location.pathname.includes("posts"));
-    }, 100);
-  }, []);
+    let cancelled = false;
 
-  useEffect(() => {
+    const fetchPost = async (postId: string) => {
+      if (!postId) return null;
+      try {
+        const response = await getPost(postId);
+        return response?.post ?? null;
+      } catch (error) {
+        console.error("Failed to load original post:", error);
+        return null;
+      }
+    };
+
     (async () => {
-      if (postData) {
-        setPostType(postData.Type);
-        if (postData.Type === "repost") {
-          const original_post = posts.find(
-            (post: PostSchema) => post.PostID === postData.OriginalPostId
-          );
-          if (original_post) {
-            setData(posts.find((post: PostSchema) => post.PostID === postData.OriginalPostId)!);
-            if (original_post.OriginalPostId) {
-              const original_post_1 = posts.find(
-                (post: PostSchema) => post.PostID === original_post.OriginalPostId
-              );
-              if (original_post_1)
-                setOriginalPost(
-                  posts.find((post: PostSchema) => post.PostID === original_post.OriginalPostId)!
-                );
-              else {
-                const postsResponse = await getPost(original_post.OriginalPostId);
-                setOriginalPost(postsResponse.post);
-              }
-            }
-          }
-        } else if (postData.Type === "quote") {
-          const original_post = posts.find(
-            (post: PostSchema) => post.PostID === postData.OriginalPostId
-          );
-          if (original_post) setOriginalPost(original_post);
-          else {
-            const postsResponse = await getPost(postData.OriginalPostId);
-            setOriginalPost(postsResponse.post);
-          }
+      if (!postData?.PostID) {
+        if (!cancelled) {
+          setData({} as PostSchema);
+          setIsResolvingPost(false);
+        }
+        return;
+      }
+
+      if (postData.Type !== "repost" && postData.Type !== "quote") {
+        if (cancelled) return;
+        setOriginalPost(null);
+        setData(postData);
+        setIsResolvingPost(false);
+        return;
+      }
+
+      setIsResolvingPost(true);
+      const originalId = postData.OriginalPostId;
+      if (!originalId) {
+        if (!cancelled) {
           setData(postData);
+          setIsResolvingPost(false);
+        }
+        return;
+      }
+
+      // Reposts carry no content of their own: resolve the post they point at,
+      // falling back to the API when it is not in the loaded feed.
+      const cached = posts.find((post: PostSchema) => post.PostID === originalId);
+      const resolved = cached ?? (await fetchPost(originalId));
+      if (cancelled) return;
+
+      if (!resolved) {
+        setData({} as PostSchema);
+        setOriginalPost(null);
+        setIsResolvingPost(false);
+        return;
+      }
+
+      if (postData.Type === "quote") {
+        setData(postData);
+        setOriginalPost(resolved);
+      } else {
+        setData(resolved);
+        if (resolved.OriginalPostId) {
+          const nested =
+            posts.find((post: PostSchema) => post.PostID === resolved.OriginalPostId) ??
+            (await fetchPost(resolved.OriginalPostId));
+          if (cancelled) return;
+          setOriginalPost(nested);
         } else {
-          setData(postData);
+          setOriginalPost(null);
         }
       }
+
+      if (!cancelled) setIsResolvingPost(false);
     })();
+
+    return () => {
+      cancelled = true;
+    };
+    // `posts` is intentionally read as a snapshot; store updates are merged below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick((tick) => tick + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
 
     const handleDeletePost = (event: DeletePostEvent) => {
+      const { data, originalPost, postData } = latestRef.current;
       const deletesPassedPost = isPostMatch(postData, event.postId);
       const deletesRenderedPost = isPostMatch(data, event.postId);
       const deletesOriginalPost = isPostMatch(originalPost, event.postId);
@@ -172,12 +260,20 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         setOriginalPost(null);
       }
 
-      if (deletesPassedPost || deletesRenderedPost || deletesOriginalPost) {
+      if (deletesPassedPost || deletesRenderedPost) {
+        // A repost has no content of its own, so deleting its target leaves a
+        // dead card behind; drop both ids and hide the card immediately.
         dispatch(deletePost(event.postId));
+        if (postData.PostID && !isPostMatch(postData, event.postId)) {
+          dispatch(deletePost(postData.PostID));
+        }
+        setRemovedPostId(postData.PostID ?? event.postId);
+        setData({} as PostSchema);
       }
     };
 
     const handleUpdatePost = (event: UpdatePostEvent) => {
+      const { data, originalPost, postData } = latestRef.current;
       const updatesRenderedPost = isPostMatch(data, event.postId);
       const updatesOriginalPost = isPostMatch(originalPost, event.postId);
       const updatesPassedPost = isPostMatch(postData, event.postId);
@@ -197,30 +293,55 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       }
     };
 
+    const handleReactionResponse = (event: {
+      message: string;
+      success: boolean;
+      postId?: string;
+    }) => {
+      if (event.success) {
+        reactionSnapshotRef.current = null;
+        return;
+      }
+
+      const snapshot = reactionSnapshotRef.current;
+      if (!snapshot) return;
+      if (event.postId && !isPostMatch(snapshot, event.postId)) return;
+
+      reactionSnapshotRef.current = null;
+      setData(snapshot);
+      dispatch(updatePost({ id: snapshot.PostID, updates: snapshot }));
+      toast.error("Error", { description: event.message });
+    };
+
+    const handleDeleteResponse = (event: { message: string; success: boolean }) => {
+      const snapshot = pendingDeleteRef.current;
+      if (!snapshot) return;
+      pendingDeleteRef.current = null;
+      if (event.success) return;
+
+      // Undo the optimistic removal so the card comes back where it can.
+      const { postData } = latestRef.current;
+      dispatch(addPost(snapshot));
+      if (postData.PostID && !isPostMatch(postData, snapshot.PostID)) {
+        dispatch(addPost(postData));
+      }
+      setRemovedPostId(null);
+      setData(snapshot);
+      toast.error("Error", { description: event.message });
+    };
+
     socket.on("deletePost", handleDeletePost);
     socket.on("updatePost", handleUpdatePost);
+    socket.on("post_reaction_response", handleReactionResponse);
+    socket.on("delete_post_response", handleDeleteResponse);
 
     return () => {
       socket.off("deletePost", handleDeletePost);
       socket.off("updatePost", handleUpdatePost);
+      socket.off("post_reaction_response", handleReactionResponse);
+      socket.off("delete_post_response", handleDeleteResponse);
     };
-  }, [data, dispatch, originalPost, postData, socket]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(updateLiveTime("getlivetime", data.TimeOfPost));
-    }, 1000);
-    return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [data.TimeOfPost]);
-
-  useEffect(() => {
-    if (!originalPost) return;
-
-    const interval = setInterval(() => {
-      setTime1(updateLiveTime("getlivetime", originalPost.TimeOfPost));
-    }, 1000);
-    return () => clearInterval(interval); // This is important to clear the interval when the component unmounts
-  }, [originalPost, originalPost?.TimeOfPost]);
+  }, [dispatch, socket]);
 
   const handleActivePost = (route: string) => {
     const id = route.split("/").at(-1);
@@ -236,6 +357,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     }
 
     if (clicked === "liked") {
+      reactionSnapshotRef.current = data;
       const { next, emit } = togglePostLike(data);
       setData(next);
       dispatch(
@@ -246,6 +368,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     }
 
     if (clicked === "bookmarked") {
+      reactionSnapshotRef.current = data;
       const { next, emit } = togglePostBookmark(data);
       setData(next);
       dispatch(
@@ -371,11 +494,20 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             text: "Delete Post",
             destructive: true,
             onClick: () => {
+              pendingDeleteRef.current = data;
               socket?.emit("deletePost", {
                 postId: data.PostID,
                 type: data.Type,
                 parentId: data.ParentId,
               });
+              // The server excludes the actor from the broadcast, so remove the
+              // card locally (rolled back by `delete_post_response` on failure).
+              dispatch(deletePost(data.PostID));
+              if (postData.PostID && !isPostMatch(postData, data.PostID)) {
+                dispatch(deletePost(postData.PostID));
+              }
+              setRemovedPostId(postData.PostID ?? data.PostID);
+              setData({} as PostSchema);
             },
           },
         ]
@@ -409,7 +541,10 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     },
   ];
 
-  if (!data.PostID) return <></>;
+  const isRemoved = removedPostId !== null && removedPostId === postData.PostID;
+
+  if (isRemoved) return <></>;
+  if (!data.PostID) return isResolvingPost ? <RenderLoadingPlaceholder /> : <></>;
 
   const isCaptionTruncated =
     Boolean(data.Caption) && data.Caption.length > 250 && !containsPost && !showFullCaption;
@@ -425,7 +560,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       )}
     >
       <div className={cn(containsPost ? "p-4 sm:p-5" : "px-4 py-3 sm:px-5")}>
-        {postType === "repost" && (
+        {postData.Type === "repost" && (
           <div className="mb-1.5 flex items-center gap-2 text-[13px] text-muted-foreground">
             <Repeat2 className="size-[15px] shrink-0 text-brand" />
             <span className="truncate">
@@ -443,7 +578,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         <div className="flex items-start gap-3">
           <Link href={`/${data.Username}/photo`} shallow className="mt-0.5 block shrink-0">
             <Avatar className="size-10">
-              <AvatarFallback>{data.NameOfPoster.slice(0, 2)}</AvatarFallback>
+              <AvatarFallback>{(data.NameOfPoster ?? "").slice(0, 2)}</AvatarFallback>
               <AvatarImage className="cursor-pointer" alt="blogger" src={data.DisplayPicture} />
             </Avatar>
           </Link>
@@ -464,7 +599,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </div>
           </div>
 
-          <Options options={options} open={open} setOpen={setOpen} />
+          <Options options={options} setOpen={setOptionsOpen} />
         </div>
 
         <div
@@ -492,7 +627,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           ) : null}
         </div>
 
-        {data?.Image.length > 0 && showMedia && (
+        {(data.Image?.length ?? 0) > 0 && showMedia && (
           <ThreadsSlide postData={data} className="mt-3 max-w-md" isLink />
         )}
 
@@ -562,6 +697,14 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             post={data}
             open={isPostMakerModalOpen}
             onOpenChange={setPostMakerModalOpen}
+            onPosted={(postedType) => {
+              if (postedType !== "comment") return;
+              const nextCount = data.NoOfComment + 1;
+              setData((prev) => (prev.PostID ? { ...prev, NoOfComment: nextCount } : prev));
+              dispatch(
+                updatePost({ id: data.PostID, updates: { NoOfComment: nextCount } })
+              );
+            }}
           >
             <div
               role="button"
@@ -582,6 +725,10 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           <ShareButton
             post={data}
             triggerClassName={cn(actionBase.replace('flex', ''), "hover:text-emerald-600", data.Shared && "text-brand")}
+            onShareCommitted={(postId, updates) => {
+              setData((prev) => (prev.PostID === postId ? { ...prev, ...updates } : prev));
+              dispatch(updatePost({ id: postId, updates }));
+            }}
           >
             <span className={cn(actionIconWrap, "group-hover:bg-emerald-500/10")}>
               <Repeat2 className={cn("size-[19px]", data.Shared && "text-brand")} />
@@ -653,7 +800,7 @@ function QuotedPostCard({
     >
       <div className="flex items-start gap-2.5">
         <Avatar className="size-8 shrink-0">
-          <AvatarFallback>{originalPost.NameOfPoster.slice(0, 2)}</AvatarFallback>
+          <AvatarFallback>{(originalPost.NameOfPoster ?? "").slice(0, 2)}</AvatarFallback>
           <AvatarImage className="cursor-pointer" alt="blogger" src={originalPost.DisplayPicture} />
         </Avatar>
         <div className="min-w-0 flex-1">
@@ -671,7 +818,7 @@ function QuotedPostCard({
                 : renderTextWithLinks(originalPost.Caption)}
             </p>
           ) : null}
-          {originalPost.Image.length > 0 && (
+          {(originalPost.Image?.length ?? 0) > 0 && (
             <ThreadsSlide className="mt-2 max-w-sm" postData={originalPost} />
           )}
         </div>
@@ -682,11 +829,9 @@ function QuotedPostCard({
 
 function Options({
   options,
-  open,
   setOpen,
 }: {
   options: Option[];
-  open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const { userdata } = useUser();

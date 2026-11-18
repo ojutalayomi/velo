@@ -121,6 +121,8 @@ Optional (if used by deploy):
   - Ensure `MONGOLINK` and `MONGODB_DATABASE` are set locally and as GitHub Action secrets
 - PR creation 403 in CI:
   - Add a fine‑grained PAT secret `PR_CREATOR_TOKEN` and ensure the workflow uses it
+- PR merge 403 in CI:
+  - The merge job uses the workflow `GITHUB_TOKEN`; ensure Actions has read/write repository permissions under **Settings > Actions > General > Workflow permissions**
 - Handlebars/webpack warning:
   - Email templates now use inline HTML generation to avoid `require.extensions` warnings
 

@@ -62,6 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           pipeline: [{ $match: { UserId: userIdStr } }],
         },
       },
+      { $match: { hidden: { $ne: true } } }, // hidden by an admin
       { $sort: { TimeOfPost: -1 } },
       { $skip: skip },
       { $limit: fetchLimit },

@@ -48,7 +48,7 @@ async function fetchExplorePosts(db: MongoDBClient, skip: number, limit: number)
       },
     },
     // Only posts that have at least one media item
-    { $match: { "Image.0": { $exists: true } } },
+    { $match: { "Image.0": { $exists: true }, hidden: { $ne: true } } },
     { $sort: { TimeOfPost: -1 } },
     { $skip: skip },
     { $limit: fetchLimit },

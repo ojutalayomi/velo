@@ -8,7 +8,7 @@ import { useTheme } from "@/app/providers/ThemeProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { UserData } from "@/lib/types/user";
 
-import { SidebarItem, UserSection, sidebarItems } from "./SidebarComps";
+import { SidebarItem, UserSection, adminSidebarItem, sidebarItems } from "./SidebarComps";
 import { handleThemeChange1 } from "./ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
@@ -80,7 +80,10 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
 
   const memoizedSidebarItems = useMemo(
     () =>
-      sidebarItems.map((item, key) => (
+      (userdata.role === "admin"
+        ? [...sidebarItems.slice(0, -1), adminSidebarItem, ...sidebarItems.slice(-1)]
+        : sidebarItems
+      ).map((item, key) => (
         <Tooltip key={item.route + key}>
           <TooltipTrigger asChild>
             <SidebarItem

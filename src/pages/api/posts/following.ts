@@ -72,7 +72,7 @@ async function fetchFollowingPostsPage(
         pipeline: [],
       },
     },
-    { $match: { UserId: { $in: followedIds } } },
+    { $match: { UserId: { $in: followedIds }, hidden: { $ne: true } } },
     { $sort: { TimeOfPost: -1 } },
     { $skip: skip },
     { $limit: fetchLimit },

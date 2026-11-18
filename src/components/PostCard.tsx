@@ -22,6 +22,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
+import ReportDialog from "@/components/ReportDialog";
+
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
@@ -343,6 +345,8 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     };
   }, [dispatch, socket]);
 
+  const [reportOpen, setReportOpen] = useState(false);
+
   const handleActivePost = (route: string) => {
     const id = route.split("/").at(-1);
     if (id) {
@@ -527,7 +531,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           {
             icon: <Flag size={18} />,
             text: "Report post",
-            onClick: () => {},
+            onClick: () => setReportOpen(true),
           },
         ]
       : []),
@@ -770,6 +774,13 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           </button>
         </div>
       </div>
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        type="post"
+        targetId={data.PostID}
+        targetUserId={data.UserId}
+      />
     </article>
   );
 };

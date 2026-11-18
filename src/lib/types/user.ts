@@ -20,6 +20,8 @@ export enum AccountType {
   BOT = "bot",
 }
 
+export type UserRole = "user" | "admin";
+
 export type Theme = "system" | "light" | "dark";
 
 export interface User {
@@ -53,6 +55,9 @@ export interface User {
     }
   >;
   resetAttempts?: number;
+  /** Set only directly in the database. Never writable from the client. */
+  role?: UserRole;
+  suspended?: boolean;
   theme?: Theme;
   time: string;
   userId: string;

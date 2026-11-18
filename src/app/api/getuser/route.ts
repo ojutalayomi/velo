@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
           displayPicture: 1,
           verified: 1,
           userId: 1,
+          role: 1,
+          suspended: 1,
           bio: 1,
           location: 1,
           website: 1,
@@ -49,6 +51,10 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.suspended) {
+      return NextResponse.json({ error: "Account suspended" }, { status: 403 });
     }
 
     return NextResponse.json(user);

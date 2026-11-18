@@ -41,6 +41,7 @@ export async function fetchPostsByCaptionMatch(
   const publicMatch = {
     $match: {
       Visibility: "everyone",
+      hidden: { $ne: true },
       Caption: { $regex: pattern, $options: "i" },
     },
   };

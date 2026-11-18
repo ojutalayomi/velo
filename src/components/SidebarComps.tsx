@@ -13,6 +13,7 @@ import {
   Compass,
   CircleUserRound,
   Bookmark,
+  ShieldCheck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -74,6 +75,12 @@ export const sidebarItems = [
     label: "Others",
   },
 ];
+
+export const adminSidebarItem = {
+  route: "admin",
+  icon: ShieldCheck,
+  label: "Admin",
+};
 
 export const SidebarItem = forwardRef<
   HTMLDivElement,

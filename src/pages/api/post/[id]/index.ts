@@ -83,15 +83,15 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
 async function searchPostFromMultipleCollections(db: MongoDBClient, id: string) {
   // Fetch posts from the 'Posts' collection
-  const post = await db.posts().findOne({ PostID: id });
+  const post = await db.posts().findOne({ PostID: id, hidden: { $ne: true } });
   if (post) return post;
 
   // Fetch posts from the 'Posts_Comments' collection
-  const comment = await db.postsComments().findOne({ PostID: id });
+  const comment = await db.postsComments().findOne({ PostID: id, hidden: { $ne: true } });
   if (comment) return comment;
 
   // Fetch posts from the 'Posts_Shares' collection
-  const share = await db.postsShares().findOne({ PostID: id });
+  const share = await db.postsShares().findOne({ PostID: id, hidden: { $ne: true } });
   if (share) return share;
 
   return null;

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
@@ -41,7 +41,6 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 import ChatTextarea from "../ChatTextarea";
 import MessageTab from "../MessageTab";
 import { MultiSelect } from "../MultiSelect";
-
 
 type Message = {
   _id: string;
@@ -98,6 +97,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingEmitRef = useRef(0);
   const lastDateRef = useRef<string>("");
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const olderLoadThrottleRef = useRef(0);
@@ -140,41 +140,47 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const Messages = useMemo(() => {
     return messages?.filter((msg) => {
       return msg.chatId === pid;
-    })
+    });
   }, [messages, pid, searchQuery]);
 
-  const getCachedData = useCallback((id: string) => {
-    const cachedData = localStorage.getItem(id);
-    if (cachedData) {
-      const parsedData = JSON.parse(cachedData);
-      if (Date.now() - parsedData.timestamp < 60000 * 5) {
-        // Cache for 5 minutes
-        return parsedData.data;
-      } else {
-        localStorage.removeItem(id);
+  const getCachedData = useCallback(
+    (id: string) => {
+      const cachedData = localStorage.getItem(id);
+      if (cachedData) {
+        const parsedData = JSON.parse(cachedData);
+        if (Date.now() - parsedData.timestamp < 60000 * 5) {
+          // Cache for 5 minutes
+          return parsedData.data;
+        } else {
+          localStorage.removeItem(id);
+        }
       }
-    }
-    return null;
-  }, [friendId]);
+      return null;
+    },
+    [friendId]
+  );
 
-  const fetchFromAPI = useCallback(async (id: string) => {
-    const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
-    if (!response.ok) {
-      // console.log();
-    }
-    const body = await response.json();
-    const arr = Array.isArray(body?.data) ? body.data : [];
-    const row = arr[0];
-    if (row?._id != null)
-      localStorage.setItem(
-        String(row._id),
-        JSON.stringify({
-          data: row,
-          timestamp: Date.now(),
-        })
-      );
-    return row;
-  }, [friendId]);
+  const fetchFromAPI = useCallback(
+    async (id: string) => {
+      const response = await fetch(`/api/users?query=${encodeURIComponent(id)}&search=true`);
+      if (!response.ok) {
+        // console.log();
+      }
+      const body = await response.json();
+      const arr = Array.isArray(body?.data) ? body.data : [];
+      const row = arr[0];
+      if (row?._id != null)
+        localStorage.setItem(
+          String(row._id),
+          JSON.stringify({
+            data: row,
+            timestamp: Date.now(),
+          })
+        );
+      return row;
+    },
+    [friendId]
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -221,14 +227,23 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     })();
   }, [friendId]);
 
-  const handleSendMessage = async (id: string) => {
+  const stopTypingSignal = useCallback(() => {
+    if (!socket || !pid || !friendId) return;
+    if (!typingTimeoutRef.current) return;
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+    lastTypingEmitRef.current = 0;
+    socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
+  }, [socket, pid, friendId, userdata]);
+
+  const handleSendMessage = async (id: string, mentions?: { userId: string; username: string }[]) => {
     if (newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
     let lastMessageId = "";
 
     try {
-      if(otherPerson.accountType === "bot") {
+      if (otherPerson.accountType === "bot") {
         setIsTextareaDisabled(true);
       }
       const isRead = friendId
@@ -255,6 +270,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         attachments: [] as Attachment[], // Will be populated with file data
         quotedMessageId: id,
         status: "sending" as msgStatus,
+        mentions: mentions ?? [],
       });
       lastMessageId = msg._id;
 
@@ -288,6 +304,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
       // Dispatch actions to update the state
       const msgCopy = msg.copy();
+      msgCopy.mentions = mentions ?? [];
       msgCopy.attachments = msgCopy.attachments.map((m, index) => {
         const objectURL = URL.createObjectURL(attachments[index]);
         return {
@@ -295,7 +312,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           ...m,
         };
       });
-      
+
       dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
@@ -320,13 +337,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             }
             const botResponse = response.data.result;
             dispatch(addMessage(botResponse));
-            dispatch(updateConversation({
-              id: msg._id as string,
-              updates: {
-                lastMessage: botResponse.content,
-                lastUpdated: botResponse.timestamp,
-              },
-            }));
+            dispatch(
+              updateConversation({
+                id: msg._id as string,
+                updates: {
+                  lastMessage: botResponse.content,
+                  lastUpdated: botResponse.timestamp,
+                },
+              })
+            );
           } else {
             socket.emit("chatMessage", msg);
           }
@@ -339,6 +358,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
       // Reset the message input and attachments
       setNewMessage("");
+      stopTypingSignal();
       clearFiles();
       closeQuote();
       const txt = document.getElementById("txt");
@@ -351,10 +371,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     } catch (error) {
       console.error("Error sending message:", error);
       dispatch(deleteMessage(lastMessageId));
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to send message. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsTextareaDisabled(false);
@@ -397,20 +415,43 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     router.push("/chats");
   };
 
-  const handleTyping = () => {
-    if (!socket || !pid || !userSettings.showTypingStatus) return;
-    socket.emit("typing", { user: userdata, to: `user:${friendId}`, chatId: pid });
+  const handleTyping = (hasText: boolean = true) => {
+    if (!socket || !pid || !friendId || !userSettings.showTypingStatus) return;
+    const payload = { user: userdata, to: `user:${friendId}`, chatId: pid };
+
+    if (!hasText) {
+      stopTypingSignal();
+      return;
+    }
+
+    // Throttle the "typing" signal; the stop timer below is still refreshed on every keystroke.
+    const now = Date.now();
+    if (now - lastTypingEmitRef.current >= 1200) {
+      lastTypingEmitRef.current = now;
+      socket.emit("typing", payload);
+    }
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      if (userSettings.showTypingStatus) {
-        socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
-      }
+      typingTimeoutRef.current = null;
+      lastTypingEmitRef.current = 0;
+      socket.emit("stopTyping", payload);
     }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (!typingTimeoutRef.current) return;
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      if (socket && pid && friendId) {
+        socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
+      }
+    };
+  }, [socket, pid, friendId, userdata]);
 
   useEffect(() => {
     if (searchParams && searchParams.get("search") === "true") {
@@ -425,12 +466,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   }, [searchParams, searchQuery]);
 
   const options = [
-    { id: 1, name: "View contact", action: () => router.push(`/${otherPerson.username}`) },
-    { id: 2, name: "Search", action: () => {
-      const currParams = new URLSearchParams(searchParams?.toString() || "");
-      currParams.set("search", "true");
-      router.push(`/chats/${pid}?${currParams.toString()}`, { scroll: false });
-    } },
+    { id: 1, name: "View contact", action: () => router.push(`/chats/${pid}/settings`) },
+    {
+      id: 2,
+      name: "Search",
+      action: () => {
+        const currParams = new URLSearchParams(searchParams?.toString() || "");
+        currParams.set("search", "true");
+        router.push(`/chats/${pid}?${currParams.toString()}`, { scroll: false });
+      },
+    },
     { id: 3, name: "Mute notifications", action: () => console.log("Mute notifications") },
     { id: 4, name: "Wallpaper", action: () => console.log("Wallpaper") },
     {
@@ -514,14 +559,18 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       setSearchResults([]);
       return;
     }
-    setSearchResults(Messages.filter((message) => message.content.toLowerCase().includes(searchQuery.toLowerCase())));
+    setSearchResults(
+      Messages.filter((message) =>
+        message.content.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
   }, [searchQuery, Messages]);
 
   return (
     <div
       className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -531,7 +580,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 size="lg"
               />
-              {(load && !otherPerson._id) ? (
+              {load && !otherPerson._id ? (
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
                 <div>
@@ -551,7 +600,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {(callHooks && otherPerson?.accountType === "bot") && (
+              {socket && otherPerson?.accountType !== "bot" && (
                 <CallButton
                   roomId={pid}
                   targetUserId={friendId}
@@ -623,21 +672,28 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             >
               Clear
             </button>
-            <div className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}>
-              <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
+            <div
+              className={`absolute right-0 top-[80%] z-50 max-h-[calc(100vh-100px)] w-full overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
+            >
+              <div className="overflow-y-auto rounded-lg border-2 bg-white p-2 dark:bg-zinc-900 dark:shadow-slate-200">
                 {searchResults.length > 0 ? (
                   searchResults.map((result) => (
-                    <MessageTab key={result._id} message={result} setQuote={setQuote} onClick={() => {
-                      setSearchQuery("");
-                      setSearchFocus(false);
-                      openSearchBar(false);
-                      router.replace(`/chats/${result.chatId}#${result._id}`, { scroll: true });
-                    }} />
+                    <MessageTab
+                      key={result._id}
+                      message={result}
+                      setQuote={setQuote}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchFocus(false);
+                        openSearchBar(false);
+                        router.replace(`/chats/${result.chatId}#${result._id}`, { scroll: true });
+                      }}
+                    />
                   ))
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
+                  <div className="flex h-full flex-1 flex-col items-center justify-center py-2 text-center">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-200">
                       No messages found
                     </h3>
                   </div>
@@ -764,7 +820,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             key={`typing-${convo?.isTypingList.find((i) => i.chatId === pid)?.id}`}
             className="my-2 mb-4 text-left"
           >
-            <span className="rounded-full bg-gray-100 rounded-bl-none px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
+            <span className="rounded-full rounded-bl-none bg-gray-100 px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
               {convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...
             </span>
           </div>
@@ -786,6 +842,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         <ChatTextarea
           quote={quote}
           newMessage={newMessage}
+          chatId={pid}
           setNewMessage={setNewMessage}
           handleSendMessage={handleSendMessage}
           handleTyping={handleTyping}

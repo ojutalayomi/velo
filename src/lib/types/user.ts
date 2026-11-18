@@ -4,6 +4,8 @@
 
 import { ObjectId } from "bson";
 
+import { PasskeyCredential } from "./passkey";
+
 /**
  * Defines the possible types of accounts.
  * Based on the JSON, we assume this is an ORGANIZATION.
@@ -17,6 +19,8 @@ export enum AccountType {
   // eslint-disable-next-line no-unused-vars
   BOT = "bot",
 }
+
+export type UserRole = "user" | "admin";
 
 export type Theme = "system" | "light" | "dark";
 
@@ -51,13 +55,18 @@ export interface User {
     }
   >;
   resetAttempts?: number;
+  /** Set only directly in the database. Never writable from the client. */
+  role?: UserRole;
+  suspended?: boolean;
   theme?: Theme;
   time: string;
   userId: string;
   username: string;
+  usernameChangedAt?: string;
   verified: boolean;
   website?: string;
   accountType: AccountType;
+  passkeys?: PasskeyCredential[]; // WebAuthn credentials
 }
 
 export interface UserData extends User {

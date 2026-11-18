@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { verifyToken } from "@/lib/auth";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
+import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 import type { Payload, PostSchema } from "@/lib/types/type";
 
@@ -49,6 +49,7 @@ async function fetchPostsPage(db: MongoDBClient, skip: number, limit: number) {
         pipeline: [],
       },
     },
+    { $match: { hidden: { $ne: true } } }, // hidden by an admin
     { $sort: { TimeOfPost: -1 } },
     { $skip: skip },
     { $limit: fetchLimit },

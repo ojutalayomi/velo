@@ -1,11 +1,9 @@
 "use client";
-import React from "react";
 import Homepage from "@/components/Home1";
-import RightSideBar from "@/components/RightSideBar";
 
 const Home = () => {
   return (
-    <div className="h-screen overflow-hidden w-full">
+    <div className="h-screen w-full overflow-hidden">
       <Homepage />
     </div>
   );

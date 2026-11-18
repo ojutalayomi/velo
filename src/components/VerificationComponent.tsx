@@ -62,12 +62,7 @@ export const Statuser = forwardRef<SVGSVGElement, StatuserProps>(
     const { status, footer } = tooltipContent || defaultTooltipContent;
 
     return (
-      <Icon
-        size={16}
-        ref={ref}
-        className={cn(Variants({ variant }), props.className)}
-        {...props}
-      />
+      <Icon size={16} ref={ref} className={cn(Variants({ variant }), props.className)} {...props} />
     );
   }
 );

@@ -1,12 +1,13 @@
 "use client";
-import React from "react";
 import { useRouter } from "next/navigation";
+import React from "react";
+
 import { FormProps, FormData } from "./FormProps";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setErrors, handleNext, handlePrevious, updateFormData } from "../../redux/signupSlice";
 import { RootState } from "../../redux/store";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 const First: React.FC = () => {
   const navigate = useRouter().push;
@@ -39,12 +40,12 @@ const First: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-2">
-        <label
+        {/*<label
           className="text-start font-semibold after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base"
           htmlFor="firstname"
         >
           Firstname
-        </label>
+        </label>*/}
         <Input
           className="font-semibold"
           type="text"
@@ -59,12 +60,12 @@ const First: React.FC = () => {
         {errors.firstname && <div className="warning">{errors.firstname}</div>}
       </div>
       <div className="flex flex-col justify-between gap-2">
-        <label
+        {/*<label
           className="text-start font-semibold after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base"
           htmlFor="lastname"
         >
           Lastname
-        </label>
+        </label>*/}
         <Input
           className="font-semibold"
           type="text"

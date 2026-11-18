@@ -1,16 +1,16 @@
 "use client";
 import { ObjectId } from "bson";
-import { Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useUser } from "@/app/providers/UserProvider";
+import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
 import { Footer } from "@/components/Footer";
+import TrendingTopics from "@/components/TrendingTopics";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { axiosApi } from "@/lib/api";
 import { SocialMediaUser } from "@/lib/class/User";
 import { cn } from "@/lib/utils";
@@ -24,11 +24,14 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   const [loading, setLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<SocialMediaUser[]>([]);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
+
   useEffect(() => {
     // Only fetch if userdata._id exists to avoid running the effect twice (once with undefined, once with real id)
     if (!userdata._id) return;
 
-    setLoading(true);
+    setTimeout(() => {
+      setLoading(true);
+    }, 100);
     axiosApi("/api")
       .get("/users?getSuggestions=true&limit=10")
       .then((suggestionsRes) => {
@@ -56,34 +59,24 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   return (
     <div
       className={cn(
-        `${pathname?.includes("/accounts") || pathname?.includes("/chats") ? "!hidden" : ""} min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
+        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") ? "!hidden" : ""} max-h-screen overflow-auto border-l min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
         className
       )}
       {...props}
     >
-      <div className="mx-auto max-h-full max-w-md space-y-2 overflow-auto">
-        {/* Search Bar */}
-        <div className="sticky top-0 w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
-              size={18}
-            />
-            <Input
-              type="text"
-              placeholder="Search people"
-              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
-            />
-          </div>
-        </div>
+      {/* Search Bar */}
+      <div className="sticky top-0 z-30 mx-auto w-full bg-gray-50 px-4 py-2 dark:bg-zinc-900">
+        <ExploreSearchPanel variant="sidebar" className="w-full" />
+      </div>
+      <div className="mx-auto max-h-full max-w-md space-y-4 overflow-auto">
 
         {/* User Profile */}
-        <div className="mx-4">
+        <div className="relative z-0 mx-4">
           <ImageContent userdata={userdata} />
         </div>
 
         {/* Suggestions Section */}
-        <div className="mx-4 max-h-[70%] overflow-auto rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-800">
+        <div className="relative z-0 mx-4 max-h-[70%] overflow-auto rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-800">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Suggested for you</h2>
             <a href="#" className="text-sm text-brand transition-colors hover:text-brand/80">
@@ -102,15 +95,15 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
                   className="group flex items-center justify-between gap-3"
                 >
                   <div className="relative">
-                    <Avatar>
+                    <Avatar className="shadow-xl">
                       <AvatarImage
                         src={suggestion.displayPicture}
                         className="rounded-full object-cover"
                       />
-                      <AvatarFallback>{suggestion.username?.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="outline">{suggestion.username?.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     {onlineUsers.includes(suggestion?._id.toString()) && (
-                      <div className="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-white bg-green-500 dark:border-zinc-800"></div>
+                      <div className="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-white bg-green-500 dark:border-zinc-800" />
                     )}
                   </div>
                   <div className="flex-1 overflow-auto">
@@ -135,6 +128,11 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
               ))
             )}
           </div>
+        </div>
+
+        {/* Trends Section */}
+        <div className="relative z-0 mx-4">
+          <TrendingTopics />
         </div>
 
         {/* Footer */}

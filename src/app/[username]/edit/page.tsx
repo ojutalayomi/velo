@@ -1,18 +1,21 @@
 "use client";
-import { useState, useRef, ChangeEvent, useEffect } from "react";
+import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Camera, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { useTheme } from "@/app/providers/ThemeProvider";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
-import { useSelector } from "react-redux";
+import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { RootState } from "@/redux/store";
 import { updateUserData } from "@/redux/userSlice";
-import { useDispatch } from "react-redux";
+
 
 export default function EditProfile() {
   const dispatch = useDispatch();
@@ -27,7 +30,12 @@ export default function EditProfile() {
     website: "",
     displayPicture: "",
     coverPhoto: "",
+    username: "",
+    dob: "",
+    isPrivate: false,
+    theme: "system" as "system" | "light" | "dark",
   });
+  const { setTheme } = useTheme();
 
   const [selectedFiles, setSelectedFiles] = useState<{
     displayPicture?: File;
@@ -38,21 +46,31 @@ export default function EditProfile() {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setFormData({
-      name: userdata.name || "",
-      bio: userdata.bio || "",
-      location: userdata.location || "",
-      website: userdata.website || "",
-      displayPicture: userdata.displayPicture || "",
-      coverPhoto: userdata.coverPhoto || "",
-    });
+    const t = setTimeout(() => {
+      setFormData({
+        name: userdata.name || "",
+        bio: userdata.bio || "",
+        location: userdata.location || "",
+        website: userdata.website || "",
+        displayPicture: userdata.displayPicture || "",
+        coverPhoto: userdata.coverPhoto || "",
+        username: userdata.username || "",
+        dob: userdata.dob ? userdata.dob.slice(0, 10) : "",
+        isPrivate: !!userdata.isPrivate,
+        theme: userdata.theme || "system",
+      });
+    }, 100);
+    return () => clearTimeout(t);
   }, [userdata]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -63,22 +81,26 @@ export default function EditProfile() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
+        body: S3UploadBody({
           filename: file.name,
           contentType: file.type,
-          bucketName: "profile-display-images",
+          bucketName: type === "displayPicture" ? BUCKETNAME.PROFILE : BUCKETNAME.BANNER,
         }),
       });
+      if (!res.ok) throw new Error("Failed to get upload URL");
 
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      return data.url;
+      // The API returns a presigned POST, so the file must be sent to S3 itself.
+      const { url, fields } = await res.json();
+      const body = new FormData();
+      Object.entries(fields as Record<string, string>).forEach(([k, v]) => body.append(k, v));
+      body.append("file", file);
+
+      const uploadRes = await fetch(url, { method: "POST", body });
+      if (!uploadRes.ok) throw new Error("Upload failed");
+
+      return url + fields.key;
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error uploading image",
-        variant: "destructive",
-      });
       return null;
     }
   };
@@ -92,10 +114,8 @@ export default function EditProfile() {
 
     if (file.size > 5 * 1024 * 1024) {
       // 5MB limit
-      toast({
-        title: "File too large",
+      toast.error("File too large", {
         description: "Please upload an image smaller than 5MB",
-        variant: "destructive",
       });
       return;
     }
@@ -124,10 +144,14 @@ export default function EditProfile() {
 
       // Only upload if new files were selected
       if (selectedFiles.displayPicture) {
-        displayPictureUrl = await uploadImage(selectedFiles.displayPicture, "displayPicture");
+        const uploaded = await uploadImage(selectedFiles.displayPicture, "displayPicture");
+        if (!uploaded) throw new Error("Profile picture upload failed");
+        displayPictureUrl = uploaded;
       }
       if (selectedFiles.coverPhoto) {
-        coverPhotoUrl = await uploadImage(selectedFiles.coverPhoto, "coverPhoto");
+        const uploaded = await uploadImage(selectedFiles.coverPhoto, "coverPhoto");
+        if (!uploaded) throw new Error("Cover photo upload failed");
+        coverPhotoUrl = uploaded;
       }
 
       const res = await fetch("/api/user/update", {
@@ -137,50 +161,49 @@ export default function EditProfile() {
         },
         body: JSON.stringify({
           ...formData,
-          displayPicture: displayPictureUrl,
-          coverPhoto: coverPhotoUrl,
+          displayPicture: displayPictureUrl.startsWith("blob:") ? "" : displayPictureUrl,
+          coverPhoto: coverPhotoUrl.startsWith("blob:") ? "" : coverPhotoUrl,
         }),
       });
 
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.message || "Update failed");
+      }
 
       const data = await res.json();
       dispatch(updateUserData(data.data));
+      setTheme(formData.theme);
 
-      toast({
-        title: "Profile updated successfully",
-      });
-      router.push(`/${userdata.username}`);
+      toast.success("Profile updated successfully");
+      router.push(`/${data.data?.username || userdata.username}`);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error updating profile",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Error updating profile");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="w-full flex-1 h-screen max-h-screen dark:bg-black overflow-auto">
-      <div className="flex backdrop-blur-lg top-0 sticky gap-4 items-center z-10 w-full px-3 py-2">
-        <ArrowLeft onClick={() => navigate()} className="cursor-pointer size-6" />
+    <div className="h-screen max-h-screen w-full flex-1 overflow-auto dark:bg-black">
+      <div className="sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg">
+        <ArrowLeft onClick={() => navigate()} className="size-6 cursor-pointer" />
         <h1 className="text-xl font-bold">Edit Profile</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* Cover Photo */}
-        <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-800 mb-16">
+        <div className="relative mb-16 h-48 w-full bg-gray-200 dark:bg-gray-800">
           <Avatar
-            className="h-full w-full object-cover rounded-none"
+            className="size-full rounded-none object-cover"
             data-s3-url={formData.coverPhoto || userdata.coverPhoto}
           >
             <AvatarImage
-              className="w-full h-full rounded-none object-cover aspect-auto"
+              className="aspect-auto size-full rounded-none object-cover"
               src={formData.coverPhoto || userdata.coverPhoto}
             />
-            <AvatarFallback className="w-full h-full rounded-none">
+            <AvatarFallback className="size-full rounded-none">
               {userdata.firstname?.[0]}
               {userdata.lastname?.[0]}
             </AvatarFallback>
@@ -188,7 +211,7 @@ export default function EditProfile() {
           <Button
             type="button"
             variant="ghost"
-            className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
+            className="absolute inset-0 flex size-full items-center justify-center bg-black/30 opacity-60 hover:opacity-100"
             onClick={() => coverInputRef.current?.click()}
           >
             <Camera className="size-6" />
@@ -203,9 +226,9 @@ export default function EditProfile() {
 
           {/* Profile Picture */}
           <div className="absolute -bottom-12 left-4">
-            <div className="relative w-24 h-24">
+            <div className="relative size-24">
               <Avatar
-                className="w-24 h-24 border-4 border-white dark:border-black"
+                className="size-24 border-4 border-white dark:border-black"
                 data-s3-url={formData.displayPicture || userdata.displayPicture}
               >
                 <AvatarImage src={formData.displayPicture || userdata.displayPicture} />
@@ -217,7 +240,7 @@ export default function EditProfile() {
               <Button
                 type="button"
                 variant="ghost"
-                className="absolute inset-0 h-full rounded-full flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
+                className="absolute inset-0 flex h-full items-center justify-center rounded-full bg-black/30 opacity-60 hover:opacity-100"
                 onClick={() => dpInputRef.current?.click()}
               >
                 <Camera className="size-5" />
@@ -243,6 +266,23 @@ export default function EditProfile() {
               onChange={handleInputChange}
               maxLength={50}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              maxLength={20}
+              pattern="[A-Za-z0-9_]{3,20}"
+              title="3-20 letters, numbers or underscores"
+              autoCapitalize="none"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              You can change your username once every 30 days.
+            </p>
           </div>
 
           <div>
@@ -279,10 +319,54 @@ export default function EditProfile() {
             />
           </div>
 
+          <div>
+            <Label htmlFor="dob">Date of birth</Label>
+            <Input
+              id="dob"
+              name="dob"
+              type="date"
+              value={formData.dob}
+              onChange={handleInputChange}
+              max={new Date().toISOString().slice(0, 10)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="theme">Theme</Label>
+            <select
+              id="theme"
+              name="theme"
+              value={formData.theme}
+              onChange={handleInputChange}
+              className="h-10 w-full rounded-md border bg-transparent px-3 text-sm dark:bg-zinc-900"
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+
+          <label className="flex cursor-pointer items-start gap-3" htmlFor="isPrivate">
+            <input
+              id="isPrivate"
+              name="isPrivate"
+              type="checkbox"
+              checked={formData.isPrivate}
+              onChange={handleInputChange}
+              className="mt-1 size-4"
+            />
+            <span>
+              <span className="block text-sm font-medium">Private account</span>
+              <span className="block text-xs text-gray-500">
+                Only you can see your followers and following lists.
+              </span>
+            </span>
+          </label>
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
                 Saving...
               </>
             ) : (

@@ -14,11 +14,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.8,
     },
-    {
-      url: process.env.NEXT_PUBLIC_BASE_URL + "/blog",
+    ...["press", "developers", "jobs", "privacy", "terms", "locations"].map((p) => ({
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/${p}`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.5,
-    },
+      changeFrequency: "monthly" as const,
+      priority: 0.4,
+    })),
   ];
 }

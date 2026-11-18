@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { serialize } from "cookie";
 import { SignJWT } from "jose";
 import { ObjectId } from "mongodb";
@@ -7,6 +6,7 @@ import { UAParser } from "ua-parser-js";
 
 import { MongoDBClient } from "../mongodb";
 import { ChatParticipant, ChatType, NewChatSettings } from "../types/type";
+import { PasskeyChallenge, PasskeyCredential } from "../types/passkey";
 import { User, Theme, AccountType } from "../types/user";
 
 export interface UserSchema extends User {
@@ -19,6 +19,8 @@ export interface UserSchema extends User {
   confirmationToken?: string;
   loginToken?: string;
   noOfUpdates?: number;
+  passkeys?: PasskeyCredential[];
+  passkeyChallenge?: PasskeyChallenge;
 }
 
 /**
@@ -75,8 +77,9 @@ export class SocialMediaUser implements UserSchema {
   // EXTENDED FIELD (Inferred from object context)
   public readonly accountType: AccountType = AccountType.HUMAN;
   // You could infer 'ORGANIZATION' based on 'Google Gemini' name and content
+  public passkeys: PasskeyCredential[];
 
-  constructor(data: UserSchema & {accountType?: AccountType}) {
+  constructor(data: UserSchema & { accountType?: AccountType }) {
     this.isNull = data === null || data === undefined;
     this._id = data._id || new ObjectId();
     this.userId = data.userId;
@@ -116,6 +119,7 @@ export class SocialMediaUser implements UserSchema {
     this.resetAttempts = data.resetAttempts || 0;
     this.providers = data.providers;
     this.signUpCount = data.signUpCount || 0;
+    this.passkeys = data.passkeys || [];
 
     // Preferences
     this.theme = data.theme ?? ("system" as Theme);
@@ -151,24 +155,24 @@ export class SocialMediaUser implements UserSchema {
    */
   public getClientSafeData() {
     return {
-        _id: this._id,
-        userId: this.userId,
-        username: this.username,
-        name: this.name,
-        firstname: this.firstname,
-        lastname: this.lastname,
-        bio: this.bio,
-        displayPicture: this.displayPicture,
-        coverPhoto: this.coverPhoto,
-        website: this.website,
-        location: this.location,
-        followers: this.followers,
-        following: this.following,
-        noOfUpdates: this.noOfUpdates,
-        isPrivate: this.isPrivate,
-        verified: this.verified,
-        isFollowing: this.isFollowing,
-        accountType: this.accountType,
+      _id: this._id,
+      userId: this.userId,
+      username: this.username,
+      name: this.name,
+      firstname: this.firstname,
+      lastname: this.lastname,
+      bio: this.bio,
+      displayPicture: this.displayPicture,
+      coverPhoto: this.coverPhoto,
+      website: this.website,
+      location: this.location,
+      followers: this.followers,
+      following: this.following,
+      noOfUpdates: this.noOfUpdates,
+      isPrivate: this.isPrivate,
+      verified: this.verified,
+      isFollowing: this.isFollowing,
+      accountType: this.accountType,
     };
   }
 
@@ -178,41 +182,41 @@ export class SocialMediaUser implements UserSchema {
    */
   private getAllData(): UserSchema {
     return {
-        _id: this._id,
-        userId: this.userId,
-        username: this.username,
-        email: this.email,
-        password: this.password,
-        time: this.time,
-        lastLogin: this.lastLogin,
-        confirmationToken: this.confirmationToken || "",
-        isEmailConfirmed: this.isEmailConfirmed,
-        loginToken: this.loginToken || "",
-        resetToken: this.resetToken || "",
-        resetTokenExpiry: this.resetTokenExpiry || undefined,
-        lastResetAttempt: this.lastResetAttempt || undefined,
-        password_reset_time: this.password_reset_time || "",
-        resetAttempts: this.resetAttempts,
-        providers: this.providers,
-        signUpCount: this.signUpCount,
-        theme: this.theme,
-        isFollowing: this.isFollowing,
-        accountType: this.accountType,
-        name: this.name,
-        firstname: this.firstname,
-        lastname: this.lastname,
-        bio: this.bio,
-        displayPicture: this.displayPicture,
-        coverPhoto: this.coverPhoto,
-        website: this.website,
-        location: this.location,
-        dob: this.dob,
-        followers: this.followers,
-        following: this.following,
-        noOfUpdates: this.noOfUpdates,
-        lastUpdate: this.lastUpdate,
-        isPrivate: this.isPrivate,
-        verified: this.verified,
+      _id: this._id,
+      userId: this.userId,
+      username: this.username,
+      email: this.email,
+      password: this.password,
+      time: this.time,
+      lastLogin: this.lastLogin,
+      confirmationToken: this.confirmationToken || "",
+      isEmailConfirmed: this.isEmailConfirmed,
+      loginToken: this.loginToken || "",
+      resetToken: this.resetToken || "",
+      resetTokenExpiry: this.resetTokenExpiry || undefined,
+      lastResetAttempt: this.lastResetAttempt || undefined,
+      password_reset_time: this.password_reset_time || "",
+      resetAttempts: this.resetAttempts,
+      providers: this.providers,
+      signUpCount: this.signUpCount,
+      theme: this.theme,
+      isFollowing: this.isFollowing,
+      accountType: this.accountType,
+      name: this.name,
+      firstname: this.firstname,
+      lastname: this.lastname,
+      bio: this.bio,
+      displayPicture: this.displayPicture,
+      coverPhoto: this.coverPhoto,
+      website: this.website,
+      location: this.location,
+      dob: this.dob,
+      followers: this.followers,
+      following: this.following,
+      noOfUpdates: this.noOfUpdates,
+      lastUpdate: this.lastUpdate,
+      isPrivate: this.isPrivate,
+      verified: this.verified,
     };
   }
 
@@ -264,7 +268,6 @@ export class SocialMediaUser implements UserSchema {
       verified: false,
       adminIds: [userIdStr],
       isPrivate: false,
-      inviteLink: "",
       timestamp: new Date().toISOString(),
       lastUpdated: new Date().toISOString(),
       lastMessageId: "",

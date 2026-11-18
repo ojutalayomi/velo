@@ -23,6 +23,16 @@ export async function verifyToken(token: string) {
   }
 }
 
+/** Reads the `velo_12` session cookie and returns the authenticated user id. */
+export async function getSessionUserId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = decodeURIComponent(cookieStore.get("velo_12")?.value || "").replace(/"/g, "");
+  if (!token) return null;
+
+  const payload = (await verifyToken(token)) as { _id?: unknown } | null;
+  return typeof payload?._id === "string" && payload._id ? payload._id : null;
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -67,9 +77,10 @@ export const authOptions: NextAuthOptions = {
 
         if (existingUser) {
           // Check if user has this provider already
-          const hasProvider = existingUser.providers && 
+          const hasProvider =
+            existingUser.providers &&
             Object.keys(existingUser.providers).includes(account?.provider || "");
-          
+
           if (hasProvider) {
             // User already has this provider, update and proceed
             await users.updateOne(
@@ -90,7 +101,7 @@ export const authOptions: NextAuthOptions = {
             // User doesn't have this provider yet, redirect to consent page
             // Store provider info temporarily in a token
             const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-            
+
             const providerConsentToken = await new SignJWT({
               email: user.email,
               provider: account?.provider,

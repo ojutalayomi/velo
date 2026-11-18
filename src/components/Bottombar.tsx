@@ -1,19 +1,22 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { useUser } from "@/app/providers/UserProvider";
 import {
   Bell,
   User,
   LogIn,
-  BadgePlus,
-  Mail,
-  Settings,
-  MessageSquarePlus,
-  Home,
-  Search,
+  SquarePen,
+  MessageCircle,
+  Settings2,
+  House,
+  Compass,
+  Bookmark,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { useUser } from "@/app/providers/UserProvider";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Drawer,
   DrawerTitle,
@@ -24,10 +27,9 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Statuser } from "./VerificationComponent";
-import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+
+import { Statuser } from "./VerificationComponent";
 
 interface BottombarProps {
   activeRoute: string;
@@ -50,6 +52,9 @@ const Root: React.FC<BottombarProps> = ({
   conversations?.map((convo) => {
     i = i + convo.unread;
   });
+  const notificationUnread = useSelector(
+    (state: RootState) => state.notifications.unreadCount
+  );
   const [isPopUp, setPopUp] = useState<boolean>(false);
   const [open, setOpen] = useState<boolean>(false);
   const router = useRouter();
@@ -61,7 +66,6 @@ const Root: React.FC<BottombarProps> = ({
     "accounts/signup",
     "accounts/forgot-password",
     "accounts/reset-password",
-    "explore",
     "explore/reel",
   ];
 
@@ -79,6 +83,23 @@ const Root: React.FC<BottombarProps> = ({
       document.removeEventListener("click", handleClickOutside);
     };
   }, [setMoreStatus]);
+
+  const [hideBar, setHideBar] = useState<boolean>(false);
+  useEffect(() => {
+    const last = new WeakMap<object, number>();
+    const onScroll = (e: Event) => {
+      const t = e.target as any;
+      const el = t === document ? document.scrollingElement : t;
+      if (!el || typeof el.scrollTop !== "number") return;
+      const prev = last.get(el) ?? 0;
+      const cur = el.scrollTop;
+      if (Math.abs(cur - prev) < 10) return;
+      setHideBar(cur > prev && cur > 80);
+      last.set(el, cur);
+    };
+    document.addEventListener("scroll", onScroll, true);
+    return () => document.removeEventListener("scroll", onScroll, true);
+  }, []);
 
   useEffect(() => {
     // console.log(location)
@@ -105,43 +126,44 @@ const Root: React.FC<BottombarProps> = ({
 
   return (
     <>
-      <div
-        className={`bg-slate-200 fixed bottom-0 left-0 right-0 tablets:hidden z-50 shadow-md rounded-t-md dark:bg-zinc-900 ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
+      {/* Floating compose button, like X */}
+      <button
+        aria-label="Compose post"
+        onClick={() => handleClick("compose/post")}
+        className={`fixed bottom-20 right-4 z-50 flex size-14 items-center justify-center rounded-full bg-brand text-white shadow-lg tablets:hidden ${hideBar ? "translate-y-16" : ""} transition-transform duration-200 ${(routes.includes(activeRoute) || pathname?.includes("/accounts") || pathname?.includes("/compose") || pathname?.includes("/chats")) && "hidden"}`}
       >
-        <div className="!shadow-none py-[10px] flex justify-evenly w-full">
-          <div
-            onClick={() => handleClick("home")}
-            className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === "home" ? "active" : ""}`}
-          >
-            <Home size={22} className="dark:stroke-tom" />
-            {/* <div>Home</div> */}
-          </div>
-          <div
-            onClick={() => handleClick("explore")}
-            className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === "explore" ? "active" : ""}`}
-          >
-            <Search size={22} className="dark:stroke-tom" />
-            {/* <div>Explore</div> */}
-          </div>
-          <div
-            onClick={() => handleClick("compose/post")}
-            className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === "create-post" ? "active" : ""}`}
-          >
-            <BadgePlus size={22} className="dark:stroke-tom" />
-            {/* <div>Post</div> */}
-          </div>
-          <div
-            onClick={() => handleClick("chats")}
-            className={`flex flex-col items-center justify-center dark:text-slate-200 ${activeRoute === "chats" ? "active" : ""} relative`}
-          >
-            <Mail size={22} className="dark:stroke-tom" />
-            {i > 0 && (
-              <div className="bg-brand text-white text-xs absolute right-0 transform translate-y-[-50%] translate-x-1/2 font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {i}
+        <SquarePen size={24} />
+      </button>
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 border-t bg-white/95 backdrop-blur transition-transform duration-200 tablets:hidden dark:bg-zinc-900/95 ${hideBar ? "translate-y-full" : ""} ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
+      >
+        <div className="flex w-full items-center justify-evenly py-[10px] !shadow-none">
+          {[
+            { route: "home", Icon: House, filled: true },
+            { route: "explore", Icon: Compass, filled: false },
+            { route: "notifications", Icon: Bell, filled: true, badge: notificationUnread },
+            { route: "chats", Icon: MessageCircle, filled: true, badge: i },
+          ].map(({ route, Icon, filled, badge }) => {
+            const active = activeRoute === route;
+            return (
+              <div
+                key={route}
+                onClick={() => handleClick(route)}
+                className="relative flex cursor-pointer flex-col items-center justify-center p-1 dark:text-slate-200"
+              >
+                <Icon
+                  size={26}
+                  strokeWidth={active ? 2.75 : 1.75}
+                  fill={active && filled ? "currentColor" : "none"}
+                />
+                {badge ? (
+                  <div className="absolute right-0 top-0 flex h-4 min-w-4 translate-x-1/3 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">
+                    {badge > 99 ? "99+" : badge}
+                  </div>
+                ) : null}
               </div>
-            )}
-            {/* <div>Chats</div> */}
-          </div>
+            );
+          })}
           {!loading ? (
             <Drawer open={open} onOpenChange={setOpen}>
               <DrawerTrigger>
@@ -153,145 +175,97 @@ const Root: React.FC<BottombarProps> = ({
                 </Avatar>
               </DrawerTrigger>
               <DrawerContent className="tablets1:hidden">
-                <DrawerHeader>
+                <DrawerHeader className="sr-only">
                   <DrawerTitle>Velo Menu</DrawerTitle>
                   <DrawerDescription>Explore your profile and settings</DrawerDescription>
                 </DrawerHeader>
-                <div
-                  id="more"
-                  className={`flex flex-col gap-2 left-0 px-4 font-light leading-normal`}
-                >
-                  <div
-                    className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === "general" ? "active" : ""}`}
-                    data-route="general"
-                    onClick={() => handleClick("general")}
-                  >
-                    <Settings size={25} />
-                    <div className="text-lg">General</div>
+                {!userdata._id ? (
+                  <div className="flex flex-col gap-3 px-6 pb-8 pt-4">
+                    <p className="text-lg font-bold dark:text-slate-200">Join Velo</p>
+                    <Link
+                      href="/accounts/login"
+                      className="flex items-center justify-center gap-2 rounded-full bg-brand py-3 font-semibold text-white"
+                    >
+                      <LogIn size={20} /> Log in
+                    </Link>
+                    <Link
+                      href="/accounts/signup"
+                      className="flex items-center justify-center gap-2 rounded-full border py-3 font-semibold dark:text-slate-200"
+                    >
+                      <User size={20} /> Sign up
+                    </Link>
                   </div>
-                  <div
-                    className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === "notifications" ? "active" : ""}`}
-                    data-route="notifications"
-                    onClick={() => handleClick("notifications")}
-                  >
-                    <Bell size={25} />
-                    <div className="notifications rt">Notifications</div>
-                  </div>
-                  {userdata.username && (
+                ) : (
+                  <div className="flex flex-col pb-6 dark:text-slate-200">
+                    {/* Profile header */}
                     <div
-                      className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === userdata.username ? "active" : ""}`}
-                      data-route={userdata.username}
+                      className="flex cursor-pointer items-center gap-3 px-6 pb-4 pt-2"
                       onClick={() => handleClick(userdata.username)}
                     >
-                      <User size={25} />
-                      <div className="myprofile rt">@{userdata.username}</div>
-                    </div>
-                  )}
-                  <div
-                    className={`flex gap-2 items-center justify-start dark:text-slate-200 rout ${activeRoute === "feedback" ? "active" : ""}`}
-                    data-route="feedback"
-                    onClick={() => handleClick("feedback")}
-                  >
-                    <MessageSquarePlus size={25} />
-                    <div className="feedback rt">Feedback</div>
-                  </div>
-                </div>
-                <DrawerFooter>
-                  {!userdata._id ? (
-                    <div className="dark:text-slate-200 flex items-center justify-between">
-                      <p className="flex items-center">
-                        <LogIn size={25} className="mr-2" />
-                        <Link href="/accounts/login">Log in</Link>
-                      </p>
-                      <p className="flex items-center">
-                        <User size={25} className="mr-2" />
-                        <Link href="/accounts/signup">Sign up</Link>
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="user">
-                      <div className="img">
-                        {/* https://s3.amazonaws.com/profile-display-images/ */}
-                        {!loading ? (
-                          <Avatar>
-                            <AvatarImage src={userdata.displayPicture} />
-                            <AvatarFallback>
-                              {userdata.firstname.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: "100%",
-                              height: "90%",
-                            }}
-                          >
-                            <div
-                              style={{ height: "30px", width: "30px" }}
-                              className="loader load"
-                            ></div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="names flex flex-col items-center">
-                        <div className="flex dark:text-slate-200">
-                          <p>
-                            {userdata.firstname !== ""
-                              ? userdata.firstname + " " + userdata.lastname
-                              : "John Doe"}
+                      <Avatar className="size-14">
+                        <AvatarImage src={userdata.displayPicture} />
+                        <AvatarFallback>
+                          {userdata.firstname.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="flex items-center">
+                          <p className="truncate text-lg font-bold leading-tight">
+                            {`${userdata.firstname} ${userdata.lastname}`.trim() || "John Doe"}
                           </p>
-                          {userdata.verified ? <Statuser className="size-4 ml-1" /> : null}
+                          {userdata.verified ? <Statuser className="ml-1 size-4" /> : null}
                         </div>
-                        <p className="username text-xs">
-                          @{userdata.username !== "" ? userdata.username : "johndoe"}
+                        <p className="truncate text-sm text-gray-500">
+                          @{userdata.username || "johndoe"}
                         </p>
                       </div>
-                      <Popover>
-                        <PopoverTrigger>
-                          <svg
-                            height="25px"
-                            width="25px"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            className="three-dots"
-                          >
-                            <g>
-                              <path
-                                className="pathEllip dark:fill-tom"
-                                d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"
-                              ></path>
-                            </g>
-                          </svg>
-                        </PopoverTrigger>
-                        <PopoverContent className="m-2 w-auto">
-                          <p className="hover:bg-slate-200">
-                            <Link href="/accounts/logout">
-                              Log out{" "}
-                              <b className="username">
-                                @{userdata.username !== "" ? userdata.username : "johndoe"}
-                              </b>
-                            </Link>
-                          </p>
-                          <p className="hover:bg-slate-200">
-                            <Link
-                              href={`${pathname !== "" ? "/accounts/login?backto=" + pathname : "/accounts/login"}`}
-                            >
-                              Add another account?
-                            </Link>
-                          </p>
-                        </PopoverContent>
-                      </Popover>
                     </div>
-                  )}
-                </DrawerFooter>
+                    <div className="mx-6 border-t" />
+                    {/* Menu items */}
+                    <div id="more" className="flex flex-col py-2">
+                      {[
+                        { route: userdata.username, label: "Profile", Icon: User },
+                        { route: "bookmarks", label: "Bookmarks", Icon: Bookmark },
+                        { route: "general", label: "Settings", Icon: Settings2 },
+                      ].map(({ route, label, Icon }) => (
+                        <div
+                          key={label}
+                          data-route={route}
+                          onClick={() => handleClick(route)}
+                          className={`flex cursor-pointer items-center gap-5 px-6 py-3.5 text-xl active:bg-gray-100 dark:active:bg-zinc-800 ${activeRoute === route ? "font-bold" : "font-medium"}`}
+                        >
+                          <Icon size={26} strokeWidth={activeRoute === route ? 2.75 : 1.75} />
+                          {label}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mx-6 border-t" />
+                    {/* Account actions */}
+                    <div className="flex flex-col py-2 text-base">
+                      <Link
+                        href={
+                          pathname !== ""
+                            ? "/accounts/login?backto=" + pathname
+                            : "/accounts/login"
+                        }
+                        className="px-6 py-3 active:bg-gray-100 dark:active:bg-zinc-800"
+                      >
+                        Add an existing account
+                      </Link>
+                      <Link
+                        href="/accounts/logout"
+                        className="px-6 py-3 active:bg-gray-100 dark:active:bg-zinc-800"
+                      >
+                        Log out @{userdata.username || "johndoe"}
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </DrawerContent>
             </Drawer>
           ) : (
             <div className="flex items-center justify-center">
-              <div style={{ height: "22px", width: "22px" }} className="loader load"></div>
+              <div style={{ height: "40px", width: "40px" }} className="loader load" />
             </div>
           )}
         </div>

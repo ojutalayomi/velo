@@ -46,25 +46,16 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
   const [searchResults, setSearchResults] = useState<ConvoType[]>([]);
   const [createPage, openCreatePage] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
-  
+
   const filterConversations = (type: string) => {
     if (!conversations) return [];
     const filteredConversations = conversations.filter((conv) => {
       if (type !== "all" && type !== "Archived") {
-        return (
-          conv.type === type &&
-          !conv.archived &&
-          !conv.deleted
-        );
+        return conv.type === type && !conv.archived && !conv.deleted;
       } else if (type === "Archived") {
-        return (
-          conv.archived
-        );
+        return conv.archived;
       } else {
-        return (
-          !conv.archived &&
-          !conv.deleted
-        );
+        return !conv.archived && !conv.deleted;
       }
     });
 
@@ -75,11 +66,15 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
 
   useEffect(() => {
     const c = filterConversations(activeTab == "All" ? "all" : activeTab);
-    setSearchResults(c.filter((conv) => {
-      if (!searchQuery) return [];
-      return conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase());
-    }));
+    setSearchResults(
+      c.filter((conv) => {
+        if (!searchQuery) return [];
+        return (
+          conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      })
+    );
   }, [searchQuery, activeTab]);
 
   const tabs = ["All", "DM", "Group", "Archived"];
@@ -164,7 +159,9 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
               Clear
             </div>
           )}
-          <div className={`absolute right-0 top-full max-h-[calc(100vh-100px)] w-full z-10 mt-2 p-2 ${searchFocus ? "block" : "hidden"}`}>
+          <div
+            className={`absolute right-0 top-full max-h-[calc(100vh-100px)] w-full z-10 mt-2 p-2 ${searchFocus ? "block" : "hidden"}`}
+          >
             <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg">
               {searchResults.length > 0 ? (
                 <ChatListPage className="p-2" filteredChats={() => searchResults} />

@@ -1,12 +1,27 @@
 "use client";
 import { ArrowLeft, Bookmark, Heart, MessageCircle, Share2, Volume2, VolumeX } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
+import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
+import { getExplorePostsCache, setExplorePostsCache } from "@/lib/explorePostsCache";
+import { submitFollowUpdate } from "@/lib/followApi";
 import { fetchExplorePosts } from "@/lib/getStatus";
+import {
+  sharePostLink,
+  togglePostBookmark,
+  togglePostLike,
+} from "@/lib/postSocialActions";
 import type { PostSchema } from "@/lib/types/type";
+import { useAppDispatch } from "@/redux/hooks";
+import { updatePost } from "@/redux/postsSlice";
 
+import CommentsDrawer from "./CommentsDrawer";
+import PostAnalytics from "./PostAnalytics";
 import { renderTextWithLinks } from "./RenderTextWithLinks";
+import ShareButton from "./ShareButton";
 import { Statuser } from "./VerificationComponent";
 
 // ── media helpers ──────────────────────────────────────────────────────────────
@@ -56,16 +71,42 @@ function ReelSlide({
   isActive,
   muted,
   onToggleMute,
+  onShowCaption,
+  currentUserId,
+  onToggleLike,
+  onToggleBookmark,
+  onToggleFollow,
+  onOpenComments,
+  onShareCommitted,
+  hasAccount,
 }: {
   post: PostSchema;
   isActive: boolean;
   muted: boolean;
   onToggleMute: () => void;
+  onShowCaption: Dispatch<SetStateAction<boolean>>;
+  currentUserId?: string;
+  onToggleLike: (post: PostSchema) => void;
+  onToggleBookmark: (post: PostSchema) => void;
+  onToggleFollow: (post: PostSchema) => void;
+  onOpenComments: (post: PostSchema) => void;
+  onShareCommitted: (postId: string, updates: Partial<PostSchema>) => void;
+  hasAccount: boolean;
 }) {
+  const { userdata } = useUser();
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [activeMediaType, setActiveMediaType] = useState<"image" | "video">("image");
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const [showHeart, setShowHeart] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const heartTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const likedRef = useRef(post.Liked);
+  likedRef.current = post.Liked;
+
+  const LONG_PRESS_MS = 500;
+  const MOVE_TOLERANCE = 10; // px of finger movement before it counts as a scroll
 
   useEffect(() => {
     setActiveMediaType(isImageUrl(post.Image[activeMediaIndex]) ? "image" : "video");
@@ -92,6 +133,40 @@ function ReelSlide({
     });
   }, [muted]);
 
+  const cancelPress = () => {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressStart.current = null;
+  };
+
+  const handlePressStart = (e: React.PointerEvent) => {
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    pressTimer.current = window.setTimeout(() => {
+      pressTimer.current = null;
+      navigator.vibrate?.(15);
+      setShowHeart(true);
+      if (heartTimer.current) window.clearTimeout(heartTimer.current);
+      heartTimer.current = window.setTimeout(() => setShowHeart(false), 700);
+      if (!likedRef.current) onToggleLike(post);
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePressMove = (e: React.PointerEvent) => {
+    const s = pressStart.current;
+    if (!s) return;
+    if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > MOVE_TOLERANCE) cancelPress();
+  };
+
+  // clear timers on unmount
+  useEffect(
+    () => () => {
+      if (pressTimer.current) window.clearTimeout(pressTimer.current);
+      if (heartTimer.current) window.clearTimeout(heartTimer.current);
+    },
+    []
+  );
+
+
   const handleCarouselScroll = () => {
     const el = carouselRef.current;
     if (!el) return;
@@ -101,17 +176,31 @@ function ReelSlide({
 
   return (
     <div className="relative size-full overflow-hidden bg-black">
+      {isActive && post.PostID && (
+          <PostAnalytics postId={post.PostID as string} userId={userdata._id} />
+        )
+      }
       {/* horizontal media carousel */}
       <div
         ref={carouselRef}
         onScroll={handleCarouselScroll}
+        onPointerDown={handlePressStart}
+        onPointerMove={handlePressMove}
+        onPointerUp={cancelPress}
+        onPointerCancel={cancelPress}
+        onPointerLeave={cancelPress}
+        onContextMenu={(e) => e.preventDefault()}
         className="flex size-full snap-x snap-mandatory overflow-x-scroll"
         style={{ scrollbarWidth: "none" }}
       >
         {post.Image.map((media, i) => {
           const isImg = isImageUrl(media);
           return (
-            <div key={i} data-index={i} className="relative size-full min-w-full snap-start overflow-hidden">
+            <div
+              key={i}
+              data-index={i}
+              className="relative size-full min-w-full snap-start overflow-hidden"
+            >
               {isImg ? (
                 <img src={media} alt="" className="absolute inset-0 size-full object-contain" />
               ) : (
@@ -130,6 +219,17 @@ function ReelSlide({
             </div>
           );
         })}
+      </div>
+
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <Heart
+          size={96}
+          fill="currentColor"
+          strokeWidth={0}
+          className={`text-white drop-shadow-lg transition-all duration-300 ease-out ${
+            showHeart ? "scale-100 opacity-100" : "scale-50 opacity-0"
+          }`}
+        />
       </div>
 
       {/* dot indicators for multi-media posts */}
@@ -177,12 +277,27 @@ function ReelSlide({
               {post?.Verified && <Statuser className="size-4" />}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              @{post.Username ? post.Username : "useranme"}
+              @{post.Username ? post.Username : "username"}
             </p>
           </div>
+          {(!currentUserId || String(post.UserId) !== String(currentUserId)) && (
+            <button
+              type="button"
+              onClick={() => onToggleFollow(post)}
+              className="ml-auto shrink-0 cursor-pointer text-nowrap rounded-full border border-white/40 px-2 py-1 text-sm text-white transition-all hover:border-brand hover:text-brand"
+            >
+              {post.IsFollowing ? "Following" : "Follow +"}
+            </button>
+          )}
         </div>
         {post.Caption ? (
-          <p className="line-clamp-3 text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+          <p 
+          className="line-clamp-3 cursor-pointer text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]" 
+          onClick={() => {
+            onShowCaption(true);
+            onOpenComments(post)
+          }}
+          >
             {renderTextWithLinks(post.Caption)}
           </p>
         ) : null}
@@ -194,9 +309,37 @@ function ReelSlide({
           icon={<Heart size={28} fill={post.Liked ? "currentColor" : "none"} strokeWidth={1.8} />}
           count={post.NoOfLikes}
           active={post.Liked}
+          onClick={() => onToggleLike(post)}
         />
-        <ActionBtn icon={<MessageCircle size={28} strokeWidth={1.8} />} count={post.NoOfComment} />
-        <ActionBtn icon={<Share2 size={28} strokeWidth={1.8} />} count={post.NoOfShares} />
+        <ActionBtn
+          icon={<MessageCircle size={28} strokeWidth={1.8} />}
+          count={post.NoOfComment}
+          onClick={() => onOpenComments(post)}
+        />
+        {hasAccount ? (
+          <ShareButton post={post} onShareCommitted={onShareCommitted}>
+            <div className="flex cursor-pointer flex-col items-center gap-1 text-white">
+              <span className="drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                <Share2 size={28} strokeWidth={1.8} className={post.Shared ? "text-brand" : ""} />
+              </span>
+              <span className="text-xs font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                {formatNo(post.NoOfShares)}
+              </span>
+            </div>
+          </ShareButton>
+        ) : (
+          <ActionBtn
+            icon={<Share2 size={28} strokeWidth={1.8} />}
+            count={post.NoOfShares}
+            onClick={async () => {
+              const canShare = typeof navigator !== "undefined" && Boolean(navigator.share);
+              await sharePostLink(post);
+              if (!canShare) {
+                toast.success("Link copied");
+              }
+            }}
+          />
+        )}
         <ActionBtn
           icon={
             <Bookmark
@@ -207,6 +350,7 @@ function ReelSlide({
           }
           count={post.NoOfBookmarks}
           active={post.Bookmarked}
+          onClick={() => onToggleBookmark(post)}
         />
       </div>
     </div>
@@ -217,9 +361,14 @@ function ReelSlide({
 export default function ExploreReel() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const socket = useSocket();
+  const { userdata } = useUser();
   const start = searchParams?.get("start") ?? null;
 
   const [posts, setPosts] = useState<PostSchema[]>([]);
+  const [showCaption, setShowCaption] = useState(false);
+  const [commentPost, setCommentPost] = useState<PostSchema | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -231,15 +380,138 @@ export default function ExploreReel() {
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  const patchPostInStateAndCache = useCallback((updated: PostSchema) => {
+    setPosts((prev) => {
+      const nextList = prev.map((p) => (p.PostID === updated.PostID ? updated : p));
+      const c = getExplorePostsCache();
+      if (c) {
+        setExplorePostsCache({ posts: nextList, pagination: c.pagination }, { merge: true });
+      }
+      return nextList;
+    });
+  }, []);
+
+  const patchPostFieldsInStateAndCache = useCallback(
+    (postId: string, updates: Partial<PostSchema>) => {
+      setPosts((prev) => {
+        const nextList = prev.map((p) => (p.PostID === postId ? { ...p, ...updates } : p));
+        const c = getExplorePostsCache();
+        if (c) {
+          setExplorePostsCache({ posts: nextList, pagination: c.pagination }, { merge: true });
+        }
+        return nextList;
+      });
+    },
+    []
+  );
+
+  const onOpenComments = useCallback(
+    (post: PostSchema) => {
+      setShowCaption(false);
+      setCommentPost(post);
+    },
+    []
+  );
+
+  const requireAuth = useCallback(() => {
+    if (!userdata._id) {
+      router.push("/accounts/login");
+      return false;
+    }
+    return true;
+  }, [userdata._id, router]);
+
+  const onToggleLike = useCallback(
+    (post: PostSchema) => {
+      if (!requireAuth()) return;
+      const { next, emit } = togglePostLike(post);
+      dispatch(
+        updatePost({ id: post.PostID, updates: { NoOfLikes: next.NoOfLikes, Liked: next.Liked } })
+      );
+      socket?.emit("reactToPost", emit);
+      patchPostInStateAndCache(next);
+    },
+    [requireAuth, dispatch, socket, patchPostInStateAndCache]
+  );
+
+  const onToggleBookmark = useCallback(
+    (post: PostSchema) => {
+      if (!requireAuth()) return;
+      const { next, emit } = togglePostBookmark(post);
+      dispatch(
+        updatePost({
+          id: post.PostID,
+          updates: { NoOfBookmarks: next.NoOfBookmarks, Bookmarked: next.Bookmarked },
+        })
+      );
+      socket?.emit("reactToPost", emit);
+      patchPostInStateAndCache(next);
+    },
+    [requireAuth, dispatch, socket, patchPostInStateAndCache]
+  );
+
+  const onToggleFollow = useCallback(
+    async (post: PostSchema) => {
+      if (!requireAuth()) return;
+      const follow = !post.IsFollowing;
+      const previousState = post.IsFollowing;
+      
+      // Optimistic update
+      const next = { ...post, IsFollowing: follow };
+      dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: follow } }));
+      patchPostInStateAndCache(next);
+
+      try {
+        const res = await submitFollowUpdate({
+          followerId: String(userdata._id),
+          followedId: String(post.UserId),
+          follow,
+        });
+        
+        if (!res.ok) {
+          // Revert optimistic update
+          const reverted = { ...post, IsFollowing: previousState };
+          dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: previousState } }));
+          patchPostInStateAndCache(reverted);
+          
+          const errorData = await res.json().catch(() => ({ message: "Failed to update follow status" }));
+          toast.error("Error", { description: errorData.message || "Failed to follow user" });
+        }
+      } catch (error) {
+        // Revert optimistic update on error
+        const reverted = { ...post, IsFollowing: previousState };
+        dispatch(updatePost({ id: post.PostID, updates: { IsFollowing: previousState } }));
+        patchPostInStateAndCache(reverted);
+        
+        console.error(error);
+        toast.error("Error", { description: "Failed to follow user" });
+      }
+    },
+    [requireAuth, userdata._id, dispatch, patchPostInStateAndCache]
+  );
+
   // initial fetch
   useEffect(() => {
     let cancelled = false;
+
+    const cached = getExplorePostsCache();
+    if (cached?.posts?.length) {
+      setPosts(cached.posts);
+      setNextSkip(cached.pagination.skip + cached.pagination.limit);
+      setHasMore(cached.pagination.hasMore);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     fetchExplorePosts(0)
       .then(({ data, pagination }) => {
         if (cancelled) return;
         setPosts(data);
         setNextSkip(pagination.skip + pagination.limit);
         setHasMore(pagination.hasMore);
+        setExplorePostsCache({ posts: data, pagination });
       })
       .catch(console.error)
       .finally(() => {
@@ -291,7 +563,9 @@ export default function ExploreReel() {
       const { data, pagination } = await fetchExplorePosts(nextSkip);
       setPosts((prev) => {
         const seen = new Set(prev.map((p) => String(p.PostID ?? p._id)));
-        return [...prev, ...data.filter((p) => !seen.has(String(p.PostID ?? p._id)))];
+        const merged = [...prev, ...data.filter((p) => !seen.has(String(p.PostID ?? p._id)))];
+        setExplorePostsCache({ posts: merged, pagination }, { merge: true });
+        return merged;
       });
       setNextSkip(pagination.skip + pagination.limit);
       setHasMore(pagination.hasMore);
@@ -323,7 +597,7 @@ export default function ExploreReel() {
       {/* fixed chrome — outside the scroll container so it never scrolls away */}
       <button
         onClick={() => router.back()}
-        className="fixed left-4 top-4 z-50 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
+        className="fixed top-4 z-50 ml-2 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
         aria-label="Go back"
       >
         <ArrowLeft size={22} />
@@ -348,10 +622,17 @@ export default function ExploreReel() {
               isActive={activeIndex === i}
               muted={muted}
               onToggleMute={() => setMuted((m) => !m)}
+              currentUserId={userdata._id}
+              onToggleLike={onToggleLike}
+              onShowCaption={setShowCaption}
+              onToggleBookmark={onToggleBookmark}
+              onToggleFollow={onToggleFollow}
+              onOpenComments={onOpenComments}
+              onShareCommitted={patchPostFieldsInStateAndCache}
+              hasAccount={Boolean(userdata._id)}
             />
           </div>
         ))}
-
         {/* loading-more spinner as a snap slide */}
         {loadingMore && (
           <div className="flex h-screen w-full snap-start items-center justify-center bg-black">
@@ -359,6 +640,15 @@ export default function ExploreReel() {
           </div>
         )}
       </div>
+      <CommentsDrawer 
+        post={commentPost}
+        showCaption={showCaption} 
+        onClose={() => setCommentPost(null)}
+        onToggleFollow={() => onToggleFollow(posts.find(p => p.PostID === commentPost?.ParentId)!)}
+        footer={
+          <>Velo</>
+        }
+      />
     </>
   );
 }

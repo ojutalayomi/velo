@@ -8,42 +8,42 @@ export const Footer = () => {
   return (
     <div className="!my-8 mx-4 space-y-2 text-xs text-gray-400">
       <div className="flex flex-wrap gap-x-2">
-        <a href="#" className="hover:underline">
+        <Link href="/about" className="hover:underline">
           About
-        </a>
+        </Link>
         ·
         <Link href="/help-support" className="hover:underline">
           Help
         </Link>
         ·
-        <a href="#" className="hover:underline">
+        <Link href="/press" className="hover:underline">
           Press
-        </a>
+        </Link>
         ·
-        <a href="#" className="hover:underline">
+        <Link href="/developers" className="hover:underline">
           API
-        </a>
+        </Link>
         ·
-        <a href="#" className="hover:underline">
+        <Link href="/jobs" className="hover:underline">
           Jobs
-        </a>
+        </Link>
         ·
-        <a href="#" className="hover:underline">
+        <Link href="/privacy" className="hover:underline">
           Privacy
-        </a>
+        </Link>
         ·
-        <a href="#" className="hover:underline">
+        <Link href="/terms" className="hover:underline">
           Terms
-        </a>
+        </Link>
       </div>
       <div className="flex gap-x-2">
-        <a href="#" className="hover:underline">
+        <Link href="/locations" className="hover:underline">
           Locations
-        </a>
+        </Link>
         ·
-        <a href="#" className="hover:underline">
+        <Link href="/locations#language" className="hover:underline">
           Language
-        </a>
+        </Link>
         ·<span>NIGERIA</span>
       </div>
       <p>© {year} VELO</p>

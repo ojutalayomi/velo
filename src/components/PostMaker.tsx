@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-handler-names */
 /* eslint-disable @next/next/no-img-element */
 import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import {
@@ -22,17 +23,18 @@ import {
   ReactNode,
   Suspense,
 } from "react";
+import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
-import { toast } from "@/hooks/use-toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { PostSchema } from "@/lib/types/type";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
-import MediaSlide from "@/templates/mediaSlides";
 import { updateLiveTime } from "@/templates/PostProps";
+import ThreadsSlide from "@/templates/ThreadSlides";
 
 import CropMediaInterface from "./CropMediaInterface";
 import { Button } from "./ui/button";
@@ -52,13 +54,14 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from ".
 import { Skeleton } from "./ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-
 interface PostMakerClientProps {
   children?: ReactNode;
   open: boolean;
   type?: PostSchema["Type"];
   post?: PostSchema;
   onOpenChange: Dispatch<SetStateAction<boolean>>;
+  /** Called after a post/comment/quote is emitted, so hosts can update counts optimistically. */
+  onPosted?: (type: PostSchema["Type"]) => void;
 }
 
 function PostMakerClient({
@@ -67,6 +70,7 @@ function PostMakerClient({
   type = "post",
   post,
   onOpenChange,
+  onPosted,
 }: PostMakerClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -76,31 +80,29 @@ function PostMakerClient({
   const socket = useSocket();
   const { files, clearFiles, setFiles } = useGlobalFileStorage();
   const [visibility, setVisibility] = useState("everyone");
-  const [errors, setErrors] = useState([""]);
+  // const [errors, setErrors] = useState([""]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [txtButton, setTxtButton] = useState(true);
   const [text, setText] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const textLimit = userdata.verified ? 10000 : 1000; // 10000 for verified users, 1000 for others
+  const isButtonDisabled = text.length > textLimit || (!files.length && !text.length);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    setTxtButton(text.length > textLimit || (!files.length && !text.length));
-  }, [files.length, text.length, textLimit]);
 
   const buttons = [
     {
       id: "media",
       icon: Images,
       label: "Add Images or Videos",
-      action: () => imageInputRef?.current?.click(),
+      action: () => null,
+      disable: false
     },
     {
       id: "poll",
       icon: ChartBarDecreasing,
       label: "Add Poll",
       action: () => console.log("Add Poll"),
+      disable: true
     },
     { id: "emoji", icon: Smile, label: "Add Emoji", action: () => {} },
     {
@@ -108,12 +110,14 @@ function PostMakerClient({
       icon: Clock4,
       label: "Schedule Post",
       action: () => console.log("Schedule Post"),
+      disable: true
     },
     {
       id: "location",
       icon: MapPin,
       label: "Add Location",
       action: () => console.log("Add Location"),
+      disable: true
     },
   ];
 
@@ -137,10 +141,8 @@ function PostMakerClient({
 
     // Check total number of files
     if (files.length > FILE_VALIDATION_CONFIG.maxFiles) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Maximum ${FILE_VALIDATION_CONFIG.maxFiles} files allowed`,
-        variant: "destructive",
       });
       clearFiles();
       return;
@@ -151,10 +153,8 @@ function PostMakerClient({
     const newTotalSize = newFiles.reduce((acc, file) => acc + file.size, existingSize);
 
     if (newTotalSize > FILE_VALIDATION_CONFIG.maxTotalSize) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Total size exceeds ${formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}`,
-        variant: "destructive",
       });
       return;
     }
@@ -173,10 +173,9 @@ function PostMakerClient({
 
     // Update state
     if (validationErrors.length > 0) {
-      setErrors(validationErrors);
+      // setErrors(validationErrors);
       validationErrors.forEach((error) =>
-        toast({
-          title: "Warning",
+        toast.warning("Warning", {
           description: error,
         })
       );
@@ -204,10 +203,10 @@ function PostMakerClient({
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
+              body: S3UploadBody({
                 filename: file!.name,
                 contentType: file!.type,
-                bucketName: "post-s",
+                bucketName: BUCKETNAME.ARTICLE,
               }),
             });
 
@@ -282,8 +281,9 @@ function PostMakerClient({
         };
         socket.emit("post", Post);
       }
+      onPosted?.(type);
     } catch (error: any) {
-      console.log(error)
+      console.log(error);
     } finally {
       setFiles([]);
       if (type === "post") navigate();
@@ -315,12 +315,10 @@ function PostMakerClient({
       {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent className="dialogCloseBtnHide flex flex-col overflow-auto bg-white mb:h-full mb:w-screen mb:max-w-none dark:bg-zinc-900">
         <DialogHeader className="dark:text-white">
-          <DialogTitle className="text-center"></DialogTitle>
+          <DialogTitle className="text-center" />
           <DialogDescription>
             <span className="flex items-center justify-between">
-              <DialogClose
-                className="transform rounded-full p-2 transition-all duration-200 hover:scale-110 hover:bg-gray-800 dark:text-white"
-              >
+              <DialogClose className="transform rounded-full p-2 transition-all duration-200 hover:scale-110 hover:bg-gray-800 dark:text-white">
                 <X size={16} />
               </DialogClose>
               <span className="text-xl font-bold text-brand">Drafts</span>
@@ -392,7 +390,7 @@ function PostMakerClient({
           {fullscreenImage && (
             <Dialog open={!!fullscreenImage} onOpenChange={closeFullscreen}>
               <DialogContent className="dialogCloseBtnHide flex h-screen max-w-none items-center justify-center gap-0 border-0 bg-transparent">
-                <DialogTitle className="text-center"></DialogTitle>
+                <DialogTitle className="text-center" />
                 <DialogClose className="absolute right-4 top-4 text-white">
                   <X size={24} />
                 </DialogClose>
@@ -485,8 +483,9 @@ function PostMakerClient({
                           </EmojiPicker>
                         ) : (
                           <button
-                            onClick={button.action}
-                            className="group rounded-full p-2 text-brand transition-all duration-200 hover:bg-brand/90"
+                            onClick={button.id === "media" ? () => imageInputRef?.current?.click() : button.action}
+                            disabled={button.disable}
+                            className={`group rounded-full p-2 transition-all duration-200 ${button.disable ? "pointer-events-none text-brand/15" : " text-brand"} hover:bg-brand/90`}
                           >
                             <button.icon size={16} className="group-hover:text-white" />
                           </button>
@@ -500,11 +499,11 @@ function PostMakerClient({
                 </div>
 
                 <Button
-                  disabled={txtButton}
+                  disabled={isButtonDisabled}
                   onClick={handlePost}
                   className="my-2 w-full transform rounded-full bg-brand px-6 py-2 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-brand/60 tablets:my-0 tablets:w-auto"
                 >
-                  {isPosting ? "Posting..." : "Post"}
+                  {isPosting ? "Sending..." : (type === "post" ? "Post" : type === "comment" ? "Reply" : "Repost")}
                   {isPosting && <Loader2 className="ml-2 animate-spin" size={16} />}
                 </Button>
               </div>
@@ -546,11 +545,7 @@ function MiniPostCard({
     <div className="rounded-xl border border-gray-500 p-4">
       <div className="flex items-start space-x-3">
         <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
-          <img
-            src={post.DisplayPicture}
-            alt={post.Username}
-            className="size-full object-cover"
-          />
+          <img src={post.DisplayPicture} alt={post.Username} className="size-full object-cover" />
         </div>
         <div className={`flex-1 ${type !== "comment" ? "grid" : ""} grid-cols-2 gap-2`}>
           <div className="col-span-2 flex flex-wrap items-center">
@@ -576,7 +571,7 @@ function MiniPostCard({
           ) : null}
           {/* {showMore} */}
           {post.Image.length > 0 && type !== "comment" && (
-            <MediaSlide
+            <ThreadsSlide
               className={`overflow-auto rounded-lg ${!post.Caption.length ? "col-span-2" : ""}`}
               postData={post}
             />
@@ -587,7 +582,7 @@ function MiniPostCard({
   );
 }
 
-function SignInPrompt({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SignInPrompt({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const { userdata } = useUser();
 

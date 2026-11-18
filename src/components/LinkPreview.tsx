@@ -31,20 +31,21 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
       if (fetchPreviewRef.current) return;
       fetchPreviewRef.current = true;
 
-      axiosApi(process.env.NEXT_PUBLIC_LINK_PREVIEW_URL).post("/preview", {
-        url
-      })
-      .then(response => {
-        setMetadata(response.data);
-        setIsImage(!!response.data.image);
-      })
-      .catch(error => {
-        console.error("Error fetching metadata:", error);
-        setError(true);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      axiosApi(process.env.NEXT_PUBLIC_LINK_PREVIEW_URL)
+        .post("/preview", {
+          url,
+        })
+        .then((response) => {
+          setMetadata(response.data);
+          setIsImage(!!response.data.image);
+        })
+        .catch((error) => {
+          console.error("Error fetching metadata:", error);
+          setError(true);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     };
 
     (async () => fetchMetadata())();

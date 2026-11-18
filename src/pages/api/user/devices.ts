@@ -53,9 +53,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       return res.status(400).json({ message: "Invalid tokenId" });
     }
 
-    const target = await db
-      .tokens()
-      .findOne({ _id: objectId, userId: payload._id });
+    const target = await db.tokens().findOne({ _id: objectId, userId: payload._id });
 
     if (!target) {
       return res.status(404).json({ message: "Session not found" });

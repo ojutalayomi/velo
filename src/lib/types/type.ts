@@ -84,7 +84,6 @@ export interface ChatData {
   groupDisplayPicture: string;
   verified: boolean;
   adminIds: string[];
-  inviteLink: string;
   isPrivate: boolean;
   timestamp: string;
   lastMessageId: string;
@@ -105,7 +104,6 @@ export interface ChatSettings {
 
   // Specific to group chats
   isPrivate?: boolean;
-  inviteLink?: string;
   members: string[]; // List of user IDs
   adminIds?: string[]; // List of admin user IDs
 
@@ -184,6 +182,40 @@ export interface ChatParticipant {
   chatType: ChatType;
 }
 
+/** A group's invite link. Only the sha256 hash of the token is stored. */
+export interface ChatInviteSchema {
+  _id: ObjectId;
+  chatId: string;
+  tokenHash: string;
+  enabled: boolean;
+  createdBy: string;
+  createdAt: Date;
+  expiresAt: Date;
+  maxUses: number | null;
+  uses: number;
+}
+
+export type InviteBlockReason = "not_found" | "disabled" | "expired" | "full";
+
+/** What an admin can see about an invite. Never includes the link itself. */
+export interface ChatInviteMetadata {
+  exists: boolean;
+  enabled: boolean;
+  expiresAt: string | null;
+  maxUses: number | null;
+  uses: number;
+}
+
+export interface ChatInvitePreview {
+  valid: boolean;
+  reason: InviteBlockReason | null;
+  chatId: string;
+  name: string;
+  displayPicture: string;
+  memberCount: number;
+  isMember: boolean;
+}
+
 type Globals = "-moz-initial" | "inherit" | "initial" | "revert" | "revert-layer" | "unset";
 export type UserSelect =
   | "text"
@@ -217,6 +249,24 @@ export type AttachmentSchema = {
   uploadedAt: string;
 };
 
+export type Mention = {
+  userId: string;
+  username: string;
+};
+
+export type MentionNotification = {
+  messageId: string;
+  chatId: string;
+  chatType: ChatType;
+  mentionedBy: {
+    userId: string;
+    username: string;
+    displayPicture: string;
+  };
+  content: string;
+  timestamp: string;
+};
+
 export interface Message {
   _id?: ObjectId | string;
   chatId: string;
@@ -237,6 +287,7 @@ export interface Message {
   attachments: (Attachment | string)[];
   quotedMessageId: string;
   status: msgStatus;
+  mentions?: Mention[];
 }
 
 export interface MessageAttributes extends Message {
@@ -328,7 +379,7 @@ export type AllChatsServer = {
 
 export interface NewChat_ {
   chat: ChatDataClient;
-  chatSettings: ChatSettings,
+  chatSettings: ChatSettings;
   requestId: string;
 }
 
@@ -465,11 +516,113 @@ export interface PostSchema {
   OriginalPostId?: string;
 }
 
+export interface PostInfo {
+  _id: ObjectId;
+  postId: string;
+  userId: string;
+  /** Denormalized for MongoDB `$text` on Posts_Bookmarks (set on bookmark + backfill). */
+  searchText?: string;
+}
+
+export type PostBookmarkSchema = PostInfo;
+export type PostLikesSchema = PostInfo;
+
+export interface DndWindow {
+  enabled: boolean;
+  /** Local time in `HH:mm`, inclusive. */
+  start: string;
+  /** Local time in `HH:mm`, exclusive. */
+  end: string;
+  /** IANA time zone, e.g. `Europe/London`. */
+  timezone: string;
+}
+
+export interface NotificationPreferences {
+  messages: boolean;
+  mentions: boolean;
+  follows: boolean;
+  calls: boolean;
+  dnd: DndWindow;
+  hideMessagePreview: boolean;
+}
+
 export interface UserSettings {
+  _id?: ObjectId;
+  userId?: string;
+  notifications?: NotificationPreferences;
   twoFactorAuth: boolean;
   loginAlerts: boolean;
   showOnlineStatus: boolean;
   showLastSeen: boolean;
   showReadReceipts: boolean;
   showTypingStatus: boolean;
+}
+
+export interface BlockedUserSchema {
+  _id: ObjectId;
+  blockerId: string;
+  blockedId: string;
+  createdAt: string;
+}
+
+export type NotificationType = "like" | "comment" | "follow" | "mention";
+
+export type NotificationTarget = "post" | "comment" | "chat_message" | "user";
+
+export type NotificationTab = "all" | "mentions" | "verified";
+
+export interface NotificationActor {
+  id: string;
+  name: string;
+  username: string;
+  displayPicture: string;
+  verified: boolean;
+}
+
+export interface InAppNotificationSchema {
+  _id: ObjectId;
+  userId: string;
+  actorId: string;
+  actor: NotificationActor;
+  type: NotificationType;
+  targetType: NotificationTarget;
+  targetId: string;
+  groupKey: string;
+  dedupeKey: string;
+  url: string;
+  snippet?: string;
+  chatId?: string;
+  chatType?: string;
+  createdAt: Date;
+  readAt: Date | null;
+}
+
+export interface NotificationGroup {
+  groupKey: string;
+  type: NotificationType;
+  targetType: NotificationTarget;
+  targetId: string;
+  url: string;
+  snippet?: string;
+  latestAt: string;
+  count: number;
+  actorCount: number;
+  unread: boolean;
+  actors: NotificationActor[];
+}
+
+export interface PushSubscriptionKeys {
+  p256dh: string;
+  auth: string;
+}
+
+export interface PushSubscriptionSchema {
+  _id: ObjectId;
+  userId: string;
+  endpoint: string;
+  keys: PushSubscriptionKeys;
+  expirationTime: number | null;
+  userAgent: string;
+  createdAt: string;
+  updatedAt: string;
 }

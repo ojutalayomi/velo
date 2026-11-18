@@ -42,12 +42,12 @@ const Second: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-2">
-        <label
+        {/*<label
           className="font-semibold text-start after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base"
           htmlFor="email"
         >
           Email
-        </label>
+        </label>*/}
         <Input
           className="font-semibold"
           type="text"
@@ -62,12 +62,12 @@ const Second: React.FC = () => {
         {errors.email && <div className="warnring">{errors.email}</div>}
       </div>
       <div className="flex flex-col justify-between gap-2">
-        <label
+        {/*<label
           className="font-semibold text-start after:content-['*'] after:ml-0.5 after:text-red-500 text-xs hover:text-base"
           htmlFor="username"
         >
           Username
-        </label>
+        </label>*/}
         <Input
           className="font-semibold"
           type="text"

@@ -1,15 +1,21 @@
 "use client";
-import Image from "next/image";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "../app/fontAwesomeLibrary";
-import { useRouter } from "next/navigation";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Bell } from "lucide-react";
-import ThemeToggle from "./ThemeToggle";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import type { RootState } from "@/redux/store";
+
+import ThemeToggle from "./ThemeToggle";
 
 const NavBar: React.FC<{ route: string }> = ({ route }) => {
   const router = useRouter();
   const navigate = useNavigateWithHistory();
+  const unreadCount = useSelector((state: RootState) => state.notifications.unreadCount);
   return (
     <>
       <nav>
@@ -19,7 +25,7 @@ const NavBar: React.FC<{ route: string }> = ({ route }) => {
               <FontAwesomeIcon
                 onClick={() => navigate()}
                 icon={"arrow-left"}
-                className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"
+                className="icon-arrow-left cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 size="1x"
               />
             ) : (
@@ -36,7 +42,7 @@ const NavBar: React.FC<{ route: string }> = ({ route }) => {
           </div>
           <div className="nav-center">
             {route === "explore" ? (
-              <div className="searchbar dark:!bg-neutral-950 dark:!shadow-lg dark:shadow-white !py-1">
+              <div className="searchbar !py-1 dark:!bg-neutral-950 dark:!shadow-lg dark:shadow-white">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="18"
@@ -50,14 +56,14 @@ const NavBar: React.FC<{ route: string }> = ({ route }) => {
                     clipRule="evenodd"
                     d="M8.68945 1C12.9293 1 16.3781 4.3727 16.3781 8.51907C16.3781 10.4753 15.6104 12.2595 14.3542 13.5986L16.8261 16.0109C17.0574 16.2371 17.0582 16.6031 16.8269 16.8294C16.7116 16.9436 16.5592 17 16.4076 17C16.2568 17 16.1052 16.9436 15.9892 16.8309L13.4874 14.3912C12.1714 15.4219 10.5028 16.0389 8.68945 16.0389C4.44955 16.0389 1 12.6655 1 8.51907C1 4.3727 4.44955 1 8.68945 1ZM8.68945 2.15821C5.10251 2.15821 2.18433 5.01125 2.18433 8.51907C2.18433 12.0269 5.10251 14.8807 8.68945 14.8807C12.2756 14.8807 15.1938 12.0269 15.1938 8.51907C15.1938 5.01125 12.2756 2.15821 8.68945 2.15821Z"
                     fill="#78828A"
-                  ></path>
+                   />
                 </svg>
                 <form id="search-form" role="search">
                   <input
                     type="search"
-                    className="dark:text-slate-200 text-sm"
+                    className="text-sm dark:text-slate-200"
                     placeholder="Search..."
-                  ></input>
+                   />
                 </form>
               </div>
             ) : null}
@@ -67,16 +73,23 @@ const NavBar: React.FC<{ route: string }> = ({ route }) => {
               <h1 className="head dark:text-slate-200">Velo</h1>
             ) : null}
           </div>
-          <div
-            className="notification flex gap-2 items-center relative"
-            style={{ visibility: "hidden" }}
-          >
-            <ThemeToggle />
-            <Bell
-              size={24}
-              className="text-gray-600 cursor-pointer dark:text-slate-200"
+          <div className="notification relative flex items-center gap-2">
+            <div style={{ visibility: "hidden" }}>
+              <ThemeToggle />
+            </div>
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="relative flex items-center"
               onClick={() => router.push("/notifications")}
-            />
+            >
+              <Bell size={24} className="cursor-pointer text-gray-600 dark:text-slate-200" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold leading-none text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
             {/* {route !== 'explore' && 
                             <svg className='rout' xmlns='http://www.w3.org/2000/svg' width='25px' height='25px' viewBox='0 0 24 24' fill='none'>
                                 <path className='hov dark:stroke-slate-200' fillRule='evenodd' clipRule='evenodd' d='M6.31215 12.463C7.3125 8.5 8.7243 6.5 11.7 6.5C14.6757 6.5 16.0875 8.5 17.0878 12.463L18.525 18.029H13.9747C13.9776 18.677 13.7394 19.3018 13.3088 19.776C12.8947 20.2372 12.3113 20.4996 11.7 20.4996C11.0887 20.4996 10.5053 20.2372 10.0913 19.776C9.66059 19.3018 9.42243 18.677 9.42533 18.029H4.875L6.31215 12.463Z' stroke='#000000' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round'></path>

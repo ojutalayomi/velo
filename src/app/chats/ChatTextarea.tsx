@@ -1,5 +1,17 @@
+import { TextAreaBox, Details } from "@ojutalayomi/react-textarea-enhanced";
 import { Cross2Icon } from "@radix-ui/react-icons";
-import { X, Send, Smile, Plus, Folder, Image, Paintbrush2, Expand, Shrink, Trash } from "lucide-react";
+import {
+  X,
+  Send,
+  Smile,
+  Plus,
+  Folder,
+  Image,
+  Paintbrush2,
+  Expand,
+  Shrink,
+  Trash,
+} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChangeEvent,
@@ -13,7 +25,7 @@ import {
   useState,
 } from "react";
 import { useSelector } from "react-redux";
-import { TextAreaBox, Details } from '@ojutalayomi/react-textarea-enhanced';
+import { toast } from "sonner";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";
@@ -40,15 +52,14 @@ import {
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { useMentionPicker } from "@/hooks/useMentionPicker";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { setToggleDialog } from "@/redux/utilsSlice";
 import VideoDiv from "@/templates/videoDiv";
-
-
 
 type Message = {
   _id: string;
@@ -65,9 +76,10 @@ interface ChatTextareaProps {
   quote: QuoteProp;
   newMessage: string;
   disabled?: boolean;
+  chatId?: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
-  handleSendMessage: (messageId: string) => void;
-  handleTyping?: () => void;
+  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
+  handleTyping?: (hasText?: boolean) => void;
   closeQuote: () => void;
 }
 
@@ -75,6 +87,7 @@ const ChatTextarea = ({
   quote,
   newMessage,
   disabled,
+  chatId,
   setNewMessage,
   handleSendMessage,
   handleTyping,
@@ -84,6 +97,7 @@ const ChatTextarea = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } = useMentionPicker(chatId ?? null, newMessage, textAreaRef);
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);
@@ -92,6 +106,14 @@ const ChatTextarea = ({
   const [expanded, setExpanded] = useState<boolean>(false);
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
+
+  const handleSendWithMentions = useCallback(
+    (messageId: string) => {
+      handleSendMessage(messageId, mentions);
+      clearMentions();
+    },
+    [handleSendMessage, mentions, clearMentions]
+  );
 
   // Memoize handleInput to use details parameter instead of state
   const handleInput = useCallback((details: Details) => {
@@ -114,15 +136,16 @@ const ChatTextarea = ({
       router.replace(`${pathname}?${currParams.toString()}`, { scroll: false });
     } else {
       currParams.delete("toggleDialog");
-      router.replace(`${pathname}${currParams.toString() ? "?" + currParams.toString() : ""}`, { scroll: false });
+      router.replace(`${pathname}${currParams.toString() ? "?" + currParams.toString() : ""}`, {
+        scroll: false,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toggleDialog]);
 
   useEffect(() => {
     if (errors.length > 0) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: errors[0],
       });
       setErrors([]);
@@ -154,7 +177,7 @@ const ChatTextarea = ({
   const handleGetDetails = useCallback(
     (details: Details) => {
       handleInput(details);
-      handleTyping?.();
+      handleTyping?.(details.text.length > 0);
     },
     [handleTyping, handleInput]
   );
@@ -163,19 +186,13 @@ const ChatTextarea = ({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter") {
-        if (e.shiftKey) {
-          return; // Allow new line when Shift+Enter
-        }
-
-        e.preventDefault(); // Prevent default for all Enter cases
-
         if (newMessage.trim().length > 0) {
-          handleSendMessage(quote.message?._id);
+          handleSendWithMentions(quote.message?._id);
           dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
         }
       }
     },
-    [newMessage, handleSendMessage, quote.message?._id, dispatch]
+    [newMessage, handleSendWithMentions, quote.message?._id, dispatch]
   );
 
   // Memoize className to prevent re-renders
@@ -187,7 +204,8 @@ const ChatTextarea = ({
 
   // Memoize emoji picker trigger className
   const emojiPickerTriggerClassName = useMemo(
-    () => `absolute inset-y-0 right-0 flex ${txtButton ? "items-end" : "items-center"} p-3 hover:text-brand/80 rounded-full z-10`,
+    () =>
+      `absolute inset-y-0 right-0 flex ${txtButton ? "items-end" : "items-center"} p-3 hover:text-brand/80 rounded-full z-10`,
     [txtButton]
   );
 
@@ -206,17 +224,22 @@ const ChatTextarea = ({
 
   // Memoize send button handler
   const handleSendClick = useCallback(() => {
-    handleSendMessage(quote.message?._id);
-  }, [handleSendMessage, quote.message?._id]);
+    handleSendWithMentions(quote.message?._id);
+  }, [handleSendWithMentions, quote.message?._id]);
 
   const urls = extractUrls(newMessage);
   const firstUrl = urls[0];
 
   return (
     <div className="relative w-full">
-      <div className={cn("fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80", disabled ? " pointer-events-none opacity-70" : "")}>
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80",
+          disabled ? " pointer-events-none opacity-70" : ""
+        )}
+      >
         {quote.state && (
-          <div className="mx-2 mb-2 rounded-lg bg-gray-100 p-3 dark:bg-zinc-800">
+          <div className="mb-2 rounded-lg bg-gray-100 p-1 dark:bg-zinc-800">
             <div className="flex max-w-full items-center justify-between gap-1">
               <div className="flex min-w-0 items-stretch space-x-2">
                 <div
@@ -263,7 +286,7 @@ const ChatTextarea = ({
             newMessage={newMessage}
             setNewMessage={setNewMessage}
             handleTyping={handleTyping}
-            handleSendMessage={handleSendMessage}
+            handleSendMessage={handleSendWithMentions}
             setFileAccepts={setFileAccepts}
           />
         )}
@@ -271,6 +294,43 @@ const ChatTextarea = ({
         <div className="flex items-end justify-between gap-2">
           <Pop input={inputRef} setFileAccepts={setFileAccepts} />
           <div className="relative flex-1">
+            {/* Mention picker */}
+            {showPicker && (
+              <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                {isFetching ? (
+                  <div className="p-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Loading members…
+                  </div>
+                ) : filteredParticipants.length === 0 ? (
+                  <div className="p-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No members found
+                  </div>
+                ) : (
+                  <ul>
+                    {filteredParticipants.map((p) => (
+                      <li
+                        key={p.userId}
+                        className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // prevent textarea blur on click
+                          const updated = selectMention(p);
+                          setNewMessage(updated);
+                        }}
+                      >
+                        <Avatar className="size-7">
+                          <AvatarImage src={p.displayPicture} alt={p.name} />
+                          <AvatarFallback className="text-xs">{p.name.slice(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium dark:text-white">{p.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{p.username}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             <TextAreaBox
               value={newMessage}
               onChange={setNewMessage}
@@ -278,7 +338,7 @@ const ChatTextarea = ({
               id="txt"
               placeholder="Type a message..."
               minHeight={20}
-              maxHeight={160}
+              // maxHeight={160}
               ref={textAreaRef}
               getDetails={handleGetDetails}
               onKeyDown={handleKeyDown}
@@ -293,10 +353,17 @@ const ChatTextarea = ({
                   onClick={handleExpandToggle}
                   className="absolute right-0 top-0 z-30 mr-1 rounded-full bg-transparent p-3 transition-colors hover:text-brand/90"
                 >
-                  {expanded ? <Shrink size={20} className="text-brand" /> : <Expand size={20} className="text-brand" />}
+                  {expanded ? (
+                    <Shrink size={20} className="text-brand" />
+                  ) : (
+                    <Expand size={20} className="text-brand" />
+                  )}
                 </Button>
               )}
-              <EmojiPicker triggerClassName={emojiPickerTriggerClassName} onChange={handleEmojiChange}>
+              <EmojiPicker
+                triggerClassName={emojiPickerTriggerClassName}
+                onChange={handleEmojiChange}
+              >
                 <Smile size={20} className="flex-1 text-brand" />
               </EmojiPicker>
             </>
@@ -389,8 +456,8 @@ interface UploadDialogProps {
   textAreaRef: RefObject<HTMLTextAreaElement | null>;
   newMessage: string;
   setNewMessage: Dispatch<SetStateAction<string>>;
-  handleTyping?: () => void;
-  handleSendMessage: (messageId: string) => void;
+  handleTyping?: (hasText?: boolean) => void;
+  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
   setFileAccepts: Dispatch<SetStateAction<string>>;
 }
 
@@ -431,7 +498,11 @@ const LazyCarouselItem = ({
 
   return (
     <div ref={itemRef} className={className}>
-      {isVisible ? children : <div className="flex size-full items-center justify-center">Loading...</div>}
+      {isVisible ? (
+        children
+      ) : (
+        <div className="flex size-full items-center justify-center">Loading...</div>
+      )}
     </div>
   );
 };
@@ -463,13 +534,13 @@ const UploadDialog = ({
   const objectURLs = useMemo(() => {
     const urlMap = new Map<File, string>();
     const currentFileKeys = new Set<string>();
-    
+
     // Create URLs for current files
     attachments.forEach((file) => {
       const fileKey = getFileKey(file);
       currentFileKeys.add(fileKey);
       fileToKeyMapRef.current.set(file, fileKey);
-      
+
       if (!prevURLsRef.current.has(fileKey)) {
         // Create new URL for new file
         urlMap.set(file, URL.createObjectURL(file));
@@ -478,14 +549,14 @@ const UploadDialog = ({
         urlMap.set(file, prevURLsRef.current.get(fileKey)!);
       }
     });
-    
+
     // Revoke URLs for files that are no longer in attachments
     prevURLsRef.current.forEach((url, fileKey) => {
       if (!currentFileKeys.has(fileKey)) {
         URL.revokeObjectURL(url);
       }
     });
-    
+
     // Update refs for next render
     const newURLsMap = new Map<string, string>();
     urlMap.forEach((url, file) => {
@@ -495,7 +566,7 @@ const UploadDialog = ({
       }
     });
     prevURLsRef.current = newURLsMap;
-    
+
     return urlMap;
   }, [attachments, getFileKey]);
 
@@ -503,7 +574,7 @@ const UploadDialog = ({
   useEffect(() => {
     const currentURLs = prevURLsRef.current;
     const currentFileToKeyMap = fileToKeyMapRef.current;
-    
+
     return () => {
       // Revoke all URLs when component unmounts
       currentURLs.forEach((url) => {
@@ -528,9 +599,7 @@ const UploadDialog = ({
         fileToKeyMapRef.current.delete(fileToRemove);
       }
       setFiles(attachments.filter((_, i) => i !== index));
-      toast({
-        title: "File removed",
-      });
+      toast("File removed");
     },
     [attachments, setFiles, getFileKey]
   );
@@ -558,7 +627,12 @@ const UploadDialog = ({
 
             const [, fileType] = file.type.split("/");
             const isImage = fileType === "png" || fileType === "jpeg" || fileType === "jpg";
-            const isVideo = fileType === "mp4" || fileType === "mov" || fileType === "mkv" || fileType === "avi" || fileType === "quicktime";
+            const isVideo =
+              fileType === "mp4" ||
+              fileType === "mov" ||
+              fileType === "mkv" ||
+              fileType === "avi" ||
+              fileType === "quicktime";
 
             // Stable key based on file properties
             const stableKey = `${file.name}-${file.size}-${file.lastModified}-${index}`;
@@ -568,7 +642,10 @@ const UploadDialog = ({
                 key={stableKey}
                 className="flex size-full flex-col items-center justify-center"
               >
-                <LazyCarouselItem index={index} className="flex size-full flex-col items-center justify-center">
+                <LazyCarouselItem
+                  index={index}
+                  className="flex size-full flex-col items-center justify-center"
+                >
                   {isImage ? (
                     <>
                       <ImageDiv media={objectURL} host={false} />
@@ -653,8 +730,8 @@ const UploadDialog = ({
                 minHeight={20}
                 maxHeight={120}
                 ref={textAreaRef}
-                getDetails={() => {
-                  handleTyping?.();
+                getDetails={(details) => {
+                  handleTyping?.(details.text.length > 0);
                 }}
                 fontFamily="myCustomFont, myCustomFont Fallback"
                 onKeyDown={(e) => {
@@ -717,10 +794,8 @@ function fileHandler(
 
     // Check total number of files
     if (attachments.length + newFiles.length > FILE_VALIDATION_CONFIG.maxFiles) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Maximum ${FILE_VALIDATION_CONFIG.maxFiles} files allowed`,
-        variant: "destructive",
       });
       clearFiles();
       return;
@@ -731,10 +806,8 @@ function fileHandler(
     const newTotalSize = newFiles.reduce((acc, file) => acc + file.size, existingSize);
 
     if (newTotalSize > FILE_VALIDATION_CONFIG.maxTotalSize) {
-      toast({
-        title: "Warning",
+      toast.error("Warning", {
         description: `Total size exceeds ${formatFileSize(FILE_VALIDATION_CONFIG.maxTotalSize)}`,
-        variant: "destructive",
       });
       return;
     }
@@ -755,8 +828,7 @@ function fileHandler(
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
       validationErrors.forEach((error) =>
-        toast({
-          title: "Warning",
+        toast.warning("Warning", {
           description: error,
         })
       );

@@ -62,13 +62,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         maxLimit: MAX_API_LIMIT,
       });
       const fetchLimit = pageLimit + 1;
-      const raw = await db
-        .users()
-        .find({})
-        .sort({ _id: 1 })
-        .skip(skip)
-        .limit(fetchLimit)
-        .toArray();
+      const raw = await db.users().find({}).sort({ _id: 1 }).skip(skip).limit(fetchLimit).toArray();
       const hasMore = raw.length > pageLimit;
       const slice = raw.slice(0, pageLimit);
       const users = await addIsFollowing(db, slice as UserSchema[], payload);
@@ -151,9 +145,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 }
 
 async function addIsFollowing(db: MongoDBClient, users: UserSchema[], payload: Payload | null) {
-  const userData = users.map((user) =>
-    new SocialMediaUser(user as UserSchema).getClientSafeData()
-  );
+  const userData = users.map((user) => new SocialMediaUser(user as UserSchema).getClientSafeData());
 
   return Promise.all(
     userData.map(async (obj) => {

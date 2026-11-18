@@ -2,12 +2,9 @@ import { ObjectId } from "mongodb";
 import { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
+import { isChatMember } from "@/lib/chatMembership";
 import { UserSchema } from "@/lib/class/User";
-import {
-  DEFAULT_MESSAGE_LIMIT,
-  pagingMeta,
-  parsePaging,
-} from "@/lib/apiPagination";
+import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
 import { getSocketInstance } from "@/lib/socket";
 import {
@@ -35,6 +32,18 @@ interface Payload {
   _id: string;
   exp: number;
 }
+
+// Membership (adminIds) and the roster are deliberately not editable here.
+const CHAT_FIELD_VALIDATORS: Record<string, (v: unknown) => boolean> = {
+  groupDescription: (v) => typeof v === "string" && v.length <= 500,
+  groupDisplayPicture: (v) => typeof v === "string" && v.length <= 500,
+  isPrivate: (v) => typeof v === "boolean",
+  name: (v) =>
+    typeof v === "object" &&
+    v !== null &&
+    !Array.isArray(v) &&
+    Object.values(v).every((entry) => typeof entry === "string" && entry.length <= 100),
+};
 
 const db = await new MongoDBClient().init();
 
@@ -261,11 +270,18 @@ export const chatRepository = {
   // Complete the logic later, now just return the chat data
   getChatById: async (
     req: NextApiRequest,
-    res: NextApiResponse<ChatDataClient | { error: string }>
+    res: NextApiResponse<ChatDataClient | { error: string }>,
+    payload: Payload
   ) => {
     try {
       const { id } = req.query;
-      const chat = await db.chats().findOne({ _id: new ObjectId(id as string) });
+      if (typeof id !== "string" || !ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid chat id" });
+      }
+      if (!(await isChatMember(db, id, payload._id))) {
+        return res.status(403).json({ error: "You are not a member of this chat" });
+      }
+      const chat = await db.chats().findOne({ _id: new ObjectId(id) });
       const chatParticipants = await db.chatParticipants().find({ chatId: id }).toArray();
       if (chat) {
         // Map the MongoDB document to ChatAttributes
@@ -278,7 +294,6 @@ export const chatRepository = {
           groupDisplayPicture: chat.groupDisplayPicture || "",
           verified: chat.verified || false,
           adminIds: chat.adminIds || [],
-          inviteLink: chat.inviteLink || "",
           isPrivate: chat.isPrivate || false,
           timestamp: chat.timestamp
             ? new Date(chat.timestamp).toISOString()
@@ -298,6 +313,39 @@ export const chatRepository = {
     }
   },
 
+  getParticipants: async (
+    req: NextApiRequest,
+    res: NextApiResponse,
+    payload: Payload
+  ) => {
+    try {
+      const { chatId } = req.query;
+      if (!chatId || typeof chatId !== 'string') {
+        return res.status(400).json({ error: 'chatId is required' });
+      }
+      if (!(await isChatMember(db, chatId, payload._id))) {
+        return res.status(403).json({ error: 'You are not a member of this chat' });
+      }
+      const participants = await db.chatParticipants().find({ chatId }).toArray();
+      const userIds = participants.map(p => new ObjectId(p.userId));
+      const users = await db.users().find({ _id: { $in: userIds } }).toArray();
+      const userMap = new Map(users.map(u => [u._id.toString(), u]));
+      const result = participants.map(p => {
+        const user = userMap.get(p.userId);
+        return {
+          userId: p.userId,
+          username: user?.username ?? '',
+          name: user?.name ?? '',
+          displayPicture: user?.displayPicture ?? '',
+        };
+      }).filter(p => p.username !== '');
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Failed to fetch participants' });
+    }
+  },
+
   createChat: async (
     req: NextApiRequest,
     res: NextApiResponse<NewChat_ | { error: string }>,
@@ -305,6 +353,8 @@ export const chatRepository = {
   ) => {
     try {
       const chatData: NewChat & { msg: MessageAttributes } = req.body;
+      // The creator is always a member, regardless of what the client sent.
+      const memberIds = Array.from(new Set([payload._id, ...(chatData.participants ?? [])]));
 
       const newID = new ObjectId(chatData._id) || new ObjectId();
       // ChatSettings Collection
@@ -321,7 +371,7 @@ export const chatRepository = {
         theme: "light" as "light" | "dark",
 
         // Specific to group chats
-        members: chatData.participants, // List of user IDs
+        members: memberIds, // List of user IDs
 
         // Specific to direct messages
         isBlocked: false,
@@ -337,15 +387,14 @@ export const chatRepository = {
         groupDescription: chatData.groupDescription || "",
         groupDisplayPicture: chatData.groupDisplayPicture || "",
         verified: false,
-        adminIds: chatData.participants, // List of admin user IDs
+        adminIds: chatData.chatType === "Group" ? [payload._id] : memberIds,
         isPrivate: false,
-        inviteLink: chatData.chatType === "Group" ? `/invite/${newID.toString()}` : "",
         timestamp: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         lastMessageId: "",
       };
 
-      const participants: ChatParticipant[] = chatData.participants.map((participantId) => ({
+      const participants: ChatParticipant[] = memberIds.map((participantId) => ({
         _id: new ObjectId(),
         unreadCount: chatData.unreadCounts?.[participantId] || 0,
         favorite: Boolean(chatData.favorite),
@@ -394,7 +443,7 @@ export const chatRepository = {
       const socket = getSocketInstance(payload._id);
       if (socket) {
         try {
-          socket.emit("chatMessage", { ...chatData.msg, participants });
+          socket.emit("chatMessage", { ...chatData.msg });
           socket.emit("addChat", newObj);
           // console.log('Message emitted:', msg);
         } catch (error) {
@@ -410,11 +459,40 @@ export const chatRepository = {
     }
   },
 
-  updateChat: async (req: NextApiRequest, res: NextApiResponse) => {
+  updateChat: async (req: NextApiRequest, res: NextApiResponse, payload: Payload) => {
     try {
       const { id } = req.query;
-      const updatedAttributes = req.body;
-      await db.chats().updateOne({ _id: new ObjectId(id as string) }, { $set: updatedAttributes });
+      if (typeof id !== "string" || !ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid chat id" });
+      }
+
+      const body = req.body;
+      if (!body || typeof body !== "object" || Array.isArray(body)) {
+        return res.status(400).json({ error: "Invalid chat attributes" });
+      }
+
+      const $set: Record<string, unknown> = {};
+      for (const [key, validate] of Object.entries(CHAT_FIELD_VALIDATORS)) {
+        if (!(key in body)) continue;
+        if (!validate(body[key])) {
+          return res.status(400).json({ error: `Invalid value for ${key}` });
+        }
+        $set[key] = body[key];
+      }
+      if (Object.keys($set).length === 0) {
+        return res.status(400).json({ error: "No valid chat attributes provided" });
+      }
+
+      const chat = await db.chats().findOne({ _id: new ObjectId(id) });
+      if (!chat) return res.status(404).json({ error: "Chat not found" });
+      if (!(await isChatMember(db, id, payload._id))) {
+        return res.status(403).json({ error: "You are not a member of this chat" });
+      }
+      if (chat.chatType === "Group" && !chat.adminIds?.includes(payload._id)) {
+        return res.status(403).json({ error: "Only group admins can edit this group" });
+      }
+
+      await db.chats().updateOne({ _id: new ObjectId(id) }, { $set });
       res.status(200).end();
     } catch (error) {
       console.error(error);
@@ -457,10 +535,21 @@ export const chatRepository = {
     }
   },
 
-  deleteChat: async (req: NextApiRequest, res: NextApiResponse) => {
+  deleteChat: async (req: NextApiRequest, res: NextApiResponse, payload: Payload) => {
     try {
       const { id } = req.query;
-      await db.chats().deleteOne({ _id: new ObjectId(id as string) });
+      if (typeof id !== "string" || !ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid chat id" });
+      }
+      const chat = await db.chats().findOne({ _id: new ObjectId(id) });
+      if (!chat) return res.status(404).json({ error: "Chat not found" });
+      if (!(await isChatMember(db, id, payload._id))) {
+        return res.status(403).json({ error: "You are not a member of this chat" });
+      }
+      if (chat.chatType === "Group" && !chat.adminIds?.includes(payload._id)) {
+        return res.status(403).json({ error: "Only group admins can delete this group" });
+      }
+      await db.chats().deleteOne({ _id: new ObjectId(id) });
       res.status(204).json("");
     } catch (error) {
       console.error(error);
@@ -468,14 +557,27 @@ export const chatRepository = {
     }
   },
 
-  addMessage: async (req: NextApiRequest, res: NextApiResponse<MessageAttributes | Err>) => {
+  addMessage: async (
+    req: NextApiRequest,
+    res: NextApiResponse<MessageAttributes | Err>,
+    payload: Payload
+  ) => {
     try {
       const { chatId } = req.query;
       const chatData: MessageAttributes = req.body;
-      const chats = await db.chats().findOne({ _id: new ObjectId(chatId as string) });
+      if (typeof chatId !== "string" || !ObjectId.isValid(chatId)) {
+        return res.status(400).json({ error: "Invalid chat id" });
+      }
+      const chats = await db.chats().findOne({ _id: new ObjectId(chatId) });
 
       if (!chats) {
         return res.status(404).json({ error: "Chat not found" });
+      }
+      if (!(await isChatMember(db, chatId, payload._id))) {
+        return res.status(403).json({ error: "You are not a member of this chat" });
+      }
+      if (chatData.sender?.id !== payload._id) {
+        return res.status(403).json({ error: "Sender does not match the authenticated user" });
       }
 
       // Messages Collection
@@ -585,21 +687,21 @@ export const chatRepository = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
-  
+
   // Improved cookie extraction
   const rawCookie = req.cookies.velo_12;
   if (!rawCookie) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  
+
   // Clean the cookie value - only remove quotes if they exist at the beginning/end
   const cookie = rawCookie.replace(/^"|"$/g, "");
-  
+
   // Additional validation
   if (!cookie || cookie.trim() === "") {
     return res.status(401).json({ error: "Invalid authentication token" });
   }
-  
+
   const payload = (await verifyToken(cookie)) as unknown as Payload;
   if (!payload) {
     return res.status(401).json({ error: "Invalid or expired token" });
@@ -607,14 +709,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   switch (method) {
     case "GET":
-      if (req.query.id) {
-        return chatRepository.getChatById(req, res);
+      if (req.query.participants) {
+        return chatRepository.getParticipants(req, res, payload);
+      } else if (req.query.id) {
+        return chatRepository.getChatById(req, res, payload);
       } else {
         return chatRepository.getAllChats(req, res, payload);
       }
     case "POST":
       if (req.query.chatId) {
-        return chatRepository.addMessage(req, res);
+        return chatRepository.addMessage(req, res, payload);
       } else {
         return chatRepository.createChat(req, res, payload);
       }
@@ -622,7 +726,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (req.query.messageId) {
         return chatRepository.editMessage(req, res);
       } else {
-        return chatRepository.updateChat(req, res);
+        return chatRepository.updateChat(req, res, payload);
       }
     case "DELETE":
       if (req.query.option === "me") {
@@ -630,7 +734,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } else if (req.query.option === "all") {
         return chatRepository.deleteMyMessage(req, res);
       } else {
-        return chatRepository.deleteChat(req, res);
+        return chatRepository.deleteChat(req, res, payload);
       }
     default:
       res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);

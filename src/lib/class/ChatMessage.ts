@@ -1,6 +1,7 @@
 import {
   Attachment,
   ChatType,
+  Mention,
   MessageAttributes,
   MessageType,
   msgStatus,
@@ -31,6 +32,7 @@ export class ChatMessage implements MessageAttributes {
   public attachments: Attachment[];
   public quotedMessageId: string;
   public status: msgStatus;
+  public mentions: Mention[];
 
   // constructor to force use of factory methods
   constructor(data: MessageAttributes) {
@@ -48,6 +50,7 @@ export class ChatMessage implements MessageAttributes {
     this.quotedMessageId = data.quotedMessageId;
     this.status = data.status;
     this.chatType = data.chatType;
+    this.mentions = data.mentions ?? [];
   }
 
   public toMessageAttributes(): MessageAttributes {
@@ -65,6 +68,7 @@ export class ChatMessage implements MessageAttributes {
       quotedMessageId: this.quotedMessageId,
       status: this.status,
       chatType: this.chatType,
+      mentions: this.mentions,
     };
   }
 
@@ -77,17 +81,17 @@ export class ChatMessage implements MessageAttributes {
    * based on attachments and content.
    */
   private static determineMessageType(data: any): MessageType {
-    const content = data.content || '';
+    const content = data.content || "";
     const attachments: Attachment[] = data.attachments || [];
     const mimeType = attachments.length > 0 ? attachments[0].type : null;
 
     // --- 1. Structured & Interactive Types (Highest Priority) ---
 
-    // Note: Poll/PollResponse/Announcement typically rely on specific 
+    // Note: Poll/PollResponse/Announcement typically rely on specific
     // structured data fields (e.g., data.pollData, data.isSystemMessage)
     if (data.pollData) {
       // Logic to distinguish Poll/PollResponse/etc would go here
-      return "Poll"; 
+      return "Poll";
     }
     if (data.isSystemMessage) {
       return "Announcement";
@@ -95,17 +99,17 @@ export class ChatMessage implements MessageAttributes {
 
     // --- 2. Media & File Types (High Priority) ---
     if (mimeType) {
-      if (mimeType === 'image/gif') return "AnimatedGIF";
-      if (mimeType.startsWith('image/')) return "Image";
-      if (mimeType.startsWith('video/')) return "Video";
-      if (mimeType.startsWith('audio/')) return "Audio";
-      
+      if (mimeType === "image/gif") return "AnimatedGIF";
+      if (mimeType.startsWith("image/")) return "Image";
+      if (mimeType.startsWith("video/")) return "Video";
+      if (mimeType.startsWith("audio/")) return "Audio";
+
       // Fallback for all other files
       return "File";
     }
 
     // --- 3. Text-Based Types (Lowest Priority) ---
-    
+
     // Check for Link (Content is ONLY a URL)
     const urlPattern = /^(http|https):\/\/[^ "]+$/;
     if (urlPattern.test(content.trim())) {
@@ -118,7 +122,7 @@ export class ChatMessage implements MessageAttributes {
       // Very basic heuristic for a short, single item (like a single large emoji)
       // For real apps, you'd check for a 'stickerId' field.
       // Assuming it's not a sticker for simplicity, letting it fall to Text
-      // return "Sticker"; 
+      // return "Sticker";
     }
 
     // Default Fallback
@@ -127,6 +131,6 @@ export class ChatMessage implements MessageAttributes {
     }
 
     // Failsafe for an empty message (shouldn't happen in a valid chat system)
-    return "Markdown"; 
+    return "Markdown";
   }
 }

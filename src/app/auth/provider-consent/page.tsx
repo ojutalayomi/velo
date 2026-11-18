@@ -103,8 +103,8 @@ export default function ProviderConsent() {
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg dark:bg-gray-900">
         <h1 className="mb-4 text-2xl font-bold">Link {getProviderName(provider)} Account</h1>
         <p className="mb-6 text-gray-600 dark:text-gray-400">
-          You&apos;re signing in with {getProviderName(provider)} for the first time. Would you like to
-          link this account to your existing profile? This will allow you to sign in with{" "}
+          You&apos;re signing in with {getProviderName(provider)} for the first time. Would you like
+          to link this account to your existing profile? This will allow you to sign in with{" "}
           {getProviderName(provider)} in the future.
         </p>
 
@@ -115,11 +115,7 @@ export default function ProviderConsent() {
         )}
 
         <div className="flex gap-4">
-          <Button
-            onClick={handleConsent}
-            disabled={consenting}
-            className="flex-1"
-          >
+          <Button onClick={handleConsent} disabled={consenting} className="flex-1">
             {consenting ? "Linking..." : "Yes, Link Account"}
           </Button>
           <Button
@@ -135,4 +131,3 @@ export default function ProviderConsent() {
     </div>
   );
 }
-

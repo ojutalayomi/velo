@@ -2,13 +2,20 @@ import { Db, MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { IResult } from "ua-parser-js";
 
 import { UserSchema } from "./class/User";
+import { StatusSchema, StatusViewerSchema } from "./types/status";
 import {
   AttachmentSchema,
+  BlockedUserSchema,
   ChatDataServer,
+  ChatInviteSchema,
   ChatParticipant,
   ChatSettings,
+  InAppNotificationSchema,
   MessageSchema,
+  PostBookmarkSchema,
+  PostLikesSchema,
   PostSchema,
+  PushSubscriptionSchema,
   Reaction,
   ReadReceipt,
   UserSettings,
@@ -145,7 +152,7 @@ export class MongoDBClient {
    * @returns Collection for storing bookmarked posts
    */
   postsBookmarks() {
-    return this.db.collection<PostSchema>("Posts_Bookmarks");
+    return this.db.collection<PostBookmarkSchema>("Posts_Bookmarks");
   }
 
   /**
@@ -161,7 +168,7 @@ export class MongoDBClient {
    * @returns Collection for storing post likes
    */
   postsLikes() {
-    return this.db.collection<PostSchema>("Posts_Likes");
+    return this.db.collection<PostLikesSchema>("Posts_Likes");
   }
 
   /**
@@ -237,6 +244,14 @@ export class MongoDBClient {
   }
 
   /**
+   * Gets the chat invite links collection
+   * @returns Collection for storing hashed group invite tokens
+   */
+  chatInvites() {
+    return this.db.collection<ChatInviteSchema>("Chat_Invites");
+  }
+
+  /**
    * Gets the chat reactions collection
    * @returns Collection for storing message reactions
    */
@@ -261,11 +276,27 @@ export class MongoDBClient {
   }
 
   /**
-   * Gets the subscriptions collection
-   * @returns Collection for storing subscription data
+   * Gets the push subscriptions collection
+   * @returns Collection for storing browser push subscriptions
    */
-  subscriptions() {
-    return this.db.collection("Subscriptions");
+  pushSubscriptions() {
+    return this.db.collection<PushSubscriptionSchema>("Push_Subscriptions");
+  }
+
+  /**
+   * Gets users blocked by (or blocking) other users.
+   * @returns Collection for push suppression and profile block state
+   */
+  blockedUsers() {
+    return this.db.collection<BlockedUserSchema>("Blocked_Users");
+  }
+
+  /**
+   * Gets the in-app notification inbox collection.
+   * @returns Collection for persisted notification events
+   */
+  notifications() {
+    return this.db.collection<InAppNotificationSchema>("Notifications");
   }
 
   /**
@@ -274,6 +305,14 @@ export class MongoDBClient {
    */
   files() {
     return this.db.collection<AttachmentSchema>("Files");
+  }
+
+  statuses() {
+    return this.db.collection<StatusSchema>("Statuses");
+  }
+
+  statusViewers() {
+    return this.db.collection<StatusViewerSchema>("Status_Viewers");
   }
 }
 

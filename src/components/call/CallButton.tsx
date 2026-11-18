@@ -59,7 +59,7 @@ export default function CallButton({
             ${
               disabled
                 ? "cursor-not-allowed bg-gray-300 text-gray-500"
-                : "bg-blue-500 text-white shadow-lg hover:bg-blue-600 hover:shadow-xl"
+                : "bg-brand text-white shadow-lg hover:bg-brand/80 hover:shadow-xl"
             }
           `}
           title="Start a call"
@@ -116,7 +116,7 @@ export default function CallButton({
           )}
 
           {/* Divider */}
-          <div className="my-1 border-t border-gray-200"></div>
+          <div className="my-1 border-t border-gray-200" />
 
           {/* Cancel Option */}
           <button

@@ -6,8 +6,8 @@ export default function ExploreReelPage() {
   return (
     <Suspense
       fallback={
-        <div className="h-screen w-full bg-black flex items-center justify-center">
-          <div className="size-10 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+        <div className="flex h-screen w-full items-center justify-center bg-black">
+          <div className="size-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
         </div>
       }
     >

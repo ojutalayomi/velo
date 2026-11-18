@@ -5,7 +5,7 @@ import { generateCode } from "./action";
 import { Input } from "@/components/ui/input";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function FailedPage() {
   return (
@@ -24,8 +24,7 @@ function FailedPageClient() {
 
   useEffect(() => {
     if (!errorMessage) return;
-    toast({
-      title: "Error",
+    toast.error("Error", {
       description: errorMessage,
     });
   }, [errorMessage]);

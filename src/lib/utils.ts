@@ -18,25 +18,32 @@ export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Normalize user ids from Redux, RSC props, or Socket.IO payloads (string, ObjectId, or `{ $oid }`). */
+export function userIdString(id: unknown): string {
+  if (id == null || id === "") return "";
+  if (typeof id === "string") return id;
+  if (typeof id === "object" && id !== null && "$oid" in id) {
+    const oid = (id as { $oid?: unknown }).$oid;
+    if (typeof oid === "string") return oid;
+  }
+  if (
+    typeof id === "object" &&
+    id !== null &&
+    typeof (id as { toString?: () => string }).toString === "function"
+  ) {
+    const s = (id as { toString: () => string }).toString();
+    if (s && s !== "[object Object]") return s;
+  }
+  const fallback = String(id);
+  return fallback === "[object Object]" ? "" : fallback;
+}
+
 export function timeFormatter() {
   const time = new Date().toLocaleString();
   const [datePart] = time.split(", ");
   const [month, day, year] = datePart.split("/");
   const formattedDate = year + "/" + month + "/" + day;
   return formattedDate;
-}
-
-export function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }
 
 export const FILE_VALIDATION_CONFIG: FileValidationConfig = {
@@ -177,4 +184,3 @@ export function updateLiveTime(
 
   return liveTime;
 }
-

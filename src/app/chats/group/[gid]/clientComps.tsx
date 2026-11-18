@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -6,16 +5,17 @@ import { ChevronDown, EllipsisVertical, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { CallButton, CallStatus, IncomingCall } from "@/components/call";
+import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "@/hooks/use-toast";
 import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
@@ -101,6 +101,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const otherIds = convo?.participants?.filter((id) => id !== userdata._id);
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingEmitRef = useRef(0);
   const lastDateRef = useRef<string>("");
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -109,6 +110,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [searchFocus, setSearchFocus] = useState(false);
   const [searchResults, setSearchResults] = useState<MessageAttributes[]>([]);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -163,7 +165,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     ) {
       setSearchResults(filtered);
     }
-  }, [searchQuery, Messages, gid]);  
+  }, [searchQuery, Messages, gid]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -190,16 +192,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     fetchData();
   }, [fetchData, gid]);
 
-  useEffect(() => {
-    if (socket && gid && userdata._id) {
-      socket.on("groupAnnouncement", (data: string) => {
-        // console.log('You have joined a group chat');
-        alert('You have joined a group chat: ' + data);
-      });
-    }
-  }, [otherIds, gid, socket, userdata._id]);
+  const stopTypingSignal = useCallback(() => {
+    if (!socket || !gid) return;
+    if (!typingTimeoutRef.current) return;
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+    lastTypingEmitRef.current = 0;
+    socket.emit("stopTyping", { user: userdata, to: `group:${gid}`, chatId: gid });
+  }, [socket, gid, userdata]);
 
-  const handleSendMessage = async (id: string) => {
+  const handleSendMessage = async (id: string, mentions?: { userId: string; username: string }[]) => {
     if (newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
@@ -230,7 +232,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         reactions: [],
         attachments: [] as Attachment[],
         quotedMessageId: id,
-        status: "sending" as msgStatus
+        status: "sending" as msgStatus,
+        mentions: mentions ?? [],
       });
 
       // Read and process all files
@@ -262,6 +265,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
 
       const msgCopy = { ...msg };
+      msgCopy.mentions = mentions ?? [];
       msgCopy.attachments = msgCopy.attachments.map((m, index) => {
         const objectURL = URL.createObjectURL(attachments[index]);
         return {
@@ -294,6 +298,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
 
       setNewMessage("");
+      stopTypingSignal();
       clearFiles();
       closeQuote();
       const txt = document.getElementById("txt");
@@ -304,10 +309,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }, 1000);
     } catch (error) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to send message. Please try again.",
-        variant: "destructive",
       });
     }
   };
@@ -322,20 +325,43 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     router.push("/chats");
   };
 
-  const handleTyping = () => {
+  const handleTyping = (hasText: boolean = true) => {
     if (!socket || !gid || !userSettings.showTypingStatus) return;
-    socket.emit("typing", { user: userdata, to: `group:${gid}`, chatId: gid });
+    const payload = { user: userdata, to: `group:${gid}`, chatId: gid };
+
+    if (!hasText) {
+      stopTypingSignal();
+      return;
+    }
+
+    // Throttle the "typing" signal; the stop timer below is still refreshed on every keystroke.
+    const now = Date.now();
+    if (now - lastTypingEmitRef.current >= 1200) {
+      lastTypingEmitRef.current = now;
+      socket.emit("typing", payload);
+    }
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      if (userSettings.showTypingStatus) {
-        socket.emit("stopTyping", { user: userdata, to: `group:${gid}`, chatId: gid });
-      }
+      typingTimeoutRef.current = null;
+      lastTypingEmitRef.current = 0;
+      socket.emit("stopTyping", payload);
     }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (!typingTimeoutRef.current) return;
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      if (socket && gid) {
+        socket.emit("stopTyping", { user: userdata, to: `group:${gid}`, chatId: gid });
+      }
+    };
+  }, [socket, gid, userdata]);
 
   useEffect(() => {
     if (searchParams && searchParams.get("search") === "true") {
@@ -351,11 +377,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   const options = [
     { id: 1, name: "View info", action: () => router.push(`/chats/group/${gid}/settings`) },
-    { id: 2, name: "Search", action: () => {
-      const currParams = new URLSearchParams(searchParams?.toString() || "");
-      currParams.set("search", "true");
-      router.push(`/chats/group/${gid}?${currParams.toString()}`, { scroll: false });
-    } },
+    {
+      id: 2,
+      name: "Search",
+      action: () => {
+        const currParams = new URLSearchParams(searchParams?.toString() || "");
+        currParams.set("search", "true");
+        router.push(`/chats/group/${gid}?${currParams.toString()}`, { scroll: false });
+      },
+    },
     { id: 3, name: "Mute notifications", action: () => console.log("Archived") },
     { id: 4, name: "Wallpaper", action: () => console.log("Hidden") },
     {
@@ -380,7 +410,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       action: () =>
         dispatch(updateConversation({ id: gid, updates: { archived: !convo?.archived } })),
     },
-    { id: 10, name: "Leave group", action: () => console.log("left group") },
+    { id: 10, name: "Leave group", action: () => setLeaveOpen(true) },
   ];
 
   useEffect(() => {
@@ -419,7 +449,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     <div
       className={`bg-bgLight tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-bgDark`}
     >
-      <div className="sticky top-0 z-10 min-h-12 flex items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -446,7 +476,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {callHooks && (
+              {socket && (
                 <CallButton
                   roomId={gid}
                   chatType={"Group"}
@@ -516,21 +546,30 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             >
               Clear
             </button>
-            <div className={`absolute right-0 top-[80%] max-h-[calc(100vh-100px)] w-full z-50 overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}>
-              <div className="bg-white dark:shadow-slate-200 dark:bg-zinc-900 overflow-y-auto border-2 rounded-lg p-2">
+            <div
+              className={`absolute right-0 top-[80%] z-50 max-h-[calc(100vh-100px)] w-full overflow-y-auto p-2 ${searchFocus ? "block" : "hidden"}`}
+            >
+              <div className="overflow-y-auto rounded-lg border-2 bg-white p-2 dark:bg-zinc-900 dark:shadow-slate-200">
                 {searchResults.length > 0 ? (
                   searchResults.map((result) => (
-                    <MessageTab key={result._id} message={result} setQuote={setQuote} onClick={() => {
-                      setSearchQuery("");
-                      setSearchFocus(false);
-                      openSearchBar(false);
-                      router.replace(`/chats/group/${gid}#${result._id}`, { scroll: true });
-                    }} />
+                    <MessageTab
+                      key={result._id}
+                      message={result}
+                      setQuote={setQuote}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchFocus(false);
+                        openSearchBar(false);
+                        router.replace(`/chats/group/${gid}#${result._id}`, { scroll: true });
+                      }}
+                    />
                   ))
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-2">
+                  <div className="flex h-full flex-1 flex-col items-center justify-center py-2 text-center">
                     <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="dark:text-slate-200 mt-2 text-sm font-medium text-gray-900">No messages found</h3>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-200">
+                      No messages found
+                    </h3>
                   </div>
                 )}
               </div>
@@ -635,11 +674,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   </div>
                 ) : null}
 
-                <MessageTab
-                  key={message._id as string}
-                  message={message}
-                  setQuote={setQuote}
-                />
+                <MessageTab key={message._id as string} message={message} setQuote={setQuote} />
               </Fragment>
             );
             lastDateRef.current = messageDate;
@@ -648,16 +683,19 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           }, [])}
         </div>
         {filteredIsTypingList?.length > 0 && (
-          <div
-            key={`typing-${filteredIsTypingList[0].id}`}
-            className="my-2 mb-4 text-left"
-          >
+          <div key={`typing-${filteredIsTypingList[0].id}`} className="my-2 mb-4 text-left">
             <div className="flex flex-wrap items-center justify-start gap-2">
-              <div className="rounded-full bg-gray-100 flex items-center gap-2 rounded-bl-none p-3 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-                <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2">
+              <div className="flex items-center gap-2 rounded-full rounded-bl-none bg-gray-100 p-3 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
+                <div className="flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background">
                   {filteredIsTypingList.slice(0, 3).map((i) => (
-                    <Avatar className="size-8 ring-4 ring-offset-background" key={i.id} data-src={i.displayPicture}>
-                      <AvatarFallback className="capitalize size-8">{i.name?.slice(0, 2)}</AvatarFallback>
+                    <Avatar
+                      className="size-8 ring-4 ring-offset-background"
+                      key={i.id}
+                      data-src={i.displayPicture}
+                    >
+                      <AvatarFallback className="size-8 capitalize">
+                        {i.name?.slice(0, 2)}
+                      </AvatarFallback>
                       <AvatarImage
                         src={i.displayPicture}
                         className="displayPicture size-8 rounded-full object-cover dark:border-slate-200"
@@ -690,6 +728,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         <ChatTextarea
           quote={quote}
           newMessage={newMessage}
+          chatId={gid}
           setNewMessage={setNewMessage}
           handleSendMessage={handleSendMessage}
           handleTyping={handleTyping}
@@ -717,6 +756,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           }}
         />
       )}
+      <LeaveGroupDialog
+        chatId={gid}
+        groupName={convo?.name ?? "this group"}
+        userId={String(userdata._id)}
+        open={leaveOpen}
+        onOpenChange={setLeaveOpen}
+        onLeft={() => {
+          dispatch(deleteConversation(gid));
+          router.replace("/chats");
+        }}
+      />
     </div>
   );
 };

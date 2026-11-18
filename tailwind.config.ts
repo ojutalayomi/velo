@@ -91,6 +91,9 @@ const config: Config = {
       stroke: {
         tom: "#e2e8f0",
       },
+      transitionTimingFunction: {
+        "out-expo": "cubic-bezier(0.23, 1, 0.32, 1)",
+      },
       width: {
         auto: "auto",
       },
@@ -116,9 +119,6 @@ const config: Config = {
       large: "1265px",
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-    require('@tailwindcss/typography')
-  ],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 };
 export default config;

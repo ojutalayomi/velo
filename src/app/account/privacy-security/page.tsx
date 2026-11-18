@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { UserSettings } from "@/lib/types/type";
 import { updateSettings } from "@/redux/userSlice";
+import { PasskeyManager } from "@/components/passkey";
 
 import { Skeleton } from "../../../components/ui/skeleton";
 
@@ -245,6 +246,11 @@ const PrivacySecurityPage = () => {
             ))}
           </div>
         </section>
+
+        {/* Passkeys Section */}
+        <div className="[&>div]:rounded-xl [&>div]:bg-white [&>div]:shadow-sm [&>div]:dark:bg-neutral-800">
+          <PasskeyManager />
+        </div>
 
         {/* Connected Devices Section */}
         <section className="rounded-xl bg-white p-6 shadow-sm dark:bg-neutral-800">

@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 import {
   Check,
@@ -35,19 +34,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Statuser } from "@/components/VerificationComponent";
 import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
-import {
-  deleteMessage,
-  updateMessage,
-  updateConversation,
-} from "@/redux/chatSlice";
+import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 
 import { MediaCollage } from "./FilesView";
 import { ReactionsInfo } from "./ReactionsInfo";
-
-
 
 type Message = {
   _id: string;
@@ -286,37 +279,50 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
           <div
             className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
           >
-            {message.attachments.length ? <MediaCollage media={message.attachments as (Attachment & { uploadedAt: string })[]} /> : <></>}
+            {message.attachments.length ? (
+              <MediaCollage
+                media={message.attachments as (Attachment & { uploadedAt: string })[]}
+              />
+            ) : (
+              <></>
+            )}
 
             {/* Message Bubble */}
-            <div
+            {/* <div
               className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl p-2 ${
                 senderId === userdata._id
                   ? "rounded-br-none bg-brand text-white"
                   : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
-              } text-left`}
+              } text-left`} */}
+            <div
+              className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl px-3 py-2 ${
+                senderId === userdata._id
+                  ? "rounded-br-none outline outline-1 outline-brand"
+                  : "rounded-bl-none shadow-md dark:shadow-zinc-700/50"
+              } bg-gray-50 text-left dark:bg-zinc-800/80 dark:text-white`}
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
             >
               {/* Sender name for other users */}
-              {(senderId !== userdata._id && message.chatType === "Group") && (
-                <div className="flex items-center justify-between gap-1 mr-4">
-                  <div className="flex items-center gap-1">
-                    <Avatar className="mt-1 size-8">
+              {senderId !== userdata._id && message.chatType === "Group" && (
+                <div className="mr-4 flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="mt-1 size-6">
                       <AvatarImage src={displayPicture} alt={sender} />
-                      <AvatarFallback className="border-2 border-white dark:border-black text-xs">{sender?.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="border-2 border-white text-xs dark:border-black">
+                        {sender?.slice(0, 2)}
+                      </AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {sender}
                     </span>
                     {verified && <Statuser className="size-4" />}
                   </div>
-                  
                 </div>
               )}
 
               {/* Quote and Link Preview */}
-              {message.quotedMessageId && <Quote message={message} senderId={senderId} />}
+              {message.quotedMessageId && <QuoteComponent message={message} senderId={senderId} />}
               {firstUrl && <LinkPreview url={firstUrl} />}
 
               {/* Message Content */}
@@ -331,7 +337,10 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                   return (
                     <>
                       {message.messageType === "Markdown" ? (
-                        <div className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}>
+                        <div
+                          // className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}
+                          className="prose prose-sm max-w-none dark:prose-invert"
+                        >
                           <Markdown>{contentToDisplay}</Markdown>
                         </div>
                       ) : (
@@ -339,7 +348,10 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                           className="whitespace-pre-wrap break-words py-1 text-sm"
                           style={{ fontFamily: "inherit" }}
                         >
-                          {renderTextWithLinks(contentToDisplay)}
+                          {renderTextWithLinks(
+                            contentToDisplay,
+                            (message.mentions ?? []).map((m) => m.username)
+                          )}
                         </p>
                       )}
 
@@ -366,13 +378,12 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                 <div className="after:content-[ • ] dark:after:text-slate-200">{time}</div>
                 {senderId === userdata._id && renderStatusIcon(message.status)}
               </div>
-
             </div>
           </div>
 
           {/* Message Options */}
           {message.messageType !== "Markdown" && (
-            <Options options={optionss} open={open} setOpen={setOpen} />
+            <OptionsComponent options={optionss} open={open} setOpen={setOpen} />
           )}
         </div>
 
@@ -386,9 +397,8 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
         />
 
         {message.messageType === "Markdown" && (
-          <Options options={optionss} open={open} setOpen={setOpen} />
+          <OptionsComponent options={optionss} open={open} setOpen={setOpen} />
         )}
-
       </div>
       {rectionInfoDisplay && (
         <ReactionsInfo message={message} setReactionInfoDisplay={setReactionInfoDisplay} />
@@ -397,6 +407,7 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
   );
 };
 
+MessageTab.displayName = "MessageTab";
 export default MessageTab;
 
 const ReactionSection = ({
@@ -450,7 +461,9 @@ const ReactionSection = ({
   );
 };
 
-const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: string }) => {
+ReactionSection.displayName = "ReactionSection";
+
+const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; senderId: string }) => {
   const { userdata } = useUser();
   const messages = useSelector((state: RootState) => state.chat.messages);
 
@@ -480,7 +493,7 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
 
   return (
     <div
-      className={`m-1 flex ${senderId === userdata._id ? "flex-row-reverse" : ""}`}
+      className={`flex ${senderId === userdata._id ? "flex-row-reverse" : "mt-2"}`}
       onClick={handleQuoteClick}
     >
       <div
@@ -491,7 +504,7 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
               ? "bg-gray-100 dark:bg-zinc-700/50"
               : "bg-gray-100 dark:bg-zinc-700/50"
           }
-          border-l-4 ${senderId === userdata._id ? "border-purple-500" : "border-gray-400"}
+          border-l-4 ${senderId === userdata._id ? "border-brand" : "border-gray-400"}
           transition-all hover:bg-opacity-80
         `}
       >
@@ -501,7 +514,9 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
           >
             {quotedMessageId?.sender?.name || ""}
           </span>
-          <span className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}>
+          <span
+            className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}
+          >
             {quotedMessageId?.content}
           </span>
         </div>
@@ -510,15 +525,17 @@ const Quote = ({ message, senderId }: { message: MessageAttributes; senderId: st
   );
 };
 
-function Options({
+QuoteComponent.displayName = "QuoteComponent";
+
+const OptionsComponent = ({
   options,
   open,
   setOpen,
 }: {
   options: Option[];
   open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+}) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -605,4 +622,6 @@ function Options({
       </Popover>
     </>
   );
-}
+};
+
+OptionsComponent.displayName = "OptionsComponent";

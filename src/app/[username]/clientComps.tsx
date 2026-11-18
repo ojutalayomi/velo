@@ -1,17 +1,21 @@
 "use client";
 import { ArrowLeft, Cake, Check, Link, Plus, Pin, Loader2 } from "lucide-react";
+import NextLink from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "@/hooks/use-toast";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
+import { submitFollowUpdate } from "@/lib/followApi";
 import { PostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
+import { RootState } from "@/redux/store";
 import { timeFormatter } from "@/templates/PostProps";
 
 import ContentSection from "./ContentTabs";
@@ -35,54 +39,78 @@ export default function Profile({
   const { userdata } = useUser();
   const socket = useSocket();
   const navigate = useNavigateWithHistory();
+  const { conversations } = useSelector((state: RootState) => state.chat);
   const [isLoading, setIsLoading] = useState(false);
   const [profileData, setProfileData] = useState(pd);
   const [postCards, setPostCards] = useState(profilePostCards);
   const [postsPagination, setPostsPagination] = useState(initialPagination);
   const [postsLoadingMore, setPostsLoadingMore] = useState(false);
 
+  const openMessage = useCallback(() => {
+    const otherId = String(profileData._id);
+    const existingConvo = conversations.find(
+      (convo) =>
+        convo.type === "DM" &&
+        convo.participants.length === 2 &&
+        convo.participants.includes(otherId)
+    );
+    if (existingConvo) {
+      router.push(`/chats/${existingConvo.id}`);
+    } else {
+      router.push(`/chats/new?otherId=${otherId}`);
+    }
+  }, [conversations, profileData._id, router]);
+
+  const viewedProfileKey = `${pd._id}:${pd.username ?? ""}`;
+
   useEffect(() => {
     if (!socket) return;
-    socket.on(
-      "followNotification",
-      (data: {
-        followedDetails: UserData;
-        followerDetails: UserData;
-        type: "follow" | "unfollow";
-        timestamp: string;
-      }) => {
-        setProfileData((prev) => ({
+
+    const handleFollowNotification = (data: {
+      followedDetails: UserData;
+      followerDetails: UserData;
+      following?: boolean;
+      timestamp?: string;
+    }) => {
+      const followedId = data.followedDetails._id;
+      const followerId = data.followerDetails._id;
+      const me = userdata._id;
+      const relationshipActive =
+        typeof data.following === "boolean"
+          ? data.following
+          : Boolean(data.followedDetails.isFollowing);
+
+      // Both followed and follower can receive this; only update UI when it matches this page / role.
+      setProfileData((prev) => {
+        if (prev._id !== followedId) return prev;
+        return {
           ...prev,
-          followers: data.followedDetails.followers,
-          isFollowing: data.followedDetails.isFollowing,
-        }));
+          ...(data.followedDetails.followers != null
+            ? { followers: data.followedDetails.followers }
+            : {}),
+          // Follow button is “do I follow this profile?” — only the follower cares.
+          ...(followerId === me ? { isFollowing: relationshipActive } : {}),
+        };
+      });
 
-        // If current user is the follower, update follow state and posts
-        if (data.followerDetails._id?.toString() === userdata._id) {
-          setProfileData((prev) => ({
-            ...prev,
-            isFollowing: data.followedDetails.isFollowing,
-          }));
-          setPostCards((prev) =>
-            prev.map((post) =>
-              post.UserId === (profileData?._id as unknown as string)
-                ? { ...post, IsFollowing: data.followedDetails.isFollowing ?? false }
-                : post
-            )
-          );
-        }
-
-        // If current user is the followed user, show a notification
-        if (data.followedDetails._id?.toString() === userdata._id) {
-          toast({
-            title: data.followedDetails.isFollowing
-              ? `${data.followerDetails.username} started following you`
-              : `${data.followerDetails.username} unfollowed you`,
-            variant: "default",
-          });
-        }
+      if (followerId === me) {
+        setPostCards((prev) =>
+          prev.map((post) =>
+            post.UserId === followedId ? { ...post, IsFollowing: relationshipActive } : post
+          )
+        );
       }
-    );
+
+      if (followedId === me) {
+        toast(
+          relationshipActive
+            ? `${data.followerDetails.username} started following you`
+            : `${data.followerDetails.username} unfollowed you`
+        );
+      }
+    };
+
+    socket.on("followNotification", handleFollowNotification);
     socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
       setPostCards((prev) => {
         return prev.filter((p) => p.PostID !== data.postId);
@@ -109,39 +137,84 @@ export default function Profile({
     });
 
     return () => {
-      // socket.off('followNotification');
+      socket.off("followNotification", handleFollowNotification);
     };
-  }, [socket]);
+  }, [socket, userdata._id, viewedProfileKey]);
 
   if (!profileData || !profileData._id) {
     notFound();
   }
 
   const handleFollow = async (follow: boolean) => {
+    // Prevent duplicate requests
+    if (isLoading) return;
+
+    // Save state before optimistic update for potential revert
+    const profileId = profileData._id;
+    const previousState = profileData.isFollowing ?? false;
+    const previousFollowers = profileData.followers;
+
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/follow`, {
-        method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          followerId: userdata._id,
-          followedId: profileData._id,
-          time: new Date().toISOString(),
-          follow,
-        }),
+      
+      // Optimistic update
+      if (follow) {
+        setProfileData((prev) => ({
+          ...prev,
+          isFollowing: true,
+          followers: typeof prev.followers === "number" ? prev.followers + 1 : prev.followers,
+        }));
+        setPostCards((prev) =>
+          prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: true } : post))
+        );
+      } else {
+        setProfileData((prev) => ({
+          ...prev,
+          isFollowing: false,
+          followers:
+            typeof prev.followers === "number" && prev.followers > 0
+              ? prev.followers - 1
+              : prev.followers,
+        }));
+        setPostCards((prev) =>
+          prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: false } : post))
+        );
+      }
+
+      const res = await submitFollowUpdate({
+        followerId: String(userdata._id),
+        followedId: String(profileData._id),
+        follow,
       });
-      if (res.ok) {
-        // setIsFollowing(follow);
+      
+      if (!res.ok) {
+        // Revert optimistic update on error
+        setProfileData((prev) => ({
+          ...prev,
+          isFollowing: previousState,
+          followers: previousFollowers,
+        }));
+        setPostCards((prev) =>
+          prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: previousState } : post))
+        );
+        
+        const data = await res.json().catch(() => ({ message: "Failed to update follow status" }));
+        toast.error(data.message || "Something went wrong");
       }
     } catch (error) {
+      // Revert on network error
+      setProfileData((prev) => ({
+        ...prev,
+        isFollowing: previousState,
+        followers: previousFollowers,
+      }));
+      setPostCards((prev) =>
+        prev.map((post) => (post.UserId === profileId ? { ...post, IsFollowing: previousState } : post))
+      );
+      
       console.error(error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to follow user",
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -176,8 +249,10 @@ export default function Profile({
     }
   }, [profileData.username, postsLoadingMore, postsPagination]);
 
+  const postCount = postCards.filter((post) => post.Type === "post").length;
+
   return (
-    <div className="h-screen max-h-screen overflow-auto w-full overflow-auto dark:bg-black">
+    <div className="h-screen max-h-screen w-full overflow-auto dark:bg-black">
       <div
         className={`sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg`}
       >
@@ -192,7 +267,7 @@ export default function Profile({
               : "Velo"}{" "}
             {profileData.verified && <Statuser className="size-4" />}
           </p>
-          <p className="text-sm text-gray-600">{profilePostCards.length} posts</p>
+          <p className="text-sm text-gray-600">{postCards.length} posts</p>
         </div>
       </div>
       {/* Cover Photo */}
@@ -232,8 +307,16 @@ export default function Profile({
             username={profileData.username}
             profileId={profileData._id as unknown as string}
           />
+          {(profileData._id !== userdata._id && !profileData.isPrivate) && (
+            <Button
+              onClick={openMessage}
+              className="rounded-full bg-brand/90 px-4 py-2 text-white hover:bg-brand/80"
+            >
+              Message
+            </Button>
+          )}
           <div className="overflow-hidden rounded-full border-2 border-white dark:border-black">
-            {(profileData._id as unknown as string) === userdata._id ? (
+            {profileData._id === userdata._id ? (
               <Button
                 onClick={() => router.push(`/${profileData.username}/edit`)}
                 className="rounded-full bg-brand/90 px-4 py-2 text-white hover:bg-brand/80"
@@ -305,13 +388,21 @@ export default function Profile({
           </div>
           {/* Stats */}
           <div className="flex gap-6 text-gray-600 dark:text-gray-400">
-            <span>
+            <NextLink
+              href={`/${profileData.username}/connections?tab=followers`}
+              className="hover:underline"
+            >
               {profileData.followers ?? 0} follower{profileData.followers === 1 ? "" : "s"}
-            </span>
-            <span>{profileData.following ?? 0} following</span>
+            </NextLink>
+            <NextLink
+              href={`/${profileData.username}/connections?tab=following`}
+              className="hover:underline"
+            >
+              {profileData.following ?? 0} following
+            </NextLink>
             <span>
-              {profilePostCards.filter((post) => post.Type === "post").length} post
-              {profilePostCards.filter((post) => post.Type === "post").length === 1 ? "" : "s"}
+              {postCount} post
+              {postCount === 1 ? "" : "s"}
             </span>
           </div>
         </div>

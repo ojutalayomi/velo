@@ -1,26 +1,32 @@
 "use client";
-import { WifiOff, XCircle } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { useState, useCallback, useEffect } from "react";
+import { Megaphone, WifiOff, X, XCircle } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "sonner";
+
 import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
+
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import Bottombar from "@/components/Bottombar";
 import { ConfirmCall } from "@/components/callConfirmation";
+import VideoChat from "@/components/CallPage";
 import NewChatMenu from "@/components/ComposeChat";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import MetallicPaint from "@/components/MetallicPaint";
 import PostMaker from "@/components/PostMaker";
 import PostPreview from "@/components/PostPreview";
 import RightSideBar from "@/components/RightSideBar";
 import Sidebar from "@/components/Sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import UserPhoto from "@/components/UserPhoto";
-import { toast } from "@/hooks/use-toast";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { FileStorageProvider } from "@/hooks/useFileStorage";
 import {
+  ChatParticipant,
   ClientComponentsProps,
   ConvoType,
   ConvoTypeProp,
@@ -28,32 +34,42 @@ import {
   msgStatus,
   NewChat_,
   Reaction,
-  ReactionType,
   PostSchema,
 } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { Time } from "@/lib/utils";
 import {
   updateConversation,
+  setTypingUser,
+  removeTypingUser,
   addMessage,
   addSetting,
-  fetchChats,
   addConversation,
+  deleteConversation,
   updateMessage,
   updateMessageReactions,
+  fetchChats,
 } from "@/redux/chatSlice";
+import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { useAppDispatch } from "@/redux/hooks";
-import { addPost, deletePost, updatePost, updatePosts } from "@/redux/postsSlice";
+import { addPost, updatePosts } from "@/redux/postsSlice";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
 
 import Error from "./error";
-import VideoChat from "../components/CallPage";
+import logo from "./icon.svg";
 import { useNetwork } from "./providers/NetworkProvider";
 
-const ClientComponents = ({ children }: ClientComponentsProps) => {
+// Slightly longer than the sender's 3s stopTyping timer so the receiver only
+// clears the indicator when a stop event never arrives (tab close, network drop).
+const TYPING_INDICATOR_TTL_MS = 5000;
+
+const INFO_ROUTES = ["/about", "/press", "/developers", "/jobs", "/privacy", "/terms", "/locations"];
+
+const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
+  const router = useRouter();
   const { deletedConversations } = useSelector((state: RootState) => state.chat);
   const { isOnline } = useNetwork();
   const [isClient, setIsClient] = useState(false);
@@ -61,7 +77,10 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
   const showPostPreview = pathname?.includes("/photo/");
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const callRoute = pathname?.startsWith("/call");
-  const { userdata } = useUser();
+  // Public info pages (About, Press, Terms, …) render full-screen without app chrome.
+  const infoRoute = INFO_ROUTES.some((r) => pathname === r || pathname?.startsWith(`${r}/`));
+  const hideChrome = callRoute || infoRoute;
+  const { userdata, loading } = useUser();
   const path = pathname?.replace("/", "") || "";
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
   const [activeRoute, setActiveRouteState] = useState<string>(path);
@@ -71,6 +90,11 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
   const { displayAnnouncement, setDisplayAnnouncement } = useAnnouncer();
   const [incomingCallId, setIncomingCallId] = useState<string | null>(null);
   const socket = useSocket();
+  const typingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const conversationsRef = useRef(conversations);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
   const routes = [
     "accounts/login",
     "accounts/signup",
@@ -108,14 +132,11 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     fetchData();
   }, [dispatch]);
 
-  const gt = useCallback(
-    (chatid: string) => {
-      return conversations.find((obj) => obj.id === chatid);
-    },
-    [conversations]
-  );
+  const gt = useCallback((chatid: string) => {
+    return conversationsRef.current.find((obj) => obj.id === chatid);
+  }, []);
 
-  const handleChat = useCallback(
+  const handleNewChat = useCallback(
     (data: NewChat_) => {
       const uid = data.requestId;
       const participant = data.chat.participants.find((p) => p.userId === uid);
@@ -188,46 +209,46 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
 
   const handleTyping = useCallback(
     (data: { user: UserData; to: string; chatId: string }) => {
-      if (data.user._id === userdata._id) return null;
-      const conversation = conversations.find((c) => c.id === data.chatId);
-      if (conversation) {
-        dispatch(
-          updateConversation({
-            id: data.chatId,
-            updates: {
-              isTypingList: [
-                ...conversation.isTypingList,
-                {
-                  id: data.user._id as string,
-                  name: data.user.name,
-                  displayPicture: data.user.displayPicture || "",
-                  username: data.user.username,
-                  isTyping: true,
-                  chatId: data.chatId,
-                },
-              ],
-            },
-          })
-        );
-      }
+      if (!data?.user?._id || data.user._id === userdata._id) return;
+      const key = `${data.chatId}:${data.user._id}`;
+
+      dispatch(
+        setTypingUser({
+          chatId: data.chatId,
+          user: {
+            id: data.user._id,
+            name: data.user.name,
+            displayPicture: data.user.displayPicture || "",
+            username: data.user.username,
+            isTyping: true,
+            chatId: data.chatId,
+          },
+        })
+      );
+
+      const existing = typingTimers.current.get(key);
+      if (existing) clearTimeout(existing);
+      typingTimers.current.set(
+        key,
+        setTimeout(() => {
+          typingTimers.current.delete(key);
+          dispatch(removeTypingUser({ chatId: data.chatId, userId: data.user._id }));
+        }, TYPING_INDICATOR_TTL_MS)
+      );
     },
     [dispatch, userdata._id]
   );
 
   const handleStopTyping = useCallback(
     (data: { user: UserData; to: string; chatId: string }) => {
-      if (data.user._id === userdata._id) return null;
-      const conversation = conversations.find((c) => c.id === data.chatId);
-      if (conversation) {
-        dispatch(
-          updateConversation({
-            id: data.chatId,
-            updates: {
-              isTypingList: conversation.isTypingList.filter((u) => u.id !== data.user._id),
-            },
-          })
-        );
-      }
+      if (!data?.user?._id || data.user._id === userdata._id) return;
+      const key = `${data.chatId}:${data.user._id}`;
+
+      const existing = typingTimers.current.get(key);
+      if (existing) clearTimeout(existing);
+      typingTimers.current.delete(key);
+
+      dispatch(removeTypingUser({ chatId: data.chatId, userId: data.user._id }));
     },
     [dispatch, userdata._id]
   );
@@ -239,16 +260,16 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on("userTyping", handleTyping);
     socket.on("userStopTyping", handleStopTyping);
     socket.on("lastActive", ({ userId, lastActive }) => {
-      const convo = conversations.find((c) => c.participants.includes(userId) && c.type === "DM");
+      const convo = conversationsRef.current.find(
+        (c) => c.participants.includes(userId) && c.type === "DM"
+      );
       dispatch(updateConversation({ id: convo?.id ?? "", updates: { timestamp: lastActive } }));
     });
     socket.on(
       "chatError",
-      (data: { error: string; chatId: string; updates: Partial<ConvoType> }) => {
-        toast({
-          title: data.error,
-          variant: "destructive",
-        });
+      (data: { error: string; chatId?: string; updates?: Partial<ConvoType> }) => {
+        toast.error(data.error);
+        if (!data.chatId || !data.updates) return;
         if (data.updates.deleted) {
           dispatch(
             addConversation(
@@ -261,8 +282,29 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       }
     );
     socket.on("newChat", (data: NewChat_) => {
-      handleChat(data);
+      handleNewChat(data);
       socket.emit("joinChat", { chatId: data.chat._id });
+    });
+    socket.on(
+      "chatParticipantsUpdated",
+      (data: { chatId: string; participants: ChatParticipant[]; adminIds?: string[] }) => {
+        dispatch(
+          updateConversation({
+            id: data.chatId,
+            updates: {
+              participants: data.participants.map((p) => p.userId),
+              ...(data.adminIds ? { adminIds: data.adminIds } : {}),
+            },
+          })
+        );
+      }
+    );
+    socket.on("chatRemoved", (data: { chatId: string }) => {
+      dispatch(deleteConversation(data.chatId));
+      // Read the live location so this listener does not have to rebind on navigation.
+      if (window.location.pathname.startsWith(`/chats/group/${data.chatId}`)) {
+        router.replace("/chats");
+      }
     });
     // New invite event to trigger call confirmation
     socket.on(
@@ -311,42 +353,13 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     });
     socket.on(
       "post_reaction_response",
-      (data: { message: string; success: boolean; postId: string; reaction: ReactionType }) => {
-        // alert(data.message);
-        if (data.success) return;
-        dispatch(
-          updatePost({
-            id: data.postId,
-            updates: {
-              [`${data.reaction.key1}`]: data.reaction.key1,
-              [`${data.reaction.key2}`]: data.reaction.key2,
-            },
-          })
-        );
+      (data: { message: string; success: boolean; postId?: string; reaction?: string }) => {
+        // PostCard owns the optimistic like/bookmark state and reverts it on failure;
+        // this payload carries no counts, so only surface the message here.
         setDisplayAnnouncement({
           status: true,
           message: data.message,
         });
-      }
-    );
-    socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
-      dispatch(deletePost(data.postId));
-    });
-    socket.on(
-      "updatePost",
-      (data: {
-        excludeUserId: string;
-        postId: string;
-        update: Partial<PostSchema>;
-        type: string;
-      }) => {
-        dispatch(updatePost({ id: data.postId, updates: data.update }));
-        // if(data.excludeUserId !== userdata._id) {
-        //     setDisplayAnnouncement({
-        //         status: true,
-        //         message: `New ${data.type}`
-        //     })
-        // }
       }
     );
     socket.on("newPost", (data: { excludeUser: string; blog: PostSchema }) => {
@@ -365,26 +378,26 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       (data: {
         followedDetails: UserData;
         followerDetails: UserData;
-        type: "follow" | "unfollow";
-        timestamp: string;
+        following?: boolean;
+        type?: "follow" | "unfollow";
+        timestamp?: string;
       }) => {
+        const nowFollowing =
+          typeof data.following === "boolean"
+            ? data.following
+            : Boolean(data.followedDetails.isFollowing);
+
         if (data.followedDetails._id?.toString() === userdata._id) {
-          toast({
-            title: data.followedDetails.isFollowing
+          toast(
+            nowFollowing
               ? `${data.followerDetails.username} started following you`
-              : `${data.followerDetails.username} unfollowed you`,
-            variant: "default",
-          });
-        } else if (data.followerDetails._id?.toString() === userdata._id) {
-          dispatch(
-            updatePosts({
-              key: "UserId",
-              value: data.followerDetails._id?.toString() || "",
-              updates: {
-                IsFollowing: data.followedDetails.isFollowing ?? false,
-              },
-            })
+              : `${data.followerDetails.username} unfollowed you`
           );
+        } else if (data.followerDetails._id?.toString() === userdata._id) {
+          const authorId = data.followedDetails._id?.toString() || "";
+          const updates = { IsFollowing: nowFollowing };
+          dispatch(updatePosts({ key: "UserId", value: authorId, updates }));
+          dispatch(updateFollowingFeedPosts({ key: "UserId", value: authorId, updates }));
         }
       }
     );
@@ -448,27 +461,62 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
       );
     });
 
+    socket.on(
+      "mentionNotification",
+      (data: {
+        messageId: string;
+        chatId: string;
+        chatType: string;
+        mentionedBy: { userId: string; username: string; displayPicture: string };
+        content: string;
+        timestamp: string;
+      }) => {
+        toast(`@${data.mentionedBy.username} mentioned you`, {
+          description: data.content.length > 80 ? data.content.slice(0, 80) + "\u2026" : data.content,
+          action: {
+            label: "View",
+            onClick: () => {
+              if (data.chatType === "Group") {
+                window.location.href = `/chats/group/${data.chatId}`;
+              } else {
+                window.location.href = `/chats/${data.chatId}`;
+              }
+            },
+          },
+        });
+      }
+    );
+
     return () => {
       socket.off("newMessage", handleChatMessage);
       socket.off("userTyping", handleTyping);
       socket.off("userStopTyping", handleStopTyping);
       socket.off("lastActive");
-      socket.off("newChat", handleChat);
+      socket.off("newChat", handleNewChat);
       socket.off("offer");
       socket.off("post_response");
       socket.off("delete_post_response");
       socket.off("post_reaction_reponse");
-      socket.off("deletePost");
-      socket.off("updatePost");
       socket.off("newPost");
       socket.off("followNotification");
       socket.off("conversationUpdated");
       socket.off("reactionAdded");
       socket.off("reactionRemoved");
       socket.off("reactionUpdated");
+      socket.off("mentionNotification");
       socket.off("chatError");
+      socket.off("chatParticipantsUpdated");
+      socket.off("chatRemoved");
     };
-  }, [socket, handleChatMessage, handleChat, handleTyping, handleStopTyping, conversations]);
+  }, [socket, router, handleChatMessage, handleNewChat, handleTyping, handleStopTyping]);
+
+  useEffect(() => {
+    const timers = typingTimers.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
 
   const setActiveRoute = useCallback((route: string) => {
     setActiveRouteState(route);
@@ -481,15 +529,81 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
   return (
     <>
       {displayAnnouncement.status && (
-        <div id="announcement" className="relative w-screen bg-brand p-2 text-center text-white">
-          <h1>{displayAnnouncement.message}</h1>
-          <XCircle
-            className="absolute right-3 top-1/2 -translate-y-1/2 transform cursor-pointer"
-            size={20}
-            onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
-          />
+        <div
+          id="announcement"
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-x-0 top-4 z-[999] flex justify-center px-4"
+        >
+          <div className="shadow-sxs relative isolate flex w-full items-center justify-center overflow-hidden rounded-sm border border-primary/20 bg-brand px-4 py-2 tracking-tight">
+            <div
+              aria-hidden="true"
+              className="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
+            >
+              <div
+                style={{
+                  clipPath:
+                    'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
+                }}
+                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+              />
+            </div>
+
+            <div
+              aria-hidden="true"
+              className="absolute left-[max(45rem,calc(50%+8rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
+            >
+              <div
+                style={{
+                  clipPath:
+                    'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
+                }}
+                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+              />
+            </div>
+
+            <div className="relative z-10 flex-col items-center space-y-2 text-sm sm:flex sm:flex-row sm:gap-3 sm:space-y-0">
+              <div className="text-md flex items-center gap-3 font-medium text-foreground">
+                {displayAnnouncement.message}
+              </div>
+
+              {/* <div className="group flex items-center gap-3">
+                <div className="hidden size-1 rounded-full bg-primary sm:block" />
+
+                <Button className="tetx-shadow-sm rounded-sm border border-white/20 bg-white/30 text-foreground shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-2px_5px_rgba(0,0,0,0.1),0_8px_20px_rgba(0,0,0,0.1)] dark:border-white/20 dark:bg-white/10 dark:shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),inset_0_-2px_4px_rgba(0,0,0,0.3),0_8px_20px_rgba(0,0,0,0.25)]">
+                  See what’s new
+                  <HiArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Button>
+              </div> */}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDisplayAnnouncement({ status: false, message: "" })}
+              className="absolute right-2 rounded-lg text-foreground hover:bg-transparent hover:text-foreground/70 dark:hover:bg-transparent"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
       )}
+      {/* {loading && (
+        <div className="pointer-events-none fixed inset-x-0 z-[999] flex size-full justify-center backdrop-blur-xl">
+          <MetallicPaint text="Velo" edgeBend={0.9}
+            density={2.5}
+            softness={1}
+            dispersion={0}
+            distortion={0}
+            angle={100}
+            scale={0.6}
+            speed={1}
+            rotation={0}
+            mouseTilt={0.5}
+            intro
+            imageSrc={logo} />
+        </div>
+      )} */}
       <div id="root" className="overflow-hidden">
         <ErrorBoundary fallback={<Error error={error} reset={handleReset} />}>
           <FileStorageProvider>
@@ -510,9 +624,9 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
               </Alert>
             )}
             {incomingCallId && (
-              <ConfirmCall id={incomingCallId} show={true} conversations={conversations} />
+              <ConfirmCall id={incomingCallId} show conversations={conversations} />
             )}
-            {!callRoute ? (
+            {!hideChrome ? (
               <Sidebar
                 setLoad={setLoad}
                 activeRoute={activeRoute}
@@ -526,11 +640,11 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
               {showPostPreview && <PostPreview />}
               {callRoute && <VideoChat />}
             </div>
-            {!callRoute ? <RightSideBar /> : null}
+            {!hideChrome ? <RightSideBar /> : null}
             {!pathname?.includes("posts") &&
-            !pathname?.includes("chats") &&
+            // !pathname?.includes("chats") &&
             !routes.includes(activeRoute) &&
-            !callRoute ? (
+            !hideChrome ? (
               <Bottombar
                 setLoad={setLoad}
                 isMoreShown={isMoreShown}
@@ -545,4 +659,4 @@ const ClientComponents = ({ children }: ClientComponentsProps) => {
     </>
   );
 };
-export default ClientComponents;
+export default RootClientComponents;

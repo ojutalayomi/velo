@@ -1,11 +1,14 @@
 *
 !.gitignore
+!ojutalayomi-react-textarea-enhanced-1.4.0.tgz
 !src/
 !src/**
 !velo/
 !velo/**
 !public
 !public/**
+!serviceworker/
+!serviceworker/**
 !.eslintrc.json
 !next.config.mjs
 !package-lock.json
@@ -46,6 +49,8 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+.cursor
 
 # typescript
 *.tsbuildinfo

@@ -38,10 +38,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 }
 
 async function fetchExplorePosts(db: MongoDBClient, skip: number, limit: number) {
-  const database = await db.getDb();
   const fetchLimit = limit + 1;
 
-  const cursor = database.collection("Posts").aggregate([
+  const cursor = db.posts().aggregate([
     {
       $unionWith: {
         coll: "Posts_Shares",
@@ -49,7 +48,7 @@ async function fetchExplorePosts(db: MongoDBClient, skip: number, limit: number)
       },
     },
     // Only posts that have at least one media item
-    { $match: { "Image.0": { $exists: true } } },
+    { $match: { "Image.0": { $exists: true }, hidden: { $ne: true } } },
     { $sort: { TimeOfPost: -1 } },
     { $skip: skip },
     { $limit: fetchLimit },

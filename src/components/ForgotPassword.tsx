@@ -62,35 +62,36 @@ const ForgotPassword: React.FC = () => {
   return (
     <Wrapper
       header={
-        <div className="flex flex-col gap-2">
-          <h1>Fill in your email to reset your password.</h1>
-          <h2>
-            Don&apos;t have an account?
-            <Link className="" href="/accounts/signup">
-              {" "}
-              Sign Up
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-bold tracking-tight">Reset your password</h1>
+          <p className="text-sm text-muted-foreground">
+            Enter your email and we&apos;ll send you a reset link.{" "}
+            <Link className="font-medium text-brand transition-colors hover:underline" href="/accounts/signup">
+              Sign up
             </Link>
-          </h2>
+          </p>
         </div>
       }
       body={
-        <form className="space-y-2 p-2" onSubmit={handleSubmit}>
-          <div className="flex flex-col justify-between gap-2">
-            <label className="font-semibold text-start">Email</label>
+        <form className="space-y-3" onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium">Email</label>
             <Input
-              className="font-semibold input1"
               type="email"
               name="email"
               id="email"
               value={formData.email}
-              placeholder="Email.."
+              placeholder="you@example.com"
               onChange={handleInputChange}
               disabled={loading}
               required
             />
-            {error && <div className="error">{error}</div>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
-          <Button className="submit" disabled={loading}>
+          <Button
+            className="h-10 w-full bg-brand font-semibold text-white shadow-sm hover:bg-brand/90 active:scale-[0.98] transition-all"
+            disabled={loading}
+          >
             {loading ? (
               <div className="loader show"></div>
             ) : success ? (

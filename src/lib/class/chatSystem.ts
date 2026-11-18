@@ -33,6 +33,44 @@ class ChatSystem {
     return createdAttributes;
   }
 
+  async addParticipants(chatId: string, userIds: string[]) {
+    return await this.chatRepository.addParticipants(chatId, userIds);
+  }
+
+  async removeParticipants(chatId: string, userIds: string[]) {
+    return await this.chatRepository.removeParticipants(chatId, userIds);
+  }
+
+  async getParticipants(chatId: string) {
+    return await this.chatRepository.getParticipants(chatId);
+  }
+
+  async getInvite(chatId: string) {
+    return await this.chatRepository.getInvite(chatId);
+  }
+
+  async createInvite(
+    chatId: string,
+    options: { expiresInHours?: number; maxUses?: number | null } = {}
+  ) {
+    return await this.chatRepository.createInvite(chatId, options);
+  }
+
+  async updateInvite(
+    chatId: string,
+    updates: { enabled?: boolean; expiresInHours?: number; maxUses?: number | null }
+  ) {
+    return await this.chatRepository.updateInvite(chatId, updates);
+  }
+
+  async previewInvite(token: string) {
+    return await this.chatRepository.previewInvite(token);
+  }
+
+  async joinInvite(token: string) {
+    return await this.chatRepository.joinInvite(token);
+  }
+
   async updateChat(id: string, updatedAttributes: Partial<ChatAttributes>): Promise<void> {
     await this.chatRepository.updateChat(id, updatedAttributes);
   }

@@ -64,6 +64,18 @@ const followingFeedSlice = createSlice({
     setFollowingError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+    updateFollowingFeedPosts: (
+      state,
+      action: PayloadAction<{ key: keyof PostSchema; value: string; updates: Partial<PostSchema> }>
+    ) => {
+      const { key, value, updates } = action.payload;
+      state.posts = state.posts.map((post) => {
+        if (post[key as keyof PostSchema] === value) {
+          return { ...post, ...updates };
+        }
+        return post;
+      });
+    },
   },
 });
 
@@ -73,6 +85,7 @@ export const {
   setFollowingFeedLoadingMore,
   setFollowingLoading,
   setFollowingError,
+  updateFollowingFeedPosts,
 } = followingFeedSlice.actions;
 
 export default followingFeedSlice.reducer;

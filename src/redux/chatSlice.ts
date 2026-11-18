@@ -43,7 +43,6 @@ const defaultSettings = {
   wallpaper: "",
   theme: "light",
   isPrivate: false,
-  inviteLink: "",
   members: [],
   adminIds: [],
   isBlocked: false,
@@ -101,6 +100,26 @@ const chatSlice = createSlice({
               ...Object.fromEntries(Object.entries(updates).map(([key, value]) => [key, value])),
             }
           : convo
+      );
+    },
+    setTypingUser: (
+      state,
+      action: PayloadAction<{
+        chatId: string;
+        user: ConvoType["isTypingList"][number];
+      }>
+    ) => {
+      const convo = state.conversations.find((c) => c.id === action.payload.chatId);
+      if (!convo) return;
+      const { user } = action.payload;
+      const others = (convo.isTypingList ?? []).filter((entry) => entry.id !== user.id);
+      convo.isTypingList = [...others, user];
+    },
+    removeTypingUser: (state, action: PayloadAction<{ chatId: string; userId: string }>) => {
+      const convo = state.conversations.find((c) => c.id === action.payload.chatId);
+      if (!convo) return;
+      convo.isTypingList = (convo.isTypingList ?? []).filter(
+        (entry) => entry.id !== action.payload.userId
       );
     },
     updateMessageReactions: (state, action: PayloadAction<{ id: string; updates: Reaction }>) => {
@@ -235,6 +254,8 @@ export const {
   setConversations,
   addConversation,
   updateConversation,
+  setTypingUser,
+  removeTypingUser,
   updateMessageReactions,
   deleteConversation,
   setMessages,
@@ -268,8 +289,8 @@ export const fetchChats = async (dispatch: Dispatch) => {
     const uid = chats.requestId;
     dispatch(setUserId(uid));
 
-    const conversations = chats.chats?.map(chat => {
-      return new Chat(chat, chats.messages).getConvo(uid)
+    const conversations = chats.chats?.map((chat) => {
+      return new Chat(chat, chats.messages).getConvo(uid);
     });
 
     dispatch(setConversations(conversations));

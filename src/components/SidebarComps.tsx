@@ -1,18 +1,19 @@
 /* eslint-disable tailwindcss/no-custom-classname */
 import {
-  BadgePlus,
+  SquarePen,
   RefreshCw,
   Bell,
-  Mail,
+  MessageCircle,
   User,
   LogIn,
   Ellipsis,
   CircleEllipsis,
-  Settings,
-  CircleHelp,
-  Home,
-  Search,
-  User2,
+  Settings2,
+  House,
+  Compass,
+  CircleUserRound,
+  Bookmark,
+  ShieldCheck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -29,33 +30,33 @@ import { Statuser } from "./VerificationComponent";
 export const sidebarItems = [
   {
     route: "home",
-    icon: Home,
+    icon: House,
     label: "Home",
   },
   {
     route: "explore",
-    icon: Search,
+    icon: Compass,
     label: "Explore",
   },
   {
     route: "compose/post",
-    icon: BadgePlus,
+    icon: SquarePen,
     label: "Post",
   },
   {
     route: "chats",
-    icon: Mail,
+    icon: MessageCircle,
     label: "Chats",
   },
   // Add other sidebar items here...
   {
     route: "profile",
-    icon: User2,
+    icon: CircleUserRound,
     label: "Profile",
   },
   {
     route: "general",
-    icon: Settings,
+    icon: Settings2,
     label: "General",
   },
   {
@@ -64,9 +65,9 @@ export const sidebarItems = [
     label: "Notifications",
   },
   {
-    route: "feedback",
-    icon: CircleHelp,
-    label: "Feedback",
+    route: "bookmarks",
+    icon: Bookmark,
+    label: "Bookmarks",
   },
   {
     route: "#",
@@ -74,6 +75,12 @@ export const sidebarItems = [
     label: "Others",
   },
 ];
+
+export const adminSidebarItem = {
+  route: "admin",
+  icon: ShieldCheck,
+  label: "Admin",
+};
 
 export const SidebarItem = forwardRef<
   HTMLDivElement,
@@ -87,6 +94,9 @@ export const SidebarItem = forwardRef<
 >(({ item, activeRoute, handleClick, userdata, isCollapsed = false, ...props }, ref) => {
   const { conversations } = useSelector((state: RootState) => state.chat);
   const i = conversations?.reduce((acc, convo) => acc + convo.unread, 0) ?? 0;
+  const notificationUnread = useSelector(
+    (state: RootState) => state.notifications.unreadCount
+  );
   const isProfile = item.route === "profile";
   const route = isProfile ? userdata.username : item.route;
   const label = isProfile ? (userdata.username ? userdata.username : "Profile") : item.label;
@@ -135,6 +145,11 @@ export const SidebarItem = forwardRef<
                     {i}
                   </div>
                 )}
+                {item.label === "Notifications" && notificationUnread > 0 && (
+                  <div className="absolute right-0 flex size-5 translate-y-[-50%] items-center justify-center rounded-full bg-brand text-xs font-bold text-white md:relative md:translate-y-0">
+                    {notificationUnread > 99 ? "99+" : notificationUnread}
+                  </div>
+                )}
               </div>
             </Link>
           ))}
@@ -167,6 +182,13 @@ export const SidebarItem = forwardRef<
               className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white ${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
             >
               {i}
+            </div>
+          )}
+          {item.label === "Notifications" && notificationUnread > 0 && (
+            <div
+              className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white ${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
+            >
+              {notificationUnread > 99 ? "99+" : notificationUnread}
             </div>
           )}
         </div>

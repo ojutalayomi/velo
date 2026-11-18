@@ -17,8 +17,7 @@ export default async function proxy(request: NextRequest) {
     request.nextUrl.hostname ||
     "127.0.0.1";
 
-  const hasKV =
-    !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
+  const hasKV = !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 
   try {
     if (process.env.NODE_ENV === "production" && hasKV) {

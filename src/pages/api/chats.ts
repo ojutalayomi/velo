@@ -6,7 +6,7 @@ import { isChatMember } from "@/lib/chatMembership";
 import { UserSchema } from "@/lib/class/User";
 import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
-import { getSocketInstance } from "@/lib/socket";
+import { emitViaSocketServer } from "@/lib/socket";
 import {
   AllChats,
   ChatDataClient,
@@ -439,17 +439,15 @@ export const chatRepository = {
         requestId: payload._id,
       };
 
-      // Emit the message via Socket.IO
-      const socket = getSocketInstance(payload._id);
-      if (socket) {
-        try {
-          socket.emit("chatMessage", { ...chatData.msg });
-          socket.emit("addChat", newObj);
-          // console.log('Message emitted:', msg);
-        } catch (error) {
-          console.error("Socket emission error:", error);
-          throw new Error("Failed to emit message");
-        }
+      // Announce the chat, then deliver its first message. The chat is already persisted, so a
+      // failed announcement is logged instead of failing the request; recipients still get it
+      // on their next fetch. Each emit waits for the socket server's ack because a
+      // fire-and-forget emit can be lost when this serverless function exits.
+      try {
+        await emitViaSocketServer(payload._id, "addChat", { chat: { _id: chat._id.toString() } });
+        await emitViaSocketServer(payload._id, "chatMessage", { ...chatData.msg });
+      } catch (error) {
+        console.error("Failed to announce the new chat:", error);
       }
 
       res.status(201).json(newObj);
@@ -492,8 +490,24 @@ export const chatRepository = {
         return res.status(403).json({ error: "Only group admins can edit this group" });
       }
 
+      if (chat.chatType !== "Group") {
+        return res.status(400).json({ error: "Only group details can be edited" });
+      }
+      if ("name" in $set) {
+        // Groups store their title under `name.group`; no other keys are allowed.
+        const name = $set.name as Record<string, string>;
+        const title = typeof name.group === "string" ? name.group.trim() : "";
+        if (Object.keys(name).some((key) => key !== "group") || !title) {
+          return res.status(400).json({ error: "Group name cannot be empty" });
+        }
+        $set.name = { group: title };
+      }
+      if (typeof $set.groupDescription === "string") {
+        $set.groupDescription = $set.groupDescription.trim();
+      }
+
       await db.chats().updateOne({ _id: new ObjectId(id) }, { $set });
-      res.status(200).end();
+      res.status(200).json($set);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Failed to update chat" });

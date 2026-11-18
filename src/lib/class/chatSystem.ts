@@ -1,7 +1,7 @@
 import ChatRepository from "./ChatRepository";
 import {
   AllChats,
-  ChatAttributes,
+  ChatUpdate,
   ChatDataClient,
   Err,
   MessageAttributes,
@@ -71,7 +71,7 @@ class ChatSystem {
     return await this.chatRepository.joinInvite(token);
   }
 
-  async updateChat(id: string, updatedAttributes: Partial<ChatAttributes>): Promise<void> {
+  async updateChat(id: string, updatedAttributes: ChatUpdate): Promise<void> {
     await this.chatRepository.updateChat(id, updatedAttributes);
   }
 

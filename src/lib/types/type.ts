@@ -112,6 +112,14 @@ export interface ChatSettings {
   lastSeen: string; // Timestamp of the last time the user was online
 }
 
+/** Fields an admin may change on a group chat via PUT /api/chats?id= */
+export interface ChatUpdate {
+  name?: { group: string };
+  groupDescription?: string;
+  groupDisplayPicture?: string;
+  isPrivate?: boolean;
+}
+
 export interface ChatAttributes {
   _id?: ObjectId; // Or string depending on your chat ID format
   name: string;

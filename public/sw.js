@@ -46,6 +46,22 @@ async function closeByTag(tag) {
   notifications.forEach((notification) => notification.close());
 }
 
+/** Visible windows already showing the page this notification points to. */
+async function viewingClients(url) {
+  const target = new URL(safeUrl(url), self.location.origin);
+  const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+
+  return clientList.filter((client) => {
+    if (client.visibilityState !== "visible") return false;
+    try {
+      const open = new URL(client.url);
+      return open.origin === target.origin && open.pathname === target.pathname;
+    } catch {
+      return false;
+    }
+  });
+}
+
 async function focusOrOpen(url) {
   const targetUrl = new URL(safeUrl(url), self.location.origin).href;
   const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
@@ -110,6 +126,14 @@ self.addEventListener("push", (event) => {
         return;
       }
 
+      // The in-app UI already shows what the user is looking at, so a system banner is noise.
+      const viewers = await viewingClients(payload.url);
+      if (viewers.length > 0) {
+        // Still make a sound, since the system would have; the page plays it.
+        viewers.forEach((client) => client.postMessage({ type: "push-sound" }));
+        return;
+      }
+
       const data = payload.data && typeof payload.data === "object" ? payload.data : {};
       const options = {
         body: typeof payload.body === "string" ? payload.body : "",
@@ -118,6 +142,10 @@ self.addEventListener("push", (event) => {
         tag: typeof payload.tag === "string" ? payload.tag : undefined,
         data: { ...data, url: safeUrl(payload.url) },
         vibrate: [100, 50, 100],
+        // Ask the OS to alert audibly; a repeated tag would otherwise replace the earlier
+        // notification quietly. renotify is only valid together with a tag.
+        silent: false,
+        ...(typeof payload.tag === "string" && payload.tag ? { renotify: true } : {}),
       };
       const title = typeof payload.title === "string" && payload.title ? payload.title : "Velo";
 

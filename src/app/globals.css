@@ -97,9 +97,6 @@ div#home {
 div#home::-webkit-scrollbar {
   display: none; /* Hide scrollbar in Chrome, Safari, and Edge */
 }
-.dark\:bg-bgDark:where(.dark, .dark *) {
-  background-image: url(/greybg-dark.png) !important;
-}
 .dark\:bg-black:where(.dark, .dark *) {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity)) !important;

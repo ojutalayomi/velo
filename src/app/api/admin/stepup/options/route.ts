@@ -24,7 +24,10 @@ export async function POST() {
       );
     }
 
-    const options = await generatePasskeyAuthenticationOptions({ credentials });
+    // Same as normal passkey login: don't restrict allowCredentials, so the browser offers
+    // any passkey it holds for this site. The verify route still requires that the chosen
+    // credential belongs to this admin.
+    const options = await generatePasskeyAuthenticationOptions({ credentials: [] });
     const database = await db.getDb();
     await database.collection("passkey_challenges").insertOne({
       challenge: options.challenge,

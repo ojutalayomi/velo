@@ -8,6 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const nextConfig = {
+  experimental: {
+    agentUpgrade: "security",
+  },
   turbopack: {
     root: __dirname,
   },

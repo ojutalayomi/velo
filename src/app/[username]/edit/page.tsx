@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useTheme } from "@/app/providers/ThemeProvider";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { RootState } from "@/redux/store";
@@ -29,7 +30,12 @@ export default function EditProfile() {
     website: "",
     displayPicture: "",
     coverPhoto: "",
+    username: "",
+    dob: "",
+    isPrivate: false,
+    theme: "system" as "system" | "light" | "dark",
   });
+  const { setTheme } = useTheme();
 
   const [selectedFiles, setSelectedFiles] = useState<{
     displayPicture?: File;
@@ -40,7 +46,7 @@ export default function EditProfile() {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTimeout(() => {
+    const t = setTimeout(() => {
       setFormData({
         name: userdata.name || "",
         bio: userdata.bio || "",
@@ -48,15 +54,23 @@ export default function EditProfile() {
         website: userdata.website || "",
         displayPicture: userdata.displayPicture || "",
         coverPhoto: userdata.coverPhoto || "",
+        username: userdata.username || "",
+        dob: userdata.dob ? userdata.dob.slice(0, 10) : "",
+        isPrivate: !!userdata.isPrivate,
+        theme: userdata.theme || "system",
       });
-    }, 100)
+    }, 100);
+    return () => clearTimeout(t);
   }, [userdata]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -73,13 +87,20 @@ export default function EditProfile() {
           bucketName: type === "displayPicture" ? BUCKETNAME.PROFILE : BUCKETNAME.BANNER,
         }),
       });
+      if (!res.ok) throw new Error("Failed to get upload URL");
 
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      return data.url;
+      // The API returns a presigned POST, so the file must be sent to S3 itself.
+      const { url, fields } = await res.json();
+      const body = new FormData();
+      Object.entries(fields as Record<string, string>).forEach(([k, v]) => body.append(k, v));
+      body.append("file", file);
+
+      const uploadRes = await fetch(url, { method: "POST", body });
+      if (!uploadRes.ok) throw new Error("Upload failed");
+
+      return url + fields.key;
     } catch (error) {
       console.error(error);
-      toast.error("Error uploading image");
       return null;
     }
   };
@@ -123,10 +144,14 @@ export default function EditProfile() {
 
       // Only upload if new files were selected
       if (selectedFiles.displayPicture) {
-        displayPictureUrl = await uploadImage(selectedFiles.displayPicture, "displayPicture");
+        const uploaded = await uploadImage(selectedFiles.displayPicture, "displayPicture");
+        if (!uploaded) throw new Error("Profile picture upload failed");
+        displayPictureUrl = uploaded;
       }
       if (selectedFiles.coverPhoto) {
-        coverPhotoUrl = await uploadImage(selectedFiles.coverPhoto, "coverPhoto");
+        const uploaded = await uploadImage(selectedFiles.coverPhoto, "coverPhoto");
+        if (!uploaded) throw new Error("Cover photo upload failed");
+        coverPhotoUrl = uploaded;
       }
 
       const res = await fetch("/api/user/update", {
@@ -136,21 +161,25 @@ export default function EditProfile() {
         },
         body: JSON.stringify({
           ...formData,
-          displayPicture: displayPictureUrl,
-          coverPhoto: coverPhotoUrl,
+          displayPicture: displayPictureUrl.startsWith("blob:") ? "" : displayPictureUrl,
+          coverPhoto: coverPhotoUrl.startsWith("blob:") ? "" : coverPhotoUrl,
         }),
       });
 
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.message || "Update failed");
+      }
 
       const data = await res.json();
       dispatch(updateUserData(data.data));
+      setTheme(formData.theme);
 
       toast.success("Profile updated successfully");
-      router.push(`/${userdata.username}`);
+      router.push(`/${data.data?.username || userdata.username}`);
     } catch (error) {
       console.error(error);
-      toast.error("Error updating profile");
+      toast.error(error instanceof Error ? error.message : "Error updating profile");
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +211,7 @@ export default function EditProfile() {
           <Button
             type="button"
             variant="ghost"
-            className="absolute inset-0 flex size-full items-center justify-center bg-black/30 opacity-0 hover:opacity-100"
+            className="absolute inset-0 flex size-full items-center justify-center bg-black/30 opacity-60 hover:opacity-100"
             onClick={() => coverInputRef.current?.click()}
           >
             <Camera className="size-6" />
@@ -211,7 +240,7 @@ export default function EditProfile() {
               <Button
                 type="button"
                 variant="ghost"
-                className="absolute inset-0 flex h-full items-center justify-center rounded-full bg-black/30 opacity-0 hover:opacity-100"
+                className="absolute inset-0 flex h-full items-center justify-center rounded-full bg-black/30 opacity-60 hover:opacity-100"
                 onClick={() => dpInputRef.current?.click()}
               >
                 <Camera className="size-5" />
@@ -237,6 +266,23 @@ export default function EditProfile() {
               onChange={handleInputChange}
               maxLength={50}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              maxLength={20}
+              pattern="[A-Za-z0-9_]{3,20}"
+              title="3-20 letters, numbers or underscores"
+              autoCapitalize="none"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              You can change your username once every 30 days.
+            </p>
           </div>
 
           <div>
@@ -272,6 +318,50 @@ export default function EditProfile() {
               placeholder="https://"
             />
           </div>
+
+          <div>
+            <Label htmlFor="dob">Date of birth</Label>
+            <Input
+              id="dob"
+              name="dob"
+              type="date"
+              value={formData.dob}
+              onChange={handleInputChange}
+              max={new Date().toISOString().slice(0, 10)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="theme">Theme</Label>
+            <select
+              id="theme"
+              name="theme"
+              value={formData.theme}
+              onChange={handleInputChange}
+              className="h-10 w-full rounded-md border bg-transparent px-3 text-sm dark:bg-zinc-900"
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+
+          <label className="flex cursor-pointer items-start gap-3" htmlFor="isPrivate">
+            <input
+              id="isPrivate"
+              name="isPrivate"
+              type="checkbox"
+              checked={formData.isPrivate}
+              onChange={handleInputChange}
+              className="mt-1 size-4"
+            />
+            <span>
+              <span className="block text-sm font-medium">Private account</span>
+              <span className="block text-xs text-gray-500">
+                Only you can see your followers and following lists.
+              </span>
+            </span>
+          </label>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (

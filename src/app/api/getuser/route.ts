@@ -36,6 +36,13 @@ export async function GET(request: NextRequest) {
           displayPicture: 1,
           verified: 1,
           userId: 1,
+          bio: 1,
+          location: 1,
+          website: 1,
+          dob: 1,
+          isPrivate: 1,
+          theme: 1,
+          usernameChangedAt: 1,
         },
       }
     );

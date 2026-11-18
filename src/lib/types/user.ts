@@ -57,6 +57,7 @@ export interface User {
   time: string;
   userId: string;
   username: string;
+  usernameChangedAt?: string;
   verified: boolean;
   website?: string;
   accountType: AccountType;

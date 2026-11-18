@@ -1,17 +1,17 @@
 /* eslint-disable tailwindcss/no-custom-classname */
 import {
-  BadgePlus,
+  SquarePen,
   RefreshCw,
   Bell,
-  Mail,
+  MessageCircle,
   User,
   LogIn,
   Ellipsis,
   CircleEllipsis,
-  Settings,
-  Home,
-  Search,
-  User2,
+  Settings2,
+  House,
+  Compass,
+  CircleUserRound,
   Bookmark,
 } from "lucide-react";
 import Image from "next/image";
@@ -29,33 +29,33 @@ import { Statuser } from "./VerificationComponent";
 export const sidebarItems = [
   {
     route: "home",
-    icon: Home,
+    icon: House,
     label: "Home",
   },
   {
     route: "explore",
-    icon: Search,
+    icon: Compass,
     label: "Explore",
   },
   {
     route: "compose/post",
-    icon: BadgePlus,
+    icon: SquarePen,
     label: "Post",
   },
   {
     route: "chats",
-    icon: Mail,
+    icon: MessageCircle,
     label: "Chats",
   },
   // Add other sidebar items here...
   {
     route: "profile",
-    icon: User2,
+    icon: CircleUserRound,
     label: "Profile",
   },
   {
     route: "general",
-    icon: Settings,
+    icon: Settings2,
     label: "General",
   },
   {

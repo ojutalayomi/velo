@@ -64,6 +64,8 @@ import { useNetwork } from "./providers/NetworkProvider";
 // clears the indicator when a stop event never arrives (tab close, network drop).
 const TYPING_INDICATOR_TTL_MS = 5000;
 
+const INFO_ROUTES = ["/about", "/press", "/developers", "/jobs", "/privacy", "/terms", "/locations"];
+
 const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
@@ -75,6 +77,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const showPostPreview = pathname?.includes("/photo/");
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const callRoute = pathname?.startsWith("/call");
+  // Public info pages (About, Press, Terms, …) render full-screen without app chrome.
+  const infoRoute = INFO_ROUTES.some((r) => pathname === r || pathname?.startsWith(`${r}/`));
+  const hideChrome = callRoute || infoRoute;
   const { userdata, loading } = useUser();
   const path = pathname?.replace("/", "") || "";
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
@@ -621,7 +626,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             {incomingCallId && (
               <ConfirmCall id={incomingCallId} show conversations={conversations} />
             )}
-            {!callRoute ? (
+            {!hideChrome ? (
               <Sidebar
                 setLoad={setLoad}
                 activeRoute={activeRoute}
@@ -635,11 +640,11 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
               {showPostPreview && <PostPreview />}
               {callRoute && <VideoChat />}
             </div>
-            {!callRoute ? <RightSideBar /> : null}
+            {!hideChrome ? <RightSideBar /> : null}
             {!pathname?.includes("posts") &&
-            !pathname?.includes("chats") &&
+            // !pathname?.includes("chats") &&
             !routes.includes(activeRoute) &&
-            !callRoute ? (
+            !hideChrome ? (
               <Bottombar
                 setLoad={setLoad}
                 isMoreShown={isMoreShown}

@@ -476,7 +476,7 @@ nav #nav .notification {
 }
 
 body {
-  background: url(/greybg.jpg);
+  background: #fff;
   font-family: "Roboto", sans-serif;
   height: 100vh;
 }

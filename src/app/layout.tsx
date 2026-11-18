@@ -65,7 +65,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body
-        className={`selection:bg-tomatom-300 dark:bg-black dark:bg-bgDark ${myCustomFont.className}`}
+        className={`selection:bg-tomatom-300 dark:bg-black ${myCustomFont.className}`}
         suppressHydrationWarning
       >
         <Providers>

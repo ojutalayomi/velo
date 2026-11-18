@@ -234,7 +234,7 @@ const ChatTextarea = ({
     <div className="relative w-full">
       <div
         className={cn(
-          "fixed inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80",
+          "sticky inset-x-0 bottom-0 z-10 border-t bg-white/80 p-2 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80",
           disabled ? " pointer-events-none opacity-70" : ""
         )}
       >

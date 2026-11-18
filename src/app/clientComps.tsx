@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import UserPhoto from "@/components/UserPhoto";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { FileStorageProvider } from "@/hooks/useFileStorage";
+import { usePushSound } from "@/hooks/usePushSound";
 import {
   ChatParticipant,
   ClientComponentsProps,
@@ -88,6 +89,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const [error, setError] = useState(null);
   const [, setLoad] = useState<boolean>(false);
   const { displayAnnouncement, setDisplayAnnouncement } = useAnnouncer();
+  usePushSound();
   const [incomingCallId, setIncomingCallId] = useState<string | null>(null);
   const socket = useSocket();
   const typingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());

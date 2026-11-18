@@ -1,6 +1,6 @@
 import {
   AllChats,
-  ChatAttributes,
+  ChatUpdate,
   ChatDataClient,
   ChatInviteMetadata,
   ChatInvitePreview,
@@ -159,15 +159,18 @@ class ChatRepository {
     return await response.json();
   }
 
-  async updateChat(id: string, updatedAttributes: Partial<ChatAttributes>): Promise<void> {
-    const response = await fetch(`/api/chats/${id}`, {
+  async updateChat(id: string, updatedAttributes: ChatUpdate): Promise<void> {
+    const response = await fetch(`/api/chats?id=${encodeURIComponent(id)}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(updatedAttributes),
     });
-    await response.json();
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.error ?? "Failed to update chat");
+    }
   }
 
   async updateChatSettings(id: string, updatedSettings: Partial<ChatSettings>): Promise<any> {

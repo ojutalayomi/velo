@@ -492,8 +492,24 @@ export const chatRepository = {
         return res.status(403).json({ error: "Only group admins can edit this group" });
       }
 
+      if (chat.chatType !== "Group") {
+        return res.status(400).json({ error: "Only group details can be edited" });
+      }
+      if ("name" in $set) {
+        // Groups store their title under `name.group`; no other keys are allowed.
+        const name = $set.name as Record<string, string>;
+        const title = typeof name.group === "string" ? name.group.trim() : "";
+        if (Object.keys(name).some((key) => key !== "group") || !title) {
+          return res.status(400).json({ error: "Group name cannot be empty" });
+        }
+        $set.name = { group: title };
+      }
+      if (typeof $set.groupDescription === "string") {
+        $set.groupDescription = $set.groupDescription.trim();
+      }
+
       await db.chats().updateOne({ _id: new ObjectId(id) }, { $set });
-      res.status(200).end();
+      res.status(200).json($set);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Failed to update chat" });

@@ -57,6 +57,8 @@ type Props = {
   message: MessageAttributes;
   setQuote: React.Dispatch<React.SetStateAction<QuoteProp>>;
   onClick?: () => void;
+  /** First bubble of a run from the same sender: gets the tail corner and extra top spacing. */
+  isFirstInGroup?: boolean;
 };
 
 // Define the type for each option
@@ -66,7 +68,7 @@ type Option = {
   onClick: () => void; // Click handler function
 };
 
-const MessageTab = ({ message, setQuote, onClick }: Props) => {
+const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props) => {
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
   const [open, setOpen] = useState(false);
@@ -94,13 +96,13 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
       case "sending":
         return <Loader size={15} className="min-w-3  animate-spin" />;
       case "sent":
-        return <Check size={15} className=" min-w-3" />;
+        return <Check size={14} className="min-w-3" />;
       case "delivered":
-        return <CheckCheck size={15} className="min-w-3  dark:text-gray-400" />;
+        return <CheckCheck size={14} className="min-w-3" />;
       case "failed":
-        return <b className="min-w-3  text-red-800">Not sent!</b>;
+        return <b className="min-w-3 text-red-600">Not sent!</b>;
       default:
-        return <CheckCheck size={15} className="min-w-3  text-green-500" />;
+        return <CheckCheck size={14} className="min-w-3 text-sky-500" />;
     }
   };
 
@@ -263,6 +265,16 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
     if (selectedMessages.length) dispatch(addSelectedMessage(message._id as string));
   };
 
+  if (message.messageType === "Announcement") {
+    return (
+      <div id={message._id as string} className="my-3 flex justify-center px-4">
+        <span className="rounded-full bg-gray-100 px-3 py-1 text-center text-xs text-gray-500 dark:bg-zinc-800 dark:text-gray-400">
+          {message.content}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <>
       <div
@@ -270,11 +282,11 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
         onClick={handleClick}
         onTouchStart={handleTouch}
         // onContextMenu={handleContextMenu}
-        className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} mb-2 flex flex-col transition-colors duration-300 dark:text-gray-400`}
+        className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} ${isFirstInGroup ? "mt-2" : "mt-0.5"} flex flex-col px-1 transition-colors duration-300 dark:text-gray-400`}
       >
         {/* Main Message Container */}
         <div
-          className={`flex ${message.messageType !== "Markdown" ? "max-w-[90%]" : "max-w-full"} flex-1 ${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} relative items-center gap-2`}
+          className={`flex ${message.messageType !== "Markdown" ? "max-w-[85%] tablets1:max-w-[75%]" : "max-w-full"} flex-1 ${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} relative items-end gap-1.5`}
         >
           <div
             className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
@@ -288,36 +300,22 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
             )}
 
             {/* Message Bubble */}
-            {/* <div
-              className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl p-2 ${
-                senderId === userdata._id
-                  ? "rounded-br-none bg-brand text-white"
-                  : "rounded-bl-none bg-gray-50 dark:bg-zinc-800/80 dark:text-white"
-              } text-left`} */}
             <div
-              className={`relative mb-1 ${message.content.length > 0 ? "flex" : "hidden"} max-w-full flex-col overflow-auto rounded-2xl px-3 py-2 ${
+              className={`relative ${message.content.length > 0 ? "flex" : "hidden"} min-w-[4.5rem] max-w-full flex-col overflow-hidden rounded-lg px-2.5 pb-1 pt-1.5 shadow-sm ${
                 senderId === userdata._id
-                  ? "rounded-br-none outline outline-1 outline-brand"
-                  : "rounded-bl-none shadow-md dark:shadow-zinc-700/50"
-              } bg-gray-50 text-left dark:bg-zinc-800/80 dark:text-white`}
+                  ? `${isFirstInGroup ? "rounded-tr-none" : ""} bg-brand/15 text-gray-900 dark:bg-brand/25 dark:text-white`
+                  : `${isFirstInGroup ? "rounded-tl-none" : ""} bg-white text-gray-900 dark:bg-zinc-800 dark:text-white`
+              } text-left`}
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
             >
               {/* Sender name for other users */}
-              {senderId !== userdata._id && message.chatType === "Group" && (
-                <div className="mr-4 flex items-center justify-between gap-1">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="mt-1 size-6">
-                      <AvatarImage src={displayPicture} alt={sender} />
-                      <AvatarFallback className="border-2 border-white text-xs dark:border-black">
-                        {sender?.slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {sender}
-                    </span>
-                    {verified && <Statuser className="size-4" />}
-                  </div>
+              {senderId !== userdata._id && message.chatType === "Group" && isFirstInGroup && (
+                <div className="mb-0.5 flex items-center gap-1">
+                  <span className="text-[13px] font-semibold text-brand dark:text-brand">
+                    {sender}
+                  </span>
+                  {verified && <Statuser className="size-3.5" />}
                 </div>
               )}
 
@@ -345,12 +343,15 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                         </div>
                       ) : (
                         <p
-                          className="whitespace-pre-wrap break-words py-1 text-sm"
+                          className="whitespace-pre-wrap break-words text-[15px] leading-snug"
                           style={{ fontFamily: "inherit" }}
                         >
                           {renderTextWithLinks(
                             contentToDisplay,
-                            (message.mentions ?? []).map((m) => m.username)
+                            [
+                              ...(message.mentions ?? []).map((m) => m.username),
+                              ...(message.chatType === "Group" ? ["ai"] : []),
+                            ]
                           )}
                         </p>
                       )}
@@ -360,8 +361,8 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
                         <Button
                           variant="link"
                           onClick={() => setIsExpanded(!isExpanded)}
-                          className={`mt-1 text-sm ${
-                            senderId === userdata._id ? "text-gray-200" : "text-gray-500"
+                          className={`mt-1 h-auto p-0 text-sm ${
+                            "text-brand"
                           } hover:underline`}
                         >
                           {isExpanded ? "Read less" : "Read more"}
@@ -373,9 +374,11 @@ const MessageTab = ({ message, setQuote, onClick }: Props) => {
               </div>
 
               <div
-                className={`${senderId === userdata._id ? "justify-end text-right" : "justify-start text-left"} mt-1 flex items-center gap-2 text-nowrap text-xs`}
+                className={`-mb-0.5 mt-0.5 flex items-center justify-end gap-1 text-nowrap text-[11px] leading-none ${
+                  "text-gray-500 dark:text-gray-400"
+                }`}
               >
-                <div className="after:content-[ • ] dark:after:text-slate-200">{time}</div>
+                <span>{time}</span>
                 {senderId === userdata._id && renderStatusIcon(message.status)}
               </div>
             </div>
@@ -501,8 +504,8 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
           flex w-full max-w-full cursor-pointer items-center gap-2 rounded-lg p-2
           ${
             senderId === userdata._id
-              ? "bg-gray-100 dark:bg-zinc-700/50"
-              : "bg-gray-100 dark:bg-zinc-700/50"
+              ? "bg-black/5 dark:bg-white/10"
+              : "bg-black/5 dark:bg-white/10"
           }
           border-l-4 ${senderId === userdata._id ? "border-brand" : "border-gray-400"}
           transition-all hover:bg-opacity-80

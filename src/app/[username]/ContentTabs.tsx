@@ -1,4 +1,11 @@
-import { MessageSquare, Share2, BookmarkPlus, Image, FileText } from "lucide-react";
+import {
+  MessageSquare,
+  Share2,
+  BookmarkPlus,
+  Image,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { JSX, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -15,12 +22,12 @@ import ThreadsSlide from "@/templates/ThreadSlides";
 
 type ID = "comment" | "post" | "share" | "media" | "bookmark";
 // Tab sections
-const tabs: { id: ID; label: string }[] = [
-  { id: "post", label: "Posts" },
-  { id: "share", label: "Shares" },
-  { id: "comment", label: "Comments" },
-  { id: "bookmark", label: "Bookmarks" },
-  { id: "media", label: "Media" },
+const tabs: { id: ID; label: string; icon: LucideIcon }[] = [
+  { id: "post", label: "Posts", icon: FileText },
+  { id: "share", label: "Shares", icon: Share2 },
+  { id: "comment", label: "Comments", icon: MessageSquare },
+  { id: "bookmark", label: "Bookmarks", icon: BookmarkPlus },
+  { id: "media", label: "Media", icon: Image },
 ];
 
 export default function ContentSection({
@@ -98,8 +105,14 @@ export default function ContentSection({
               return null;
             }
             return (
-              <TabsTrigger key={index + tab.id} value={tab.id}>
-                {tab.label}
+              <TabsTrigger
+                key={index + tab.id}
+                value={tab.id}
+                aria-label={tab.label}
+                className="gap-1.5"
+              >
+                <tab.icon className="size-4 shrink-0" />
+                {activeTab === tab.id && <span>{tab.label}</span>}
               </TabsTrigger>
             );
           })}
@@ -136,6 +149,7 @@ export default function ContentSection({
                                 className="aspect-square"
                                 postData={post}
                                 isLink
+                                fill
                                 key={`${post._id}-${index}`}
                               />
                             );

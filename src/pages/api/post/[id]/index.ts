@@ -54,6 +54,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
                   return collection.findOne({
                     OriginalPostId: post.PostID,
                     UserId: user._id.toString(),
+                    Type: "repost",
                   });
                 }
                 return collection.findOne({ postId: post.PostID, userId: user._id.toString() });

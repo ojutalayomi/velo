@@ -644,7 +644,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             </div>
             {!hideChrome ? <RightSideBar /> : null}
             {!pathname?.includes("posts") &&
-            // !pathname?.includes("chats") &&
+            !pathname?.startsWith("/chats/") &&
             !routes.includes(activeRoute) &&
             !hideChrome ? (
               <Bottombar

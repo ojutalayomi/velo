@@ -97,7 +97,23 @@ const ChatTextarea = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } = useMentionPicker(chatId ?? null, newMessage, textAreaRef);
+  const { userdata } = useSelector((state: RootState) => state.user);
+  const groupInfo = useSelector((state: RootState) =>
+    state.chat.conversations.find((convo) => convo.id === chatId)
+  );
+  const isGroup = groupInfo?.type === "Group";
+  const isGroupAdmin = isGroup && Boolean(groupInfo?.adminIds?.includes(String(userdata._id)));
+  // @all is offered to admins only (the server enforces this too); @ai to anyone in a group.
+  const specials = useMemo(
+    () => [
+      ...(isGroupAdmin
+        ? [{ userId: "all", username: "all", name: "Everyone", displayPicture: "" }]
+        : []),
+      ...(isGroup ? [{ userId: "ai", username: "ai", name: "Velo AI", displayPicture: "" }] : []),
+    ],
+    [isGroup, isGroupAdmin]
+  );
+  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } = useMentionPicker(chatId ?? null, newMessage, textAreaRef, specials);
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);

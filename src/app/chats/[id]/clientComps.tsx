@@ -5,7 +5,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import React, { Fragment, JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -39,6 +39,7 @@ import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
 import ChatTextarea from "../ChatTextarea";
+import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
 import MessageTab from "../MessageTab";
 import { MultiSelect } from "../MultiSelect";
 
@@ -98,10 +99,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingEmitRef = useRef(0);
-  const lastDateRef = useRef<string>("");
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const olderLoadThrottleRef = useRef(0);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
@@ -503,18 +502,23 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     },
   ];
 
-  useEffect(() => {
-    if (messageBoxRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messageBoxRef.current;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+  const lastMessageIdRef = useRef<string | null>(null);
+  const atBottomRef = useRef(true);
 
-      // Only auto-scroll if user was already at the bottom
-      if (!isNearBottom && !isScrolled) {
-        scrollToBottom();
-        setIsScrolled(true);
-      }
-    }
-  }, [Messages, isScrolled]);
+  useLayoutEffect(() => {
+    const box = messageBoxRef.current;
+    const last = Messages?.[Messages.length - 1];
+    if (!box || !last) return;
+    const lastId = String(last._id);
+    const isFirst = lastMessageIdRef.current === null;
+    const isNew = lastMessageIdRef.current !== lastId;
+    lastMessageIdRef.current = lastId;
+    if (!isNew) return; // older messages were prepended; keep position
+    const mine = last.sender?.id === userdata?._id;
+    if (isFirst) box.scrollTop = box.scrollHeight;
+    else if (atBottomRef.current || mine) scrollToBottom();
+  }, [Messages]);
+
 
   const scrollToBottom = () => {
     if (messageBoxRef.current) {
@@ -530,6 +534,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (!box) return;
     const { scrollTop, scrollHeight, clientHeight } = box;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    atBottomRef.current = isNearBottom;
     setShowScrollButton(!isNearBottom);
 
     if (
@@ -786,34 +791,29 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               <Loader2 className="size-6 animate-spin text-gray-400" aria-label="Loading older" />
             </div>
           )}
-          {Messages?.reduce((acc: JSX.Element[], message, index) => {
-            const messageDate = new Date(message.timestamp).toLocaleDateString("en-US", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            });
-
-            acc.push(
-              <Fragment key={message._id as string}>
-                {index === 0 || messageDate !== lastDateRef.current ? (
-                  <div
-                    key={`date-${messageDate}`}
-                    data-date={messageDate}
-                    className="sticky top-0 z-[1] my-2 text-center"
-                  >
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-                      {messageDate}
-                    </span>
-                  </div>
-                ) : null}
-
-                <MessageTab key={message._id as string} message={message} setQuote={setQuote} />
-              </Fragment>
-            );
-            lastDateRef.current = messageDate;
-
-            return acc;
-          }, [])}
+          {Messages?.reduce((groups: { key: string; ts: string; items: typeof Messages }[], message) => {
+            const key = getDayKey(message.timestamp);
+            const last = groups[groups.length - 1];
+            if (last && last.key === key) last.items.push(message);
+            else groups.push({ key, ts: message.timestamp, items: [message] });
+            return groups;
+          }, []).map((group) => (
+            <DateGroup key={group.key} timestamp={group.ts}>
+              {group.items.map((message, i) => (
+                <MessageTab
+                  key={message._id as string}
+                  message={message}
+                  setQuote={setQuote}
+                  isFirstInGroup={
+                    i === 0 ||
+                    group.items[i - 1].sender?.id !== message.sender?.id ||
+                    group.items[i - 1].messageType === "Announcement" ||
+                    message.messageType === "Announcement"
+                  }
+                />
+              ))}
+            </DateGroup>
+          ))}
         </div>
         {convo?.isTypingList?.filter((i) => i.chatId === pid).map((i) => i.name).length > 0 && (
           <div
@@ -828,7 +828,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       </div>
 
       {showScrollButton && (
-        <div className="absolute bottom-16 right-0 mr-4 flex items-center gap-2 rounded-full bg-gray-100 p-2 shadow-lg dark:bg-zinc-900 dark:text-slate-200">
+        <div className="absolute bottom-20 right-0 mr-4 flex items-center gap-2 rounded-full bg-gray-100 p-2 shadow-lg dark:bg-zinc-900 dark:text-slate-200">
           <ChevronDown
             className="cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             onClick={scrollToBottom}

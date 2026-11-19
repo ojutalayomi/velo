@@ -24,6 +24,8 @@ const HOSTNAME = "https://s3.amazonaws.com/post-s/";
 type ThreadsSlideProps = HTMLAttributes<HTMLDivElement> & {
   postData: PostSchema;
   isLink?: boolean;
+  /** Fill the parent box (e.g. grid tiles) instead of using the media's own aspect ratio. */
+  fill?: boolean;
 };
 
 function isImageMedia(media: string) {
@@ -194,12 +196,14 @@ function MediaFrame({
   postData,
   isLink,
   hasDots,
+  fill,
 }: {
   media: string;
   index: number;
   postData: PostSchema;
   isLink: boolean;
   hasDots: boolean;
+  fill: boolean;
 }) {
   const isImage = isImageMedia(media);
   const src = getMediaSrc(media, isHostedMedia(media));
@@ -228,7 +232,7 @@ function MediaFrame({
   return (
     <div
       className={frameClass}
-      style={ratio ? { aspectRatio: `${ratio}` } : undefined}
+      style={ratio && !fill ? { aspectRatio: `${ratio}` } : undefined}
       {...pointerProps}
     >
       {isImage ? (
@@ -258,7 +262,7 @@ function MediaFrame({
   );
 }
 
-const ThreadsSlide = ({ className, postData, isLink = false, ...props }: ThreadsSlideProps) => {
+const ThreadsSlide = ({ className, postData, isLink = false, fill = false, ...props }: ThreadsSlideProps) => {
   const [api, setApi] = useState<CarouselApi>();
   const { index } = useParams() as { index: string };
   const [current, setCurrent] = useState(0);
@@ -298,11 +302,15 @@ const ThreadsSlide = ({ className, postData, isLink = false, ...props }: Threads
 
   return (
     <div
-      className={cn("group/media relative flex w-full flex-1 items-center justify-center", className)}
+      className={cn(
+        "group/media relative flex w-full flex-1 items-center justify-center",
+        fill && "overflow-hidden",
+        className
+      )}
       {...props}
     >
       <Carousel setApi={setApi} className="size-full">
-        <CarouselContent className="ml-0">
+        <CarouselContent className={cn("ml-0", fill && "h-full")}>
           {mediaItems.map((media, index) => (
             <CarouselItem key={`${media}-${index}`} className="pl-0">
               <MediaFrame
@@ -311,6 +319,7 @@ const ThreadsSlide = ({ className, postData, isLink = false, ...props }: Threads
                 postData={postData}
                 isLink={isLink}
                 hasDots={showControls}
+                fill={fill}
               />
             </CarouselItem>
           ))}

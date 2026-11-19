@@ -15,7 +15,9 @@ type Mention = {
 export function useMentionPicker(
   chatId: string | null,
   newMessage: string,
-  textAreaRef: React.RefObject<HTMLTextAreaElement | null>
+  textAreaRef: React.RefObject<HTMLTextAreaElement | null>,
+  /** Always-available entries such as @all and @ai; they are not fetched members. */
+  specials: MentionParticipant[] = []
 ): {
   showPicker: boolean;
   mentionQuery: string;
@@ -94,13 +96,13 @@ export function useMentionPicker(
 
   const lowerQuery = mentionQuery.toLowerCase();
 
-  const filteredParticipants = participants
-    .filter(
-      (p) =>
-        p.username.toLowerCase().startsWith(lowerQuery) ||
-        p.name.toLowerCase().startsWith(lowerQuery)
-    )
-    .slice(0, 5);
+  const matches = (p: MentionParticipant) =>
+    p.username.toLowerCase().startsWith(lowerQuery) || p.name.toLowerCase().startsWith(lowerQuery);
+
+  const filteredParticipants = [
+    ...specials.filter(matches),
+    ...participants.filter(matches).slice(0, 5),
+  ];
 
   const selectMention = useCallback(
     (participant: MentionParticipant): string => {
@@ -115,6 +117,13 @@ export function useMentionPicker(
       );
 
       const updatedMessage = replacedPrefix + textAfterCursor;
+
+      // `@ai` is detected from the text by the server; only real users and `@all` are recorded.
+      if (participant.userId === "ai") {
+        setShowPicker(false);
+        setMentionQuery("");
+        return updatedMessage;
+      }
 
       setMentions((prev) => {
         const alreadyAdded = prev.some((m) => m.userId === participant.userId);

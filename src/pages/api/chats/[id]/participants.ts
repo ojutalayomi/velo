@@ -9,7 +9,7 @@ import {
 } from "@/lib/chatMembership";
 import { MongoDBClient } from "@/lib/mongodb";
 import { emitViaSocketServer } from "@/lib/socket";
-import { ChatParticipant, NewChatSettings } from "@/lib/types/type";
+import { ChatParticipant, MessageSchema, NewChatSettings } from "@/lib/types/type";
 
 const MAX_MEMBERS_PER_REQUEST = 50;
 
@@ -86,6 +86,41 @@ const addMembers = async (
   const added = participants.filter((participant) => newIds.includes(participant.userId));
 
   if (added.length > 0) {
+    const adder = await db.users().findOne({ _id: new ObjectId(callerId) });
+    const names = added.map((participant) => userMap.get(participant.userId)?.name || "Someone");
+    const joined =
+      names.length > 2
+        ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
+        : names.join(" and ");
+    const announcement: MessageSchema = {
+      _id: new ObjectId(),
+      chatId: id,
+      sender: {
+        id: callerId,
+        name: adder?.name ?? "",
+        displayPicture: adder?.displayPicture ?? "",
+        username: adder?.username ?? "",
+        verified: false,
+      },
+      receiverId: id,
+      content: `${adder?.name || "An admin"} added ${joined}`,
+      timestamp: new Date().toISOString(),
+      chatType: "Group",
+      messageType: "Announcement",
+      reactions: [],
+      attachments: [],
+      quotedMessageId: "",
+      status: "sent",
+    } as MessageSchema;
+    try {
+      await db.chatMessages().insertOne(announcement);
+      await emitViaSocketServer(callerId, "chatMessage", {
+        ...announcement,
+        _id: announcement._id.toString(),
+      });
+    } catch (error) {
+      console.error("Failed to post the member-added notice:", error);
+    }
     try {
       await emitViaSocketServer(callerId, "chat:participantsAdded", {
         chatId: id,

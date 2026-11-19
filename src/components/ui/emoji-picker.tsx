@@ -25,26 +25,26 @@ export const EmojiPicker = React.forwardRef<
   const { theme } = useTheme();
   const isMobile = useMediaQuery("(max-width: 640px)");
 
-  const EPicker = () => {
-    return (
-      <Picker
-        onEmojiClick={(emojiObject) => onChange(emojiObject.emoji)}
-        width="100%"
-        className="!bg-transparent !mt-0 border-none"
-        theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
-        skinTonesDisabled
-        searchDisabled
-        previewConfig={{
-          showPreview: false,
-        }}
-      />
-    );
-  };
+  // An element, not an inner component: a component declared during render gets a new
+  // identity on every parent re-render, which remounts the picker (the flicker on select).
+  const picker = (
+    <Picker
+      onEmojiClick={(emojiObject) => onChange(emojiObject.emoji)}
+      width="100%"
+      className="!bg-transparent !mt-0 border-none"
+      theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
+      skinTonesDisabled
+      searchDisabled
+      previewConfig={{
+        showPreview: false,
+      }}
+    />
+  );
 
   return (
     <>
       {noPopover ? (
-        <EPicker />
+        picker
       ) : isMobile ? (
         <Drawer>
           <DrawerTrigger
@@ -58,7 +58,7 @@ export const EmojiPicker = React.forwardRef<
             <DrawerHeader>
               <DrawerTitle>Emoji Picker</DrawerTitle>
             </DrawerHeader>
-            <EPicker />
+            {picker}
           </DrawerContent>
         </Drawer>
       ) : (
@@ -71,7 +71,7 @@ export const EmojiPicker = React.forwardRef<
             {children || <SmilePlus className="h-4 w-4" />}
           </PopoverTrigger>
           <PopoverContent className="w-full p-0 border-none" side="top" sideOffset={5}>
-            <EPicker />
+            {picker}
           </PopoverContent>
         </Popover>
       )}

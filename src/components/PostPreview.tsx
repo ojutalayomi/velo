@@ -22,11 +22,11 @@ import { RootState } from "@/redux/store";
 import MediaSlides from "@/templates/mediaSlides";
 import { Comments, formatNo } from "@/templates/PostProps";
 
+import CommentComposer from "./CommentComposer";
 import PostAnalytics from "./PostAnalytics";
 import ShareButton from "./ShareButton";
 import { fetchCommentsPage, getPost } from "../lib/getStatus";
 import { Skeleton } from "./ui/skeleton";
-import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 
 
 
@@ -155,42 +155,6 @@ const PostPreview: React.FC = () => {
       dispatch(updatePost({ id, updates: { NoOfShares: post.NoOfShares + 1, Shared: true } }));
     }
   };
-
-  const handleComment = useCallback(
-    (caption: string): boolean => {
-      if (!post || !id || !userdata._id || !socket) return false;
-      if (!caption.trim()) return false;
-
-      const Post: PostSchema = {
-        _id: "",
-        UserId: "",
-        DisplayPicture: "",
-        NameOfPoster: "",
-        Verified: false,
-        TimeOfPost: new Date().toISOString(),
-        Visibility: "everyone",
-        Caption: caption,
-        Image: [""],
-        IsFollowing: false,
-        NoOfLikes: 0,
-        Liked: false,
-        NoOfComment: 0,
-        NoOfShares: 0,
-        NoOfBookmarks: 0,
-        Bookmarked: false,
-        Username: "",
-        PostID: "",
-        Code: "",
-        WhoCanComment: "everyone",
-        Shared: false,
-        Type: "comment",
-        ParentId: post ? post.PostID : "",
-      };
-      socket.emit("post", Post);
-      return true;
-    },
-    [post, id, userdata._id, socket]
-  );
 
   const handleBookmark = () => {
     if (!post || !id || !userdata._id) return;
@@ -339,11 +303,11 @@ const PostPreview: React.FC = () => {
         </div>
 
         {/* Reply input */}
-        <ReplyTextArea
+        <CommentComposer
           className="md:hidden"
-          value={replyText}
-          onChange={setReplyText}
-          handleComment={handleComment}
+          parent={currentPost}
+          text={replyText}
+          onTextChange={setReplyText}
         />
       </div>
       <RightSideBar
@@ -351,7 +315,6 @@ const PostPreview: React.FC = () => {
         currentPost={currentPost}
         replyText={replyText}
         onReplyTextChange={setReplyText}
-        handleComment={handleComment}
         className="w-1/2 flex-none md:w-2/5 lg:w-1/3"
       />
     </div>
@@ -366,7 +329,6 @@ const RightSideBar = ({
   id,
   replyText,
   onReplyTextChange,
-  handleComment,
   ...props
 }: {
   className?: string;
@@ -374,7 +336,6 @@ const RightSideBar = ({
   id: string;
   replyText: string;
   onReplyTextChange: (value: string) => void;
-  handleComment: (caption: string) => boolean;
   props?: HTMLDivElement;
 }) => {
   const { userdata } = useUser();
@@ -505,10 +466,10 @@ const RightSideBar = ({
         )}
 
         {/* Reply input */}
-        <ReplyTextArea
-          value={replyText}
-          onChange={onReplyTextChange}
-          handleComment={handleComment}
+        <CommentComposer
+          parent={currentPost}
+          text={replyText}
+          onTextChange={onReplyTextChange}
         />
 
         {/* Comments Section */}
@@ -552,71 +513,6 @@ const RightSideBar = ({
  * Controlled reply box. Both the mobile and sidebar instances are always mounted
  * (one is hidden by CSS) and receive the same `value`, so they never drift apart.
  */
-function ReplyTextArea({
-  className,
-  value,
-  onChange,
-  handleComment,
-}: {
-  className?: string;
-  value: string;
-  onChange: (value: string) => void;
-  handleComment: (caption: string) => boolean;
-}) {
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-grow whenever the shared value changes, and again when a hidden copy
-  // becomes visible (a display:none textarea measures 0 until it is shown).
-  useEffect(() => {
-    const el = textAreaRef.current;
-    if (!el) return;
-
-    const resize = () => {
-      el.style.height = "38px";
-      el.style.height = `${Math.max(38, el.scrollHeight)}px`;
-    };
-    resize();
-
-    let frame = 0;
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(resize);
-    });
-    observer.observe(el);
-
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, [value]);
-
-  return (
-    <div
-      className={cn("flex flex-col gap-2 items-end p-4 bg-white dark:bg-zinc-900 dark:text-white", className)}
-    >
-      <TextAreaBox
-        ref={textAreaRef}
-        charLimit={250}
-        maxHeight={300}
-        value={value}
-        onChange={(e) => onChange(e)}
-        placeholder="Send your reply"
-        highlightColor="#ff6257"
-        className="max-h-[100px] w-full flex-grow resize-none border-none bg-transparent p-2 text-sm focus:border-b focus:border-brand focus:outline-none dark:text-white"
-      />
-      <Button
-        onClick={() => {
-          if (handleComment(value)) onChange("");
-        }}
-        className="rounded-full bg-brand px-2 py-1 text-sm text-white disabled:opacity-50"
-        disabled={!value.trim()}
-      >
-        Reply
-      </Button>
-    </div>
-  );
-}
-
 function RenderLoadingPlaceholder() {
   return (
     <div className="m-4 flex cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">

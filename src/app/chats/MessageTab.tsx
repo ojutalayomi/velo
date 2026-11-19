@@ -111,7 +111,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
       case "failed":
         return <b className="min-w-3 text-red-600">Not sent!</b>;
       default:
-        return <CheckCheck size={14} className="min-w-3" />;
+        return <CheckCheck size={14} className="min-w-3 text-sky-500" />;
     }
   };
 

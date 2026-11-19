@@ -24,6 +24,8 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isImage, setIsImage] = useState(false);
+  const [smallImage, setSmallImage] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const fetchPreviewRef = useRef(false);
 
   useEffect(() => {
@@ -85,33 +87,56 @@ export function LinkPreview({ url, direction }: LinkPreviewProps) {
       </a>
     );
 
+  const text = (
+    <div className="min-w-0 flex-1">
+      {metadata.title && <h3 className="line-clamp-2 text-sm font-medium">{metadata.title}</h3>}
+      {metadata.description && (
+        <p className="line-clamp-2 text-xs opacity-80">{metadata.description}</p>
+      )}
+      <p className="mt-0.5 truncate text-xs opacity-60">{metadata.site_name}</p>
+    </div>
+  );
+
+  // Small images (logos, favicons) look wrong stretched across the card, so they become a thumbnail.
+  if (imageFailed || smallImage) {
+    const thumb = imageFailed ? metadata.favicon : metadata.image;
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="my-2 flex items-center gap-3 overflow-hidden rounded-lg bg-black/5 p-2 dark:bg-white/10"
+      >
+        {thumb && (
+          <img
+            src={thumb}
+            alt={metadata.title || "Link preview"}
+            className="size-14 shrink-0 rounded-md bg-white object-contain"
+          />
+        )}
+        {text}
+      </a>
+    );
+  }
+
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="my-2 block overflow-hidden rounded-lg bg-transparent shadow-bar backdrop-blur-2xl"
+      className="my-2 block overflow-hidden rounded-lg bg-black/5 dark:bg-white/10"
     >
-      <div className="flex h-full flex-col items-center gap-3 p-2">
-        {metadata.image && (
-          <div className="flex w-full flex-1">
-            <Avatar className="aspect-square h-auto flex-1 rounded object-cover">
-              <AvatarImage
-                className="rounded-none object-cover"
-                src={metadata.image}
-                alt={metadata.title || "Link preview"}
-              />
-            </Avatar>
-          </div>
-        )}
-        <div className="max-w-full flex-1">
-          {metadata.title && <h3 className="truncate text-sm font-medium">{metadata.title}</h3>}
-          {metadata.description && (
-            <p className="line-clamp-2 truncate text-sm">{metadata.description}</p>
-          )}
-          <p className="mt-1 truncate text-xs">{metadata.site_name}</p>
-        </div>
-      </div>
+      {metadata.image && (
+        <img
+          src={metadata.image}
+          alt={metadata.title || "Link preview"}
+          onLoad={(e) => setSmallImage(e.currentTarget.naturalWidth < 250)}
+          onError={() => setImageFailed(true)}
+          // Natural ratio, but very tall images are cropped so they can't swamp the chat.
+          className="block h-auto max-h-72 w-full object-cover"
+        />
+      )}
+      <div className="flex p-2">{text}</div>
     </a>
   );
 }

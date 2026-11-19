@@ -164,9 +164,11 @@ const ChatSettingsPage: React.FC = () => {
       } else if (field === "isArchived") {
         dispatch(updateConversation({ id: gid as string, updates: { archived: value } }));
       }
+      // The participant row stores these as `pinned` / `archived`.
+      const column = field === "isPinned" ? "pinned" : field === "isArchived" ? "archived" : field;
       socket?.emit("updateConversation", {
         id: gid,
-        updates: { [field]: value, userId: userdata._id },
+        updates: { [column]: value },
       });
     }
   };

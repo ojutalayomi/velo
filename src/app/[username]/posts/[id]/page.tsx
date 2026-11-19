@@ -1,5 +1,4 @@
 "use client";
-import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -8,9 +7,9 @@ import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
+import CommentComposer from "@/components/CommentComposer";
 import PostAnalytics from "@/components/PostAnalytics";
 import PostCard from "@/components/PostCard";
-import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
@@ -51,10 +50,6 @@ const PostContent: React.FC = () => {
   const [commentsMessage, setCommentsMessage] = useState<Comments["message"]>();
   const [commentsPagination, setCommentsPagination] = useState<PaginationMeta | null>(null);
   const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
-  const [newMessage, setNewMessage] = useState<string>("")
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [textAreaStyle, setTextAreaStyle] = useState<string>("rounded-full");
-  const [isTextAreaFocused, setIsTextAreaFocused] = useState<boolean>(false);
 
   const fetchPost = async (id: string) => {
     setLoading((l) => {
@@ -152,31 +147,6 @@ const PostContent: React.FC = () => {
   }, [commentsLoadingMore, commentsPagination, params?.id, commentKey]);
 
   useEffect(() => {
-    const handleInput = () => {
-      const textArea = textAreaRef.current;
-      if (textArea) {
-        textArea.style.height = "34px";
-        textArea.style.height = `${textArea.scrollHeight}px`;
-      }
-      if (textArea && textArea.value) {
-        setTextAreaStyle("rounded-xl");
-        setIsTextAreaFocused(true);
-      } else {
-        setTextAreaStyle("rounded-full");
-        setIsTextAreaFocused(false);
-      }
-    };
-
-    const textArea = textAreaRef.current;
-    if (textArea) {
-      textArea.addEventListener("input", handleInput);
-      return () => {
-        textArea.removeEventListener("input", handleInput);
-      };
-    }
-  }, []);
-
-  useEffect(() => {
     if (!socket || !post) return;
     socket.on("newComment", (data: { excludeUser: string; blog: PostSchema }) => {
       setComments((prevComments) => {
@@ -247,32 +217,6 @@ const PostContent: React.FC = () => {
       // socket.off('updatePost');
     };
   }, [post, socket]);
-
-  // Memoize onKeyDown handler
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter") {
-        if (e.shiftKey) {
-          return; // Allow new line when Shift+Enter
-        }
-
-        e.preventDefault(); // Prevent default for all Enter cases
-
-        if (newMessage.trim().length > 0) {
-          // handleSendMessage(quote.message?._id);
-        }
-      }
-    },
-    [newMessage]
-  );
-
-  // Memoize emoji picker onChange handler
-  const handleEmojiChange = useCallback(
-    (emoji: string) => {
-      setNewMessage((prev) => prev + emoji);
-    },
-    [setNewMessage]
-  );
 
   return (
     <>
@@ -362,50 +306,18 @@ const PostContent: React.FC = () => {
         </div>
         {(!errorMessage.post || !userdata._id || commentsMessage === "Disable Comment.") && (
           <footer className="sticky bottom-0 w-full border-t border-gray-200 bg-gray-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200">
-            <div 
-            className="mx-auto flex max-w-3xl items-center gap-2"
-            onClick={() => {
-              const currParams = new URLSearchParams(searchParams?.toString() || "");
-              currParams.set("composeComment", "true");
-              currParams.set("postId", post?.PostID || "");
-              currParams.set("postType", "comment");
-              router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
-            }}
-            >
-              <Image
-                src={userdata.displayPicture || "/velo11.png"}
-                className={`rounded-full object-cover ${isTextAreaFocused ? "hidden" : ""}`}
-                width={32}
-                height={32}
-                alt="User avatar"
-              />
-              <div className={`relative flex flex-1 ${textAreaStyle} overflow-hidden`}>
-                <TextAreaBox
-                  className={`max-h-28 min-h-[34px] flex-1 resize-none border bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400`}
-                  value={newMessage}
-                  onChange={setNewMessage}
-                  onKeyDown={handleKeyDown}
-                  highlightColor="#ff6257"
-                  ref={textAreaRef}
-                  minHeight={20}
-                  maxHeight={160}
-                  placeholder="Write a comment..."
-                  fontFamily="myCustomFont, myCustomFont Fallback"
-                  textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
-                />
-                <div
-                  className={`absolute right-3 ${isTextAreaFocused ? "bottom-0" : "top-1/2"} flex -translate-y-1/2 transform items-center gap-4 text-gray-400`}
-                >
-                  <EmojiPicker
-                    onChange={handleEmojiChange}
-                  >
-                    <SmileIcon className="size-4 cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
-                  </EmojiPicker>
-                  <Upload className="size-4 cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
-                  <Send className="size-4 cursor-pointer text-brand hover:text-brand/80" />
-                </div>
-              </div>
-            </div>
+            <CommentComposer
+              variant="bar"
+              className="mx-auto max-w-3xl"
+              parent={post}
+              onRequireSignIn={() => {
+                const currParams = new URLSearchParams(searchParams?.toString() || "");
+                currParams.set("composeComment", "true");
+                currParams.set("postId", post?.PostID || "");
+                currParams.set("postType", "comment");
+                router.push(`${pathname}?${currParams.toString()}`, { scroll: false });
+              }}
+            />
           </footer>
         )}
       </div>

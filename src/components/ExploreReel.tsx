@@ -18,6 +18,7 @@ import type { PostSchema } from "@/lib/types/type";
 import { useAppDispatch } from "@/redux/hooks";
 import { updatePost } from "@/redux/postsSlice";
 
+import CommentComposer from "./CommentComposer";
 import CommentsDrawer from "./CommentsDrawer";
 import PostAnalytics from "./PostAnalytics";
 import { renderTextWithLinks } from "./RenderTextWithLinks";
@@ -646,7 +647,11 @@ export default function ExploreReel() {
         onClose={() => setCommentPost(null)}
         onToggleFollow={() => onToggleFollow(posts.find(p => p.PostID === commentPost?.ParentId)!)}
         footer={
-          <>Velo</>
+          <CommentComposer
+            variant="bar"
+            parent={commentPost}
+            className="border-t border-gray-200 px-3 py-2 dark:border-zinc-800"
+          />
         }
       />
     </>

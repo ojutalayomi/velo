@@ -91,7 +91,16 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
     setMessageContent(message.content.replace("≤≤≤", ""));
   }, [message.content]);
 
+  // Read once every other member in the chat has a read receipt for this message.
+  const readByEveryone = (() => {
+    const others = Object.entries(message.isRead ?? {}).filter(([id]) => id !== senderId);
+    return others.length > 0 && others.every(([, read]) => read);
+  })();
+
   const renderStatusIcon = (status: string) => {
+    if (readByEveryone && status !== "failed" && status !== "sending") {
+      return <CheckCheck size={14} className="min-w-3 text-sky-500" />;
+    }
     switch (status) {
       case "sending":
         return <Loader size={15} className="min-w-3  animate-spin" />;

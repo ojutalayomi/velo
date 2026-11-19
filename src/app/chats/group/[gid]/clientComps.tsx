@@ -128,6 +128,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         id: convo.id,
         updates: { unreadCount: 0, userId: userdata._id },
       });
+      socket.emit("markRead", { chatId: convo.id });
       dispatch(updateConversation({ id: convo.id, updates: { unread: 0 } }));
       dispatch(
         updateMessage({

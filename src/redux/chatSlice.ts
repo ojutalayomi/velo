@@ -189,6 +189,17 @@ const chatSlice = createSlice({
         msg._id === action.payload.id ? { ...msg, content: action.payload.content } : msg
       );
     },
+    markMessagesRead: (
+      state,
+      action: PayloadAction<{ messageIds: string[]; readerId: string }>
+    ) => {
+      const ids = new Set(action.payload.messageIds);
+      state.messages.forEach((message) => {
+        if (ids.has(String(message._id))) {
+          message.isRead = { ...(message.isRead ?? {}), [action.payload.readerId]: true };
+        }
+      });
+    },
     updateMessage: (
       state,
       action: PayloadAction<{ id?: string; updates: Partial<MessageAttributes> }>
@@ -265,6 +276,7 @@ export const {
   addMessage,
   editMessage,
   updateMessage,
+  markMessagesRead,
   deleteMessage,
   setSettings,
   addSetting,

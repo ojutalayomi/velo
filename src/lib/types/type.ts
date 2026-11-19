@@ -43,7 +43,8 @@ export interface ReadReceipt {
   messageId: string;
   userId: string;
   chatId: string;
-  readAt: string;
+  /** Null until that user has actually read the message. */
+  readAt: string | null;
 }
 
 export interface Reaction {

@@ -88,8 +88,6 @@ export interface ChatData {
   isPrivate: boolean;
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
-  /** DMs only: the sorted member pair, unique across chats. See src/lib/dmKey.ts. */
-  dmKey?: string;
   timestamp: string;
   lastMessageId: string;
   lastUpdated: string;

@@ -7,8 +7,7 @@ import { UserSchema } from "@/lib/class/User";
 import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
 import { canSendMessage } from "@/lib/chatPermissions";
-import { dmKeyFor } from "@/lib/dmKey";
-import { emitSequenceViaSocketServer, emitViaSocketServer } from "@/lib/socket";
+import { emitViaSocketServer } from "@/lib/socket";
 import {
   AllChats,
   ChatDataClient,

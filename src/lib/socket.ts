@@ -56,8 +56,19 @@ export type EmitOptions = {
  */
 export async function emitSequenceViaSocketServer(
   userId: string,
-  events: { event: ServerEvent; payload: Record<string, unknown> }[],
-  options?: EmitOptions
+  event:
+    | "follow"
+    | "unfollow"
+    | "status:create"
+    | "status:delete"
+    | "status:view"
+    | "addChat"
+    | "chatMessage"
+    | "chat:updated"
+    | "chat:participantsAdded"
+    | "chat:participantsRemoved",
+  payload: Record<string, unknown>,
+  options?: { connectTimeoutMs?: number; ackTimeoutMs?: number }
 ): Promise<void> {
   const baseUrl = getSocketServerUrl();
   if (!baseUrl) {

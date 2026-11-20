@@ -5,7 +5,6 @@ import {
   Calendar,
   Loader2,
   LogOut,
-  Trash2,
   Megaphone,
   Pencil,
   Pin,

@@ -17,7 +17,9 @@ export function useMentionPicker(
   newMessage: string,
   textAreaRef: React.RefObject<HTMLTextAreaElement | null>,
   /** Always-available entries such as @all and @ai; they are not fetched members. */
-  specials: MentionParticipant[] = []
+  specials: MentionParticipant[] = [],
+  /** The signed-in user; they can't mention themselves, so they're left out of the list. */
+  currentUserId?: string | null
 ): {
   showPicker: boolean;
   mentionQuery: string;
@@ -101,7 +103,10 @@ export function useMentionPicker(
 
   const filteredParticipants = [
     ...specials.filter(matches),
-    ...participants.filter(matches).slice(0, 5),
+    ...participants
+      .filter((p) => !currentUserId || String(p.userId) !== String(currentUserId))
+      .filter(matches)
+      .slice(0, 5),
   ];
 
   const selectMention = useCallback(
@@ -139,12 +144,12 @@ export function useMentionPicker(
 
       return updatedMessage;
     },
-    [newMessage, textAreaRef]
+    [newMessage, textAreaRef, setShowPicker, setMentionQuery, setMentions]
   );
 
   const clearMentions = useCallback(() => {
     setMentions([]);
-  }, []);
+  }, [setMentions]);
 
   return {
     showPicker,

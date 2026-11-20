@@ -3,11 +3,37 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { logAdminAction, requireAdmin } from "@/lib/admin";
 import { MongoDBClient } from "@/lib/mongodb";
+import { emitViaSocketServer } from "@/lib/socket";
 
 const MAX_TITLE = 100;
 const MAX_MESSAGE = 500;
 
 const isSafeUrl = (u: string) => u.startsWith("/") && !u.startsWith("//") || /^https:\/\//i.test(u);
+
+function parseFields(body: Record<string, unknown> | undefined) {
+  const title = typeof body?.title === "string" ? body.title.trim() : "";
+  const message = typeof body?.message === "string" ? body.message.trim() : "";
+  const url = typeof body?.url === "string" ? body.url.trim() : "";
+  const expires = body?.expiresAt ? new Date(String(body.expiresAt)) : null;
+
+  if (!title || title.length > MAX_TITLE || !message || message.length > MAX_MESSAGE) {
+    return { error: `Title (max ${MAX_TITLE}) and message (max ${MAX_MESSAGE}) are required` };
+  }
+  if (url && !isSafeUrl(url)) return { error: "Link must be a relative path or https URL" };
+  if (expires && (isNaN(expires.getTime()) || expires.getTime() <= Date.now())) {
+    return { error: "Expiry must be a future date" };
+  }
+  return { title, message, url, expires };
+}
+
+/** Live-push to connected users; failures are logged because users still get it on next load. */
+async function broadcast(adminId: string, event: "announcement:publish" | "announcement:retire", id: string) {
+  try {
+    await emitViaSocketServer(adminId, event, { id }, { totalTimeoutMs: 8000 });
+  } catch (error) {
+    console.error("Announcement broadcast failed:", error);
+  }
+}
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   const admin = await requireAdmin(req, res);
@@ -23,22 +49,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     if (req.method === "POST") {
-      const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
-      const message = typeof req.body?.message === "string" ? req.body.message.trim() : "";
-      const url = typeof req.body?.url === "string" ? req.body.url.trim() : "";
-      const expires = req.body?.expiresAt ? new Date(req.body.expiresAt) : null;
-
-      if (!title || title.length > MAX_TITLE || !message || message.length > MAX_MESSAGE) {
-        return res.status(400).json({
-          message: `Title (max ${MAX_TITLE}) and message (max ${MAX_MESSAGE}) are required`,
-        });
-      }
-      if (url && !isSafeUrl(url)) {
-        return res.status(400).json({ message: "Link must be a relative path or https URL" });
-      }
-      if (expires && (isNaN(expires.getTime()) || expires.getTime() <= Date.now())) {
-        return res.status(400).json({ message: "Expiry must be a future date" });
-      }
+      const parsed = parseFields(req.body);
+      if ("error" in parsed) return res.status(400).json({ message: parsed.error });
+      const { title, message, url, expires } = parsed;
 
       const doc = {
         _id: new ObjectId(),
@@ -57,7 +70,40 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         targetId: String(doc._id),
         details: { title },
       });
+      await broadcast(admin._id, "announcement:publish", String(doc._id));
       return res.status(201).json({ data: doc });
+    }
+
+    if (req.method === "PUT") {
+      const id = req.body?.id;
+      if (typeof id !== "string" || !ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid request" });
+      }
+      const parsed = parseFields(req.body);
+      if ("error" in parsed) return res.status(400).json({ message: parsed.error });
+      const { title, message, url, expires } = parsed;
+
+      const target = await col.findOne({ _id: new ObjectId(id) });
+      if (!target) return res.status(404).json({ message: "Announcement not found" });
+
+      const expiresAt = expires ? expires.toISOString() : null;
+      await col.updateOne(
+        { _id: target._id },
+        url
+          ? { $set: { title, message, expiresAt, url } }
+          : { $set: { title, message, expiresAt }, $unset: { url: "" } }
+      );
+      await logAdminAction({
+        adminId: admin._id,
+        action: "announcement_edit",
+        targetId: id,
+        details: { title, previousTitle: target.title },
+      });
+      // Re-broadcast so live viewers see the corrected text (the socket server ignores inactive ones).
+      if (target.active) await broadcast(admin._id, "announcement:publish", id);
+      return res
+        .status(200)
+        .json({ data: { ...target, title, message, expiresAt, url: url || undefined } });
     }
 
     if (req.method === "PATCH") {
@@ -74,10 +120,11 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         targetId: id,
         details: { title: target.title },
       });
+      await broadcast(admin._id, active ? "announcement:publish" : "announcement:retire", id);
       return res.status(200).json({ data: { active } });
     }
 
-    res.setHeader("Allow", "GET, POST, PATCH");
+    res.setHeader("Allow", "GET, POST, PUT, PATCH");
     return res.status(405).json({ message: "Method Not Allowed" });
   } catch (error) {
     console.error("Admin announcements error:", error);

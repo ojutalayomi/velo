@@ -402,7 +402,11 @@ const RightSideBar = ({
     if (!socket || !hasCurrentPost) return;
 
     const onNewComment = (data: { excludeUser: string; blog: PostSchema }) => {
-      setComments((prev) => (prev ? [data.blog, ...prev] : [data.blog]));
+      if (data.blog.ParentId !== id) return;
+      setComments((prev) => {
+        if (prev?.some((c) => c.PostID === data.blog.PostID)) return prev;
+        return prev ? [data.blog, ...prev] : [data.blog];
+      });
     };
 
     const onDeletePost = (data: { excludeUser: string; postId: string; type: string }) => {
@@ -432,7 +436,7 @@ const RightSideBar = ({
       socket.off("deletePost", onDeletePost);
       socket.off("updatePost", onUpdatePost);
     };
-  }, [socket, hasCurrentPost]);
+  }, [socket, hasCurrentPost, id]);
 
   return (
     <div

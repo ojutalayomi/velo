@@ -71,11 +71,14 @@ export async function fetchFollowingPostsPage(
   return { data, pagination };
 }
 
+export type ExploreFilterId = "all" | "photos" | "videos" | "popular" | "hot";
+
 export async function fetchExplorePosts(
   skip = 0,
-  limit = DEFAULT_POST_LIMIT
+  limit = DEFAULT_POST_LIMIT,
+  filter: ExploreFilterId = "all"
 ): Promise<{ data: PostSchema[]; pagination: PaginationMeta }> {
-  const response = await fetch(`/api/explore?limit=${limit}&skip=${skip}`, {
+  const response = await fetch(`/api/explore?limit=${limit}&skip=${skip}&filter=${filter}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -87,6 +90,34 @@ export async function fetchExplorePosts(
   const pagination = body.pagination ?? { skip: 0, limit, hasMore: false };
   return { data, pagination };
 }
+
+/** Suggested accounts for the explore page (excludes self, followed and blocked users). */
+export async function fetchExplorePeople(
+  skip = 0,
+  limit = 12
+): Promise<{ data: ExplorePerson[]; pagination: PaginationMeta }> {
+  const response = await fetch(`/api/explore/people?limit=${limit}&skip=${skip}`, {
+    headers: { "Content-Type": "application/json" },
+  });
+  const body = (await parseJsonResponse(response)) as {
+    data?: ExplorePerson[];
+    pagination?: PaginationMeta;
+  };
+  const data = Array.isArray(body?.data) ? body.data : [];
+  const pagination = body.pagination ?? { skip: 0, limit, hasMore: false };
+  return { data, pagination };
+}
+
+export type ExplorePerson = {
+  _id: string;
+  username: string;
+  name?: string;
+  displayPicture?: string;
+  bio?: string;
+  followers?: number;
+  verified?: boolean;
+  isFollowing?: boolean;
+};
 
 export async function fetchCommentsPage(
   postId: string,

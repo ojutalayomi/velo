@@ -1,5 +1,6 @@
 "use client";
 import { Check, Copy } from "lucide-react";
+import Link from "next/link";
 import React, { useState } from "react";
 import MarkdownComponent from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -105,7 +106,40 @@ const CodeBlock: React.FC<{ language: string; code: string; isDark: boolean }> =
   );
 };
 
-export const Markdown = ({ children }: { children: string }) => {
+const MENTION_HREF = /^\/([\w]+)\?src=mention_click$/;
+const NON_LINKABLE_MENTIONS = new Set(["all", "ai"]);
+const mentionClass =
+  "rounded bg-brand/10 px-0.5 font-semibold text-brand no-underline transition-all duration-150";
+
+/**
+ * Turns confirmed `@username` mentions into links, leaving code blocks and inline code alone.
+ * Only usernames in `mentionUsernames` are converted, matching the non-Markdown renderer.
+ */
+const linkMentions = (text: string, mentionUsernames?: string[]) => {
+  if (!mentionUsernames?.length) return text;
+  const allowed = new Set(mentionUsernames.map((u) => u.toLowerCase()));
+  return text
+    .split(/(```[\s\S]*?```|`[^`\n]*`)/g)
+    .map((segment, i) =>
+      i % 2 === 1
+        ? segment
+        : segment.replace(/(^|[^\w@])@(\w+)/g, (match, before: string, name: string) =>
+            allowed.has(name.toLowerCase())
+              ? `${before}[@${name}](/${name}?src=mention_click)`
+              : match
+          )
+    )
+    .join("");
+};
+
+export const Markdown = ({
+  children,
+  mentionUsernames,
+}: {
+  children: string;
+  /** Usernames that were really mentioned in this message; only these get highlighted. */
+  mentionUsernames?: string[];
+}) => {
   const theme = useTheme();
   const isDark = theme.theme === "dark";
   return (
@@ -133,6 +167,22 @@ export const Markdown = ({ children }: { children: string }) => {
           );
         },
         a({ href, children }) {
+          const mention = href ? MENTION_HREF.exec(href) : null;
+          if (mention) {
+            // @all and @ai aren't profiles, so highlight them without linking.
+            if (NON_LINKABLE_MENTIONS.has(mention[1].toLowerCase())) {
+              return <span className={mentionClass}>{children}</span>;
+            }
+            return (
+              <Link
+                href={href as string}
+                className={`${mentionClass} hover:underline`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {children}
+              </Link>
+            );
+          }
           return (
             <a
               href={href}
@@ -189,7 +239,7 @@ export const Markdown = ({ children }: { children: string }) => {
         },
       }}
     >
-      {children}
+      {linkMentions(children, mentionUsernames)}
     </MarkdownComponent>
   );
 };

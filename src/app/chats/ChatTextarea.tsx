@@ -113,12 +113,11 @@ const ChatTextarea = ({
     ],
     [isGroup, isGroupAdmin]
   );
-  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } = useMentionPicker(chatId ?? null, newMessage, textAreaRef, specials);
+  const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } = useMentionPicker(chatId ?? null, newMessage, textAreaRef, specials, userdata._id);
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);
   const [fileAccepts, setFileAccepts] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<boolean>(false);
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
@@ -143,7 +142,7 @@ const ChatTextarea = ({
     if (attachments.length > 0 && pathname && pathname.includes("/chats")) {
       dispatch(setToggleDialog(true));
     }
-  }, [attachments, dispatch]);
+  }, [attachments, dispatch, pathname]);
 
   useEffect(() => {
     const currParams = new URLSearchParams(searchParams?.toString() || "");
@@ -158,15 +157,6 @@ const ChatTextarea = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toggleDialog]);
-
-  useEffect(() => {
-    if (errors.length > 0) {
-      toast.error("Error", {
-        description: errors[0],
-      });
-      setErrors([]);
-    }
-  }, [errors]);
 
   const handleQuoteClick = () => {
     const messageElement = document.getElementById(quote.message?._id as string);
@@ -187,7 +177,7 @@ const ChatTextarea = ({
     return text.match(urlRegex) || [];
   };
 
-  const handleFiles = fileHandler(inputRef, attachments, clearFiles, setErrors, setFiles);
+  const handleFiles = fileHandler(attachments, clearFiles, setFiles);
 
   // Memoize getDetails callback to prevent infinite re-renders
   const handleGetDetails = useCallback(
@@ -312,7 +302,7 @@ const ChatTextarea = ({
           <div className="relative flex-1">
             {/* Mention picker */}
             {showPicker && (
-              <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="absolute bottom-full left-0 z-50 mb-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                 {isFetching ? (
                   <div className="p-3 text-center text-sm text-gray-500 dark:text-gray-400">
                     Loading members…
@@ -414,6 +404,8 @@ const Pop = ({ input, setFileAccepts }: PopProps) => {
       onClick: () => {
         setFileAccepts(".pdf, .docx, .doc, .xls, .xlsx, .ppt, .pptx");
         if (input.current) {
+          // The accept attribute must change before click(), so state alone is too late.
+          // eslint-disable-next-line react-hooks/immutability
           input.current.accept = ".pdf, .docx, .doc, .xls, .xlsx, .ppt, .pptx";
           input.current.click();
         }
@@ -425,6 +417,8 @@ const Pop = ({ input, setFileAccepts }: PopProps) => {
       onClick: () => {
         setFileAccepts(".jpg, .jpeg, .png, .gif, .mp4, .mov, .mkv");
         if (input.current) {
+          // The accept attribute must change before click(), so state alone is too late.
+          // eslint-disable-next-line react-hooks/immutability
           input.current.accept = ".jpg, .jpeg, .png, .gif, .mp4, .mov, .mkv";
           input.current.click();
         }
@@ -537,92 +531,42 @@ const UploadDialog = ({
   const { toggleDialog } = useSelector((state: RootState) => state.utils);
   const { files: attachments, setFiles, clearFiles } = useGlobalFileStorage();
 
-  // Create stable file key for comparison
-  const getFileKey = useCallback((file: File) => {
-    return `${file.name}-${file.size}-${file.lastModified}`;
-  }, []);
-
-  // Track previous URLs by file key to properly clean up only removed ones
-  const prevURLsRef = useRef<Map<string, string>>(new Map());
-  const fileToKeyMapRef = useRef<Map<File, string>>(new Map());
-
-  // Memoize object URLs - only create when attachments change
+  // Object URLs are cached per File (created lazily, so repeated renders reuse them)
+  // and revoked in an effect once the file leaves `attachments` or on unmount.
   const objectURLs = useMemo(() => {
     const urlMap = new Map<File, string>();
-    const currentFileKeys = new Set<string>();
-
-    // Create URLs for current files
-    attachments.forEach((file) => {
-      const fileKey = getFileKey(file);
-      currentFileKeys.add(fileKey);
-      fileToKeyMapRef.current.set(file, fileKey);
-
-      if (!prevURLsRef.current.has(fileKey)) {
-        // Create new URL for new file
-        urlMap.set(file, URL.createObjectURL(file));
-      } else {
-        // Reuse existing URL for file that's still present
-        urlMap.set(file, prevURLsRef.current.get(fileKey)!);
-      }
-    });
-
-    // Revoke URLs for files that are no longer in attachments
-    prevURLsRef.current.forEach((url, fileKey) => {
-      if (!currentFileKeys.has(fileKey)) {
-        URL.revokeObjectURL(url);
-      }
-    });
-
-    // Update refs for next render
-    const newURLsMap = new Map<string, string>();
-    urlMap.forEach((url, file) => {
-      const fileKey = fileToKeyMapRef.current.get(file);
-      if (fileKey) {
-        newURLsMap.set(fileKey, url);
-      }
-    });
-    prevURLsRef.current = newURLsMap;
-
+    attachments.forEach((file) => urlMap.set(file, getObjectURL(file)));
     return urlMap;
-  }, [attachments, getFileKey]);
+  }, [attachments]);
 
-  // Cleanup all URLs only on unmount
+  const liveFilesRef = useRef<File[]>([]);
   useEffect(() => {
-    const currentURLs = prevURLsRef.current;
-    const currentFileToKeyMap = fileToKeyMapRef.current;
+    liveFilesRef.current.forEach((file) => {
+      if (!attachments.includes(file)) revokeObjectURL(file);
+    });
+    liveFilesRef.current = attachments;
+  }, [attachments]);
 
-    return () => {
-      // Revoke all URLs when component unmounts
-      currentURLs.forEach((url) => {
-        URL.revokeObjectURL(url);
-      });
-      currentURLs.clear();
-      currentFileToKeyMap.clear();
-    };
-  }, []);
+  useEffect(
+    () => () => {
+      liveFilesRef.current.forEach(revokeObjectURL);
+      liveFilesRef.current = [];
+    },
+    []
+  );
 
-  // Memoize removeFile handler
+  // Memoize removeFile handler (URLs are revoked by the effect above)
   const removeFile = useCallback(
     (index: number) => {
-      const fileToRemove = attachments[index];
-      if (fileToRemove) {
-        const fileKey = getFileKey(fileToRemove);
-        const url = prevURLsRef.current.get(fileKey);
-        if (url) {
-          URL.revokeObjectURL(url);
-          prevURLsRef.current.delete(fileKey);
-        }
-        fileToKeyMapRef.current.delete(fileToRemove);
-      }
       setFiles(attachments.filter((_, i) => i !== index));
       toast("File removed");
     },
-    [attachments, setFiles, getFileKey]
+    [attachments, setFiles]
   );
 
   // Memoize carousel content to prevent re-renders on text input changes
   const carouselContent = useMemo(() => {
-    if (!inputRef.current?.files || attachments.length === 0) {
+    if (attachments.length === 0) {
       return null;
     }
 
@@ -700,7 +644,7 @@ const UploadDialog = ({
         )}
       </Carousel>
     );
-  }, [attachments, inputRef, objectURLs, setFiles, removeFile]);
+  }, [attachments, objectURLs, setFiles, removeFile]);
 
   return (
     <Dialog
@@ -792,15 +736,31 @@ const UploadDialog = ({
   );
 };
 
+const objectURLCache = new WeakMap<File, string>();
+
+function getObjectURL(file: File) {
+  let url = objectURLCache.get(file);
+  if (!url) {
+    url = URL.createObjectURL(file);
+    objectURLCache.set(file, url);
+  }
+  return url;
+}
+
+function revokeObjectURL(file: File) {
+  const url = objectURLCache.get(file);
+  if (url) {
+    URL.revokeObjectURL(url);
+    objectURLCache.delete(file);
+  }
+}
+
 function fileHandler(
-  inputRef: RefObject<HTMLInputElement | null>,
   attachments: File[],
   clearFiles: () => void,
-  setErrors: Dispatch<SetStateAction<string[]>>,
   setFiles: (files: File[]) => void
 ) {
   return (e: ChangeEvent<HTMLInputElement>) => {
-    if (!inputRef.current) return;
     const files = e.target.files;
     if (!files) return;
 
@@ -842,7 +802,6 @@ function fileHandler(
 
     // Update state
     if (validationErrors.length > 0) {
-      setErrors(validationErrors);
       validationErrors.forEach((error) =>
         toast.warning("Warning", {
           description: error,

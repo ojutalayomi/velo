@@ -44,6 +44,7 @@ export class Chat {
             ? this.chat.name[uid]
             : this.chat.name.group,
       adminIds: this.chat.adminIds,
+      onlyAdminsCanSend: this.chat.onlyAdminsCanSend ?? false,
       lastMessage: this.chat.lastMessageId
         ? this.filter(this.chat.lastMessageId) || "🚫 Message not found"
         : "📝 Be the first to send a message",

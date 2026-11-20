@@ -44,6 +44,7 @@ export async function emitViaSocketServer(
     | "status:view"
     | "addChat"
     | "chatMessage"
+    | "chat:updated"
     | "chat:participantsAdded"
     | "chat:participantsRemoved",
   payload: Record<string, unknown>,

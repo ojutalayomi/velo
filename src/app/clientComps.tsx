@@ -153,6 +153,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             ? data.chat.name[Object.keys(data.chat.name).find((e) => !e.includes(uid)) || ""]
             : data.chat.name.group,
         adminIds: data.chat.adminIds,
+        onlyAdminsCanSend: data.chat.onlyAdminsCanSend ?? false,
         displayPicture: otherParticipant?.displayPicture || "",
         description: data.chat.groupDescription || "",
         verified: data.chat.verified || false,

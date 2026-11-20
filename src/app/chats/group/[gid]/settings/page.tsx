@@ -5,9 +5,11 @@ import {
   Calendar,
   Loader2,
   LogOut,
+  Megaphone,
   Pencil,
   Pin,
   ShieldCheck,
+  ShieldOff,
   UserMinus,
   UserPlus,
   Users,
@@ -85,6 +87,8 @@ const ChatSettingsPage: React.FC = () => {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [roleBusyId, setRoleBusyId] = useState<string | null>(null);
+  const [restrictBusy, setRestrictBusy] = useState(false);
   const convo = useMemo(
     () => conversations?.find((c) => c.id === gid) as ConvoType,
     [conversations, gid]
@@ -150,6 +154,42 @@ const ChatSettingsPage: React.FC = () => {
       });
     } finally {
       setRemovingId(null);
+    }
+  };
+
+  const changeRole = async (member: MemberRow, makeAdmin: boolean) => {
+    if (roleBusyId) return;
+    setRoleBusyId(member.userId);
+    try {
+      const adminIds = await chatSystem.setAdmin(gid as string, member.userId, makeAdmin);
+      dispatch(updateConversation({ id: gid as string, updates: { adminIds } }));
+      toast.success(
+        makeAdmin
+          ? `${member.name || member.username} is now an admin`
+          : `${member.name || member.username} is no longer an admin`
+      );
+    } catch (error) {
+      toast.error("Could not change the admin role", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setRoleBusyId(null);
+    }
+  };
+
+  const setOnlyAdminsCanSend = async (value: boolean) => {
+    if (restrictBusy) return;
+    setRestrictBusy(true);
+    dispatch(updateConversation({ id: gid as string, updates: { onlyAdminsCanSend: value } }));
+    try {
+      await chatSystem.updateChat(gid as string, { onlyAdminsCanSend: value });
+    } catch (error) {
+      dispatch(updateConversation({ id: gid as string, updates: { onlyAdminsCanSend: !value } }));
+      toast.error("Could not update the group", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setRestrictBusy(false);
     }
   };
 
@@ -271,6 +311,25 @@ const ChatSettingsPage: React.FC = () => {
         </SettingsRow>
       </SettingsSection>
 
+      {isAdmin && (
+        <SettingsSection title="Admin controls">
+          <SettingsRow
+            icon={Megaphone}
+            tone="purple"
+            title="Only admins can send messages"
+            description={
+              convo.onlyAdminsCanSend ? "Members can read but not reply" : "Everyone can send messages"
+            }
+          >
+            <Switch
+              id="only-admins-send"
+              checked={Boolean(convo.onlyAdminsCanSend)}
+              onChange={(value: any) => setOnlyAdminsCanSend(Boolean(value))}
+            />
+          </SettingsRow>
+        </SettingsSection>
+      )}
+
       <SettingsSection title={`Members · ${convo.participants.length}`}>
         <SettingsRow
           icon={Users}
@@ -321,18 +380,39 @@ const ChatSettingsPage: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  {memberIsAdmin ? (
-                    <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                      Admin
-                    </span>
-                  ) : (
-                    isAdmin && (
+                  <div className="flex shrink-0 items-center gap-1">
+                    {memberIsAdmin && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                        Admin
+                      </span>
+                    )}
+                    {isAdmin && !(memberIsAdmin && convo.adminIds.length <= 1) && (
+                      <button
+                        type="button"
+                        onClick={() => changeRole(member, !memberIsAdmin)}
+                        disabled={roleBusyId !== null}
+                        aria-label={
+                          memberIsAdmin ? `Remove ${label} as admin` : `Make ${label} an admin`
+                        }
+                        title={memberIsAdmin ? "Remove admin" : "Make admin"}
+                        className="rounded-md p-2 text-gray-400 transition-colors hover:bg-amber-50 hover:text-amber-600 disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-amber-950"
+                      >
+                        {roleBusyId === member.userId ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : memberIsAdmin ? (
+                          <ShieldOff size={16} />
+                        ) : (
+                          <ShieldCheck size={16} />
+                        )}
+                      </button>
+                    )}
+                    {isAdmin && !memberIsAdmin && (
                       <button
                         type="button"
                         onClick={() => removeMember(member)}
                         disabled={removingId !== null}
                         aria-label={`Remove ${label} from the group`}
-                        className="shrink-0 rounded-md p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-red-950"
+                        className="rounded-md p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-red-950"
                       >
                         {removingId === member.userId ? (
                           <Loader2 className="size-4 animate-spin" />
@@ -340,8 +420,8 @@ const ChatSettingsPage: React.FC = () => {
                           <UserMinus size={16} />
                         )}
                       </button>
-                    )
-                  )}
+                    )}
+                  </div>
                 </li>
               );
             })}

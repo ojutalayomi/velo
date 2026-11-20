@@ -86,6 +86,8 @@ export interface ChatData {
   verified: boolean;
   adminIds: string[];
   isPrivate: boolean;
+  /** Announcement mode: only admins may post. */
+  onlyAdminsCanSend?: boolean;
   timestamp: string;
   lastMessageId: string;
   lastUpdated: string;
@@ -119,6 +121,8 @@ export interface ChatUpdate {
   groupDescription?: string;
   groupDisplayPicture?: string;
   isPrivate?: boolean;
+  /** Announcement mode: only admins may post. */
+  onlyAdminsCanSend?: boolean;
 }
 
 export interface ChatAttributes {
@@ -397,6 +401,8 @@ export interface ConvoType {
   type: string;
   name: string;
   adminIds: string[];
+  /** Announcement mode: only admins may post. */
+  onlyAdminsCanSend?: boolean;
   lastMessage: string;
   timestamp: string;
   unread: number;

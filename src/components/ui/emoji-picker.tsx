@@ -19,7 +19,7 @@ interface EmojiPickerProps {
 }
 
 export const EmojiPicker = React.forwardRef<
-  React.ElementRef<typeof PopoverTrigger>,
+  React.ComponentRef<typeof PopoverTrigger>,
   EmojiPickerProps
 >(({ onChange, children, triggerClassName, asChild, noPopover }, ref) => {
   const { theme } = useTheme();
@@ -55,9 +55,6 @@ export const EmojiPicker = React.forwardRef<
             {children || <SmilePlus className="h-4 w-4" />}
           </DrawerTrigger>
           <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>Emoji Picker</DrawerTitle>
-            </DrawerHeader>
             {picker}
           </DrawerContent>
         </Drawer>

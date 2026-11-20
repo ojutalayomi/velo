@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { CallButton, CallStatus, IncomingCall } from "@/components/call";
+import DeleteChatDialog from "@/components/DeleteChatDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -102,6 +103,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const olderLoadThrottleRef = useRef(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [isTextareaDisabled, setIsTextareaDisabled] = useState(false);
@@ -478,14 +480,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     },
     { id: 3, name: "Mute notifications", action: () => console.log("Mute notifications") },
     { id: 4, name: "Wallpaper", action: () => console.log("Wallpaper") },
-    {
-      id: 5,
-      name: "Delete",
-      action: () => {
-        dispatch(deleteConversation(pid));
-        router.replace("/chats");
-      },
-    },
+    // Deleting removes the chat on the server for everyone in it, so confirm first.
+    { id: 5, name: "Delete", action: () => setDeleteOpen(true) },
     { id: 6, name: "Report", action: () => console.log("Blocked") },
     {
       id: 7,
@@ -876,6 +872,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           }}
         />
       )}
+      <DeleteChatDialog
+        chatId={pid}
+        name={convo?.name ?? "this person"}
+        kind={convo?.type === "Personal" ? "personal" : "direct"}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDeleted={() => {
+          dispatch(deleteConversation(pid));
+          router.replace("/chats");
+        }}
+      />
     </div>
   );
 };

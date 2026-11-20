@@ -29,26 +29,35 @@ export function getSocketInstance(userId: string) {
   return socket;
 }
 
+export type ServerEvent =
+  | "follow"
+  | "unfollow"
+  | "status:create"
+  | "status:delete"
+  | "status:view"
+  | "addChat"
+  | "chatMessage"
+  | "chat:updated"
+  | "chat:participantsAdded"
+  | "chat:participantsRemoved";
+
+export type EmitOptions = {
+  connectTimeoutMs?: number;
+  ackTimeoutMs?: number;
+  /** Hard ceiling for the whole call, so a slow socket server cannot outlast the API route. */
+  totalTimeoutMs?: number;
+};
+
 /**
- * For Next.js API routes (especially Vercel): open a dedicated connection, wait until connected,
- * emit with acknowledgement, then close. Fire-and-forget `emit` on a cold client often never
- * reaches the socket server because the serverless function exits before the handshake completes.
+ * For Next.js API routes (especially Vercel): open one dedicated connection, wait until
+ * connected, emit each event in order waiting for its acknowledgement, then close. Fire-and-forget
+ * `emit` on a cold client often never reaches the socket server because the serverless function
+ * exits before the handshake completes.
  */
-export async function emitViaSocketServer(
+export async function emitSequenceViaSocketServer(
   userId: string,
-  event:
-    | "follow"
-    | "unfollow"
-    | "status:create"
-    | "status:delete"
-    | "status:view"
-    | "addChat"
-    | "chatMessage"
-    | "chat:updated"
-    | "chat:participantsAdded"
-    | "chat:participantsRemoved",
-  payload: Record<string, unknown>,
-  options?: { connectTimeoutMs?: number; ackTimeoutMs?: number }
+  events: { event: ServerEvent; payload: Record<string, unknown> }[],
+  options?: EmitOptions
 ): Promise<void> {
   const baseUrl = getSocketServerUrl();
   if (!baseUrl) {
@@ -56,6 +65,7 @@ export async function emitViaSocketServer(
   }
   const connectTimeoutMs = options?.connectTimeoutMs ?? 12_000;
   const ackTimeoutMs = options?.ackTimeoutMs ?? 10_000;
+  const totalTimeoutMs = options?.totalTimeoutMs;
 
   const client = io(baseUrl, {
     path: SOCKET_PATH,
@@ -76,7 +86,9 @@ export async function emitViaSocketServer(
     }
   };
 
-  try {
+  let deadline: ReturnType<typeof setTimeout> | undefined;
+
+  const run = async () => {
     await new Promise<void>((resolve, reject) => {
       if (client.connected) {
         resolve();
@@ -96,16 +108,44 @@ export async function emitViaSocketServer(
       });
     });
 
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(`Socket server ack timed out after ${ackTimeoutMs}ms`));
-      }, ackTimeoutMs);
-      client.emit(event, payload, () => {
-        clearTimeout(timer);
-        resolve();
+    for (const { event, payload } of events) {
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          reject(new Error(`Socket server ack for ${event} timed out after ${ackTimeoutMs}ms`));
+        }, ackTimeoutMs);
+        client.emit(event, payload, () => {
+          clearTimeout(timer);
+          resolve();
+        });
       });
-    });
+    }
+  };
+
+  try {
+    if (totalTimeoutMs === undefined) {
+      await run();
+    } else {
+      await Promise.race([
+        run(),
+        new Promise<never>((_, reject) => {
+          deadline = setTimeout(
+            () => reject(new Error(`Socket emit exceeded ${totalTimeoutMs}ms`)),
+            totalTimeoutMs
+          );
+        }),
+      ]);
+    }
   } finally {
+    if (deadline) clearTimeout(deadline);
     close();
   }
+}
+
+export async function emitViaSocketServer(
+  userId: string,
+  event: ServerEvent,
+  payload: Record<string, unknown>,
+  options?: EmitOptions
+): Promise<void> {
+  await emitSequenceViaSocketServer(userId, [{ event, payload }], options);
 }

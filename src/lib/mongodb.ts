@@ -4,6 +4,7 @@ import { IResult } from "ua-parser-js";
 import { UserSchema } from "./class/User";
 import { StatusSchema, StatusViewerSchema } from "./types/status";
 import {
+  AnnouncementSchema,
   AttachmentSchema,
   BlockedUserSchema,
   ChatDataServer,
@@ -289,6 +290,14 @@ export class MongoDBClient {
    */
   blockedUsers() {
     return this.db.collection<BlockedUserSchema>("Blocked_Users");
+  }
+
+  /**
+   * Gets admin-published announcements shown to all users.
+   * @returns Collection for site-wide announcements
+   */
+  announcements() {
+    return this.db.collection<AnnouncementSchema>("Announcements");
   }
 
   /**

@@ -10,6 +10,7 @@ import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 import Bottombar from "@/components/Bottombar";
 import { ConfirmCall } from "@/components/callConfirmation";
 import VideoChat from "@/components/CallPage";
@@ -643,6 +644,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             ) : null}
             {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
             <div id="detail" className="">
+              {!hideChrome && <AnnouncementBanner />}
               {children}
               {showProfilePicture && <UserPhoto />}
               {showPostPreview && <PostPreview />}

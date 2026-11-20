@@ -394,6 +394,8 @@ export interface NewChat_ {
   chat: ChatDataClient;
   chatSettings: ChatSettings;
   requestId: string;
+  /** False when the socket announcement or first message could not be delivered. */
+  announced?: boolean;
 }
 
 export interface ConvoType {
@@ -578,6 +580,17 @@ export interface BlockedUserSchema {
   blockerId: string;
   blockedId: string;
   createdAt: string;
+}
+
+export interface AnnouncementSchema {
+  _id: ObjectId;
+  title: string;
+  message: string;
+  url?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  expiresAt?: string | null;
 }
 
 export type NotificationType = "like" | "comment" | "follow" | "mention";

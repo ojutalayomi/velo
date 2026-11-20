@@ -10,6 +10,7 @@ import {
   Pin,
   ShieldCheck,
   ShieldOff,
+  Trash2,
   UserMinus,
   UserPlus,
   Users,
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import AddGroupMembersDialog from "@/components/AddGroupMembersDialog";
+import DeleteChatDialog from "@/components/DeleteChatDialog";
 import {
   SettingsRow,
   SettingsSection,
@@ -84,6 +86,7 @@ const ChatSettingsPage: React.FC = () => {
   const [addMembersOpen, setAddMembersOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -441,6 +444,15 @@ const ChatSettingsPage: React.FC = () => {
           description="Stop receiving messages from this group"
           onClick={() => setLeaveOpen(true)}
         />
+        {isAdmin && (
+          <SettingsRow
+            icon={Trash2}
+            destructive
+            title="Delete group"
+            description="Permanently delete this group for everyone"
+            onClick={() => setDeleteOpen(true)}
+          />
+        )}
       </SettingsSection>
 
       <LeaveGroupDialog
@@ -457,6 +469,17 @@ const ChatSettingsPage: React.FC = () => {
 
       {isAdmin && (
         <>
+          <DeleteChatDialog
+            chatId={gid as string}
+            name={convo.name ?? "this group"}
+            kind="group"
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            onDeleted={() => {
+              dispatch(deleteConversation(gid as string));
+              router.replace("/chats");
+            }}
+          />
           <AddGroupMembersDialog
             chatId={gid as string}
             existingMemberIds={convo.participants ?? []}

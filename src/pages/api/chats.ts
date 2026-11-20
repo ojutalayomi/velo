@@ -7,7 +7,7 @@ import { UserSchema } from "@/lib/class/User";
 import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
 import { canSendMessage } from "@/lib/chatPermissions";
-import { emitViaSocketServer } from "@/lib/socket";
+import { emitSequenceViaSocketServer, emitViaSocketServer } from "@/lib/socket";
 import {
   AllChats,
   ChatDataClient,
@@ -20,6 +20,7 @@ import {
   NewChat_,
   NewChatSettings,
 } from "@/lib/types/type";
+import { dmKeyFor } from "@/lib/dmKey";
 
 function generateRandom16DigitNumber(): string {
   let randomNumber = "";

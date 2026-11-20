@@ -10,6 +10,7 @@ import {
   Pin,
   ShieldCheck,
   ShieldOff,
+  Trash2,
   UserMinus,
   UserPlus,
   Users,

@@ -199,9 +199,19 @@ const ChatPage = () => {
     fetchData();
   }, [fetchData, otherId]);
 
+  const pendingIds = useRef<{ key: string; chatId: string; messageId: string; content: string } | null>(
+    null
+  );
+
   const handleSendMessage = async (id: string) => {
     if (!allowSend) return;
     if (newMessage.trim() === "" && attachments.length === 0) {
+      return;
+    }
+
+    // A DM needs the other person resolved first; sending earlier creates a chat with "undefined".
+    if (type !== "group" && !newPerson?._id) {
+      toast.error("Please wait", { description: "Still loading this person's profile." });
       return;
     }
 
@@ -209,9 +219,23 @@ const ChatPage = () => {
       setAllowSend(false);
 
       // Prepare the message object
+      // Reuse the ids across retries of the same draft. A failed or lost response must not turn
+      // the next attempt into a second chat (or a duplicate of the first message).
+      const draftKey = `${type}:${otherId}:${groupName}:${groupDescription}`;
+      if (pendingIds.current?.key !== draftKey) {
+        pendingIds.current = {
+          key: draftKey,
+          chatId: generateObjectId(),
+          messageId: generateObjectId(),
+          content: newMessage,
+        };
+      } else if (pendingIds.current.content !== newMessage) {
+        pendingIds.current = { ...pendingIds.current, messageId: generateObjectId(), content: newMessage };
+      }
+
       const msg = new ChatMessage({
-        _id: generateObjectId(),
-        chatId: generateObjectId(),
+        _id: pendingIds.current.messageId,
+        chatId: pendingIds.current.chatId,
         sender: {
           id: String(userdata._id),
           name: userdata.name,
@@ -229,7 +253,8 @@ const ChatPage = () => {
         quotedMessageId: id,
         status: "sending" as msgStatus,
       });
-      msg.receiverId = type === "group" ? msg.chatId : String(userdata._id);
+      // The recipient: the chat for groups, the other person for a DM.
+      msg.receiverId = type === "group" ? msg.chatId : String(newPerson?._id ?? otherId);
 
       let displayPictureUrl = "";
 
@@ -397,6 +422,11 @@ const ChatPage = () => {
         });
         return;
       }
+      // The server may have reused an existing conversation (a DM with this person already
+      // existed): from here on the chat is wherever the server says it is.
+      msg.chatId = result.chat._id;
+      msgCopy.chatId = result.chat._id;
+
       // Emit the message via Socket.IO
       if (socket) {
         try {
@@ -424,6 +454,13 @@ const ChatPage = () => {
         }
       }
 
+      // The API could not hand the first message to the socket server in time. Send it over our own
+      // connection; the server ignores it if it had arrived after all (same message id).
+      if (result.announced === false && socket) {
+        socket.emit("chatMessage", { ...msg });
+      }
+      pendingIds.current = null;
+
       const chat = new Chat(result.chat, []);
       dispatch(addConversation(chat.getConvo(userdata._id)));
       dispatch(addMessage(msgCopy));
@@ -450,7 +487,10 @@ const ChatPage = () => {
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Error", {
-        description: "Failed to send message. Please try again.",
+        description:
+          error instanceof Error && error.message
+            ? `Failed to send message: ${error.message}`
+            : "Failed to send message. Please try again.",
       });
     } finally {
       setAllowSend(true);

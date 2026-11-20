@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { CallButton, CallStatus, IncomingCall } from "@/components/call";
+import DeleteChatDialog from "@/components/DeleteChatDialog";
 import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -111,6 +112,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [searchFocus, setSearchFocus] = useState(false);
   const [searchResults, setSearchResults] = useState<MessageAttributes[]>([]);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -389,14 +391,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     },
     { id: 3, name: "Mute notifications", action: () => console.log("Archived") },
     { id: 4, name: "Wallpaper", action: () => console.log("Hidden") },
-    {
-      id: 5,
-      name: "Delete",
-      action: () => {
-        dispatch(deleteConversation(gid));
-        router.replace("/chats");
-      },
-    },
+    // Deleting a group removes it for everyone, so only admins are offered it (with a confirmation).
+    ...(convo?.adminIds?.includes(String(userdata._id))
+      ? [{ id: 5, name: "Delete group", action: () => setDeleteOpen(true) }]
+      : []),
     { id: 6, name: "Report", action: () => console.log("Blocked") },
     {
       id: 7,
@@ -779,6 +777,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         open={leaveOpen}
         onOpenChange={setLeaveOpen}
         onLeft={() => {
+          dispatch(deleteConversation(gid));
+          router.replace("/chats");
+        }}
+      />
+      <DeleteChatDialog
+        chatId={gid}
+        name={convo?.name ?? "this group"}
+        kind="group"
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDeleted={() => {
           dispatch(deleteConversation(gid));
           router.replace("/chats");
         }}

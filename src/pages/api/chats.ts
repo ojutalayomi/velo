@@ -2,12 +2,13 @@ import { ObjectId } from "mongodb";
 import { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
-import { isChatMember } from "@/lib/chatMembership";
+import { ensureChatDmIndex, isChatMember, isDuplicateKeyError } from "@/lib/chatMembership";
 import { UserSchema } from "@/lib/class/User";
 import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
 import { canSendMessage } from "@/lib/chatPermissions";
-import { emitViaSocketServer } from "@/lib/socket";
+import { dmKeyFor } from "@/lib/dmKey";
+import { emitSequenceViaSocketServer, emitViaSocketServer } from "@/lib/socket";
 import {
   AllChats,
   ChatDataClient,
@@ -53,6 +54,63 @@ const func = async (_id: string): Promise<UserSchema | null> => {
   const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
   const user = await db.users().findOne({ _id: objectId as ObjectId });
   return user as UserSchema;
+};
+
+/** Builds the client-facing chat object (DM display names and pictures resolved). */
+const buildChatCopy = async (
+  chat: { _id: ObjectId | string; name?: Record<string, string>; chatType: string } & Record<string, any>,
+  participants: ChatParticipant[],
+  callerId: string
+): Promise<ChatDataClient> => {
+  const chatCopy = {
+    ...chat,
+    _id: chat._id.toString(),
+    name: { ...(chat.name ?? {}) },
+    participants: participants.map((participant) => ({ ...participant })),
+  } as unknown as ChatDataClient;
+
+  if (chatCopy.chatType === "DM" && chatCopy.participants.length === 2) {
+    delete chatCopy.name[chatCopy.participants.find((p) => p.userId === callerId)?.userId ?? ""];
+  }
+
+  await Promise.all(
+    chatCopy.participants.map(async (participant, index) => {
+      if (chatCopy.chatType === "DM" && participant.userId !== callerId) {
+        const user = await func(participant.userId);
+        chatCopy.name[participant.userId] = user?.name ?? "";
+        chatCopy.participants[index].displayPicture = user?.displayPicture ?? "";
+      }
+    })
+  );
+
+  return chatCopy;
+};
+
+/**
+ * Announces a new chat and delivers its first message over one acknowledged connection.
+ * Bounded well under the platform's 10s function limit (cold start + DB work come first), so a
+ * slow socket server can never outlast the API route; resolves to whether
+ * everything was delivered, which the client uses to decide on a fallback.
+ */
+const announceNewChat = async (
+  callerId: string,
+  chatId: string,
+  msg: MessageAttributes | undefined
+): Promise<boolean> => {
+  try {
+    await emitSequenceViaSocketServer(
+      callerId,
+      [
+        { event: "addChat", payload: { chat: { _id: chatId } } },
+        ...(msg ? [{ event: "chatMessage" as const, payload: { ...msg } }] : []),
+      ],
+      { connectTimeoutMs: 2_500, ackTimeoutMs: 2_500, totalTimeoutMs: 4_000 }
+    );
+    return true;
+  } catch (error) {
+    console.error("Failed to announce the new chat:", error);
+    return false;
+  }
 };
 
 export const chatRepository = {
@@ -359,6 +417,74 @@ export const chatRepository = {
       const memberIds = Array.from(new Set([payload._id, ...(chatData.participants ?? [])]));
 
       const newID = new ObjectId(chatData._id) || new ObjectId();
+
+      // Reuse a chat that already exists instead of creating another: either this very id (a lost
+      // response, a double click) or, for a DM, the existing DM between the same two people. The
+      // first message is re-addressed to the reused chat; the client follows the returned id.
+      const respondWithExisting = async (existing: { _id: ObjectId } & Record<string, any>) => {
+        const existingId = existing._id.toString();
+        const rows = await db.chatParticipants().find({ chatId: existingId }).toArray();
+        const callerRow = rows.find((row) => row.userId === payload._id);
+        if (!callerRow) return res.status(409).json({ error: "Chat id already in use" });
+
+        const msg = chatData.msg ? { ...chatData.msg, chatId: existingId } : undefined;
+        const announced = await announceNewChat(payload._id, existingId, msg);
+        return res.status(200).json({
+          chat: await buildChatCopy(existing as any, rows, payload._id),
+          chatSettings: callerRow.chatSettings,
+          requestId: payload._id,
+          announced,
+        } as any);
+      };
+
+      const existingChat = await db.chats().findOne({ _id: newID });
+      if (existingChat) return respondWithExisting(existingChat);
+
+      // Every participant must be a real user; a missing profile on the client otherwise
+      // arrives here as the string "undefined" and creates a chat nobody can open.
+      if (memberIds.some((memberId) => !ObjectId.isValid(memberId))) {
+        return res.status(400).json({ error: "Invalid participant" });
+      }
+      const knownUsers = await db
+        .users()
+        .countDocuments({ _id: { $in: memberIds.map((memberId) => new ObjectId(memberId)) } });
+      if (knownUsers !== memberIds.length) {
+        return res.status(400).json({ error: "One or more participants do not exist" });
+      }
+
+      // One DM per pair: the stored pair key is authoritative; the roster join below also finds
+      // DMs created before the key existed.
+      const dmKey =
+        chatData.chatType === "DM" && memberIds.length === 2
+          ? dmKeyFor(memberIds[0], memberIds[1])
+          : undefined;
+      if (dmKey) {
+        const byKey = await db.chats().findOne({ dmKey });
+        if (byKey) return respondWithExisting(byKey);
+
+        const otherId = memberIds.find((memberId) => memberId !== payload._id);
+        const mine = await db
+          .chatParticipants()
+          .find({ userId: payload._id }, { projection: { chatId: 1 } })
+          .toArray();
+        const shared = otherId
+          ? await db
+              .chatParticipants()
+              .find(
+                { userId: otherId, chatId: { $in: mine.map((row) => row.chatId) } },
+                { projection: { chatId: 1 } }
+              )
+              .toArray()
+          : [];
+        const existingDm = shared.length
+          ? await db.chats().findOne({
+              _id: { $in: shared.map((row) => new ObjectId(row.chatId)) },
+              chatType: "DM",
+            })
+          : null;
+        if (existingDm) return respondWithExisting(existingDm);
+      }
+
       // ChatSettings Collection
       const chatSettings: NewChatSettings = {
         _id: new ObjectId(),
@@ -394,6 +520,7 @@ export const chatRepository = {
         timestamp: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         lastMessageId: "",
+        ...(dmKey ? { dmKey } : {}),
       };
 
       const participants: ChatParticipant[] = memberIds.map((participantId) => ({
@@ -410,47 +537,28 @@ export const chatRepository = {
         chatType: chatData.chatType,
       }));
 
-      await db.chats().insertOne(chat);
+      if (dmKey) await ensureChatDmIndex(db);
+      try {
+        await db.chats().insertOne(chat);
+      } catch (error) {
+        // Lost a race with a simultaneous creation of the same DM: use the one that won.
+        if (dmKey && isDuplicateKeyError(error)) {
+          const winner = await db.chats().findOne({ dmKey });
+          if (winner) return respondWithExisting(winner);
+        }
+        throw error;
+      }
       await db.chatParticipants().insertMany(participants);
       // await db.collection('chatSettings').insertOne(chatSettings);
 
+      const announced = await announceNewChat(payload._id, chat._id.toString(), chatData.msg);
+
       const newObj = {
-        chat: await (async () => {
-          const chatCopy: ChatDataClient = { ...chat, _id: chat._id.toString(), participants };
-          // delete (chatCopy as any)._id;
-
-          if (chatCopy.chatType === "DM" && chatCopy.participants.length === 2) {
-            delete chatCopy.name[
-              chatCopy.participants.find((p) => p.userId === payload._id)?.userId ?? ""
-            ];
-          }
-
-          await Promise.all(
-            chatCopy.participants.map(async (participant, index) => {
-              if (chatCopy.chatType === "DM" && participant.userId !== payload._id) {
-                const user = await func(participant.userId);
-                chatCopy.name[participant.userId] = user?.name ?? "";
-                chatCopy.participants[index].displayPicture = user?.displayPicture ?? "";
-              }
-            })
-          );
-
-          return chatCopy;
-        })(),
+        chat: await buildChatCopy(chat, participants, payload._id),
         chatSettings,
         requestId: payload._id,
+        announced,
       };
-
-      // Announce the chat, then deliver its first message. The chat is already persisted, so a
-      // failed announcement is logged instead of failing the request; recipients still get it
-      // on their next fetch. Each emit waits for the socket server's ack because a
-      // fire-and-forget emit can be lost when this serverless function exits.
-      try {
-        await emitViaSocketServer(payload._id, "addChat", { chat: { _id: chat._id.toString() } });
-        await emitViaSocketServer(payload._id, "chatMessage", { ...chatData.msg });
-      } catch (error) {
-        console.error("Failed to announce the new chat:", error);
-      }
 
       res.status(201).json(newObj);
     } catch (error) {

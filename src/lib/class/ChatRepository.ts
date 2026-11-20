@@ -45,7 +45,12 @@ class ChatRepository {
       },
       body: JSON.stringify(chatAttributes),
     });
-    const createdChat = await response.json();
+    const createdChat = await response.json().catch(() => null);
+    // A failed request must throw: callers treat any object as success and would otherwise
+    // read `.chat` off an error body.
+    if (!response.ok || !createdChat?.chat) {
+      throw new Error(createdChat?.error ?? `Failed to create chat (${response.status})`);
+    }
     return createdChat;
   }
 

@@ -88,6 +88,8 @@ export interface ChatData {
   isPrivate: boolean;
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
+  /** DMs only: the sorted member pair, unique across chats. See src/lib/dmKey.ts. */
+  dmKey?: string;
   timestamp: string;
   lastMessageId: string;
   lastUpdated: string;
@@ -394,6 +396,8 @@ export interface NewChat_ {
   chat: ChatDataClient;
   chatSettings: ChatSettings;
   requestId: string;
+  /** False when the socket announcement or first message could not be delivered. */
+  announced?: boolean;
 }
 
 export interface ConvoType {

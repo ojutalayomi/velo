@@ -3,6 +3,7 @@ import { Db, MongoBulkWriteError, MongoClient } from "mongodb";
 import { MongoDBClient } from "@/lib/mongodb";
 
 export const CHAT_PARTICIPANT_INDEX_NAME = "unique_chat_user";
+export const CHAT_DM_INDEX_NAME = "unique_dm_pair";
 
 /** Membership is the existence of a Chat_Participants row for (chatId, userId). */
 export async function isChatMember(db: MongoDBClient, chatId: string, userId: string) {
@@ -50,4 +51,44 @@ export function isDuplicateMemberError(error: unknown): boolean {
     ? error.writeErrors
     : [error.writeErrors];
   return writeErrors.length > 0 && writeErrors.every((entry) => entry.code === 11000);
+}
+
+/** True when a single-document write failed because of a unique index (error code 11000). */
+export function isDuplicateKeyError(error: unknown): boolean {
+  return (error as { code?: number } | null)?.code === 11000;
+}
+
+const dmIndexPromises = new WeakMap<MongoClient, Map<string, Promise<void>>>();
+
+/**
+ * Unique index on `dmKey` so two DMs can never exist for the same pair. Only documents that
+ * have a `dmKey` are covered, so DMs created before it existed (and any duplicates among them)
+ * neither block the build nor are protected; creation still finds them through the roster
+ * lookup. scripts/dedupe-dm-chats.ts merges those duplicates and backfills their `dmKey`.
+ */
+export async function ensureChatDmIndex(wrapper: MongoDBClient): Promise<void> {
+  const db: Db = await wrapper.getDb();
+  let databases = dmIndexPromises.get(db.client);
+  if (!databases) {
+    databases = new Map();
+    dmIndexPromises.set(db.client, databases);
+  }
+  const existing = databases.get(db.databaseName);
+  if (existing) return existing;
+  const pending = wrapper
+    .chats()
+    .createIndex(
+      { dmKey: 1 },
+      { unique: true, name: CHAT_DM_INDEX_NAME, partialFilterExpression: { dmKey: { $type: "string" } } }
+    )
+    .then(() => undefined)
+    .catch((error: unknown) => {
+      databases.delete(db.databaseName);
+      console.error(
+        "Could not create the unique DM pair index; run scripts/dedupe-dm-chats.ts:",
+        error
+      );
+    });
+  databases.set(db.databaseName, pending);
+  return pending;
 }

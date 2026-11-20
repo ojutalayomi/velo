@@ -9,6 +9,7 @@ import {
   House,
   Compass,
   Bookmark,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -181,6 +182,14 @@ const Root: React.FC<BottombarProps> = ({
                 </DrawerHeader>
                 {!userdata._id ? (
                   <div className="flex flex-col gap-3 px-6 pb-8 pt-4">
+                    <Link
+                      href="/trending"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-4 py-2 text-xl font-medium dark:text-slate-200"
+                    >
+                      <TrendingUp size={26} strokeWidth={1.75} /> Trending
+                    </Link>
+                    <div className="border-t" />
                     <p className="text-lg font-bold dark:text-slate-200">Join Velo</p>
                     <Link
                       href="/accounts/login"
@@ -225,6 +234,7 @@ const Root: React.FC<BottombarProps> = ({
                     <div id="more" className="flex flex-col py-2">
                       {[
                         { route: userdata.username, label: "Profile", Icon: User },
+                        { route: "trending", label: "Trending", Icon: TrendingUp },
                         { route: "bookmarks", label: "Bookmarks", Icon: Bookmark },
                         { route: "general", label: "Settings", Icon: Settings2 },
                       ].map(({ route, label, Icon }) => (

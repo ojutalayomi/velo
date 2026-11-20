@@ -39,7 +39,9 @@ export type ServerEvent =
   | "chatMessage"
   | "chat:updated"
   | "chat:participantsAdded"
-  | "chat:participantsRemoved";
+  | "chat:participantsRemoved"
+  | "announcement:publish"
+  | "announcement:retire";
 
 export type EmitOptions = {
   connectTimeoutMs?: number;

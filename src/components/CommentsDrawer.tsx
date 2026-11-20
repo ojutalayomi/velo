@@ -9,6 +9,7 @@ import { PostSchema } from "@/lib/types/type";
 
 import { renderTextWithLinks } from "./RenderTextWithLinks";
 import { Statuser } from "./VerificationComponent";
+import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 
 const PAGE_SIZE = 20;
@@ -68,6 +69,7 @@ export default function CommentsDrawer({
   footer?: React.ReactNode;
 }) {
   const { userdata } = useUser();
+  const socket = useSocket();
   const [visible, setVisible] = useState(false);
   const [comments, setComments] = useState<PostSchema[]>([]);
   const [loading, setLoading] = useState(false);
@@ -148,6 +150,21 @@ export default function CommentsDrawer({
     setVisible(false);
     window.setTimeout(onClose, CLOSE_MS);
   }, [onClose]);
+
+  // Live comments for the open post (the server also echoes your own comment back)
+  useEffect(() => {
+    if (!socket || !postId) return;
+    const onNewComment = (data: { blog: PostSchema }) => {
+      if (data.blog.ParentId !== postId) return;
+      setComments((prev) =>
+        prev.some((c) => c.PostID === data.blog.PostID) ? prev : [data.blog, ...prev]
+      );
+    };
+    socket.on("newComment", onNewComment);
+    return () => {
+      socket.off("newComment", onNewComment);
+    };
+  }, [socket, postId]);
 
   // Escape to close + lock page scroll while open
   useEffect(() => {

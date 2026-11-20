@@ -20,6 +20,7 @@ export default function AnnouncementsAdmin() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [url, setUrl] = useState("");
@@ -42,15 +43,40 @@ export default function AnnouncementsAdmin() {
     return () => clearTimeout(t);
   }, [load]);
 
+  const resetForm = () => {
+    setEditingId(null);
+    setTitle("");
+    setMessage("");
+    setUrl("");
+    setExpiresAt("");
+  };
+
+  // datetime-local wants local "YYYY-MM-DDTHH:mm".
+  const toLocalInput = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
+
+  const startEdit = (r: Row) => {
+    setEditingId(r._id);
+    setTitle(r.title);
+    setMessage(r.message);
+    setUrl(r.url ?? "");
+    setExpiresAt(toLocalInput(r.expiresAt));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const publish = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!confirm("Publish this announcement to ALL users?")) return;
+    if (!editingId && !confirm("Publish this announcement to ALL users?")) return;
     setSaving(true);
     try {
       const res = await fetch("/api/admin/announcements", {
-        method: "POST",
+        method: editingId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(editingId && { id: editingId }),
           title,
           message,
           url,
@@ -59,12 +85,13 @@ export default function AnnouncementsAdmin() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.message || "Failed to publish");
-      setRows((prev) => [json.data, ...prev]);
-      setTitle("");
-      setMessage("");
-      setUrl("");
-      setExpiresAt("");
-      toast.success("Announcement published");
+      if (editingId) {
+        setRows((prev) => prev.map((r) => (r._id === editingId ? json.data : r)));
+      } else {
+        setRows((prev) => [json.data, ...prev]);
+      }
+      resetForm();
+      toast.success(editingId ? "Announcement updated" : "Announcement published");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to publish");
     } finally {
@@ -89,7 +116,9 @@ export default function AnnouncementsAdmin() {
     <div className="space-y-6">
       <form onSubmit={publish} className="space-y-3 rounded-md border p-4">
         <p className="text-sm text-gray-500">
-          Users see the newest live announcement as a dismissible banner.
+          {editingId
+            ? "Editing an announcement. Live viewers see the corrected text immediately."
+            : "Users see the newest live announcement as a dismissible banner."}
         </p>
         <Input
           placeholder="Title"
@@ -120,8 +149,13 @@ export default function AnnouncementsAdmin() {
           />
         </label>
         <Button type="submit" disabled={saving}>
-          {saving ? "Publishing…" : "Publish to everyone"}
+          {saving ? "Saving…" : editingId ? "Save changes" : "Publish to everyone"}
         </Button>
+        {editingId && (
+          <Button type="button" variant="outline" className="ml-2" onClick={resetForm}>
+            Cancel
+          </Button>
+        )}
       </form>
 
       {loading ? (
@@ -145,6 +179,9 @@ export default function AnnouncementsAdmin() {
                   {r.expiresAt && ` · expires ${new Date(r.expiresAt).toLocaleString()}`}
                 </p>
               </div>
+              <Button size="sm" variant="outline" onClick={() => startEdit(r)}>
+                Edit
+              </Button>
               <Button
                 size="sm"
                 variant={r.active ? "destructive" : "outline"}

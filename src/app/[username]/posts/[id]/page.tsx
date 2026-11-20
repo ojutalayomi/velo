@@ -213,73 +213,65 @@ const PostContent: React.FC = () => {
 
   useEffect(() => {
     if (!socket || !post) return;
-    socket.on("newComment", (data: { excludeUser: string; blog: PostSchema }) => {
+
+    const onNewComment = (data: { excludeUser: string; blog: PostSchema }) => {
+      if (data.blog.ParentId !== post.PostID) return;
       setComments((prevComments) => {
-        if (prevComments) {
-          return [data.blog, ...prevComments];
-        }
-        return [data.blog];
+        if (prevComments?.some((c) => c.PostID === data.blog.PostID)) return prevComments;
+        return prevComments ? [data.blog, ...prevComments] : [data.blog];
       });
-    });
-    socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
+    };
+
+    const onDeletePost = (data: { excludeUser: string; postId: string; type: string }) => {
       if (!data.postId) return;
-      if (post?.PostID === data.postId) {
-        setPost((prevPost) => {
-          if (prevPost && prevPost._id === data.postId) {
-            const update: Partial<PostSchema> = {
-              Image: [],
-              Caption: `${prevPost.Type.toUpperCase()} deleted this post.`,
-              WhoCanComment: "none",
-            };
-            prevPost = { ...prevPost, ...update };
-            return prevPost;
-          }
-          return prevPost;
-        });
-      } else {
-        setComments((prevComments) => {
-          if (prevComments) {
-            return prevComments.filter((comment) => comment._id !== data.postId);
-          }
-        });
-      }
-    });
-    socket.on(
-      "updatePost",
-      (data: {
-        excludeUserId: string;
-        postId: string;
-        update: Partial<PostSchema>;
-        type: string;
-      }) => {
-        if (!data.postId) return;
-        if (post?.PostID === data.postId) {
-          setPost((prevPost) => {
-            if (prevPost && prevPost._id === data.postId) {
-              prevPost = { ...prevPost, ...data.update };
-              return prevPost;
-            }
-            return prevPost;
-          });
-        } else {
-          setComments((prevComments) => {
-            if (prevComments) {
-              const index = prevComments.findIndex((post) => post.PostID === data.postId);
-              if (index !== -1) {
-                prevComments[index] = { ...prevComments[index], ...data.update };
-                return prevComments;
+      if (post.PostID === data.postId) {
+        setPost((prevPost) =>
+          prevPost && prevPost._id === data.postId
+            ? {
+                ...prevPost,
+                Image: [],
+                Caption: `${prevPost.Type.toUpperCase()} deleted this post.`,
+                WhoCanComment: "none",
               }
-            }
-            return prevComments;
-          });
-        }
+            : prevPost
+        );
+      } else {
+        setComments((prevComments) =>
+          prevComments ? prevComments.filter((comment) => comment._id !== data.postId) : prevComments
+        );
       }
-    );
+    };
+
+    const onUpdatePost = (data: {
+      excludeUserId: string;
+      postId: string;
+      update: Partial<PostSchema>;
+      type: string;
+    }) => {
+      if (!data.postId) return;
+      if (post.PostID === data.postId) {
+        setPost((prevPost) =>
+          prevPost && prevPost._id === data.postId ? { ...prevPost, ...data.update } : prevPost
+        );
+      } else {
+        // Return a new array so React sees the change (no in-place mutation).
+        setComments((prevComments) =>
+          prevComments
+            ? prevComments.map((c) => (c.PostID === data.postId ? { ...c, ...data.update } : c))
+            : prevComments
+        );
+      }
+    };
+
+    socket.on("newComment", onNewComment);
+    socket.on("deletePost", onDeletePost);
+    socket.on("updatePost", onUpdatePost);
 
     return () => {
-      socket.off("newComment");
-      // socket.off('deletePost');
-      // socket.off('updatePost');
+      // Remove only this page's handlers, not every listener on the shared socket.
+      socket.off("newComment", onNewComment);
+      socket.off("deletePost", onDeletePost);
+      socket.off("updatePost", onUpdatePost);
     };
   }, [post, socket]);
 

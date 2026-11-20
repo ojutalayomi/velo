@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -10,16 +11,20 @@ export const metadata: Metadata = {
 
 export default function TrendingPage() {
   return (
-    <main className="h-full min-h-screen overflow-auto bg-gray-50 px-4 pb-24 pt-6 dark:bg-zinc-950 dark:text-slate-200">
-      <div className="mx-auto max-w-xl space-y-4">
-        <Link href="/explore" className="inline-block text-sm text-brand hover:underline py-4">
-          ← Explore
-        </Link>
-        <h1 className="text-2xl font-semibold">Trending conversations</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Ranked by the number of people posting, then post count and recency. Updated about every
-          five minutes.
-        </p>
+    <main className="h-full min-h-screen overflow-auto bg-gray-50 pb-24 dark:bg-zinc-950 dark:text-slate-200">
+      <header className="sticky top-0 z-10 border-b bg-gray-50/90 px-4 py-2 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+        <div className="mx-auto flex max-w-xl items-center gap-3">
+          <Link
+            href="/explore"
+            aria-label="Back to Explore"
+            className="flex rounded-full p-2 shadow hover:bg-accent"
+          >
+            <ArrowLeft size={18} />
+          </Link>
+          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Explore</span>
+        </div>
+      </header>
+      <div className="mx-auto max-w-xl px-4 pt-4">
         <TrendingTopics variant="page" />
       </div>
     </main>

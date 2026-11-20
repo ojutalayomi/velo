@@ -348,7 +348,14 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                           // className={`prose prose-sm max-w-none dark:prose-invert ${senderId === userdata._id ? "text-white" : ""}`}
                           className="prose prose-sm max-w-none dark:prose-invert"
                         >
-                          <Markdown>{contentToDisplay}</Markdown>
+                          <Markdown
+                            mentionUsernames={[
+                              ...(message.mentions ?? []).map((m) => m.username),
+                              ...(message.chatType === "Group" ? ["ai"] : []),
+                            ]}
+                          >
+                            {contentToDisplay}
+                          </Markdown>
                         </div>
                       ) : (
                         <p

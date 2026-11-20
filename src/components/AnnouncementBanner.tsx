@@ -1,7 +1,9 @@
 "use client";
 import { Megaphone, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { useSocket } from "@/app/providers/SocketProvider";
 
 interface Announcement {
   id: string;
@@ -15,25 +17,44 @@ const KEY = "velo_dismissed_announcement";
 /** Shows the newest live admin announcement until the user dismisses it. */
 export default function AnnouncementBanner() {
   const [item, setItem] = useState<Announcement | null>(null);
+  const socket = useSocket();
+
+  const show = useCallback((data: Announcement | null) => {
+    let dismissed: string | null = null;
+    try {
+      dismissed = localStorage.getItem(KEY);
+    } catch {}
+    setItem(data && data.id !== dismissed ? data : null);
+  }, []);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/announcements", { cache: "no-store" });
+      if (!res.ok) return;
+      show(((await res.json()) as { data: Announcement | null }).data);
+    } catch {}
+  }, [show]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/announcements");
-        if (!res.ok) return;
-        const { data } = (await res.json()) as { data: Announcement | null };
-        let dismissed: string | null = null;
-        try {
-          dismissed = localStorage.getItem(KEY);
-        } catch {}
-        if (!cancelled && data && data.id !== dismissed) setItem(data);
-      } catch {}
-    })();
+    const t = setTimeout(load, 0);
+    return () => clearTimeout(t);
+  }, [load]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onNew = (data: Announcement) => show(data);
+    // Refetch rather than just clearing: an older live announcement may take over.
+    const onRemoved = (data: { id: string }) => setItem((cur) => (cur?.id === data?.id ? null : cur));
+    socket.on("announcement:new", onNew);
+    socket.on("announcement:removed", onRemoved);
+    // Catch anything missed while disconnected.
+    socket.on("connect", load);
     return () => {
-      cancelled = true;
+      socket.off("announcement:new", onNew);
+      socket.off("announcement:removed", onRemoved);
+      socket.off("connect", load);
     };
-  }, []);
+  }, [socket, show, load]);
 
   if (!item) return null;
 

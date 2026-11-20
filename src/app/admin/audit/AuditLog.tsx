@@ -10,7 +10,7 @@ interface Entry {
   action: string;
   targetId: string;
   time: string;
-  details?: { username?: string };
+  details?: { username?: string; title?: string };
 }
 
 export default function AuditLog() {
@@ -57,7 +57,7 @@ export default function AuditLog() {
           {rows.map((r, i) => (
             <li key={i} className="flex flex-wrap items-center justify-between gap-2 p-3">
               <span>
-                <b>{r.action}</b> · @{r.details?.username || r.targetId}
+                <b>{r.action}</b> · {r.details?.title ? `“${r.details.title}”` : `@${r.details?.username || r.targetId}`}
               </span>
               <span className="text-xs text-gray-500">
                 admin {r.adminId.slice(-6)} · {new Date(r.time).toLocaleString()}

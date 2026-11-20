@@ -7,7 +7,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import PostCard from "@/components/PostCard";
@@ -48,6 +48,15 @@ export default function ContentSection({
   const [activeTab, setActiveTab] = useState<string>(tabs[0].id);
   const router = useRouter();
 
+  // Private tabs are removed on other users' profiles, so carousel indexes must
+  // map onto this filtered list, not the full `tabs` array.
+  const isOwnProfile = userdata._id === profileData._id?.toString();
+  const visibleTabs = useMemo(
+    () =>
+      tabs.filter((tab) => isOwnProfile || !["bookmark", "share", "comment"].includes(tab.id)),
+    [isOwnProfile]
+  );
+
   const filterPosts = (type: ID) => {
     switch (type) {
       case "media":
@@ -66,7 +75,7 @@ export default function ContentSection({
     if (!api) return;
     setActiveTab(value);
     api.scrollTo(
-      tabs.findIndex((tab) => tab.id === value),
+      visibleTabs.findIndex((tab) => tab.id === value),
       true
     );
   };
@@ -78,32 +87,26 @@ export default function ContentSection({
 
     const updateActiveTab = () => {
       const index = api.selectedScrollSnap();
-      if (index >= 0 && index < tabs.length) {
-        setActiveTab(tabs[index].id);
+      if (index >= 0 && index < visibleTabs.length) {
+        setActiveTab(visibleTabs[index].id);
       }
     };
 
     updateActiveTab();
     api.on("select", updateActiveTab);
-  }, [api]);
-
-  const shouldHideTab = (tab: { id: string; label: string }) => {
-    const isPrivateTab = tab.id === "bookmark" || tab.id === "share" || tab.id === "comment";
-    const isNotOwnProfile = userdata._id !== profileData._id?.toString();
-    return isPrivateTab && isNotOwnProfile;
-  };
+    return () => {
+      api.off("select", updateActiveTab);
+    };
+  }, [api, visibleTabs]);
 
   return (
     <div className="w-full px-2">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         {/* Fixed TabsList */}
         <TabsList
-          className={`grid ${userdata._id !== profileData._id?.toString() ? "grid-cols-2" : "grid-cols-5"} bg-transparent`}
+          className={`grid ${isOwnProfile ? "grid-cols-5" : "grid-cols-2"} bg-transparent`}
         >
-          {tabs.map((tab, index) => {
-            if (shouldHideTab(tab)) {
-              return null;
-            }
+          {visibleTabs.map((tab, index) => {
             return (
               <TabsTrigger
                 key={index + tab.id}
@@ -120,10 +123,7 @@ export default function ContentSection({
 
         <Carousel setApi={setApi} className="min-h-screen w-full border-t">
           <CarouselContent>
-            {tabs.map((tab, index) => {
-              if (shouldHideTab(tab)) {
-                return null;
-              }
+            {visibleTabs.map((tab, index) => {
               return (
                 <CarouselItem key={tab.id + index} className="w-full" data-label={tab.label}>
                   {(() => {
@@ -137,7 +137,7 @@ export default function ContentSection({
                         {filteredPosts.length === 0 && (
                           <EmptyStateCard
                             postType={tab.id}
-                            {...(userdata._id === profileData._id?.toString()
+                            {...(isOwnProfile
                               ? { onAction: () => router.push("/compose/post") }
                               : {})}
                           />

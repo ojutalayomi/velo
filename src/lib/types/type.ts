@@ -584,6 +584,17 @@ export interface BlockedUserSchema {
   createdAt: string;
 }
 
+export interface AnnouncementSchema {
+  _id: ObjectId;
+  title: string;
+  message: string;
+  url?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  expiresAt?: string | null;
+}
+
 export type NotificationType = "like" | "comment" | "follow" | "mention";
 
 export type NotificationTarget = "post" | "comment" | "chat_message" | "user";

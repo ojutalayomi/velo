@@ -1,8 +1,7 @@
 "use client";
-import { ArrowLeft, Loader2, Send, Share, SmileIcon, Upload } from "lucide-react";
-import Image from "next/image";
+import { ArrowLeft, Loader2, Share } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -50,6 +49,72 @@ const PostContent: React.FC = () => {
   const [commentsMessage, setCommentsMessage] = useState<Comments["message"]>();
   const [commentsPagination, setCommentsPagination] = useState<PaginationMeta | null>(null);
   const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
+
+  // Pull-down-to-reveal parent post (only for comments)
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const mainPostRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const wheelAcc = useRef(0);
+  const [parentPost, setParentPost] = useState<PostSchema | null>(null);
+  const [parentLoading, setParentLoading] = useState(false);
+  const [parentError, setParentError] = useState<string | null>(null);
+  const [pull, setPull] = useState(0);
+  const PULL_THRESHOLD = 70;
+  const isComment = post?.Type === "comment" && !!post.ParentId;
+
+  const revealParent = useCallback(async () => {
+    if (!post?.ParentId || parentPost || parentLoading) return;
+    setParentLoading(true);
+    setParentError(null);
+    try {
+      const res = await getPost(post.ParentId);
+      setParentPost(res.post as PostSchema);
+    } catch (error) {
+      setParentError((error as Error).message);
+    } finally {
+      setParentLoading(false);
+    }
+  }, [post?.ParentId, parentPost, parentLoading]);
+
+  // Reset when navigating to a different post
+  useEffect(() => {
+    setParentPost(null);
+    setParentError(null);
+    setPull(0);
+  }, [params?.id]);
+
+  // Keep the main post in view once the parent is inserted above it
+  useLayoutEffect(() => {
+    if (parentPost) mainPostRef.current?.scrollIntoView({ block: "start" });
+  }, [parentPost]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!isComment || parentPost) return;
+    touchStartY.current = scrollRef.current?.scrollTop === 0 ? e.touches[0].clientY : null;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    setPull(dy > 0 ? Math.min(dy * 0.5, PULL_THRESHOLD * 1.5) : 0);
+  };
+  const onTouchEnd = () => {
+    if (touchStartY.current === null) return;
+    touchStartY.current = null;
+    if (pull >= PULL_THRESHOLD) void revealParent();
+    setPull(0);
+  };
+  const onWheel = (e: React.WheelEvent) => {
+    if (!isComment || parentPost || scrollRef.current?.scrollTop !== 0) return;
+    if (e.deltaY < 0) {
+      wheelAcc.current += -e.deltaY;
+      if (wheelAcc.current > 150) {
+        wheelAcc.current = 0;
+        void revealParent();
+      }
+    } else {
+      wheelAcc.current = 0;
+    }
+  };
 
   const fetchPost = async (id: string) => {
     setLoading((l) => {
@@ -221,7 +286,14 @@ const PostContent: React.FC = () => {
   return (
     <>
       {params?.id && <PostAnalytics postId={params.id as string} userId={userdata._id} />}
-      <div className="flex size-full h-screen max-h-screen w-full flex-col overflow-auto">
+      <div
+        ref={scrollRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onWheel={onWheel}
+        className="flex size-full h-screen max-h-screen w-full flex-col overflow-auto"
+      >
         <div className="sticky top-0 z-10 flex justify-between bg-white p-1 shadow-md dark:bg-zinc-900">
           <div className="m-2 flex w-full items-center justify-between gap-2">
             <ArrowLeft size={24} className="cursor-pointer" onClick={() => navigate()} />
@@ -234,6 +306,28 @@ const PostContent: React.FC = () => {
           </div>
         </div>
         <div className="flex-1 dark:text-slate-200">
+          {isComment && !parentPost && (
+            <div
+              className="flex items-center justify-center overflow-hidden text-sm text-gray-500 transition-[height] dark:text-slate-400"
+              style={{ height: parentLoading ? 40 : pull }}
+            >
+              {parentLoading ? (
+                <Loader2 className="loader" size={20} />
+              ) : parentError ? (
+                parentError
+              ) : pull >= PULL_THRESHOLD ? (
+                "Release to view parent post"
+              ) : pull > 0 ? (
+                "Pull down to view parent post"
+              ) : null}
+            </div>
+          )}
+          {parentPost && (
+            <div className="border-l-2 border-gray-300 dark:border-zinc-700">
+              <PostCard key={parentPost._id} postData={parentPost} />
+            </div>
+          )}
+          <div ref={mainPostRef}>
           {loading.post ? (
             <div className="mt-4 flex w-full cursor-progress flex-col space-y-3 rounded-xl bg-white p-4 shadow-md dark:bg-zinc-900">
               <div className="flex items-center justify-start gap-2">
@@ -261,6 +355,7 @@ const PostContent: React.FC = () => {
               </div>
             )
           )}
+          </div>
 
           <div>
             {!errorMessage.comment ? 

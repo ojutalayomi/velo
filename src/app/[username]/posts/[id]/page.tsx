@@ -337,7 +337,7 @@ function SelectComponent() {
       <SelectTrigger className="w-full max-w-48 rounded-full">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="max-w-28">
+      <SelectContent>
         <SelectGroup>
           <SelectLabel>Sort comments</SelectLabel>
           {items.map((item) => (

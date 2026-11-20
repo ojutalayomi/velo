@@ -6,6 +6,7 @@ import { isChatMember } from "@/lib/chatMembership";
 import { UserSchema } from "@/lib/class/User";
 import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
+import { canSendMessage } from "@/lib/chatPermissions";
 import { emitViaSocketServer } from "@/lib/socket";
 import {
   AllChats,
@@ -38,6 +39,7 @@ const CHAT_FIELD_VALIDATORS: Record<string, (v: unknown) => boolean> = {
   groupDescription: (v) => typeof v === "string" && v.length <= 500,
   groupDisplayPicture: (v) => typeof v === "string" && v.length <= 500,
   isPrivate: (v) => typeof v === "boolean",
+  onlyAdminsCanSend: (v) => typeof v === "boolean",
   name: (v) =>
     typeof v === "object" &&
     v !== null &&
@@ -507,6 +509,13 @@ export const chatRepository = {
       }
 
       await db.chats().updateOne({ _id: new ObjectId(id) }, { $set });
+
+      // Tell the other members so their screens (title, composer) update without a reload.
+      try {
+        await emitViaSocketServer(payload._id, "chat:updated", { chatId: id });
+      } catch (error) {
+        console.error("Failed to announce the group update:", error);
+      }
       res.status(200).json($set);
     } catch (error) {
       console.error(error);
@@ -583,6 +592,17 @@ export const chatRepository = {
         return res.status(400).json({ error: "Invalid chat id" });
       }
       const chats = await db.chats().findOne({ _id: new ObjectId(chatId) });
+      if (
+        chats &&
+        !canSendMessage({
+          chatType: chats.chatType,
+          onlyAdminsCanSend: chats.onlyAdminsCanSend,
+          adminIds: chats.adminIds,
+          userId: payload._id,
+        })
+      ) {
+        return res.status(403).json({ error: "Only admins can send messages in this group" });
+      }
 
       if (!chats) {
         return res.status(404).json({ error: "Chat not found" });

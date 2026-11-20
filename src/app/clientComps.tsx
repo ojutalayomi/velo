@@ -153,6 +153,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             ? data.chat.name[Object.keys(data.chat.name).find((e) => !e.includes(uid)) || ""]
             : data.chat.name.group,
         adminIds: data.chat.adminIds,
+        onlyAdminsCanSend: data.chat.onlyAdminsCanSend ?? false,
         displayPicture: otherParticipant?.displayPicture || "",
         description: data.chat.groupDescription || "",
         verified: data.chat.verified || false,
@@ -305,6 +306,20 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on("messagesRead", (data: { readerId: string; messageIds: string[] }) => {
       dispatch(markMessagesRead({ messageIds: data.messageIds, readerId: data.readerId }));
     });
+    socket.on(
+      "chatDetailsUpdated",
+      (data: {
+        chatId: string;
+        name?: string;
+        description?: string;
+        displayPicture?: string;
+        adminIds?: string[];
+        onlyAdminsCanSend?: boolean;
+      }) => {
+        const { chatId, ...updates } = data;
+        dispatch(updateConversation({ id: chatId, updates }));
+      }
+    );
     socket.on("chatRemoved", (data: { chatId: string }) => {
       dispatch(deleteConversation(data.chatId));
       // Read the live location so this listener does not have to rebind on navigation.
@@ -513,6 +528,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("chatError");
       socket.off("chatParticipantsUpdated");
       socket.off("chatRemoved");
+      socket.off("chatDetailsUpdated");
       socket.off("messagesRead");
     };
   }, [socket, router, handleChatMessage, handleNewChat, handleTyping, handleStopTyping]);

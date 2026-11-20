@@ -173,6 +173,18 @@ class ChatRepository {
     }
   }
 
+  /** Promotes or demotes a group member; resolves to the group's new admin ids. */
+  async setAdmin(chatId: string, userId: string, admin: boolean): Promise<string[]> {
+    const response = await fetch(`/api/chats/${chatId}/admins`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, admin }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(data?.error ?? "Failed to update admin role");
+    return data.adminIds;
+  }
+
   async updateChatSettings(id: string, updatedSettings: Partial<ChatSettings>): Promise<any> {
     const response = await fetch(`/api/chats/${id}/settings`, {
       method: "PUT",

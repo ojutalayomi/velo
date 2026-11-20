@@ -75,6 +75,10 @@ class ChatSystem {
     await this.chatRepository.updateChat(id, updatedAttributes);
   }
 
+  async setAdmin(chatId: string, userId: string, admin: boolean) {
+    return await this.chatRepository.setAdmin(chatId, userId, admin);
+  }
+
   async updateChatSettings(
     id: string,
     updatedSettings: Partial<NewChatSettings>

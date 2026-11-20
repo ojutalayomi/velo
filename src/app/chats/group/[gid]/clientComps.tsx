@@ -34,6 +34,7 @@ import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
 import ChatTextarea from "../../ChatTextarea";
+import { canSendMessage } from "@/lib/chatPermissions";
 import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
 import MessageTab from "../../MessageTab";
 import { MultiSelect } from "../../MultiSelect";
@@ -725,6 +726,20 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
       {selectedMessages.length ? (
         <MultiSelect />
+      ) : !canSendMessage({
+          chatType: "Group",
+          onlyAdminsCanSend: convo?.onlyAdminsCanSend,
+          adminIds: convo?.adminIds,
+          userId: String(userdata._id),
+        }) ? (
+        <div className="relative w-full">
+          <div
+            role="status"
+            className="sticky inset-x-0 bottom-0 z-10 border-t bg-white/80 p-4 text-center text-sm text-gray-500 backdrop-blur-lg tablets1:absolute tablets1:inset-x-auto tablets1:w-full dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-gray-400"
+          >
+            Only admins can send messages in this group
+          </div>
+        </div>
       ) : (
         <ChatTextarea
           quote={quote}

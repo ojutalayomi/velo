@@ -1,3 +1,5 @@
+import { callPreview, parseCallRecord } from "@/lib/callRecord";
+
 /** Poll definition stored on a post (`Poll`) or serialized as a chat message's content. */
 export interface PollData {
   question: string;
@@ -87,6 +89,10 @@ export function messageText(message: { messageType?: string; content?: string })
   if (message.messageType === "Poll") {
     const poll = parsePollContent(message.content);
     if (poll) return pollPreview(poll);
+  }
+  if (message.messageType === "Call") {
+    const record = parseCallRecord(message.content);
+    if (record) return callPreview(record);
   }
   return message.content ?? "";
 }

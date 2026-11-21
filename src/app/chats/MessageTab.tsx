@@ -36,6 +36,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
+import { useReactors } from "@/hooks/useReactors";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import {
@@ -467,6 +468,10 @@ const ReactionSection = ({
   setReactionInfoDisplay: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const { userdata } = useUser();
+  const resolveUser = useReactors(
+    message.reactions.map((r) => r.userId),
+    false
+  );
 
   const reactionArray: Reaction[] = [];
 
@@ -487,7 +492,16 @@ const ReactionSection = ({
             (r) => r.reaction === reaction.reaction
           ).length;
           acc.push(
-            <span key={index} title={`${reaction.userId}`} className="cursor-pointer text-xs">
+            <span
+              key={index}
+              title={message.reactions
+                .filter((r) => r.reaction === reaction.reaction)
+                .map((r) =>
+                  r.userId === userdata._id ? "You" : (resolveUser(r.userId)?.name ?? "Someone")
+                )
+                .join(", ")}
+              className="cursor-pointer text-xs"
+            >
               {reaction.reaction}
               {reactionCount > 1 && <sub className="ml-0.5 text-xs">{reactionCount}</sub>}
             </span>

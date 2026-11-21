@@ -39,6 +39,7 @@ import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
+import { chatDraftKey, useDraft } from "@/hooks/useDraft";
 import { TypingBubble } from "../TypingIndicator";
 import ChatTextarea from "../ChatTextarea";
 import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
@@ -84,12 +85,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [time, setTime] = useState("");
   const [load, setLoading] = useState<boolean>();
   const [err, setError] = useState<boolean>();
-  const [newMessage, setNewMessage] = useState("");
   const [otherPerson, setOtherPerson] = useState<UserData>({} as UserData);
   const pid =
     params?.id === "me"
       ? (conversations.find((c) => c.type === "Personal")?.id as string)
       : (params?.id as string);
+  const [newMessage, setNewMessage] = useDraft(chatDraftKey(pid ?? ""));
   const socket = useSocket();
   const callHooks = useCallManager(socket!) || null;
   const convo = conversations?.find((c) => c.id === pid) as ConvoType;

@@ -35,6 +35,7 @@ import { RootState } from "@/redux/store";
 import { DELETED_MARKER } from "@/lib/messageDeletion";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
+import { chatDraftKey, useDraft } from "@/hooks/useDraft";
 import { TypingBubble, typingLabel } from "../../TypingIndicator";
 import ChatTextarea from "../../ChatTextarea";
 import { canSendMessage } from "@/lib/chatPermissions";
@@ -93,8 +94,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [load, setLoading] = useState<boolean>();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   const [err, setError] = useState<boolean>();
-  const [newMessage, setNewMessage] = useState("");
   const gid = params?.gid as string;
+  const [newMessage, setNewMessage] = useDraft(chatDraftKey(gid ?? ""));
   const convo = conversations?.find((c) => c.id === gid) as ConvoType;
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const socket = useSocket();

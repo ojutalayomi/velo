@@ -52,6 +52,7 @@ import { EmojiPicker } from "./ui/emoji-picker";
 import { Input } from "./ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Skeleton } from "./ui/skeleton";
+import { useDraft } from "@/hooks/useDraft";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface PostMakerClientProps {
@@ -83,7 +84,8 @@ function PostMakerClient({
   // const [errors, setErrors] = useState([""]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [text, setText] = useState("");
+  const draftKey = `post:${type}:${post?.PostID ?? ""}`;
+  const [text, setText] = useDraft(draftKey);
   const [isPosting, setIsPosting] = useState(false);
   const textLimit = userdata.verified ? 10000 : 1000; // 10000 for verified users, 1000 for others
   const isButtonDisabled = text.length > textLimit || (!files.length && !text.length);
@@ -281,6 +283,7 @@ function PostMakerClient({
         };
         socket.emit("post", Post);
       }
+      setText("");
       onPosted?.(type);
     } catch (error: any) {
       console.log(error);

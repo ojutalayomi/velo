@@ -1,191 +1,176 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { Loader2, Lock, UserPen } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Mail, Phone, MapPin, Calendar } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
+
 import { useUser } from "@/app/providers/UserProvider";
+import { SettingsGroup, SettingsHeader, SettingsRow } from "@/components/settings/SettingsUI";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+type FormState = { name: string; username: string; dob: string; location: string };
+
+const EMPTY: FormState = { name: "", username: "", dob: "", location: "" };
 
 const PersonalInfoPage = () => {
   const router = useRouter();
-  const { userdata, loading } = useUser();
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    location: "",
-    birthdate: "",
-    bio: "",
-  });
+  const { userdata, loading, refetchUser } = useUser();
+  const [form, setForm] = useState<FormState>(EMPTY);
+  const [saved, setSaved] = useState<FormState>(EMPTY);
+  const [saving, setSaving] = useState(false);
 
+  // Fill the form from the signed-in user once it loads.
   useEffect(() => {
-    if (!loading && userdata) {
-      setFormData({
-        fullName: userdata.firstname + " " + userdata.lastname || "",
-        email: userdata.email || "",
-        phone: "",
-        location: "",
-        birthdate: "",
-        bio: "",
-      });
-    }
+    if (loading || !userdata?._id) return;
+    const t = setTimeout(() => {
+      const values: FormState = {
+        name: userdata.name || `${userdata.firstname} ${userdata.lastname}`.trim(),
+        username: userdata.username || "",
+        dob: userdata.dob ? userdata.dob.slice(0, 10) : "",
+        location: userdata.location || "",
+      };
+      setForm(values);
+      setSaved(values);
+    }, 0);
+    return () => clearTimeout(t);
   }, [userdata, loading]);
+
+  const changed = (Object.keys(form) as (keyof FormState)[]).filter((k) => form[k] !== saved[k]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement update logic
-    // console.log('Form submitted:', formData);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (!changed.length) return;
+    setSaving(true);
+    try {
+      // Only send what actually changed.
+      const body = Object.fromEntries(changed.map((k) => [k, form[k]]));
+      const res = await fetch("/api/user/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.message || "Update failed");
+      }
+      setSaved(form);
+      refetchUser();
+      toast.success("Personal information updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Update failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="max-h-screen overflow-auto bg-gray-50 dark:bg-zinc-900">
-      <header className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b dark:border-neutral-800">
-        <div className="px-4 py-2 flex items-center gap-4">
-          <button
-            onClick={() => router.push("/general")}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </button>
-          <div className="flex items-center gap-2">
-            <User className="w-6 h-6 text-gray-900 dark:text-white" />
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Personal Information
-            </h1>
-          </div>
-        </div>
-      </header>
+    <div className="max-h-screen w-full overflow-auto">
+      <SettingsHeader title="Personal information" backTo="/general" />
 
-      <main className="max-w-4xl mx-auto p-4">
+      <main className="mx-auto mb-20 max-w-2xl space-y-6 p-4 tablets:mb-6">
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
         >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
-                  placeholder="Enter your full name"
-                />
-              </div>
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              maxLength={50}
+              placeholder="Your name"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              name="username"
+              value={form.username}
+              onChange={handleChange}
+              maxLength={20}
+              pattern="[A-Za-z0-9_]{3,20}"
+              title="3-20 letters, numbers or underscores"
+              autoCapitalize="none"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              You can change your username once every 30 days.
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Phone Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
-                  placeholder="Enter your phone number"
-                />
-              </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Input id="email" value={userdata?.email || ""} readOnly disabled className="pr-9" />
+              <Lock className="absolute right-3 top-2.5 size-4 text-gray-400" />
             </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Your email can&apos;t be changed here.
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Location
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MapPin className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
-                  placeholder="Enter your location"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Birth Date
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Calendar className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="date"
-                  name="birthdate"
-                  value={formData.birthdate}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Bio
-              </label>
-              <textarea
-                name="bio"
-                value={formData.bio}
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="dob">Date of birth</Label>
+              <Input
+                id="dob"
+                name="dob"
+                type="date"
+                value={form.dob}
                 onChange={handleChange}
-                rows={4}
-                className="block w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
-                placeholder="Tell us about yourself"
+                max={new Date().toISOString().slice(0, 10)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                name="location"
+                value={form.location}
+                onChange={handleChange}
+                maxLength={30}
+                placeholder="City, Country"
               />
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md shadow-sm transition-colors duration-200"
-            >
-              Save Changes
-            </button>
+          <div className="flex items-center justify-end gap-3">
+            {changed.length > 0 && (
+              <Button type="button" variant="ghost" onClick={() => setForm(saved)} disabled={saving}>
+                Reset
+              </Button>
+            )}
+            <Button type="submit" disabled={!changed.length || saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
           </div>
         </form>
+
+        <SettingsGroup title="Profile">
+          <SettingsRow
+            icon={<UserPen size={20} />}
+            label="Edit profile"
+            description="Photo, cover, bio and website"
+            onClick={() => router.push(`/${userdata?.username}/edit`)}
+          />
+        </SettingsGroup>
       </main>
     </div>
   );

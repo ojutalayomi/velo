@@ -33,6 +33,7 @@ export class ChatMessage implements MessageAttributes {
   public quotedMessageId: string;
   public status: msgStatus;
   public mentions: Mention[];
+  public forwarded?: boolean;
 
   // constructor to force use of factory methods
   constructor(data: MessageAttributes) {
@@ -51,6 +52,7 @@ export class ChatMessage implements MessageAttributes {
     this.status = data.status;
     this.chatType = data.chatType;
     this.mentions = data.mentions ?? [];
+    if (data.forwarded) this.forwarded = true;
   }
 
   public toMessageAttributes(): MessageAttributes {
@@ -69,6 +71,7 @@ export class ChatMessage implements MessageAttributes {
       status: this.status,
       chatType: this.chatType,
       mentions: this.mentions,
+      ...(this.forwarded ? { forwarded: true } : {}),
     };
   }
 

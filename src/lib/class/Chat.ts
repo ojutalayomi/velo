@@ -1,4 +1,5 @@
 import { ChatDataClient, MessageAttributes } from "../types/type";
+import { DELETED_MARKER, deletedPreview } from "@/lib/messageDeletion";
 import { Time } from "../utils";
 
 export class Chat {
@@ -14,9 +15,9 @@ export class Chat {
     if (!this.messages) return;
     const filteredResults = this.messages.filter((msg) => msg._id === param);
     const result = filteredResults[0];
-    return filteredResults.length > 0
-      ? `${result.attachments.length > 0 ? "📷 " : ""}${result.content}`
-      : null;
+    if (filteredResults.length === 0) return null;
+    if (result.content.endsWith(DELETED_MARKER)) return deletedPreview(result.content);
+    return `${result.attachments.length > 0 ? "📷 " : ""}${result.content}`;
   }
 
   private getName = (uid: string) =>
@@ -49,6 +50,7 @@ export class Chat {
         ? this.filter(this.chat.lastMessageId) || "🚫 Message not found"
         : "📝 Be the first to send a message",
       timestamp: this.chat.timestamp,
+      lastSeenHidden: this.chat.lastSeenHidden ?? false,
       unread: participant?.unreadCount || 0,
       displayPicture:
         this.chat.chatType === "DM" || this.chat.chatType === "Personal"

@@ -21,6 +21,7 @@ import {
   NewChatSettings,
 } from "@/lib/types/type";
 import { dmKeyFor } from "@/lib/dmKey";
+import { canShowLastSeen } from "@/lib/userPrivacy";
 
 function generateRandom16DigitNumber(): string {
   let randomNumber = "";
@@ -79,6 +80,12 @@ const buildChatCopy = async (
         const user = await func(participant.userId);
         chatCopy.name[participant.userId] = user?.name ?? "";
         chatCopy.participants[index].displayPicture = user?.displayPicture ?? "";
+        if (await canShowLastSeen(participant.userId)) {
+          const lastSeen = (user as { lastSeen?: string } | null)?.lastSeen;
+          if (lastSeen) chatCopy.timestamp = new Date(lastSeen).toISOString();
+        } else {
+          chatCopy.lastSeenHidden = true;
+        }
       }
     })
   );
@@ -259,6 +266,13 @@ export const chatRepository = {
                       // Set the name for the other participant
                       if (participant.userId !== payload._id) {
                         a.name[participant.userId] = user?.name ?? "";
+                        // "Last seen" for a DM is the other person's last disconnect time.
+                        if (await canShowLastSeen(participant.userId)) {
+                          const lastSeen = (user as { lastSeen?: string } | null)?.lastSeen;
+                          if (lastSeen) a.timestamp = new Date(lastSeen).toISOString();
+                        } else {
+                          a.lastSeenHidden = true;
+                        }
                       }
                     }
                   } else if (a.chatType === "Group") {

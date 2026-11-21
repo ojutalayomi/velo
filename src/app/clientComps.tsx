@@ -2,7 +2,9 @@
 import { Megaphone, WifiOff, X, XCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useStore } from "react-redux";
+
+import { deletedPreview, SENDER_DELETED_CONTENT } from "@/lib/messageDeletion";
 import { toast } from "sonner";
 
 import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
@@ -71,6 +73,7 @@ const INFO_ROUTES = ["/about", "/press", "/developers", "/jobs", "/privacy", "/t
 
 const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
   const pathname = usePathname();
   const router = useRouter();
   const { deletedConversations } = useSelector((state: RootState) => state.chat);
@@ -165,6 +168,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
         deleted: participant?.deleted || false,
         archived: participant?.archived || false,
         timestamp: data.chat.timestamp,
+        lastSeenHidden: data.chat.lastSeenHidden ?? false,
         lastUpdated: Time(data.chat.lastUpdated),
         participants: data.chat.participants.map((p) => p.userId),
         online: false,
@@ -265,10 +269,12 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on("userTyping", handleTyping);
     socket.on("userStopTyping", handleStopTyping);
     socket.on("lastActive", ({ userId, lastActive }) => {
+      if (!lastActive) return;
       const convo = conversationsRef.current.find(
         (c) => c.participants.includes(userId) && c.type === "DM"
       );
-      dispatch(updateConversation({ id: convo?.id ?? "", updates: { timestamp: lastActive } }));
+      if (!convo) return;
+      dispatch(updateConversation({ id: convo.id, updates: { timestamp: lastActive } }));
     });
     socket.on(
       "chatError",
@@ -307,6 +313,32 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     socket.on("messagesRead", (data: { readerId: string; messageIds: string[] }) => {
       dispatch(markMessagesRead({ messageIds: data.messageIds, readerId: data.readerId }));
     });
+    // A message was deleted for everyone (by its sender or a group admin).
+    socket.on(
+      "messageDeleted",
+      (data: {
+        chatId: string;
+        messageId: string;
+        content: string;
+        deletedBy?: string;
+        byAdmin?: boolean;
+      }) => {
+        const state = store.getState();
+        const old = state.chat.messages.find((m) => String(m._id) === data.messageId);
+        // The sender's own screen already says "You deleted this message".
+        const mine = !data.byAdmin && data.deletedBy === userdata._id;
+        const content = mine ? SENDER_DELETED_CONTENT : data.content;
+        dispatch(updateMessage({ id: data.messageId, updates: { content, attachments: [] } }));
+
+        // Only touch the chat-list preview when the deleted message is the one it shows.
+        const convo = state.chat.conversations.find((c) => c.id === data.chatId);
+        if (convo && old && convo.lastMessage.endsWith(old.content)) {
+          dispatch(
+            updateConversation({ id: data.chatId, updates: { lastMessage: deletedPreview(content) } })
+          );
+        }
+      }
+    );
     socket.on("chatRemoved", (data: { chatId: string }) => {
       dispatch(deleteConversation(data.chatId));
       // Read the live location so this listener does not have to rebind on navigation.
@@ -515,9 +547,10 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("chatError");
       socket.off("chatParticipantsUpdated");
       socket.off("chatRemoved");
+      socket.off("messageDeleted");
       socket.off("messagesRead");
     };
-  }, [socket, router, handleChatMessage, handleNewChat, handleTyping, handleStopTyping]);
+  }, [socket, router, store, userdata._id, handleChatMessage, handleNewChat, handleTyping, handleStopTyping]);
 
   useEffect(() => {
     const timers = typingTimers.current;
@@ -643,7 +676,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
               />
             ) : null}
             {/* <pre data-testid="client-component">{JSON.stringify(user, null, 2)}</pre>; */}
-            <div id="detail" className="">
+            <div id="detail" className="bg-gray-50 dark:bg-zinc-900/95">
               {!hideChrome && <AnnouncementBanner />}
               {children}
               {showProfilePicture && <UserPhoto />}

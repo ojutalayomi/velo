@@ -134,7 +134,7 @@
   overflow: auto;
   position: absolute;
   right: 65px;
-  z-index: 2;
+  z-index: 20;
 }
 .pre-blog .blog .blogger-details .blog-top-right .pre-ellipsis .ellipsis-dropdown p {
   align-items: center;
@@ -575,7 +575,7 @@ body #root #sidebar {
   height: 100%;
   overflow: visible;
   position: relative;
-  z-index: 2;
+  z-index: 20;
 }
 body #root #sidebar::-webkit-scrollbar {
   width: 0px;

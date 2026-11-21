@@ -3,7 +3,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChevronDown, EllipsisVertical, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
@@ -32,6 +32,7 @@ import {
 import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
+import { DELETED_MARKER } from "@/lib/messageDeletion";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
 import ChatTextarea from "../../ChatTextarea";
@@ -110,7 +111,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [searchFocus, setSearchFocus] = useState(false);
-  const [searchResults, setSearchResults] = useState<MessageAttributes[]>([]);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -143,32 +143,22 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
   }, [convo, convoLoading, dispatch, convo?.unread, socket, userdata._id]);
 
-  const Messages = messages?.filter((msg) => {
-    const sender = "sender" in msg ? msg?.sender?.name : "";
-    return (
-      msg.chatId === gid &&
-      (msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sender.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }) as MessageAttributes[];
+  // The conversation itself is never filtered by the search box.
+  const Messages = useMemo(
+    () => (messages?.filter((msg) => msg.chatId === gid) ?? []) as MessageAttributes[],
+    [messages, gid]
+  );
 
-  useEffect(() => {
-    // Prevent unnecessary updates if search results would not change
-    if (!searchQuery) {
-      if (searchResults.length > 0) setSearchResults([]);
-      return;
-    }
-    const filtered = Messages.filter((msg) => {
-      return msg.chatId === gid && msg.content.toLowerCase().includes(searchQuery.toLowerCase());
+  // Search matches message text or sender name, and skips deleted-message placeholders.
+  const searchResults = useMemo(() => {
+    const needle = searchQuery.trim().toLowerCase();
+    if (!needle) return [];
+    return Messages.filter((msg) => {
+      if (msg.content.endsWith(DELETED_MARKER)) return false;
+      const sender = msg.sender?.name ?? "";
+      return msg.content.toLowerCase().includes(needle) || sender.toLowerCase().includes(needle);
     });
-    // Only update if the results have actually changed
-    if (
-      filtered.length !== searchResults.length ||
-      filtered.some((msg, idx) => msg._id !== searchResults[idx]?._id)
-    ) {
-      setSearchResults(filtered);
-    }
-  }, [searchQuery, Messages, gid]);
+  }, [searchQuery, Messages]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -376,7 +366,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       setSearchFocus(false);
       setSearchQuery("");
     }
-  }, [searchParams, searchQuery]);
+    // Only the URL drives this; depending on searchQuery would reset what the user is typing.
+  }, [searchParams]);
 
   const options = [
     { id: 1, name: "View info", action: () => router.push(`/chats/group/${gid}/settings`) },
@@ -452,7 +443,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   return (
     <div
-      className={`bg-white tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-black`}
+      className={`bg-white tablets1:flex ${chaT} border-l z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-black`}
     >
       <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (

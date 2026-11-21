@@ -12,6 +12,7 @@ import {
   Shrink,
   Trash,
   BarChart3,
+  Mic,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -49,6 +50,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
+import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { formatClock } from "@/lib/voiceNote";
 import type { MessageType } from "@/lib/types/type";
 import type { PollData } from "@/lib/polls";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
@@ -121,6 +124,22 @@ const ChatTextarea = ({
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
 
+  const voice = useVoiceRecorder();
+  const sendVoiceNote = useCallback(async () => {
+    const file = await voice.stop();
+    if (!file) return;
+    pendingVoiceRef.current.file = file;
+    setFiles([file]);
+  }, [voice, setFiles]);
+  // Recordings are capped; reaching the cap sends what was recorded.
+  useEffect(() => {
+    if (voice.recording && voice.seconds >= MAX_VOICE_SECONDS) void sendVoiceNote();
+  }, [voice.recording, voice.seconds, sendVoiceNote]);
+  const startVoiceNote = useCallback(async () => {
+    const error = await voice.start();
+    if (error) toast.error(error, { duration: 8000 });
+  }, [voice]);
+
   const [pollOpen, setPollOpen] = useState(false);
   const sendPoll = useCallback(
     (poll: PollData) => {
@@ -148,11 +167,25 @@ const ChatTextarea = ({
     setTxtButton(details.text !== "");
   }, []);
 
+  // A recorded voice note is sent straight away, so it must not open the preview dialog.
+  const pendingVoiceRef = useRef<{ file: File | null }>({ file: null });
+
   useEffect(() => {
+    if (pendingVoiceRef.current.file) return;
     if (attachments.length > 0 && pathname && pathname.includes("/chats")) {
       dispatch(setToggleDialog(true));
     }
   }, [attachments, dispatch, pathname]);
+
+  useEffect(() => {
+    const pending = pendingVoiceRef.current.file;
+    if (pending && attachments.includes(pending)) {
+      // Clearing a ref in an effect is intended; the compiler lint cannot tell it from a hook argument.
+      // eslint-disable-next-line react-hooks/immutability
+      pendingVoiceRef.current.file = null;
+      handleSendWithMentions(quote.message?._id);
+    }
+  }, [attachments, handleSendWithMentions, quote.message?._id]);
 
   useEffect(() => {
     const currParams = new URLSearchParams(searchParams?.toString() || "");
@@ -307,7 +340,31 @@ const ChatTextarea = ({
           />
         )}
 
-        <div className="flex items-end justify-between gap-2">
+        {voice.recording && (
+          <div className="flex items-center gap-3 px-2 py-1.5">
+            <Button
+              variant="ghost"
+              aria-label="Cancel voice note"
+              onClick={voice.cancel}
+              className="h-auto rounded-full p-2 text-gray-600 hover:text-red-500 dark:text-gray-300"
+            >
+              <Trash size={20} />
+            </Button>
+            <span className="flex flex-1 items-center gap-2 text-sm dark:text-white">
+              <span className="size-2.5 animate-pulse rounded-full bg-red-500" />
+              {formatClock(voice.seconds)}
+              <span className="text-xs text-gray-500">/ {formatClock(MAX_VOICE_SECONDS)}</span>
+            </span>
+            <Button
+              aria-label="Send voice note"
+              onClick={() => void sendVoiceNote()}
+              className="h-auto rounded-full bg-brand p-2.5 text-white hover:bg-brand/90"
+            >
+              <Send size={20} />
+            </Button>
+          </div>
+        )}
+        <div className={cn("flex items-end justify-between gap-2", voice.recording && "hidden")}>
           <Pop input={inputRef} setFileAccepts={setFileAccepts} onPoll={() => setPollOpen(true)} />
           <PollCreator
             key={pollOpen ? "open" : "closed"}
@@ -390,13 +447,23 @@ const ChatTextarea = ({
               </EmojiPicker>
             </>
           </div>
-          <Button
-            disabled={newMessage.length === 0 && attachments.length === 0}
-            onClick={handleSendClick}
-            className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
-          >
-            <Send size={20} className="text-brand" />
-          </Button>
+          {newMessage.length === 0 && attachments.length === 0 && !disabled ? (
+            <Button
+              aria-label="Record a voice note"
+              onClick={() => void startVoiceNote()}
+              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
+            >
+              <Mic size={20} className="text-brand" />
+            </Button>
+          ) : (
+            <Button
+              disabled={newMessage.length === 0 && attachments.length === 0}
+              onClick={handleSendClick}
+              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
+            >
+              <Send size={20} className="text-brand" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

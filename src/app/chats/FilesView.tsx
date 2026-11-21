@@ -4,6 +4,7 @@ import { Download, FileText, Share } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import { DocCard } from "@/components/DocCard";
+import { VoiceNotePlayer } from "@/components/VoiceNotePlayer";
 import ImageDiv from "@/components/imageDiv";
 import {
   Carousel,
@@ -76,12 +77,19 @@ const MediaCollage = ({ media }: MediaCollageProps) => {
   const excess = mediaLength - 4;
   const mediaType = media.map((m) => m.type?.split("/")[0])[0];
   const isImage = mediaType === "image";
+  const isAudio = mediaType === "audio";
 
   return (
     <div className="w-full overflow-hidden rounded-xl">
       <MediaDialogComponent files={media} mediaDialog={mediaDialog} toggleMediaDialog={toggleMediaDialog} />
 
-      {isImage ? (
+      {isAudio ? (
+        <div className="flex flex-col gap-1 rounded-xl bg-white px-3 py-1 shadow-sm dark:bg-zinc-800 dark:text-white">
+          {media.map((m) => (
+            <VoiceNotePlayer key={m.name} url={m.url || ""} name={m.name} />
+          ))}
+        </div>
+      ) : isImage ? (
         <div className={cn("grid gap-1.5", mediaLength === 1 ? "grid-cols-1" : "grid-cols-2")}>
           {media.map((m, key) => {
             if (moreThanFour && key > 2) return null;

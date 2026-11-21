@@ -1,4 +1,5 @@
 import { messageText } from "@/lib/polls";
+import { isVoiceNoteName } from "@/lib/voiceNote";
 import { ChatDataClient, MessageAttributes } from "../types/type";
 import { DELETED_MARKER, deletedPreview } from "@/lib/messageDeletion";
 import { Time } from "../utils";
@@ -18,7 +19,11 @@ export class Chat {
     const result = filteredResults[0];
     if (filteredResults.length === 0) return null;
     if (result.content.endsWith(DELETED_MARKER)) return deletedPreview(result.content);
-    return `${result.attachments.length > 0 ? "📷 " : ""}${messageText(result)}`;
+    const text = messageText(result);
+    // Attachments here are stored keys, and voice notes carry a recognisable name.
+    const voice = result.attachments.some((a) => isVoiceNoteName(typeof a === "string" ? a : a?.key));
+    if (voice && !text) return "🎤 Voice message";
+    return `${result.attachments.length > 0 ? "📷 " : ""}${text}`;
   }
 
   private getName = (uid: string) =>

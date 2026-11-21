@@ -1,5 +1,5 @@
 "use client";
-import { Ellipsis, Info, MessageSquareText, Pin } from "lucide-react";
+import { Ellipsis, Info, MessageSquareText, Phone, Pin, Video } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
@@ -25,7 +25,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
+import { useOptionalCall } from "@/components/call/callContext";
 import { Statuser } from "@/components/VerificationComponent";
+import type { CallType } from "@/lib/call/callState";
 import { ConvoType } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import { lastMessagePreview } from "@/lib/polls";
@@ -60,6 +62,8 @@ const ChatProfileDialog: React.FC<{
   onOpenChange: (open: boolean) => void;
 }> = ({ chat, open, onOpenChange }) => {
   const router = useRouter();
+  const call = useOptionalCall();
+  const { userdata } = useUser();
   const isGroup = chat.type === "Group";
   const isPersonal = chat.type === "Personal";
   const subtitle = isGroup
@@ -73,9 +77,30 @@ const ChatProfileDialog: React.FC<{
     router.push(path);
   };
 
-  const actions = [
-    { label: "Message", Icon: MessageSquareText, path: chatHref(chat) },
-    ...(isPersonal ? [] : [{ label: "Info", Icon: Info, path: `${chatHref(chat)}/settings` }]),
+  const startCall = (callType: CallType) => {
+    const targetUserId = isGroup ? undefined : chat.participants.find((id) => id !== userdata._id);
+    if (!isGroup && !targetUserId) return;
+    onOpenChange(false);
+    void call?.startCall({
+      roomId: chat.id,
+      targetUserId,
+      callType,
+      chatType: isGroup ? "Group" : "DM",
+      peer: { id: targetUserId, name: chat.name, avatar: chat.displayPicture },
+    });
+  };
+  // You can't call yourself, and only one call can run at a time.
+  const canCall = !isPersonal && Boolean(call) && call?.state.status === "idle";
+
+  const actions: { label: string; Icon: typeof Info; onClick: () => void; disabled?: boolean }[] = [
+    { label: "Message", Icon: MessageSquareText, onClick: () => go(chatHref(chat)) },
+    ...(isPersonal
+      ? []
+      : [
+          { label: "Voice", Icon: Phone, onClick: () => startCall("audio"), disabled: !canCall },
+          { label: "Video", Icon: Video, onClick: () => startCall("video"), disabled: !canCall },
+          { label: "Info", Icon: Info, onClick: () => go(`${chatHref(chat)}/settings`) },
+        ]),
   ];
 
   return (
@@ -103,13 +128,15 @@ const ChatProfileDialog: React.FC<{
             </p>
           )}
         </div>
-        <div className="flex items-center justify-center gap-8 px-6 pb-6 pt-2">
-          {actions.map(({ label, Icon, path }) => (
+        <div className="flex items-center justify-center gap-5 px-4 pb-6 pt-2">
+          {actions.map(({ label, Icon, onClick, disabled }) => (
             <button
               key={label}
               type="button"
-              onClick={() => go(path)}
-              className="group flex flex-col items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300"
+              onClick={onClick}
+              disabled={disabled}
+              title={disabled && call ? "You are already in a call" : undefined}
+              className="group flex flex-col items-center gap-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300"
             >
               <span className="flex size-12 items-center justify-center rounded-full bg-brand text-white shadow-sm transition-transform group-hover:scale-105 group-active:scale-95">
                 <Icon className="size-5" />

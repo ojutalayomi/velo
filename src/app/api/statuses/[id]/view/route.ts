@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { MongoDBClient } from "@/lib/mongodb";
 import { emitViaSocketServer } from "@/lib/socket";
@@ -27,13 +27,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       return NextResponse.json({ message: "Owner views are not tracked" });
     }
 
-    if (status.visibility === "followers") {
-      const canView = await db.followers().findOne({
-        followerId: viewerId,
-        followedId: status.userId,
-      });
-      if (!canView) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    // Statuses are only visible to followers of the owner.
+    const canView = await db.followers().findOne({
+      followerId: viewerId,
+      followedId: status.userId,
+    });
+    if (!canView) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 
     const viewedAt = new Date().toISOString();
     await db.statusViewers().updateOne(
@@ -50,16 +49,18 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       { upsert: true }
     );
 
-    try {
-      await emitViaSocketServer(viewerId, "status:view", {
-        statusId: id,
-        ownerId: status.userId,
-        viewerId,
-        viewedAt,
-      });
-    } catch (error) {
-      console.error("[api/statuses] status:view socket emit failed:", error);
-    }
+    after(async () => {
+      try {
+        await emitViaSocketServer(viewerId, "status:view", {
+          statusId: id,
+          ownerId: status.userId,
+          viewerId,
+          viewedAt,
+        });
+      } catch (error) {
+        console.error("[api/statuses] status:view socket emit failed:", error);
+      }
+    });
 
     return NextResponse.json({ message: "Status viewed", data: { viewedAt } });
   } catch (error) {

@@ -3,6 +3,11 @@ import { ObjectId } from "mongodb";
 export type StatusMediaType = "image" | "video";
 export type StatusVisibility = "followers" | "everyone";
 
+export interface StatusMention {
+  userId: string;
+  username: string;
+}
+
 export interface StatusSchema {
   _id: ObjectId;
   userId: string;
@@ -14,7 +19,9 @@ export interface StatusSchema {
   expiresAt: string;
   /** Date-typed copy of `expiresAt`, used by the TTL index. */
   expiresAtDate?: Date;
+  /** Always "followers": statuses are only visible to people who follow the owner. */
   visibility: StatusVisibility;
+  mentions?: StatusMention[];
 }
 
 export interface StatusViewerSchema {
@@ -40,6 +47,7 @@ export interface StatusClient {
   createdAt: string;
   expiresAt: string;
   visibility: StatusVisibility;
+  mentions: StatusMention[];
   viewed: boolean;
   viewers: StatusViewerClient[];
 }
@@ -59,11 +67,15 @@ export interface StatusGroup {
   latestAt: string;
 }
 
-export interface StatusCreateInput {
+export interface StatusCreateItem {
   mediaUrl: string;
   mediaKey: string;
   mediaType: StatusMediaType;
+}
+
+/** One caption shared by up to 10 media items; created together or not at all. */
+export interface StatusCreateInput extends StatusCreateItem {
+  items?: StatusCreateItem[];
   caption?: string;
-  visibility?: StatusVisibility;
 }
 

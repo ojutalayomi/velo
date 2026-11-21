@@ -92,6 +92,11 @@ export class ChatMessage implements MessageAttributes {
 
     // Note: Poll/PollResponse/Announcement typically rely on specific
     // structured data fields (e.g., data.pollData, data.isSystemMessage)
+    // An explicit structured type set by the composer wins over content sniffing; otherwise a
+    // poll (whose content is JSON) would be re-typed as Markdown and render as raw text.
+    if (data.messageType === "Poll") {
+      return "Poll";
+    }
     if (data.pollData) {
       // Logic to distinguish Poll/PollResponse/etc would go here
       return "Poll";

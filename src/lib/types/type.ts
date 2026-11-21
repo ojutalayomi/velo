@@ -67,6 +67,7 @@ export type MessageType =
   | "Contact"
   | "Sticker"
   | "Poll"
+  | "Call"
   | "PollResponse"
   | "PollEnd"
   | "PollResult"

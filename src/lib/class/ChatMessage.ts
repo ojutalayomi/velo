@@ -97,6 +97,9 @@ export class ChatMessage implements MessageAttributes {
     if (data.messageType === "Poll") {
       return "Poll";
     }
+    if (data.messageType === "Call") {
+      return "Call";
+    }
     if (data.pollData) {
       // Logic to distinguish Poll/PollResponse/etc would go here
       return "Poll";

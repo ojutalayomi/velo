@@ -36,7 +36,9 @@ import { Statuser } from "@/components/VerificationComponent";
 import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
+import { CallCard } from "@/components/CallCard";
 import { PollCard } from "@/components/PollCard";
+import { parseCallRecord } from "@/lib/callRecord";
 import { messageText, parsePollContent } from "@/lib/polls";
 import { useReactors } from "@/hooks/useReactors";
 import { useAppDispatch } from "@/redux/hooks";
@@ -238,7 +240,8 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   };
 
   const pollData = message.messageType === "Poll" ? parsePollContent(message.content) : null;
-  const urls = pollData ? [] : extractUrls(messageContent);
+  const callRecord = message.messageType === "Call" ? parseCallRecord(message.content) : null;
+  const urls = pollData || callRecord ? [] : extractUrls(messageContent);
   const firstUrl = urls[0]; // Only show preview for the first URL
 
   const handleTouch = (e: TouchEvent<HTMLDivElement>) => {
@@ -372,6 +375,16 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                     messageContent.length > MAX_LENGTH && !isExpanded
                       ? messageContent.slice(0, MAX_LENGTH) + "..."
                       : messageContent;
+
+                  if (callRecord) {
+                    return (
+                      <CallCard
+                        record={callRecord}
+                        viewerId={String(userdata._id)}
+                        isGroup={message.chatType === "Group"}
+                      />
+                    );
+                  }
 
                   if (pollData) {
                     return (

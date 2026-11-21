@@ -1,5 +1,5 @@
 "use client";
-import { ArrowUpRight, Ellipsis, MessageSquareText, Pin } from "lucide-react";
+import { Ellipsis, Info, MessageSquareText, Pin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
@@ -44,6 +44,84 @@ type FilteredChatsProps = {
 interface Props {
   chat: ConvoType;
 }
+
+/** Where a chat lives; its settings page sits under it (not available for "message yourself"). */
+const chatHref = (chat: ConvoType) =>
+  chat.type === "Group"
+    ? `/chats/group/${chat.id}`
+    : chat.type === "Personal"
+      ? "/chats/me"
+      : `/chats/${chat.id}`;
+
+/** Profile card shown when the avatar in the chat list is tapped. */
+const ChatProfileDialog: React.FC<{
+  chat: ConvoType;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}> = ({ chat, open, onOpenChange }) => {
+  const router = useRouter();
+  const isGroup = chat.type === "Group";
+  const isPersonal = chat.type === "Personal";
+  const subtitle = isGroup
+    ? `Group · ${chat.participants.length} ${chat.participants.length === 1 ? "member" : "members"}`
+    : isPersonal
+      ? "Your own space"
+      : "Direct message";
+
+  const go = (path: string) => {
+    onOpenChange(false);
+    router.push(path);
+  };
+
+  const actions = [
+    { label: "Message", Icon: MessageSquareText, path: chatHref(chat) },
+    ...(isPersonal ? [] : [{ label: "Info", Icon: Info, path: `${chatHref(chat)}/settings` }]),
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[90vw] max-w-xs gap-0 overflow-hidden rounded-3xl border-none p-0 dark:bg-zinc-900">
+        <div className="flex flex-col items-center gap-3 bg-gradient-to-b from-brand/20 to-transparent px-6 pb-4 pt-10">
+          <Avatar className="size-44 shadow-lg ring-4 ring-white dark:ring-zinc-900">
+            <AvatarImage
+              src={chat.displayPicture}
+              alt={chat.name}
+              className="size-full rounded-full object-cover"
+            />
+            <AvatarFallback className="text-5xl capitalize">{chat.name?.slice(0, 2)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col items-center gap-0.5 text-center">
+            <DialogTitle className="flex items-center gap-1 text-xl">
+              <span className="break-words">{chat.name}</span>
+              {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
+            </DialogTitle>
+            <DialogDescription className="text-sm">{subtitle}</DialogDescription>
+          </div>
+          {isGroup && chat.description && (
+            <p className="line-clamp-3 text-center text-sm text-gray-600 dark:text-gray-400">
+              {chat.description}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-8 px-6 pb-6 pt-2">
+          {actions.map(({ label, Icon, path }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => go(path)}
+              className="group flex flex-col items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300"
+            >
+              <span className="flex size-12 items-center justify-center rounded-full bg-brand text-white shadow-sm transition-transform group-hover:scale-105 group-active:scale-95">
+                <Icon className="size-5" />
+              </span>
+              {label}
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Card: React.FC<Props> = ({ chat }) => {
   const [time, setTime] = useState<string>();
@@ -198,13 +276,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     <>
       <Link
         key={chat.id}
-        href={
-          chat.type === "Group"
-            ? `/chats/group/${chat.id}`
-            : chat.type === "Personal"
-              ? `/chats/me`
-              : `/chats/${chat.id}`
-        }
+        href={chatHref(chat)}
       >
         <div
           className="group relative flex cursor-pointer items-center gap-3 overflow-visible rounded-lg bg-white p-3 shadow-bar transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 dark:bg-zinc-900 dark:text-white dark:shadow-bar-dark hover:dark:bg-zinc-700"
@@ -345,36 +417,10 @@ const Card: React.FC<Props> = ({ chat }) => {
               )}
             </div>
           </div>
-
-          {/* Fullscreen image */}
-          <Dialog open={showFullscreen} onOpenChange={setShowFullscreen}>
-            <DialogContent className="flex flex-col items-center justify-center">
-              <Avatar className="size-64">
-                <AvatarImage
-                  src={chat.displayPicture}
-                  alt={chat.name}
-                  className="size-64 rounded-full object-cover dark:border-slate-200"
-                />
-                <AvatarFallback className="text-6xl capitalize">
-                  {chat.name?.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <DialogTitle className="flex items-center gap-1">
-                {chat.name} {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
-              </DialogTitle>
-              <DialogDescription className="flex items-center gap-2">
-                <span className="flex items-center gap-1 rounded-full bg-brand p-2 text-white">
-                  <MessageSquareText className="size-8 flex-shrink-0" />
-                </span>
-                <span className="flex items-center gap-1 rounded-full bg-brand p-2 text-white">
-                  <ArrowUpRight className="size-8 flex-shrink-0" />
-                </span>
-              </DialogDescription>
-            </DialogContent>
-          </Dialog>
         </div>
       </Link>
       {/* Outside the Link: clicks inside a portaled dialog bubble up through React and would navigate. */}
+      <ChatProfileDialog chat={chat} open={showFullscreen} onOpenChange={setShowFullscreen} />
       <DeleteChatDialog
         chatId={chat.id}
         name={chat.name}

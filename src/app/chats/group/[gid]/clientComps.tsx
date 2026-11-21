@@ -1,7 +1,7 @@
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ChevronDown, EllipsisVertical, MessageSquare } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -27,6 +27,7 @@ import {
   addMessage,
   updateMessage,
   deleteConversation,
+  fetchMoreChatMessages,
 } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
@@ -53,6 +54,10 @@ type QuoteProp = {
   message: Message;
   state: boolean | undefined;
 };
+
+// Only the newest messages are mounted when a chat opens; older ones are revealed on scroll.
+const INITIAL_VISIBLE = 40;
+const REVEAL_STEP = 40;
 
 const initialQuoteState = {
   message: {
@@ -99,6 +104,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const liveCall = callCtx?.groupCalls[gid];
   const [newMessage, setNewMessage] = useDraft(chatDraftKey(gid ?? ""));
   const convo = conversations?.find((c) => c.id === gid) as ConvoType;
+  const messagesHasMore = useSelector((state: RootState) => state.chat.messagesHasMore);
+  const loadingMoreMessages = useSelector((state: RootState) => state.chat.loadingMoreMessages);
+  const olderLoadThrottleRef = useRef(0);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const socket = useSocket();
 
@@ -162,6 +171,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     () => (messages?.filter((msg) => msg.chatId === gid) ?? []) as MessageAttributes[],
     [messages, gid]
   );
+
+  const visibleMessages = useMemo(
+    () => (Messages.length > visibleCount ? Messages.slice(-visibleCount) : Messages),
+    [Messages, visibleCount]
+  );
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE);
+  }, [gid]);
 
   // Search matches message text or sender name, and skips deleted-message placeholders.
   const searchResults = useMemo(() => {
@@ -445,6 +463,37 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px threshold
       atBottomRef.current = isNearBottom;
       setShowScrollButton(!isNearBottom);
+
+      if (scrollTop < 120 && visibleCount < Messages.length) {
+        const box = messageBoxRef.current;
+        const prevSH = scrollHeight;
+        const prevST = scrollTop;
+        setVisibleCount((c) => c + REVEAL_STEP);
+        requestAnimationFrame(() => {
+          box.scrollTop = prevST + (box.scrollHeight - prevSH);
+        });
+        return;
+      }
+
+      if (
+        scrollTop < 120 &&
+        messagesHasMore &&
+        !loadingMoreMessages &&
+        scrollHeight > clientHeight + 40
+      ) {
+        const now = Date.now();
+        if (now - olderLoadThrottleRef.current < 900) return;
+        olderLoadThrottleRef.current = now;
+        const box = messageBoxRef.current;
+        const prevSH = scrollHeight;
+        const prevST = scrollTop;
+        void (async () => {
+          await dispatch(fetchMoreChatMessages() as never);
+          requestAnimationFrame(() => {
+            box.scrollTop = prevST + (box.scrollHeight - prevSH);
+          });
+        })();
+      }
     }
   };
 
@@ -673,7 +722,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           </div>
         </div>
         <div className="mt-4 flex-1">
-          {Messages?.reduce((groups: { key: string; ts: string; items: typeof Messages }[], message) => {
+          {loadingMoreMessages && (
+            <div className="flex justify-center py-2">
+              <Loader2 className="size-6 animate-spin text-gray-400" aria-label="Loading older" />
+            </div>
+          )}
+          {visibleMessages.reduce((groups: { key: string; ts: string; items: typeof Messages }[], message) => {
             const key = getDayKey(message.timestamp);
             const last = groups[groups.length - 1];
             if (last && last.key === key) last.items.push(message);

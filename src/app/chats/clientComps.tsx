@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import SwiperCore from "swiper";
-import { Swiper, SwiperSlide, useSwiper } from "swiper/react";
+import { Swiper, SwiperSlide } from "swiper/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "@/app/fontAwesomeLibrary";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,6 @@ import {
   MessageSquare,
   Users,
   Archive,
-  Phone,
   LockKeyholeOpen,
   LockKeyhole,
   MessageCirclePlus,
@@ -99,28 +98,19 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
             {loading ? (
               <div className="animate-pulse">loading...</div>
             ) : (
-              <div>{userdata ? userdata.username : "Username"}</div>
+              <div>Chats</div>
             )}
-            <Phone
-              size={21}
-              className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"
-            />
           </div>
-          <MessageCirclePlus
-            size={21}
-            onClick={() => router.push("/chats/compose")}
-            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"
-          />
           <button
             onClick={() => setAyo(!ayo)}
             className={`text-gray-600 ${userdata.username !== "Ojutalayo" && "hidden"} hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out`}
           >
             {ayo ? <LockKeyholeOpen size={21} /> : <LockKeyhole size={21} />}
           </button>
-          <FontAwesomeIcon
-            icon={"ellipsis-h"}
-            className="icon-arrow-left text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out max-h-[21px]"
-            size="lg"
+          <MessageCirclePlus
+            size={21}
+            onClick={() => router.push("/chats/compose")}
+            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer transition-colors duration-300 ease-in-out"
           />
         </div>
         {/* Search */}

@@ -58,6 +58,10 @@ type QuoteProp = {
   state: boolean | undefined;
 };
 
+// Only the newest messages are mounted when a chat opens; older ones are revealed on scroll.
+const INITIAL_VISIBLE = 40;
+const REVEAL_STEP = 40;
+
 const initialQuoteState = {
   message: {
     _id: "",
@@ -86,6 +90,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [load, setLoading] = useState<boolean>();
   const [err, setError] = useState<boolean>();
   const [otherPerson, setOtherPerson] = useState<UserData>({} as UserData);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const pid =
     params?.id === "me"
       ? (conversations.find((c) => c.type === "Personal")?.id as string)
@@ -99,6 +104,26 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const searchParams = useSearchParams();
   const friendId = convo?.participants?.find((id: string) => id !== userdata._id) as string;
+
+  // The conversation already carries the name, picture and verified flag, so show those at once
+  // instead of waiting on the profile request (which only adds username and bio).
+  useEffect(() => {
+    if (!convo) return;
+    setOtherPerson((prev) =>
+      prev._id || prev.name
+        ? prev
+        : ({
+            name: convo.name,
+            displayPicture: convo.displayPicture,
+            verified: convo.verified,
+          } as UserData)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convo?.id]);
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE);
+  }, [pid]);
   const { chaT } = useSelector((state: RootState) => state.navigation);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingEmitRef = useRef(0);
@@ -145,6 +170,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       return msg.chatId === pid;
     });
   }, [messages, pid]);
+
+  const visibleMessages = useMemo(
+    () => (Messages.length > visibleCount ? Messages.slice(-visibleCount) : Messages),
+    [Messages, visibleCount]
+  );
 
   const getCachedData = useCallback(
     (id: string) => {
@@ -540,6 +570,17 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     atBottomRef.current = isNearBottom;
     setShowScrollButton(!isNearBottom);
 
+    if (scrollTop < 120 && visibleCount < Messages.length) {
+      const prevSH = box.scrollHeight;
+      const prevST = box.scrollTop;
+      setVisibleCount((c) => c + REVEAL_STEP);
+      requestAnimationFrame(() => {
+        const b = messageBoxRef.current;
+        if (b) b.scrollTop = prevST + (b.scrollHeight - prevSH);
+      });
+      return;
+    }
+
     if (
       scrollTop < 120 &&
       messagesHasMore &&
@@ -586,7 +627,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 size="lg"
               />
-              {load && !otherPerson._id ? (
+              {load && !otherPerson.name ? (
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
                 <div>
@@ -715,7 +756,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         onScroll={handleScroll}
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
-          {load ? (
+          {load && !otherPerson?.name ? (
             <div className="size-20 animate-pulse rounded-full bg-gray-200" />
           ) : (
             <>
@@ -741,7 +782,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
           <div className="text-center">
             <p className="flex items-center justify-center text-sm font-bold dark:text-slate-200">
-              {load ? (
+              {load && !otherPerson?.name ? (
                 <span className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
               ) : (
                 <>
@@ -776,7 +817,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               <Loader2 className="size-6 animate-spin text-gray-400" aria-label="Loading older" />
             </div>
           )}
-          {Messages?.reduce((groups: { key: string; ts: string; items: typeof Messages }[], message) => {
+          {visibleMessages.reduce((groups: { key: string; ts: string; items: typeof Messages }[], message) => {
             const key = getDayKey(message.timestamp);
             const last = groups[groups.length - 1];
             if (last && last.key === key) last.items.push(message);

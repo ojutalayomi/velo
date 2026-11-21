@@ -32,7 +32,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
       db.statusViewers().deleteMany({ statusId: id }),
     ]);
 
-    const targetUserIds = await getFollowerUserIds(db, userId);
+    const targetUserIds = Array.from(new Set([userId, ...(await getFollowerUserIds(db, userId))]));
     after(async () => {
       try {
         await emitViaSocketServer(userId, "status:delete", {

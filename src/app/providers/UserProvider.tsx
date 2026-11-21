@@ -39,7 +39,8 @@ interface UseUserReturn {
 type FetchOutcome =
   | { kind: "ok"; data: UserData }
   | { kind: "rate_limited" }
-  | { kind: "login_required" };
+  | { kind: "login_required" }
+  | { kind: "email_unconfirmed"; email: string };
 
 const UserContext = createContext<UseUserReturn | undefined>(undefined);
 
@@ -71,6 +72,7 @@ async function requestUser(): Promise<FetchOutcome> {
   if (response.ok) return { kind: "ok", data: body };
   if (body?.message === "Too many requests") return { kind: "rate_limited" };
   if (body?.message === "login") return { kind: "login_required" };
+  if (body?.code === "email_unconfirmed") return { kind: "email_unconfirmed", email: body.email };
   throw new Error("Failed to fetch user data");
 }
 
@@ -143,6 +145,11 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           await delay(RATE_LIMIT_WAIT_MS);
           fetchedRef.current = false;
           retryAfterRateLimit = true;
+          break;
+
+        case "email_unconfirmed":
+          fetchedRef.current = true;
+          router.push(`/accounts/confirm-email/pending?email=${encodeURIComponent(outcome.email)}`);
           break;
 
         case "login_required":

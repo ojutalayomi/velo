@@ -3,6 +3,8 @@ import { jwtVerify } from "jose";
 import { MongoDBClient } from "@/lib/mongodb";
 import { sendConfirmationEmail } from "@/lib/email";
 import { headers } from "next/headers";
+import { setCookie } from "@/lib/auth";
+import { SocialMediaUser, UserSchema } from "@/lib/class/User";
 
 export async function GET(request: Request) {
   const token = request.url.split("/").pop()?.split("?")[0];
@@ -42,6 +44,17 @@ export async function GET(request: Request) {
     await users.updateOne(
       { _id: user._id },
       { $set: { isEmailConfirmed: true }, $unset: { confirmationToken: "" } }
+    );
+
+    // The emailed link proves ownership of the address, so start the session now.
+    // The token was just unset above, which makes the link single-use.
+    const userAgent = (await headersList).get("user-agent") || "";
+    await new SocialMediaUser(user as unknown as UserSchema).setSession(
+      db,
+      userAgent,
+      "app",
+      undefined,
+      setCookie
     );
 
     await sendConfirmationEmail(user.email, user.firstname, user.lastname, user.username);

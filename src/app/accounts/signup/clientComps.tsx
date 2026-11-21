@@ -71,6 +71,11 @@ const Comps: React.FC = () => {
       }
 
       const response = await SubmitForm(formData);
+      if (response?.requiresEmailConfirmation) {
+        // No session until the email is confirmed.
+        router.push(`/accounts/confirm-email/pending?email=${encodeURIComponent(response.email)}`);
+        return;
+      }
       dispatch(setUserData(response));
       dispatch(setSuccess(true));
       router.push(backTo || "/home");

@@ -68,6 +68,8 @@ export async function POST(request: Request) {
       getStatusGroupForOwner(db, userId),
       getFollowerUserIds(db, userId),
     ]);
+    // The owner's other devices need the update too.
+    const recipients = Array.from(new Set([userId, ...targetUserIds]));
 
     if (group) {
       const newIds = new Set(docs.map((doc) => doc._id.toString()));
@@ -84,7 +86,7 @@ export async function POST(request: Request) {
       // can never turn a saved status into a gateway timeout.
       after(async () => {
         try {
-          await emitViaSocketServer(userId, "status:create", { group: broadcastGroup, targetUserIds });
+          await emitViaSocketServer(userId, "status:create", { group: broadcastGroup, targetUserIds: recipients });
         } catch (error) {
           console.error("[api/statuses] status:create socket emit failed:", error);
         }

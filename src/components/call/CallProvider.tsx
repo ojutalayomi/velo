@@ -4,20 +4,27 @@ import { ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useStat
 import type { Socket } from "socket.io-client";
 import { toast } from "sonner";
 
-import { CallPeer, CallPermissionError } from "@/lib/call/callPeer";
 import {
+  acquireLocalMedia,
+  CallPermissionError,
+  getIceServers,
+  PeerLink,
+} from "@/lib/call/callPeer";
+import {
+  ActiveCallInfo,
   callReducer,
   CallChatType,
   CallEndReason,
   CallType,
   initialCallState,
 } from "@/lib/call/callState";
+import { startRingtone, stopRingtone } from "@/lib/call/ringtone";
 
 import CallOverlay from "./CallOverlay";
-import { CallContext, CallContextValue, StartCallInput } from "./callContext";
+import { CallContext, CallContextValue, GroupCallInfo, StartCallInput } from "./callContext";
 
 const ENDED_SCREEN_MS = 2200;
-/** Group invites have no server-side ring timeout, so the client stops ringing eventually. */
+/** Group invites are dismissed after a while if nobody ends the call. */
 const GROUP_RING_MS = 45_000;
 
 interface InvitePayload {
@@ -30,13 +37,26 @@ interface InvitePayload {
   chatType: CallChatType;
 }
 
+interface PersonPayload {
+  userId: string;
+  name?: string;
+  avatar?: string;
+}
+
+const person = (p: PersonPayload) => ({ userId: p.userId, name: p.name || "Someone", avatar: p.avatar });
+
 export function CallProvider({ children, socket }: { children: ReactNode; socket: Socket }) {
   const [state, dispatch] = useReducer(callReducer, initialCallState);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
+  const [groupCalls, setGroupCalls] = useState<Record<string, GroupCallInfo>>({});
 
-  const peerRef = useRef<CallPeer | null>(null);
   const stateRef = useRef(state);
+  const localRef = useRef<MediaStream | null>(null);
+  const iceRef = useRef<RTCIceServer[]>([]);
+  const linksRef = useRef(new Map<string, PeerLink>());
+  /** Identity of the current call attempt, to drop results that arrive after it was cancelled. */
+  const sessionRef = useRef<object | null>(null);
   const ringTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     stateRef.current = state;
@@ -47,13 +67,16 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
     ringTimerRef.current = null;
   };
 
-  /** Releases the camera/microphone and the connection. Safe to call repeatedly. */
+  /** Releases the camera/microphone and every connection. Safe to call repeatedly. */
   const teardown = useCallback(() => {
     clearRingTimer();
-    peerRef.current?.close();
-    peerRef.current = null;
+    sessionRef.current = null;
+    linksRef.current.forEach((link) => link.close());
+    linksRef.current.clear();
+    localRef.current?.getTracks().forEach((track) => track.stop());
+    localRef.current = null;
     setLocalStream(null);
-    setRemoteStream(null);
+    setRemoteStreams({});
   }, []);
 
   const finish = useCallback(
@@ -64,17 +87,50 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
     [teardown]
   );
 
-  const createPeer = useCallback(
-    (callType: CallType, onFailed: () => void) => {
-      const peer = new CallPeer(socket, callType, {
-        onRemoteStream: setRemoteStream,
-        onConnected: () => dispatch({ type: "connected", at: Date.now() }),
-        onFailed,
+  const dropPeer = useCallback((userId: string) => {
+    linksRef.current.get(userId)?.close();
+    linksRef.current.delete(userId);
+    setRemoteStreams((prev) => {
+      if (!(userId in prev)) return prev;
+      const { [userId]: _gone, ...rest } = prev;
+      void _gone;
+      return rest;
+    });
+    dispatch({ type: "peerLeft", userId });
+  }, []);
+
+  /** The connection to one other participant, created on first use. */
+  const ensureLink = useCallback(
+    (userId: string): PeerLink | null => {
+      const existing = linksRef.current.get(userId);
+      if (existing) return existing;
+      const callId = stateRef.current.call?.callId;
+      const local = localRef.current;
+      if (!callId || !local) return null;
+      const link = new PeerLink({
+        socket,
+        callId,
+        remoteUserId: userId,
+        localStream: local,
+        iceServers: iceRef.current,
+        onRemoteStream: (id, stream) => setRemoteStreams((prev) => ({ ...prev, [id]: stream })),
+        onState: (id, linkState) => {
+          if (linkState === "connected") {
+            dispatch({ type: "peerConnected", userId: id, at: Date.now() });
+            return;
+          }
+          dropPeer(id);
+          if (linksRef.current.size === 0) {
+            const currentId = stateRef.current.call?.callId;
+            if (currentId) socket.emit("call:end", { callId: currentId });
+            finish("failed");
+          }
+        },
       });
-      peerRef.current = peer;
-      return peer;
+      linksRef.current.set(userId, link);
+      return link;
     },
-    [socket]
+    [socket, dropPeer, finish]
   );
 
   const startCall = useCallback(
@@ -84,6 +140,8 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
         toast.error("You are offline. Reconnect to place a call.");
         return;
       }
+      const session = {};
+      sessionRef.current = session;
       dispatch({
         type: "outgoing",
         call: {
@@ -95,19 +153,23 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
           peer: input.peer,
         },
       });
-      const peer = createPeer(input.callType, () => {
-        const id = stateRef.current.call?.callId;
-        if (id) socket.emit("call:end", { callId: id });
-        finish("failed");
-      });
       try {
         // Ask for the microphone (and camera for video) before ringing anyone.
-        setLocalStream(await peer.acquireMedia());
+        const [media, ice] = await Promise.all([
+          acquireLocalMedia(input.callType),
+          getIceServers(),
+        ]);
+        if (sessionRef.current !== session) {
+          media.getTracks().forEach((track) => track.stop()); // cancelled during the permission prompt
+          return;
+        }
+        localRef.current = media;
+        iceRef.current = ice;
+        setLocalStream(media);
       } catch (error) {
         finish(error instanceof CallPermissionError ? "permission-denied" : "failed");
         return;
       }
-      if (peerRef.current !== peer) return; // cancelled while the permission prompt was open
       socket.emit("call:invite", {
         roomId: input.roomId,
         targetUserId: input.targetUserId,
@@ -115,32 +177,67 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
         chatType: input.chatType,
       });
     },
-    [socket, createPeer, finish]
+    [socket, finish]
+  );
+
+  /** Answer a DM call or join a group call: get media ready first, then tell the server. */
+  const accept = useCallback(
+    async (info: ActiveCallInfo) => {
+      const callId = info.callId;
+      if (!callId) return;
+      clearRingTimer();
+      const session = {};
+      sessionRef.current = session;
+      dispatch({ type: "accepting" });
+      try {
+        const [media, ice] = await Promise.all([
+          acquireLocalMedia(info.callType),
+          getIceServers(),
+        ]);
+        if (sessionRef.current !== session) {
+          media.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        localRef.current = media;
+        iceRef.current = ice;
+        setLocalStream(media);
+      } catch (error) {
+        socket.emit("call:answer", { callId, accepted: false });
+        finish(error instanceof CallPermissionError ? "permission-denied" : "failed");
+        return;
+      }
+      socket.emit("call:answer", { callId, accepted: true });
+    },
+    [socket, finish]
   );
 
   const acceptCall = useCallback(async () => {
-    const current = stateRef.current;
-    if (current.status !== "incoming" || !current.call?.callId) return;
-    const { callId, callType } = current.call;
-    clearRingTimer();
-    dispatch({ type: "accepted" });
+    const { status, call } = stateRef.current;
+    if (status !== "incoming" || !call) return;
+    await accept(call);
+  }, [accept]);
 
-    const peer = createPeer(callType, () => {
-      socket.emit("call:end", { callId });
-      finish("failed");
-    });
-    peer.setCallId(callId);
-    try {
-      // Media must be ready before we answer: the caller sends its offer right away.
-      setLocalStream(await peer.acquireMedia());
-    } catch (error) {
-      socket.emit("call:answer", { callId, accepted: false });
-      finish(error instanceof CallPermissionError ? "permission-denied" : "failed");
-      return;
-    }
-    if (peerRef.current !== peer) return;
-    socket.emit("call:answer", { callId, accepted: true });
-  }, [socket, createPeer, finish]);
+  const joinGroupCall = useCallback(
+    async (input: { roomId: string; name: string; avatar?: string }) => {
+      const live = groupCalls[input.roomId];
+      if (!live || stateRef.current.status !== "idle") return;
+      if (live.count >= live.max) {
+        toast.error("This call is full");
+        return;
+      }
+      const call: ActiveCallInfo = {
+        callId: live.callId,
+        roomId: input.roomId,
+        chatType: "Group",
+        callType: live.callType,
+        direction: "incoming",
+        peer: { name: input.name, avatar: input.avatar },
+      };
+      dispatch({ type: "incoming", call });
+      await accept(call);
+    },
+    [groupCalls, accept]
+  );
 
   const declineCall = useCallback(() => {
     const callId = stateRef.current.call?.callId;
@@ -166,16 +263,28 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
 
   // Apply mute / camera toggles to the live tracks.
   useEffect(() => {
-    peerRef.current?.setMuted(state.muted);
+    localRef.current?.getAudioTracks().forEach((track) => (track.enabled = !state.muted));
   }, [state.muted]);
   useEffect(() => {
-    peerRef.current?.setCameraOff(state.cameraOff);
+    localRef.current?.getVideoTracks().forEach((track) => (track.enabled = !state.cameraOff));
   }, [state.cameraOff]);
+
+  // Ring while an incoming call waits, and play ringback while ours rings.
+  useEffect(() => {
+    if (state.status === "incoming") startRingtone("incoming");
+    else if (state.status === "outgoing" && state.call?.callId) startRingtone("outgoing");
+    else stopRingtone();
+    return stopRingtone;
+  }, [state.status, state.call?.callId]);
 
   // Server events.
   useEffect(() => {
     const matches = (callId?: string | null) =>
       !!callId && stateRef.current.call?.callId === callId;
+    const fail = (callId: string) => {
+      socket.emit("call:end", { callId });
+      finish("failed");
+    };
 
     const onInvite = (data: InvitePayload) => {
       if (stateRef.current.status !== "idle") return; // busy: the server already answered for DMs
@@ -200,33 +309,46 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
 
     const onInitiated = (data: { callId: string }) => {
       if (stateRef.current.status !== "outgoing" || stateRef.current.call?.callId) return;
-      peerRef.current?.setCallId(data.callId);
       dispatch({ type: "initiated", callId: data.callId });
     };
 
-    const onAnswered = (data: { callId: string }) => {
-      if (!matches(data.callId) || stateRef.current.status !== "outgoing") return;
-      dispatch({ type: "accepted" });
-      peerRef.current?.createOffer().catch(() => {
-        socket.emit("call:end", { callId: data.callId });
-        finish("failed");
-      });
-    };
-
-    const onOffer = (data: { callId: string; offer: RTCSessionDescriptionInit }) => {
+    // We joined: connect to everyone already in the call by sending each an offer.
+    const onJoined = (data: { callId: string; participants: PersonPayload[] }) => {
       if (!matches(data.callId)) return;
-      peerRef.current?.handleOffer(data.offer).catch(() => {
-        socket.emit("call:end", { callId: data.callId });
-        finish("failed");
-      });
+      dispatch({ type: "joined", participants: data.participants.map(person) });
+      for (const other of data.participants) {
+        ensureLink(other.userId)
+          ?.createOffer()
+          .catch(() => fail(data.callId));
+      }
     };
 
-    const onAnswer = (data: { callId: string; answer: RTCSessionDescriptionInit }) => {
-      if (matches(data.callId)) void peerRef.current?.handleAnswer(data.answer);
+    // Someone else joined; they will send us an offer.
+    const onPeerJoined = (data: { callId: string; user: PersonPayload }) => {
+      if (matches(data.callId)) dispatch({ type: "peerJoined", user: person(data.user) });
     };
 
-    const onCandidate = (data: { callId: string; candidate: RTCIceCandidateInit }) => {
-      if (matches(data.callId)) void peerRef.current?.addCandidate(data.candidate);
+    const onPeerLeft = (data: { callId: string; userId: string }) => {
+      if (matches(data.callId)) dropPeer(data.userId);
+    };
+
+    const onOffer = (data: { callId: string; from: string; offer: RTCSessionDescriptionInit }) => {
+      if (!matches(data.callId)) return;
+      ensureLink(data.from)
+        ?.handleOffer(data.offer)
+        .catch(() => fail(data.callId));
+    };
+
+    const onAnswer = (data: { callId: string; from: string; answer: RTCSessionDescriptionInit }) => {
+      if (matches(data.callId)) void linksRef.current.get(data.from)?.handleAnswer(data.answer);
+    };
+
+    const onCandidate = (data: {
+      callId: string;
+      from: string;
+      candidate: RTCIceCandidateInit;
+    }) => {
+      if (matches(data.callId)) void ensureLink(data.from)?.addCandidate(data.candidate);
     };
 
     const onDeclined = (data: { callId: string }) => {
@@ -236,12 +358,16 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
     const onEnded = (data: { callId: string | null; reason?: string; local?: boolean }) => {
       const { status } = stateRef.current;
       if (status === "idle" || status === "ended") return;
-      // `local` rejections answer our own invite before it has an id.
+      // `local` rejections answer our own invite or join, which may not have an id yet.
       if (!data.local && !matches(data.callId)) return;
-      const reason: CallEndReason =
-        data.reason === "timeout" || data.reason === "busy" || data.reason === "already-in-call"
-          ? data.reason
-          : "hangup";
+      const known: CallEndReason[] = [
+        "timeout",
+        "busy",
+        "full",
+        "group-call-active",
+        "already-in-call",
+      ];
+      const reason = known.find((r) => r === data.reason) ?? "hangup";
       if (status === "incoming" && reason === "hangup") {
         teardown();
         dispatch({ type: "reset" }); // the caller cancelled before we answered
@@ -250,7 +376,7 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
       }
     };
 
-    // Another device (or group member) answered or declined; stop ringing here.
+    // Another device answered or declined; stop ringing here.
     const onHandled = (data: { callId: string }) => {
       if (stateRef.current.status === "incoming" && matches(data.callId)) {
         teardown();
@@ -258,27 +384,59 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
       }
     };
 
+    const onGroupState = (data: {
+      roomId: string;
+      callId: string | null;
+      callType?: CallType;
+      count: number;
+      max: number;
+    }) => {
+      setGroupCalls((prev) => {
+        if (!data.callId || !data.callType) {
+          if (!(data.roomId in prev)) return prev;
+          const { [data.roomId]: _gone, ...rest } = prev;
+          void _gone;
+          return rest;
+        }
+        return {
+          ...prev,
+          [data.roomId]: {
+            callId: data.callId,
+            callType: data.callType,
+            count: data.count,
+            max: data.max,
+          },
+        };
+      });
+    };
+
     socket.on("call:invite", onInvite);
     socket.on("call:initiated", onInitiated);
-    socket.on("call:answered", onAnswered);
+    socket.on("call:joined", onJoined);
+    socket.on("call:peer-joined", onPeerJoined);
+    socket.on("call:peer-left", onPeerLeft);
     socket.on("webrtc:offer", onOffer);
     socket.on("webrtc:answer", onAnswer);
     socket.on("webrtc:candidate", onCandidate);
     socket.on("call:declined", onDeclined);
     socket.on("call:ended", onEnded);
     socket.on("call:handled", onHandled);
+    socket.on("call:group-state", onGroupState);
     return () => {
       socket.off("call:invite", onInvite);
       socket.off("call:initiated", onInitiated);
-      socket.off("call:answered", onAnswered);
+      socket.off("call:joined", onJoined);
+      socket.off("call:peer-joined", onPeerJoined);
+      socket.off("call:peer-left", onPeerLeft);
       socket.off("webrtc:offer", onOffer);
       socket.off("webrtc:answer", onAnswer);
       socket.off("webrtc:candidate", onCandidate);
       socket.off("call:declined", onDeclined);
       socket.off("call:ended", onEnded);
       socket.off("call:handled", onHandled);
+      socket.off("call:group-state", onGroupState);
     };
-  }, [socket, finish, teardown]);
+  }, [socket, finish, teardown, ensureLink, dropPeer]);
 
   // Leave the "call ended" screen after a moment.
   useEffect(() => {
@@ -289,6 +447,7 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
 
   // Hang up if the page is closed or this provider goes away mid-call.
   useEffect(() => {
+    const links = linksRef.current;
     const hangUp = () => {
       const { status, call } = stateRef.current;
       if (status !== "idle" && status !== "ended" && call?.callId) {
@@ -299,7 +458,8 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
     return () => {
       window.removeEventListener("pagehide", hangUp);
       hangUp();
-      peerRef.current?.close();
+      links.forEach((link) => link.close());
+      links.clear();
     };
   }, [socket]);
 
@@ -307,7 +467,9 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
     () => ({
       state,
       localStream,
-      remoteStream,
+      remoteStreams,
+      groupCalls,
+      joinGroupCall,
       startCall,
       acceptCall,
       declineCall,
@@ -319,7 +481,9 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
     [
       state,
       localStream,
-      remoteStream,
+      remoteStreams,
+      groupCalls,
+      joinGroupCall,
       startCall,
       acceptCall,
       declineCall,

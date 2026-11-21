@@ -12,7 +12,12 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { endReasonLabel, formatDuration, type CallState } from "@/lib/call/callState";
+import {
+  endReasonLabel,
+  formatDuration,
+  type CallParticipant,
+  type CallState,
+} from "@/lib/call/callState";
 import { cn } from "@/lib/utils";
 
 import { useCall } from "./callContext";
@@ -121,16 +126,59 @@ function RoundButton({
 }
 
 function statusText(state: CallState, seconds: number) {
+  const others = Object.keys(state.participants).length;
   switch (state.status) {
     case "outgoing":
       return state.call?.callId ? "Ringing…" : "Calling…";
     case "connecting":
       return "Connecting…";
     case "connected":
-      return formatDuration(seconds);
+      return state.call?.chatType === "Group" && others > 0
+        ? `${formatDuration(seconds)} · ${others + 1} in call`
+        : formatDuration(seconds);
     default:
       return "";
   }
+}
+
+/** One participant in a group call: their video (or avatar) and name. */
+function ParticipantTile({
+  participant,
+  stream,
+  isVideo,
+}: {
+  participant: CallParticipant;
+  stream: MediaStream | null;
+  isVideo: boolean;
+}) {
+  const hasVideo = isVideo && !!stream && stream.getVideoTracks().length > 0;
+  return (
+    <div className="relative flex min-h-0 items-center justify-center overflow-hidden rounded-2xl bg-zinc-800/90">
+      {hasVideo ? (
+        <StreamElement
+          stream={stream}
+          kind="video"
+          muted
+          className="absolute inset-0 size-full object-cover"
+        />
+      ) : (
+        <Avatar className="size-20 border-2 border-white/10 sm:size-24">
+          <AvatarImage src={participant.avatar} alt="" className="object-cover" />
+          <AvatarFallback className="bg-zinc-700 text-xl font-semibold text-white">
+            {participant.name.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      )}
+      <span className="absolute bottom-2 left-2 max-w-[80%] truncate rounded-full bg-black/55 px-2.5 py-1 text-xs">
+        {participant.name}
+      </span>
+      {!participant.connected && (
+        <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/80">
+          Connecting…
+        </span>
+      )}
+    </div>
+  );
 }
 
 function useElapsedSeconds(connectedAt: number | null) {
@@ -149,7 +197,7 @@ export default function CallOverlay() {
   const {
     state,
     localStream,
-    remoteStream,
+    remoteStreams,
     acceptCall,
     declineCall,
     endCall,
@@ -166,8 +214,18 @@ export default function CallOverlay() {
   const kindLabel = isVideo ? "video call" : "voice call";
   const where = call.chatType === "Group" ? " · Group" : "";
 
+  const participantIds = Object.keys(state.participants);
+  const isGroup = call.chatType === "Group";
+  const firstRemote = participantIds.length ? (remoteStreams[participantIds[0]] ?? null) : null;
+
   // Remote audio keeps playing whatever the UI is showing (full screen, minimized, or ended).
-  const remoteAudio = <StreamElement stream={remoteStream} kind="audio" />;
+  const remoteAudio = (
+    <>
+      {Object.entries(remoteStreams).map(([id, stream]) => (
+        <StreamElement key={id} stream={stream} kind="audio" />
+      ))}
+    </>
+  );
 
   if (status === "incoming") {
     return (
@@ -252,7 +310,14 @@ export default function CallOverlay() {
     );
   }
 
-  const showRemoteVideo = isVideo && !!remoteStream;
+  const showGrid = isGroup && participantIds.length > 0;
+  const showRemoteVideo = !showGrid && isVideo && !!firstRemote;
+  const gridCols =
+    participantIds.length <= 1
+      ? "grid-cols-1"
+      : participantIds.length <= 3
+        ? "grid-cols-1 sm:grid-cols-2"
+        : "grid-cols-2 sm:grid-cols-3";
 
   return (
     <div
@@ -264,7 +329,7 @@ export default function CallOverlay() {
       {remoteAudio}
       {showRemoteVideo && (
         <StreamElement
-          stream={remoteStream}
+          stream={firstRemote}
           kind="video"
           muted
           className="absolute inset-0 size-full object-cover"
@@ -292,14 +357,27 @@ export default function CallOverlay() {
       </div>
 
       {/* Body */}
-      <div className="relative flex flex-1 items-center justify-center">
-        {!showRemoteVideo && (
-          <PeerAvatar
-            name={call.peer.name}
-            src={call.peer.avatar}
-            className="size-36"
-            ring={status === "outgoing"}
-          />
+      <div className="relative flex min-h-0 flex-1 items-center justify-center">
+        {showGrid ? (
+          <div className={cn("grid size-full auto-rows-fr gap-2 p-3", gridCols)}>
+            {participantIds.map((id) => (
+              <ParticipantTile
+                key={id}
+                participant={state.participants[id]}
+                stream={remoteStreams[id] ?? null}
+                isVideo={isVideo}
+              />
+            ))}
+          </div>
+        ) : (
+          !showRemoteVideo && (
+            <PeerAvatar
+              name={call.peer.name}
+              src={call.peer.avatar}
+              className="size-36"
+              ring={status === "outgoing"}
+            />
+          )
         )}
         {isVideo && localStream && (
           <div className="absolute right-4 top-4 h-40 w-28 overflow-hidden rounded-2xl border border-white/20 bg-zinc-800 shadow-lg sm:h-48 sm:w-36">

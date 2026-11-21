@@ -18,10 +18,22 @@ export interface StartCallInput {
   peer: CallPeerInfo;
 }
 
+/** A group call that is live right now and can be joined. */
+export interface GroupCallInfo {
+  callId: string;
+  callType: CallType;
+  count: number;
+  max: number;
+}
+
 export interface CallContextValue {
   state: CallState;
   localStream: MediaStream | null;
-  remoteStream: MediaStream | null;
+  /** Remote media by participant user id. */
+  remoteStreams: Record<string, MediaStream>;
+  /** Live group calls by chat id (for the "join call" banner). */
+  groupCalls: Record<string, GroupCallInfo>;
+  joinGroupCall: (input: { roomId: string; name: string; avatar?: string }) => Promise<void>;
   startCall: (input: StartCallInput) => Promise<void>;
   acceptCall: () => Promise<void>;
   declineCall: () => void;

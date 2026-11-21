@@ -13,6 +13,7 @@ import { ObjectId } from "mongodb";
 
 import { SocialMediaUser } from "@/lib/class/User";
 import { AccountType } from "@/lib/types/user";
+import { setCookie } from "@/lib/auth";
 import { isValidPassword, PASSWORD_RULE_MESSAGE } from "@/lib/passwordPolicy";
 
 export async function POST(request: NextRequest) {

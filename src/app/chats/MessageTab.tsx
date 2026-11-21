@@ -525,9 +525,11 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
     if (messageElement) {
       messageElement.scrollIntoView({ behavior: "smooth" });
       // Add a brief highlight effect
-      messageElement.classList.add("bg-brand/20 py-2");
+      messageElement.classList.add("bg-brand/20");
+      messageElement.classList.add("py-2");
       setTimeout(() => {
-        messageElement.classList.remove("bg-brand/20 py-2");
+        messageElement.classList.remove("bg-brand/20");
+        messageElement.classList.remove("py-2");
       }, 2000);
     }
   };

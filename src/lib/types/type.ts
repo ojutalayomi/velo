@@ -197,6 +197,8 @@ export interface ChatParticipant {
   displayPicture: string;
   userId: string;
   chatType: ChatType;
+  /** Set for DM participants that are bot accounts (calls are not offered). */
+  isBot?: boolean;
 }
 
 /** A group's invite link. Only the sha256 hash of the token is stored. */
@@ -419,6 +421,8 @@ export interface ConvoType {
   displayPicture: string;
   description: string;
   verified: boolean;
+  /** A DM with a bot account. */
+  isBot?: boolean;
   favorite: boolean;
   pinned: boolean;
   deleted: boolean;

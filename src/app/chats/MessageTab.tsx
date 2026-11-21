@@ -382,6 +382,8 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                         record={callRecord}
                         viewerId={String(userdata._id)}
                         isGroup={message.chatType === "Group"}
+                        chatId={String(message.chatId)}
+                        receiverId={String(message.receiverId)}
                       />
                     );
                   }

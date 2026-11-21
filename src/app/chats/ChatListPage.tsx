@@ -1,5 +1,5 @@
 "use client";
-import { ArrowUpRight, Ellipsis, MessageSquareText, Pin } from "lucide-react";
+import { Ellipsis, Info, MessageSquareText, Phone, Pin, Video } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
@@ -25,7 +25,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
+import { useOptionalCall } from "@/components/call/callContext";
 import { Statuser } from "@/components/VerificationComponent";
+import type { CallType } from "@/lib/call/callState";
 import { ConvoType } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import { lastMessagePreview } from "@/lib/polls";
@@ -44,6 +46,113 @@ type FilteredChatsProps = {
 interface Props {
   chat: ConvoType;
 }
+
+/** Where a chat lives; its settings page sits under it (not available for "message yourself"). */
+const chatHref = (chat: ConvoType) =>
+  chat.type === "Group"
+    ? `/chats/group/${chat.id}`
+    : chat.type === "Personal"
+      ? "/chats/me"
+      : `/chats/${chat.id}`;
+
+/** Profile card shown when the avatar in the chat list is tapped. */
+const ChatProfileDialog: React.FC<{
+  chat: ConvoType;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}> = ({ chat, open, onOpenChange }) => {
+  const router = useRouter();
+  const call = useOptionalCall();
+  const { userdata } = useUser();
+  const isGroup = chat.type === "Group";
+  const isPersonal = chat.type === "Personal";
+  // Bots can't answer calls.
+  const callable = !isPersonal && !chat.isBot;
+  const subtitle = isGroup
+    ? `Group · ${chat.participants.length} ${chat.participants.length === 1 ? "member" : "members"}`
+    : isPersonal
+      ? "Your own space"
+      : "Direct message";
+
+  const go = (path: string) => {
+    onOpenChange(false);
+    router.push(path);
+  };
+
+  const startCall = (callType: CallType) => {
+    const targetUserId = isGroup ? undefined : chat.participants.find((id) => id !== userdata._id);
+    if (!isGroup && !targetUserId) return;
+    onOpenChange(false);
+    void call?.startCall({
+      roomId: chat.id,
+      targetUserId,
+      callType,
+      chatType: isGroup ? "Group" : "DM",
+      peer: { id: targetUserId, name: chat.name, avatar: chat.displayPicture },
+    });
+  };
+  // You can't call yourself, and only one call can run at a time.
+  const canCall = callable && Boolean(call) && call?.state.status === "idle";
+
+  const actions: { label: string; Icon: typeof Info; onClick: () => void; disabled?: boolean }[] = [
+    { label: "Message", Icon: MessageSquareText, onClick: () => go(chatHref(chat)) },
+    ...(callable
+      ? [
+          { label: "Voice", Icon: Phone, onClick: () => startCall("audio"), disabled: !canCall },
+          { label: "Video", Icon: Video, onClick: () => startCall("video"), disabled: !canCall },
+        ]
+      : []),
+    ...(isPersonal
+      ? []
+      : [{ label: "Info", Icon: Info, onClick: () => go(`${chatHref(chat)}/settings`) }]),
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[90vw] max-w-xs gap-0 overflow-hidden rounded-3xl border-none p-0 dark:bg-zinc-900">
+        <div className="flex flex-col items-center gap-3 bg-gradient-to-b from-brand/20 to-transparent px-6 pb-4 pt-10">
+          <Avatar className="size-44 shadow-lg ring-4 ring-white dark:ring-zinc-900">
+            <AvatarImage
+              src={chat.displayPicture}
+              alt={chat.name}
+              className="size-full rounded-full object-cover"
+            />
+            <AvatarFallback className="text-5xl capitalize">{chat.name?.slice(0, 2)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col items-center gap-0.5 text-center">
+            <DialogTitle className="flex items-center gap-1 text-xl">
+              <span className="break-words">{chat.name}</span>
+              {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
+            </DialogTitle>
+            <DialogDescription className="text-sm">{subtitle}</DialogDescription>
+          </div>
+          {isGroup && chat.description && (
+            <p className="line-clamp-3 text-center text-sm text-gray-600 dark:text-gray-400">
+              {chat.description}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-5 px-4 pb-6 pt-2">
+          {actions.map(({ label, Icon, onClick, disabled }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={onClick}
+              disabled={disabled}
+              title={disabled && call ? "You are already in a call" : undefined}
+              className="group flex flex-col items-center gap-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300"
+            >
+              <span className="flex size-12 items-center justify-center rounded-full bg-brand text-white shadow-sm transition-transform group-hover:scale-105 group-active:scale-95">
+                <Icon className="size-5" />
+              </span>
+              {label}
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Card: React.FC<Props> = ({ chat }) => {
   const [time, setTime] = useState<string>();
@@ -198,13 +307,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     <>
       <Link
         key={chat.id}
-        href={
-          chat.type === "Group"
-            ? `/chats/group/${chat.id}`
-            : chat.type === "Personal"
-              ? `/chats/me`
-              : `/chats/${chat.id}`
-        }
+        href={chatHref(chat)}
       >
         <div
           className="group relative flex cursor-pointer items-center gap-3 overflow-visible rounded-lg bg-white p-3 shadow-bar transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 dark:bg-zinc-900 dark:text-white dark:shadow-bar-dark hover:dark:bg-zinc-700"
@@ -214,32 +317,34 @@ const Card: React.FC<Props> = ({ chat }) => {
         >
           {/* Dropdown/Drawer menu button */}
           {/* Always render dropdown, but only open when dropdownOpen is true */}
-          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="pointer-events-none absolute right-0 mr-4 overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 dark:border-zinc-900 dark:bg-black"
-                onClick={handleEllipsisClick}
-              >
-                <Ellipsis className="size-6" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {options.map((option) => (
-                <DropdownMenuItem
-                  key={option.id}
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleOption(option);
-                    setDropdownOpen(false);
-                  }}
+          {!isMobile && (
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="pointer-events-none absolute right-0 mr-4 overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 dark:border-zinc-900 dark:bg-black"
+                  onClick={handleEllipsisClick}
                 >
-                  {option.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <Ellipsis className="size-6" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {options.map((option) => (
+                  <DropdownMenuItem
+                    key={option.id}
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleOption(option);
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    {option.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {/* Only render drawer on mobile, open on long-press */}
           {isMobile && (
             <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
@@ -345,36 +450,10 @@ const Card: React.FC<Props> = ({ chat }) => {
               )}
             </div>
           </div>
-
-          {/* Fullscreen image */}
-          <Dialog open={showFullscreen} onOpenChange={setShowFullscreen}>
-            <DialogContent className="flex flex-col items-center justify-center">
-              <Avatar className="size-64">
-                <AvatarImage
-                  src={chat.displayPicture}
-                  alt={chat.name}
-                  className="size-64 rounded-full object-cover dark:border-slate-200"
-                />
-                <AvatarFallback className="text-6xl capitalize">
-                  {chat.name?.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <DialogTitle className="flex items-center gap-1">
-                {chat.name} {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
-              </DialogTitle>
-              <DialogDescription className="flex items-center gap-2">
-                <span className="flex items-center gap-1 rounded-full bg-brand p-2 text-white">
-                  <MessageSquareText className="size-8 flex-shrink-0" />
-                </span>
-                <span className="flex items-center gap-1 rounded-full bg-brand p-2 text-white">
-                  <ArrowUpRight className="size-8 flex-shrink-0" />
-                </span>
-              </DialogDescription>
-            </DialogContent>
-          </Dialog>
         </div>
       </Link>
       {/* Outside the Link: clicks inside a portaled dialog bubble up through React and would navigate. */}
+      <ChatProfileDialog chat={chat} open={showFullscreen} onOpenChange={setShowFullscreen} />
       <DeleteChatDialog
         chatId={chat.id}
         name={chat.name}

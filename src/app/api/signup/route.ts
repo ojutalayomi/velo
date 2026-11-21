@@ -13,7 +13,6 @@ import { ObjectId } from "mongodb";
 
 import { SocialMediaUser } from "@/lib/class/User";
 import { AccountType } from "@/lib/types/user";
-import { setCookie } from "@/lib/auth";
 import { isValidPassword, PASSWORD_RULE_MESSAGE } from "@/lib/passwordPolicy";
 
 export async function POST(request: NextRequest) {
@@ -24,7 +23,6 @@ export async function POST(request: NextRequest) {
     const BaseUrl = `${protocol}://${host}/`;
 
     const body = await request.json();
-    const userAgent = (await headers()).get("user-agent") || "";
     const time = new Date().toISOString();
     const { firstname, lastname, email, username, password, displayPicture } = body;
     const userId = uuidv4();
@@ -103,7 +101,10 @@ export async function POST(request: NextRequest) {
           lastname,
           BaseUrl + "accounts/confirm-email/" + confirmationToken
         );
-        return NextResponse.json({ message: "Confirmation email sent." }, { status: 200 });
+        return NextResponse.json(
+          { message: "Confirmation email sent.", requiresEmailConfirmation: true, email },
+          { status: 200 }
+        );
       } else {
         let error = {};
         if (result.username === username) error = "Username is not available.";
@@ -148,7 +149,8 @@ export async function POST(request: NextRequest) {
       await user.storeInDB(db);
 
       await user.createPersonalChatForUser(db);
-      await user.setSession(db, userAgent, "app", undefined, setCookie);
+      // No session yet: it is issued when the user confirms their email
+      // (see app/accounts/confirm-email/[token]/route.ts).
 
       await confirmationEmail(
         email,
@@ -156,7 +158,10 @@ export async function POST(request: NextRequest) {
         lastname,
         BaseUrl + "accounts/confirm-email/" + confirmationToken
       );
-      return NextResponse.json(user.getClientSafeData(), { status: 200 });
+      return NextResponse.json(
+        { message: "Confirmation email sent.", requiresEmailConfirmation: true, email },
+        { status: 200 }
+      );
     }
   } catch (error) {
     console.error("An error occurred:", error);

@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
           isPrivate: 1,
           theme: 1,
           usernameChangedAt: 1,
+          isEmailConfirmed: 1,
         },
       }
     );
@@ -55,6 +56,15 @@ export async function GET(request: NextRequest) {
 
     if (user.suspended) {
       return NextResponse.json({ error: "Account suspended" }, { status: 403 });
+    }
+
+    // Only an explicit `false` is unconfirmed; accounts created before this
+    // flag existed have no value and stay allowed.
+    if (user.isEmailConfirmed === false) {
+      return NextResponse.json(
+        { error: "Email not confirmed", code: "email_unconfirmed", email: user.email },
+        { status: 403 }
+      );
     }
 
     return NextResponse.json(user);

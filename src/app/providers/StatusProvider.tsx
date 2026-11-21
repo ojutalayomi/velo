@@ -7,6 +7,7 @@ import type { StatusGroup } from "@/lib/types/status";
 import { useAppDispatch } from "@/redux/hooks";
 import {
   addViewerToOwnedStatus,
+  markViewedLocal,
   removeStatus,
   setStatusError,
   setStatusGroups,
@@ -47,7 +48,16 @@ const StatusProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (!socket) return;
 
     const handleCreated = (data: { group?: StatusGroup }) => {
-      if (data.group) dispatch(upsertStatusGroup(data.group));
+      if (!data.group) return;
+      // The owner never sees their own statuses as unviewed (this covers their other devices).
+      const mine = data.group.user._id === userdata?._id;
+      dispatch(
+        upsertStatusGroup(
+          mine
+            ? { ...data.group, statuses: data.group.statuses.map((s) => ({ ...s, viewed: true })) }
+            : data.group
+        )
+      );
     };
     const handleDeleted = (data: { statusId: string; ownerId: string }) => {
       dispatch(removeStatus(data));
@@ -58,12 +68,10 @@ const StatusProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       viewerId: string;
       viewedAt: string;
     }) => {
-      dispatch(
-        addViewerToOwnedStatus({
-          statusId: data.statusId,
-          viewer: { userId: data.viewerId, viewedAt: data.viewedAt },
-        })
-      );
+      const viewer = { userId: data.viewerId, viewedAt: data.viewedAt };
+      // This account viewed it on another device: clear the ring here too.
+      if (data.viewerId === userdata?._id) dispatch(markViewedLocal({ statusId: data.statusId, viewer }));
+      else dispatch(addViewerToOwnedStatus({ statusId: data.statusId, viewer }));
     };
 
     socket.on("statusCreated", handleCreated);
@@ -75,7 +83,7 @@ const StatusProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       socket.off("statusDeleted", handleDeleted);
       socket.off("statusViewed", handleViewed);
     };
-  }, [dispatch, socket]);
+  }, [dispatch, socket, userdata?._id]);
 
   return <StatusContext.Provider value={{ refreshStatuses }}>{children}</StatusContext.Provider>;
 };

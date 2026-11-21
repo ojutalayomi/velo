@@ -19,6 +19,7 @@ import type { PostSchema } from "@/lib/types/type";
 import { getServerTrendsState, getTrendsState, refreshTrends, subscribeTrends } from "@/lib/trendsClient";
 
 import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
+import { ExploreStatusRail } from "@/components/status/ExploreStatusRail";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
@@ -424,6 +425,8 @@ const Explore = () => {
       </header>
 
       <main className="max-w-screen-sm mx-auto p-1 pb-4">
+        <ExploreStatusRail />
+
         {/* Trending topics rail */}
         {trends.length > 0 && (
           <section className="mb-4 mt-2">

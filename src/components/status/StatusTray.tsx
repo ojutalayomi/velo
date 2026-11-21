@@ -118,7 +118,7 @@ const StatusTray = () => {
   );
 };
 
-const StatusAvatar = ({ group, fallback }: { group?: StatusGroup; fallback?: string }) => {
+export const StatusAvatar = ({ group, fallback }: { group?: StatusGroup; fallback?: string }) => {
   const ringClass = group?.hasUnviewed ? "ring-brand" : "ring-muted-foreground/40";
   return (
     <div className={`rounded-full p-0.5 ring-2 ${ringClass}`}>
@@ -343,16 +343,19 @@ const StatusComposer = ({
   );
 };
 
-const StatusViewer = ({
+export const StatusViewer = ({
   groups,
   initialGroupIndex,
   initialStatusIndex,
   onClose,
+  onViewed,
 }: {
   groups: StatusGroup[];
   initialGroupIndex: number;
   initialStatusIndex: number;
   onClose: () => void;
+  /** Called once a status has been recorded as viewed (for callers that keep their own list). */
+  onViewed?: (statusId: string) => void;
 }) => {
   const dispatch = useAppDispatch();
   const { userdata } = useUser();
@@ -368,16 +371,17 @@ const StatusViewer = ({
     setProgress(0);
     if (!status || isOwner || status.viewed) return;
     markStatusViewed(status._id)
-      .then(() =>
+      .then(() => {
         dispatch(
           markViewedLocal({
             statusId: status._id,
             viewer: { userId: userdata._id, viewedAt: new Date().toISOString() },
           })
-        )
-      )
+        );
+        onViewed?.(status._id);
+      })
       .catch(() => undefined);
-  }, [dispatch, isOwner, status, userdata._id]);
+  }, [dispatch, isOwner, status, userdata._id, onViewed]);
 
   useEffect(() => {
     if (!status) return;

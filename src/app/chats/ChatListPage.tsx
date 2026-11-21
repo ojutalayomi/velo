@@ -317,32 +317,34 @@ const Card: React.FC<Props> = ({ chat }) => {
         >
           {/* Dropdown/Drawer menu button */}
           {/* Always render dropdown, but only open when dropdownOpen is true */}
-          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="pointer-events-none absolute right-0 mr-4 overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 dark:border-zinc-900 dark:bg-black"
-                onClick={handleEllipsisClick}
-              >
-                <Ellipsis className="size-6" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {options.map((option) => (
-                <DropdownMenuItem
-                  key={option.id}
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleOption(option);
-                    setDropdownOpen(false);
-                  }}
+          {!isMobile && (
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="pointer-events-none absolute right-0 mr-4 overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 dark:border-zinc-900 dark:bg-black"
+                  onClick={handleEllipsisClick}
                 >
-                  {option.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <Ellipsis className="size-6" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {options.map((option) => (
+                  <DropdownMenuItem
+                    key={option.id}
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleOption(option);
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    {option.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {/* Only render drawer on mobile, open on long-press */}
           {isMobile && (
             <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>

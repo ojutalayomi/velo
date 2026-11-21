@@ -340,31 +340,39 @@ const ChatTextarea = ({
           />
         )}
 
-        {voice.recording && (
+        {(voice.recording || voice.processing) && (
           <div className="flex items-center gap-3 px-2 py-1.5">
             <Button
               variant="ghost"
               aria-label="Cancel voice note"
               onClick={voice.cancel}
+              disabled={voice.processing}
               className="h-auto rounded-full p-2 text-gray-600 hover:text-red-500 dark:text-gray-300"
             >
               <Trash size={20} />
             </Button>
             <span className="flex flex-1 items-center gap-2 text-sm dark:text-white">
               <span className="size-2.5 animate-pulse rounded-full bg-red-500" />
-              {formatClock(voice.seconds)}
-              <span className="text-xs text-gray-500">/ {formatClock(MAX_VOICE_SECONDS)}</span>
+              {voice.processing ? (
+                <span className="text-sm text-gray-500">Preparing voice note…</span>
+              ) : (
+                <>
+                  {formatClock(voice.seconds)}
+                  <span className="text-xs text-gray-500">/ {formatClock(MAX_VOICE_SECONDS)}</span>
+                </>
+              )}
             </span>
             <Button
               aria-label="Send voice note"
               onClick={() => void sendVoiceNote()}
+              disabled={voice.processing}
               className="h-auto rounded-full bg-brand p-2.5 text-white hover:bg-brand/90"
             >
               <Send size={20} />
             </Button>
           </div>
         )}
-        <div className={cn("flex items-end justify-between gap-2", voice.recording && "hidden")}>
+        <div className={cn("flex items-end justify-between gap-2", (voice.recording || voice.processing) && "hidden")}>
           <Pop input={inputRef} setFileAccepts={setFileAccepts} onPoll={() => setPollOpen(true)} />
           <PollCreator
             key={pollOpen ? "open" : "closed"}

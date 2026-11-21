@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { describeMediaError } from "@/lib/call/callPeer";
+import { toMp3 } from "@/lib/audioConvert";
 import { pickVoiceMime, voiceFileName } from "@/lib/voiceNote";
 
 export const MAX_VOICE_SECONDS = 5 * 60;
@@ -11,6 +12,8 @@ export const MAX_VOICE_SECONDS = 5 * 60;
 export function useVoiceRecorder() {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  /** The recording ended and is being converted to MP3. */
+  const [processing, setProcessing] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -69,9 +72,15 @@ export function useVoiceRecorder() {
         const blob = new Blob(chunksRef.current, { type });
         chunksRef.current = [];
         release();
-        resolve(
-          blob.size > 0 ? new File([blob], voiceFileName(type, elapsed), { type: blob.type }) : null
-        );
+        if (blob.size === 0) {
+          resolve(null);
+          return;
+        }
+        setProcessing(true);
+        const raw = new File([blob], voiceFileName(type, elapsed), { type: blob.type });
+        void toMp3(raw, elapsed)
+          .then(resolve)
+          .finally(() => setProcessing(false));
       };
       recorder.stop();
     });
@@ -88,5 +97,5 @@ export function useVoiceRecorder() {
   // Leaving the page must not leave the microphone on.
   useEffect(() => cancel, [cancel]);
 
-  return { recording, seconds, start, stop, cancel };
+  return { recording, processing, seconds, start, stop, cancel };
 }

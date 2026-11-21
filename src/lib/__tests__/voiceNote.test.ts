@@ -23,3 +23,12 @@ describe("voice notes", () => {
     expect(formatClock(5)).toBe("0:05");
   });
 });
+
+describe("floatToInt16", () => {
+  it("scales and clamps samples for the MP3 encoder", () => {
+    const { floatToInt16 } = jest.requireActual("@/lib/audioConvert");
+    expect(Array.from(floatToInt16(new Float32Array([0, 1, -1, 2, -2, 0.5])))).toEqual([
+      0, 32767, -32768, 32767, -32768, 16383,
+    ]);
+  });
+});

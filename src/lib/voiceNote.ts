@@ -15,6 +15,7 @@ export function pickVoiceMime(isSupported: (type: string) => boolean): string | 
 const EXTENSIONS: Record<string, string> = {
   "audio/webm": "webm",
   "audio/mp4": "m4a",
+  "audio/mpeg": "mp3",
   "audio/ogg": "ogg",
 };
 

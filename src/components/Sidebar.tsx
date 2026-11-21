@@ -1,16 +1,19 @@
-/* eslint-disable tailwindcss/no-custom-classname */
-import { Moon, Sun, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { UserData } from "@/lib/types/user";
 
-import { SidebarItem, UserSection, adminSidebarItem, sidebarItems } from "./SidebarComps";
+import {
+  SIDEBAR_ITEM_PITCH,
+  SidebarItem,
+  UserSection,
+  adminSidebarItem,
+  sidebarItems,
+} from "./SidebarComps";
 import { handleThemeChange1 } from "./ThemeToggle";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface SidebarProps {
   activeRoute: string;
@@ -21,13 +24,29 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute }) => {
   const { userdata, loading, error, refetchUser } = useUser();
   const [isPopUp, setPopUp] = useState<boolean>(false);
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [isOpen, setOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const lastPointer = useRef<string>("mouse");
+  const [isTapOpen, setTapOpen] = useState<boolean>(false);
+  const [isMoreOpen, setMoreOpen] = useState<boolean>(false);
+  const [fitCount, setFitCount] = useState<number>(Infinity);
+  const isCollapsed = !(isHovered || isTapOpen || isPopUp || isMoreOpen);
+
+  // Touch: first tap on the collapsed bar expands it (instead of navigating); tapping outside closes it.
+  useEffect(() => {
+    if (!isTapOpen) return;
+    const close = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setTapOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [isTapOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,23 +62,6 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
   }, []);
 
   useEffect(() => {
-    const isSidebarCollapsed = localStorage.getItem("isSidebarCollapsed");
-    if (isSidebarCollapsed) {
-      setTimeout(() => {
-        setIsCollapsed(isSidebarCollapsed === "true");
-      }, 100);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (pathname?.includes("/chats")) {
-      setTimeout(() => {
-        setIsCollapsed(true);
-      }, 100);
-    }
-  }, [pathname]);
-
-  useEffect(() => {
     if (pathname === "/") {
       router.push("/home");
     }
@@ -70,6 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
     (route: string) => {
       setLoad(true);
       setActiveRoute(route);
+      setTapOpen(false);
     },
     [setLoad, setActiveRoute]
   );
@@ -78,35 +81,30 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
     setPopUp(!isPopUp);
   }, [isPopUp]);
 
-  const memoizedSidebarItems = useMemo(
+  const allItems = useMemo(
     () =>
-      (userdata.role === "admin"
-        ? [...sidebarItems.slice(0, -1), adminSidebarItem, ...sidebarItems.slice(-1)]
-        : sidebarItems
-      ).map((item, key) => (
-        <Tooltip key={item.route + key}>
-          <TooltipTrigger asChild>
-            <SidebarItem
-              item={item}
-              activeRoute={activeRoute}
-              handleClick={handleClick}
-              userdata={userdata}
-              isCollapsed={isCollapsed}
-            />
-          </TooltipTrigger>
-          <TooltipContent
-            side="right"
-            align="center"
-            className="md:hidden"
-            sideOffset={5}
-            alignOffset={5}
-          >
-            {item.label}
-          </TooltipContent>
-        </Tooltip>
-      )),
-    [activeRoute, handleClick, userdata, isCollapsed]
+      userdata.role === "admin"
+        ? [...sidebarItems.slice(0, -1), adminSidebarItem]
+        : sidebarItems.slice(0, -1),
+    [userdata.role]
   );
+  const moreItem = sidebarItems[sidebarItems.length - 1];
+
+  // Work out how many items fit in the nav area; the rest move into the "More" popover.
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const measure = () => setFitCount(Math.floor(nav.clientHeight / SIDEBAR_ITEM_PITCH));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [allItems.length]);
+
+  const hasOverflow = allItems.length > fitCount;
+  const visibleCount = hasOverflow ? Math.max(fitCount - 1, 0) : allItems.length;
+  const visibleItems = allItems.slice(0, visibleCount);
+  const overflowItems = allItems.slice(visibleCount);
 
   const userSectionRef = useRef<HTMLDivElement>(null);
 
@@ -116,97 +114,81 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
     }, 100);
   }, [theme]);
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    const newTheme = isDarkMode ? "light" : "dark";
-    handleThemeChange1(newTheme, isOpen, setTheme, setOpen);
-  };
-
   const darkMode = (isDark: boolean) => {
     setIsDarkMode(isDark);
     const newTheme = isDark ? "dark" : "light";
     handleThemeChange1(newTheme, isOpen, setTheme, setOpen);
   };
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-    localStorage.setItem("isSidebarCollapsed", (!isCollapsed).toString());
-  };
-
   return (
     <div
       id="sidebar"
-      className={`${pathname?.includes("/accounts") ? "!hidden" : ""} relative hidden max-w-min flex-col overflow-auto border-r bg-gray-50 transition-all duration-300 tablets:flex dark:bg-zinc-900 dark:text-slate-200 ${isCollapsed ? "w-16" : "w-64"}`}
+      className={`${pathname?.includes("/accounts") ? "!hidden" : ""} relative hidden w-16 shrink-0 tablets:block`}
+      ref={ref}
+      onPointerDown={(e) => {
+        lastPointer.current = e.pointerType;
+      }}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setIsHovered(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setIsHovered(false)}
+      onClickCapture={(e) => {
+        if (lastPointer.current !== "mouse" && isCollapsed) {
+          e.preventDefault();
+          e.stopPropagation();
+          setTapOpen(true);
+        }
+      }}
     >
-      <button
-        onClick={toggleSidebar}
-        className="absolute -right-3 top-20 z-10 rounded-full bg-white p-1 shadow-md transition-colors hover:bg-gray-100 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+      {/* Floating panel: the outer element reserves 4rem in the layout, this one expands over the content. */}
+      <div
+        className={`absolute inset-y-0 left-0 flex flex-col overflow-hidden border-r bg-gray-50 transition-[width,box-shadow] duration-200 dark:bg-zinc-900 dark:text-slate-200 ${isCollapsed ? "w-16" : "w-64 rounded-r-2xl border-r-black/5 shadow-2xl dark:border-r-white/10"}`}
       >
-        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-      </button>
-      <div className="m-2 flex justify-center md:justify-start">
-        <Image
-          src="/velo11.png"
-          className="displayPicture mb-[-5px] mt-[10px]"
-          width={30}
-          height={30}
-          alt="logo"
-        />
-      </div>
-      <div className="flex-1">{memoizedSidebarItems}</div>
-      <div className="flex justify-center px-2 md:block">
-        <div
-          className={`${isCollapsed ? "hidden" : "hidden items-center justify-between rounded-full bg-gray-100 p-1 shadow-bar md:flex dark:bg-zinc-900 dark:text-gray-200 dark:shadow-bar-dark"}`}
-        >
-          <button
-            onClick={() => darkMode(false)}
-            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${!isDarkMode ? "bg-white shadow-bar dark:bg-zinc-600 dark:shadow-bar-dark" : ""}`}
-          >
-            <Sun size={20} className="inline" /> Light
-          </button>
-          <button
-            onClick={() => darkMode(true)}
-            className={`flex flex-1 items-center gap-1 rounded-full px-4 py-2 ${isDarkMode ? "bg-white shadow-bar dark:bg-zinc-600 dark:shadow-bar-dark" : ""}`}
-          >
-            <Moon size={20} className="inline" /> Dark
-          </button>
+        <div className="m-2 flex shrink-0 justify-start">
+          <Image
+            src="/velo11.png"
+            className="displayPicture mb-[-5px] mt-[10px]"
+            width={30}
+            height={30}
+            alt="logo"
+          />
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={toggleDarkMode}
-              className={`${isCollapsed ? "mx-auto !block" : ""} rounded-full bg-gray-100 p-2 shadow-bar md:hidden dark:bg-gray-700 dark:shadow-bar-dark`}
-            >
-              {isDarkMode ? (
-                <Moon size={20} className="mx-auto" />
-              ) : (
-                <Sun size={20} className="mx-auto" />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent
-            side="right"
-            align="center"
-            className="md:hidden"
-            sideOffset={5}
-            alignOffset={5}
-          >
-            Toggle {!isDarkMode ? "Dark" : "Light"} Mode
-          </TooltipContent>
-        </Tooltip>
-      </div>
-      <div className="px-2">
-        <UserSection
-          ref={userSectionRef}
-          error={error}
-          loading={loading}
-          userdata={userdata as UserData}
-          pathname={pathname as string}
-          isPopUp={isPopUp}
-          isCollapsed={isCollapsed}
-          handlePopUp={handlePopUp}
-          refetchUser={refetchUser}
-        />
+        <div ref={navRef} className="min-h-0 flex-1 overflow-hidden whitespace-nowrap">
+          {visibleItems.map((item) => (
+            <SidebarItem
+              key={item.route}
+              item={item}
+              activeRoute={activeRoute}
+              handleClick={handleClick}
+              userdata={userdata}
+              isCollapsed={isCollapsed}
+            />
+          ))}
+          {hasOverflow && (
+            <SidebarItem
+              item={moreItem}
+              activeRoute={activeRoute}
+              handleClick={handleClick}
+              userdata={userdata}
+              isCollapsed={isCollapsed}
+              overflowItems={overflowItems}
+              onMoreOpenChange={setMoreOpen}
+            />
+          )}
+        </div>
+        <div className="mx-2 shrink-0 border-t border-black/5 px-0 pb-1 pt-2 dark:border-white/10">
+          <UserSection
+            ref={userSectionRef}
+            error={error}
+            loading={loading}
+            userdata={userdata as UserData}
+            pathname={pathname as string}
+            isPopUp={isPopUp}
+            isCollapsed={isCollapsed}
+            handlePopUp={handlePopUp}
+            refetchUser={refetchUser}
+            isDarkMode={isDarkMode}
+            onThemeChange={darkMode}
+          />
+        </div>
       </div>
     </div>
   );

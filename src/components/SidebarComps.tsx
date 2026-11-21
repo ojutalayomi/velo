@@ -1,5 +1,7 @@
 /* eslint-disable tailwindcss/no-custom-classname */
 import {
+  Moon,
+  Sun,
   SquarePen,
   RefreshCw,
   Bell,
@@ -78,9 +80,27 @@ export const sidebarItems = [
   {
     route: "#",
     icon: CircleEllipsis,
-    label: "Others",
+    label: "More",
   },
 ];
+
+/** Every nav row is exactly this tall (36px + 2px gap), so the sidebar can compute how many fit. */
+export const SIDEBAR_ITEM_PITCH = 38;
+const ROW = "relative mb-0.5 flex h-9 cursor-pointer items-center gap-3";
+const ROW_SHELL =
+  "mx-2 rounded-xl !px-[11px] !py-0 transition-colors hover:bg-slate-200/70 dark:hover:bg-zinc-800";
+
+const CountBadge = ({ count, isCollapsed }: { count: number; isCollapsed: boolean }) => (
+  <span
+    className={`flex items-center justify-center rounded-full bg-brand text-[11px] font-bold leading-none text-white ${
+      isCollapsed
+        ? "absolute left-4 top-1 size-4 ring-2 ring-gray-50 dark:ring-zinc-900"
+        : "ml-auto size-5"
+    }`}
+  >
+    {count > 99 ? "99+" : count}
+  </span>
+);
 
 export const adminSidebarItem = {
   route: "admin",
@@ -96,114 +116,124 @@ export const SidebarItem = forwardRef<
     handleClick: (route: string) => void;
     userdata: UserData;
     isCollapsed?: boolean;
+    /** Items that did not fit in the sidebar; listed inside the "More" popover. */
+    overflowItems?: (typeof sidebarItems)[0][];
+    onMoreOpenChange?: (open: boolean) => void;
   }
->(({ item, activeRoute, handleClick, userdata, isCollapsed = false, ...props }, ref) => {
-  const { conversations } = useSelector((state: RootState) => state.chat);
-  const i = conversations?.reduce((acc, convo) => acc + convo.unread, 0) ?? 0;
-  const notificationUnread = useSelector(
-    (state: RootState) => state.notifications.unreadCount
-  );
-  const isProfile = item.route === "profile";
-  const route = isProfile ? userdata.username : item.route;
-  const label = isProfile ? (userdata.username ? userdata.username : "Profile") : item.label;
-  const isActive = activeRoute === route;
+>(
+  (
+    {
+      item,
+      activeRoute,
+      handleClick,
+      userdata,
+      isCollapsed = false,
+      overflowItems = [],
+      onMoreOpenChange,
+      ...props
+    },
+    ref
+  ) => {
+    const { conversations } = useSelector((state: RootState) => state.chat);
+    const i = conversations?.reduce((acc, convo) => acc + convo.unread, 0) ?? 0;
+    const notificationUnread = useSelector((state: RootState) => state.notifications.unreadCount);
+    const isProfile = item.route === "profile";
+    const route = isProfile ? userdata.username : item.route;
+    const label = isProfile ? (userdata.username ? userdata.username : "Profile") : item.label;
+    const isActive = activeRoute === route;
 
-  if (item.label === "Others")
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <div
-            id={item.label.toLowerCase()}
-            ref={ref}
-            className={`sidebar ft rout dark:text-slate-200`}
-            data-route={route}
-            {...props}
-          >
+    if (item.label === "More")
+      return (
+        <Popover onOpenChange={onMoreOpenChange}>
+          <PopoverTrigger asChild>
             <div
-              className="relative my-1.5 flex cursor-pointer items-center justify-center gap-2 md:justify-start"
-              onClick={() => handleClick(route)}
+              id="more"
+              ref={ref}
+              className="sidebar ft rout dark:text-slate-200"
+              data-route={route}
+              aria-label="More"
+              {...props}
             >
-              <item.icon />
-              {!isCollapsed && <div className="hidden md:block">{label}</div>}
-            </div>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent
-          side="right"
-          aria-label="morePopOver"
-          className="flex w-auto flex-col gap-4 rounded-md bg-white p-4 shadow-lg dark:bg-neutral-950 dark:text-slate-200"
-        >
-          {sidebarItems.slice(3, 8).map((item, key) => (
-            <Link
-              key={item.route + key + "l"}
-              aria-label={item.route}
-              className="hidden"
-              href={`/${item.route}`}
-            >
-              <div
-                className="group relative flex items-center gap-2"
-                onClick={() => handleClick(route)}
-              >
-                <item.icon size={25} className="group-hover:text-brand" />
-                <div className="group-hover:text-brand">{item.label}</div>
-                {item.label === "Chats" && i > 0 && (
-                  <div className="absolute right-0 flex size-5 translate-y-[-50%] items-center justify-center rounded-full bg-brand text-xs font-bold text-white md:relative md:translate-y-0">
-                    {i}
-                  </div>
-                )}
-                {item.label === "Notifications" && notificationUnread > 0 && (
-                  <div className="absolute right-0 flex size-5 translate-y-[-50%] items-center justify-center rounded-full bg-brand text-xs font-bold text-white md:relative md:translate-y-0">
-                    {notificationUnread > 99 ? "99+" : notificationUnread}
-                  </div>
-                )}
+              <div className={ROW}>
+                <item.icon size={25} />
+                {!isCollapsed && <div>{label}</div>}
               </div>
-            </Link>
-          ))}
-        </PopoverContent>
-      </Popover>
-    );
+            </div>
+          </PopoverTrigger>
+          <PopoverContent
+            side="right"
+            align="end"
+            aria-label="More"
+            collisionPadding={8}
+            className="flex max-h-[var(--radix-popover-content-available-height)] w-56 flex-col overflow-y-auto rounded-xl bg-white p-2 shadow-lg dark:bg-neutral-950 dark:text-slate-200"
+          >
+            {overflowItems.map((overflow) => (
+              <SidebarItem
+                key={overflow.route}
+                item={overflow}
+                activeRoute={activeRoute}
+                handleClick={handleClick}
+                userdata={userdata}
+                className="!mx-0 hover:text-brand"
+              />
+            ))}
+          </PopoverContent>
+        </Popover>
+      );
 
-  return (
-    <Link href={`/${route}`}>
-      <div
-        ref={ref}
-        {...props}
-        className={cn(
-          `sidebar ft dark:text-slate-200 rout ${
-            isActive ? "active backdrop-filter backdrop-blur-[5px]" : ""
-          }`,
-          props.className
-        )}
-        data-route={route}
-        aria-label={item.route}
-      >
+    return (
+      <Link href={`/${route}`} className="block">
         <div
-          className="relative my-1.5 flex cursor-pointer items-center justify-center gap-2 md:justify-start"
-          onClick={() => handleClick(route)}
+          ref={ref}
+          {...props}
+          className={cn(
+            `sidebar ft dark:text-slate-200 rout ${
+              isActive ? "active backdrop-filter backdrop-blur-[5px]" : ""
+            }`,
+            props.className
+          )}
+          data-route={route}
+          aria-label={item.route}
         >
-          <item.icon size={25} />
-          <div className={`${!isCollapsed && "md:block"} hidden  transition`}>{label}</div>
-          {item.label === "Chats" && i > 0 && (
-            <div
-              className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white ${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
-            >
-              {i}
-            </div>
-          )}
-          {item.label === "Notifications" && notificationUnread > 0 && (
-            <div
-              className={`absolute translate-x-[50%] translate-y-[-50%] bg-brand text-xs text-white ${!isCollapsed && "md:relative md:translate-y-0"} flex size-5 items-center justify-center rounded-full font-bold`}
-            >
-              {notificationUnread > 99 ? "99+" : notificationUnread}
-            </div>
-          )}
+          <div className={ROW} onClick={() => handleClick(route)}>
+            <item.icon size={25} />
+            {!isCollapsed && <div className="transition">{label}</div>}
+            {item.label === "Chats" && i > 0 && <CountBadge count={i} isCollapsed={isCollapsed} />}
+            {item.label === "Notifications" && notificationUnread > 0 && (
+              <CountBadge count={notificationUnread} isCollapsed={isCollapsed} />
+            )}
+          </div>
         </div>
-      </div>
-    </Link>
-  );
-});
+      </Link>
+    );
+  }
+);
 
 SidebarItem.displayName = "SidebarItem";
+
+const ThemeSwitch = ({
+  isDarkMode,
+  onChange,
+}: {
+  isDarkMode: boolean;
+  onChange: (isDark: boolean) => void;
+}) => (
+  <div className="flex items-center rounded-full bg-gray-100 p-1 dark:bg-zinc-900">
+    {[
+      { dark: false, label: "Light", Icon: Sun },
+      { dark: true, label: "Dark", Icon: Moon },
+    ].map(({ dark, label, Icon }) => (
+      <button
+        key={label}
+        type="button"
+        onClick={() => onChange(dark)}
+        className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm ${isDarkMode === dark ? "bg-white shadow-bar dark:bg-zinc-600 dark:shadow-bar-dark" : ""}`}
+      >
+        <Icon size={16} /> {label}
+      </button>
+    ))}
+  </div>
+);
 
 export const UserSection = forwardRef<
   HTMLDivElement,
@@ -216,10 +246,23 @@ export const UserSection = forwardRef<
     isCollapsed?: boolean;
     handlePopUp: () => void;
     refetchUser: () => void;
+    isDarkMode: boolean;
+    onThemeChange: (isDark: boolean) => void;
   }
 >(
   (
-    { error, loading, userdata, pathname, isPopUp, isCollapsed = false, handlePopUp, refetchUser },
+    {
+      error,
+      loading,
+      userdata,
+      pathname,
+      isPopUp,
+      isCollapsed = false,
+      handlePopUp,
+      refetchUser,
+      isDarkMode,
+      onThemeChange,
+    },
     ref
   ) => (
     <div ref={ref} className="flex">
@@ -233,6 +276,19 @@ export const UserSection = forwardRef<
           />
         ) : (
           <div className="flex flex-col gap-4 px-1 py-2 dark:text-slate-200">
+            <button
+              type="button"
+              aria-label="Toggle theme"
+              onClick={() => onThemeChange(!isDarkMode)}
+              className="flex items-center hover:text-brand"
+            >
+              {isDarkMode ? (
+                <Moon size={25} className="mr-2" />
+              ) : (
+                <Sun size={25} className="mr-2" />
+              )}
+              {!isCollapsed && <div>{isDarkMode ? "Dark" : "Light"} mode</div>}
+            </button>
             <Link
               href={`${pathname !== "" ? "/accounts/login?backto=" + pathname : "/accounts/login"}`}
               className="flex items-center hover:text-brand"
@@ -258,6 +314,8 @@ export const UserSection = forwardRef<
             className="w-auto rounded-md bg-white p-2 shadow-lg dark:bg-neutral-950 dark:text-slate-200"
           >
             <div className="flex flex-col">
+              <ThemeSwitch isDarkMode={isDarkMode} onChange={onThemeChange} />
+              <div className="my-2 border-t border-black/5 dark:border-white/10" />
               <Link
                 href="/accounts/logout"
                 className="rounded p-2 hover:bg-slate-200 dark:hover:bg-slate-900"
@@ -295,7 +353,7 @@ const UserComponentLoading = ({
   refetchUser: () => void;
 }) => {
   return (
-    <div className="user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between md:shadow-bar dark:hover:bg-neutral-900 md:dark:shadow-bar-dark">
+    <div className="user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between dark:hover:bg-neutral-900">
       <div className="img">
         {loading ? (
           <div className={`flex h-[90%] w-full items-center justify-center`}>
@@ -307,7 +365,7 @@ const UserComponentLoading = ({
       </div>
 
       <div
-        className={`names hidden max-w-[50%] flex-1 flex-col items-center ${isCollapsed ? "hidden" : "md:!flex"}`}
+        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "md:!flex"}`}
       >
         <div className="flex max-w-full dark:text-slate-200">
           <div className="mb-1 h-4 w-14 animate-pulse rounded bg-[#9E9E9E]" />
@@ -333,7 +391,7 @@ const UserComponent = ({
 }) => {
   return (
     <div
-      className={`${isCollapsed ? "!shadow-none" : ""} user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between md:shadow-bar dark:hover:bg-neutral-900 md:dark:shadow-bar-dark`}
+      className={`${isCollapsed ? "!shadow-none" : ""} user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between dark:hover:bg-neutral-900`}
     >
       <div className="img size-10 max-h-10 max-w-10">
         <Image
@@ -349,7 +407,7 @@ const UserComponent = ({
       </div>
 
       <div
-        className={`names hidden max-w-[50%] flex-1 flex-col items-center ${isCollapsed ? "hidden" : "md:flex"}`}
+        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "md:flex"}`}
       >
         <div className="flex max-w-full dark:text-slate-200">
           <p className="truncate">{userdata.name}</p>

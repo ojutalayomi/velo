@@ -1,5 +1,15 @@
 "use client";
-import { ArrowLeft, Eye, Key, Laptop, Lock, Shield, Smartphone } from "lucide-react";
+import {
+  BellRing,
+  CheckCheck,
+  Clock,
+  Eye,
+  Key,
+  Laptop,
+  MessageSquareMore,
+  ShieldCheck,
+  Smartphone,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -8,6 +18,7 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { UserSettings } from "@/lib/types/type";
 import { updateSettings } from "@/redux/userSlice";
 import { PasskeyManager } from "@/components/passkey";
+import { SettingsGroup, SettingsHeader, SettingsRow, Switch } from "@/components/settings/SettingsUI";
 
 import { Skeleton } from "../../../components/ui/skeleton";
 
@@ -76,6 +87,19 @@ const PrivacySecurityPage = () => {
   const [devicesLoading, setDevicesLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
+  // Load the saved settings (they used to reset to the defaults on every visit).
+  useEffect(() => {
+    fetch("/api/user/settings")
+      .then((r) => r.json())
+      .then((body: { data?: typeof settings }) => {
+        if (body.data) {
+          setSettings(body.data);
+          dispatch(updateSettings(body.data as UserSettings));
+        }
+      })
+      .catch(console.error);
+  }, [dispatch]);
+
   useEffect(() => {
     fetch("/api/user/devices")
       .then((r) => r.json())
@@ -109,219 +133,146 @@ const PrivacySecurityPage = () => {
 
   const handleToggle = (setting: keyof typeof settings) => {
     const prev = settings;
-    setSettings((prev) => ({ ...prev, [setting]: !prev[setting] }));
-    dispatch(updateSettings({ ...prev, [setting]: !prev[setting] } as UserSettings));
-    if (socket) {
-      socket.emit("updateSettings", { ...prev, [setting]: !prev[setting] });
-    }
+    const next = { ...prev, [setting]: !prev[setting] };
+    setSettings(next);
+    dispatch(updateSettings(next as UserSettings));
+    // Save on the server so other people's views (e.g. last seen) honour it.
+    fetch("/api/user/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [setting]: next[setting] }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to save setting");
+        // Tell the socket server only after the save, so it reads the new value.
+        socket?.emit("updateSettings", next);
+      })
+      .catch((e) => {
+        console.error(e);
+        // Roll back so the toggle reflects what is actually saved.
+        setSettings(prev);
+        dispatch(updateSettings(prev as UserSettings));
+      });
+
   };
 
   const handleChangePassword = () => {
     router.push("/accounts/forgot-password");
   };
 
+  const privacyRows: { key: keyof typeof settings; icon: React.ReactNode; label: string; desc: string }[] = [
+    { key: "showOnlineStatus", icon: <Eye size={20} />, label: "Online status", desc: "Show when you're online" },
+    { key: "showLastSeen", icon: <Clock size={20} />, label: "Last seen", desc: "Show when you were last active" },
+    { key: "showReadReceipts", icon: <CheckCheck size={20} />, label: "Read receipts", desc: "Show when you've read messages" },
+    { key: "showTypingStatus", icon: <MessageSquareMore size={20} />, label: "Typing status", desc: "Show when you're typing" },
+  ];
+
   return (
-    <div className="w-full max-h-screen overflow-auto">
-      <header className="sticky top-0 z-10 border-b bg-white dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex items-center gap-4 px-4 py-2">
-          <button
-            onClick={() => router.push("/general")}
-            className="rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-neutral-800"
-          >
-            <ArrowLeft className="size-5 text-gray-600 dark:text-gray-300" />
-          </button>
-          <div className="flex items-center gap-2">
-            <Lock className="size-6 text-gray-900 dark:text-white" />
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Privacy &amp; Security
-            </h1>
-          </div>
-        </div>
-      </header>
+    <div className="max-h-screen w-full overflow-auto">
+      <SettingsHeader title="Privacy and security" backTo="/general" />
 
-      <main className="mx-auto mb-16 max-w-4xl space-y-6 p-4 tablets:mb-0">
-        {/* Security Section */}
-        <section className="rounded-xl bg-white p-6 shadow-sm dark:bg-neutral-800">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-            <Shield className="size-5 text-green-500" />
-            Security Settings
-          </h2>
+      <main className="mx-auto mb-20 max-w-2xl space-y-6 p-4 tablets:mb-6">
+        <SettingsGroup
+          title="Who can see what"
+          description="Control what other people can see about your activity."
+        >
+          {privacyRows.map(({ key, icon, label, desc }) => (
+            <SettingsRow
+              key={key}
+              icon={icon}
+              label={label}
+              description={desc}
+              trailing={
+                <Switch checked={settings[key]} onChange={() => handleToggle(key)} label={label} />
+              }
+            />
+          ))}
+        </SettingsGroup>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">
-                  Two-Factor Authentication
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Add an extra layer of security to your account
-                </p>
-              </div>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
-                  checked={settings.twoFactorAuth}
-                  onChange={() => handleToggle("twoFactorAuth")}
-                  className="peer sr-only"
-                />
-                <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/30 dark:border-neutral-600 dark:bg-neutral-700 dark:peer-focus:ring-brand/80"></div>
-              </label>
-            </div>
+        <SettingsGroup title="Security">
+          <SettingsRow
+            icon={<ShieldCheck size={20} />}
+            label="Two-factor authentication"
+            description="Coming soon"
+            trailing={
+              <Switch
+                checked={settings.twoFactorAuth}
+                onChange={() => handleToggle("twoFactorAuth")}
+                label="Two-factor authentication"
+                disabled
+              />
+            }
+          />
+          <SettingsRow
+            icon={<BellRing size={20} />}
+            label="Login alerts"
+            description="Coming soon"
+            trailing={
+              <Switch
+                checked={settings.loginAlerts}
+                onChange={() => handleToggle("loginAlerts")}
+                label="Login alerts"
+                disabled
+              />
+            }
+          />
+          <SettingsRow
+            icon={<Key size={20} />}
+            label="Change password"
+            description="Reset it by email"
+            onClick={handleChangePassword}
+          />
+        </SettingsGroup>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">Login Alerts</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Get notified of new login attempts
-                </p>
-              </div>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
-                  checked={settings.loginAlerts}
-                  onChange={() => handleToggle("loginAlerts")}
-                  className="peer sr-only"
-                />
-                <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/30 dark:border-neutral-600 dark:bg-neutral-700 dark:peer-focus:ring-brand/80"></div>
-              </label>
-            </div>
-
-            <button
-              onClick={handleChangePassword}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-gray-100 px-4 py-2 text-gray-900 transition-colors hover:bg-gray-200 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
-            >
-              <Key className="size-4" />
-              Change Password
-            </button>
-          </div>
-        </section>
-
-        {/* Privacy Section */}
-        <section className="rounded-xl bg-white p-6 shadow-sm dark:bg-neutral-800">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-            <Eye className="size-5 text-blue-500" />
-            Privacy Settings
-          </h2>
-
-          <div className="space-y-4">
-            {(
-              [
-                {
-                  key: "showOnlineStatus",
-                  label: "Online Status",
-                  desc: "Show when you're online",
-                },
-                {
-                  key: "showLastSeen",
-                  label: "Last Seen",
-                  desc: "Show when you were last active",
-                },
-                {
-                  key: "showReadReceipts",
-                  label: "Read Receipts",
-                  desc: "Show when you've read messages",
-                },
-                {
-                  key: "showTypingStatus",
-                  label: "Typing Status",
-                  desc: "Show when you're typing",
-                },
-              ] as { key: keyof typeof settings; label: string; desc: string }[]
-            ).map(({ key, label, desc }) => (
-              <div key={key} className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">{label}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{desc}</p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={settings[key]}
-                    onChange={() => handleToggle(key)}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/30 dark:border-neutral-600 dark:bg-neutral-700 dark:peer-focus:ring-brand/80"></div>
-                </label>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Passkeys Section */}
-        <div className="[&>div]:rounded-xl [&>div]:bg-white [&>div]:shadow-sm [&>div]:dark:bg-neutral-800">
+        {/* Passkeys */}
+        <div className="[&>div]:rounded-2xl [&>div]:border [&>div]:bg-white [&>div]:shadow-none [&>div]:dark:border-zinc-800 [&>div]:dark:bg-zinc-900">
           <PasskeyManager />
         </div>
 
-        {/* Connected Devices Section */}
-        <section className="rounded-xl bg-white p-6 shadow-sm dark:bg-neutral-800">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-            <Smartphone className="size-5 text-purple-500" />
-            Connected Devices
-          </h2>
-
-          <div className="space-y-3">
-            {devicesLoading ? (
-              <>
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="rounded-lg bg-gray-50 p-4 dark:bg-neutral-700">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="size-9 rounded-full shrink-0" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-36 rounded" />
-                        <Skeleton className="h-3 w-52 rounded" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </>
-            ) : devices.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No active sessions found.</p>
-            ) : (
-              devices.map((device) => {
-                const mobile = isMobile(device.deviceInfo);
-                const Icon = mobile ? Smartphone : Laptop;
-                return (
-                  <div key={device.id} className="rounded-lg bg-gray-50 p-4 dark:bg-neutral-700">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-                        <Icon className="size-4 text-purple-600 dark:text-purple-400" />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                            {deviceLabel(device.deviceInfo)}
-                          </h3>
-                          {device.isCurrent && (
-                            <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              This device
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          {deviceSubLabel(device.deviceInfo)}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                          Session started {timeAgo(device.createdAt)}
-                        </p>
-                      </div>
-
-                      {!device.isCurrent && (
-                        <button
-                          onClick={() => handleRemove(device.id)}
-                          disabled={removingId === device.id}
-                          className="shrink-0 text-sm font-medium text-red-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {removingId === device.id ? "Removing…" : "Remove"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </section>
+        <SettingsGroup
+          title="Signed-in devices"
+          description="Sessions that are currently logged in to your account."
+        >
+          {devicesLoading ? (
+            [0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+                <Skeleton className="size-9 shrink-0 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-36 rounded" />
+                  <Skeleton className="h-3 w-52 rounded" />
+                </div>
+              </div>
+            ))
+          ) : devices.length === 0 ? (
+            <p className="px-4 py-3.5 text-sm text-gray-500 dark:text-gray-400">
+              No active sessions found.
+            </p>
+          ) : (
+            devices.map((device) => {
+              const Icon = isMobile(device.deviceInfo) ? Smartphone : Laptop;
+              return (
+                <SettingsRow
+                  key={device.id}
+                  icon={<Icon size={20} />}
+                  label={deviceLabel(device.deviceInfo) + (device.isCurrent ? " · This device" : "")}
+                  description={`${deviceSubLabel(device.deviceInfo)} · started ${timeAgo(device.createdAt)}`}
+                  trailing={
+                    device.isCurrent ? undefined : (
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(device.id)}
+                        disabled={removingId === device.id}
+                        className="shrink-0 text-sm font-medium text-red-500 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {removingId === device.id ? "Removing…" : "Remove"}
+                      </button>
+                    )
+                  }
+                />
+              );
+            })
+          )}
+        </SettingsGroup>
       </main>
     </div>
   );

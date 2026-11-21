@@ -4,6 +4,7 @@ import {
   CheckCheck,
   Copy,
   Ellipsis,
+  Forward,
   Loader,
   TextQuote,
   Trash2,
@@ -37,6 +38,13 @@ import { updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
+import {
+  ADMIN_DELETED_CONTENT,
+  DELETED_MARKER,
+  deletedPreview,
+  messageDeletion,
+  SENDER_DELETED_CONTENT,
+} from "@/lib/messageDeletion";
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 
 import { MediaCollage } from "./FilesView";
@@ -78,6 +86,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   const [time] = useState<string>(updateLiveTime("chat-time", message.timestamp));
   const socket = useSocket();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
+  const adminIds = useSelector(
+    (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.adminIds
+  );
+  const deletion = messageDeletion({
+    senderId: message?.sender?.id,
+    userId: userdata._id,
+    chatType: message.chatType,
+    adminIds,
+  });
   const [rectionInfoDisplay, setReactionInfoDisplay] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const MAX_LENGTH = 300; // Adjust this number to change when the "Read more" appears
@@ -158,24 +175,28 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
       text: isCopied ? "Copied!" : "Copy message",
       onClick: copyToClipboard,
     },
-    ...(senderId === userdata._id
+    ...(deletion
       ? [
           {
             icon: Trash2,
             text: "Delete",
             onClick: () => {
-              if (!message.content.endsWith("≤≤≤")) {
+              if (!message.content.endsWith(DELETED_MARKER)) {
                 if (socket) {
                   dispatch(
                     updateConversation({
                       id: message.chatId as string,
-                      updates: { lastMessage: "This message was deleted" },
+                      updates: { lastMessage: deletedPreview(deletion === "admin" ? ADMIN_DELETED_CONTENT : SENDER_DELETED_CONTENT) },
                     })
                   );
                   dispatch(
                     updateMessage({
                       id: message._id as string,
-                      updates: { attachments: [], content: "You deleted this message.≤≤≤" },
+                      updates: {
+                        attachments: [],
+                        content:
+                          deletion === "admin" ? ADMIN_DELETED_CONTENT : SENDER_DELETED_CONTENT,
+                      },
                     })
                   );
                   openOptions(false);
@@ -270,8 +291,9 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (onClick) return onClick();
     if ((e.target as HTMLElement).closest("a")) return;
+    // Once selecting has started, a tap toggles the message in or out of the selection.
     if (IsSelected) dispatch(removeSelectedMessage(message._id as string));
-    if (selectedMessages.length) dispatch(addSelectedMessage(message._id as string));
+    else if (selectedMessages.length) dispatch(addSelectedMessage(message._id as string));
   };
 
   if (message.messageType === "Announcement") {
@@ -325,6 +347,12 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                     {sender}
                   </span>
                   {verified && <Statuser className="size-3.5" />}
+                </div>
+              )}
+
+              {message.forwarded && (
+                <div className="mb-0.5 flex items-center gap-1 text-[11px] italic text-gray-500 dark:text-gray-400">
+                  <Forward className="size-3" /> Forwarded
                 </div>
               )}
 
@@ -497,11 +525,9 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
     if (messageElement) {
       messageElement.scrollIntoView({ behavior: "smooth" });
       // Add a brief highlight effect
-      messageElement.classList.add("bg-brand/20");
-      messageElement.classList.add("rounded-lg");
+      messageElement.classList.add("bg-brand/20 py-2");
       setTimeout(() => {
-        messageElement.classList.remove("bg-brand/20");
-        messageElement.classList.remove("rounded-lg");
+        messageElement.classList.remove("bg-brand/20 py-2");
       }, 2000);
     }
   };

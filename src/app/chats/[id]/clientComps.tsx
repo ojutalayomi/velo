@@ -41,6 +41,7 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 
 import ChatTextarea from "../ChatTextarea";
 import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
+import { DELETED_MARKER } from "@/lib/messageDeletion";
 import MessageTab from "../MessageTab";
 import { MultiSelect } from "../MultiSelect";
 
@@ -107,7 +108,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [isTextareaDisabled, setIsTextareaDisabled] = useState(false);
-  const [searchResults, setSearchResults] = useState<MessageAttributes[]>([]);
   const [searchFocus, setSearchFocus] = useState(false);
 
   useEffect(() => {
@@ -143,7 +143,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     return messages?.filter((msg) => {
       return msg.chatId === pid;
     });
-  }, [messages, pid, searchQuery]);
+  }, [messages, pid]);
 
   const getCachedData = useCallback(
     (id: string) => {
@@ -465,7 +465,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       setSearchFocus(false);
       setSearchQuery("");
     }
-  }, [searchParams, searchQuery]);
+    // Only the URL drives this; depending on searchQuery would reset what the user is typing.
+  }, [searchParams]);
 
   const options = [
     { id: 1, name: "View contact", action: () => router.push(`/chats/${pid}/settings`) },
@@ -556,21 +557,19 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
   };
 
-  useEffect(() => {
-    if (!searchQuery) {
-      setSearchResults([]);
-      return;
-    }
-    setSearchResults(
-      Messages.filter((message) =>
-        message.content.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+  // Skips deleted-message placeholders, which would otherwise match words like "deleted".
+  const searchResults = useMemo(() => {
+    const needle = searchQuery.trim().toLowerCase();
+    if (!needle) return [];
+    return Messages.filter(
+      (message) =>
+        !message.content.endsWith(DELETED_MARKER) && message.content.toLowerCase().includes(needle)
     );
   }, [searchQuery, Messages]);
 
   return (
     <div
-      className={`bg-white tablets1:flex ${chaT} z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-black`}
+      className={`bg-white tablets1:flex ${chaT} border-l z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-black`}
     >
       <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
         {!searchBarOpen ? (
@@ -593,7 +592,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {onlineUsers.includes(otherPerson?._id as string)
                       ? "Online"
-                      : `Last seen: ${time}`}
+                      : convo?.lastSeenHidden
+                        ? "Offline"
+                        : `Last seen: ${time}`}
                     {convo?.isTypingList.filter((i) => i.chatId === pid).map((i) => i.name).length >
                       0 &&
                       ` • ${convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...`}
@@ -818,7 +819,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             className="my-2 mb-4 text-left"
           >
             <span className="rounded-full rounded-bl-none bg-gray-100 px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-              {convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...
+              Typing...
             </span>
           </div>
         )}

@@ -89,6 +89,8 @@ export interface ChatData {
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
   timestamp: string;
+  /** DMs only: the other person hides their last seen time. */
+  lastSeenHidden?: boolean;
   lastMessageId: string;
   lastUpdated: string;
 }
@@ -301,6 +303,8 @@ export interface Message {
   quotedMessageId: string;
   status: msgStatus;
   mentions?: Mention[];
+  /** Set by the server on copies created by forwarding. */
+  forwarded?: boolean;
 }
 
 export interface MessageAttributes extends Message {
@@ -407,6 +411,8 @@ export interface ConvoType {
   onlyAdminsCanSend?: boolean;
   lastMessage: string;
   timestamp: string;
+  /** DMs only: the other person hides their last seen time. */
+  lastSeenHidden?: boolean;
   unread: number;
   displayPicture: string;
   description: string;

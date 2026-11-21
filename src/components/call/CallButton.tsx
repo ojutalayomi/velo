@@ -44,10 +44,6 @@ export default function CallButton({
     }
   };
 
-  if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
-    return null;
-  }
-
   return (
     <Popover open={showCallOptions && !disabled} onOpenChange={setShowCallOptions}>
       <PopoverTrigger asChild>

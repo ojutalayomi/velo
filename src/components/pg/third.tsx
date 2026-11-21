@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { FormData } from "./FormProps";
+import { isValidPassword, PASSWORD_RULE_MESSAGE } from "../../lib/passwordPolicy";
 import "../fontAwesomeLibrary";
 import { useAppDispatch } from "../../redux/hooks";
 import {
@@ -32,17 +33,12 @@ const Third: React.FC = () => {
     };
   }, [preview]);
 
-  const isValidPassword = (password: string) => {
-    const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.,/#!$%^&*;:{}=_-`~()]).{6,20}$/;
-    return re.test(password);
-  };
-
   const onInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     const newErrors: Partial<Record<keyof FormData, string>> = {};
     if (name === "password" && value.length > 0) {
       newErrors.password = !isValidPassword(value)
-        ? "6–20 chars, including uppercase, lowercase, number & special character."
+        ? PASSWORD_RULE_MESSAGE
         : "";
       dispatch(setError(!!newErrors.password));
     }

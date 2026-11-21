@@ -14,6 +14,7 @@ import { ObjectId } from "mongodb";
 import { SocialMediaUser } from "@/lib/class/User";
 import { AccountType } from "@/lib/types/user";
 import { setCookie } from "@/lib/auth";
+import { isValidPassword, PASSWORD_RULE_MESSAGE } from "@/lib/passwordPolicy";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,8 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
 
-    if (!password) {
+    if (!password || typeof password !== "string") {
       return NextResponse.json({ error: "Password is required" }, { status: 400 });
+    }
+    if (!isValidPassword(password)) {
+      return NextResponse.json({ error: PASSWORD_RULE_MESSAGE }, { status: 400 });
     }
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, saltRounds);

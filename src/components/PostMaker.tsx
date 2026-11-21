@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  useCallback,
   useState,
   useRef,
   useEffect,
@@ -35,7 +36,7 @@ import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
 import { PostLocation, PostSchema } from "@/lib/types/type";
-import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
+import { FILE_VALIDATION_CONFIG, formatFileSize, generateObjectId, validateFile } from "@/lib/utils";
 import { updateLiveTime } from "@/templates/PostProps";
 import ThreadsSlide from "@/templates/ThreadSlides";
 
@@ -55,7 +56,9 @@ import { EmojiPicker } from "./ui/emoji-picker";
 import { Input } from "./ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Skeleton } from "./ui/skeleton";
-import { useDraft } from "@/hooks/useDraft";
+import { usePostDrafts } from "@/hooks/usePostDrafts";
+import { PostDraftsDialog, DraftsTrigger } from "@/components/PostDraftsDialog";
+import { draftChanged, isDraftEmpty, type PostDraft } from "@/lib/postDrafts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface PostMakerClientProps {
@@ -87,8 +90,11 @@ function PostMakerClient({
   // const [errors, setErrors] = useState([""]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const draftKey = `post:${type}:${post?.PostID ?? ""}`;
-  const [text, setText] = useDraft(draftKey);
+  const [text, setText] = useState("");
+  const draftScope = type === "post" ? "post" : `${type}:${post?.PostID ?? ""}`;
+  const { drafts, save: saveDraft, remove: removeSavedDraft, clearScope } = usePostDrafts(draftScope);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftsOpen, setDraftsOpen] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [poll, setPoll] = useState<PollData | null>(null);
   const [pollDialogOpen, setPollDialogOpen] = useState(false);
@@ -198,6 +204,55 @@ function PostMakerClient({
     e.target.value = "";
   }
 
+  // Autosave the composition as a draft (a new draft per fresh composition), debounced.
+  const latest = useRef({ draftId, text, visibility, poll, location, drafts });
+  useEffect(() => {
+    latest.current = { draftId, text, visibility, poll, location, drafts };
+  });
+  const flushDraft = useCallback(() => {
+    const { draftId: id, text: t, visibility: v, poll: p, location: l, drafts: list } = latest.current;
+    const content = { text: t, visibility: v, poll: p, location: l };
+    if (isDraftEmpty(content)) {
+      // Clearing the composer discards its draft.
+      if (id && list.some((d) => d.id === id)) removeSavedDraft(id);
+      return;
+    }
+    const existing = id ? list.find((d) => d.id === id) : undefined;
+    if (!draftChanged(existing, content)) return;
+    const nextId = id ?? generateObjectId();
+    if (!id) setDraftId(nextId);
+    saveDraft(nextId, content);
+  }, [saveDraft, removeSavedDraft]);
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(flushDraft, 500);
+    return () => clearTimeout(timer);
+  }, [open, text, visibility, poll, location, flushDraft]);
+
+  // Don't lose the last keystrokes when the composer closes or unmounts.
+  useEffect(() => flushDraft, [flushDraft]);
+
+  const openDraft = (draft: PostDraft) => {
+    flushDraft(); // keep what is currently being written
+    setDraftId(draft.id);
+    setText(draft.text);
+    setVisibility(draft.visibility);
+    setPoll(draft.poll);
+    setLocation(draft.location);
+    setDraftsOpen(false);
+  };
+
+  const deleteDraft = (id: string) => {
+    removeSavedDraft(id);
+    if (id === draftId) {
+      setDraftId(null);
+      setText("");
+      setPoll(null);
+      setLocation(null);
+    }
+  };
+
   const handlePost = async () => {
     if (!socket) return;
     setIsPosting(true);
@@ -292,6 +347,10 @@ function PostMakerClient({
         };
         socket.emit("post", Post);
       }
+      if (draftId) removeSavedDraft(draftId);
+      // The composer may unmount before the next render, so reset what the draft flush reads too.
+      latest.current = { ...latest.current, draftId: null, text: "", poll: null, location: null };
+      setDraftId(null);
       setText("");
       setPoll(null);
       setLocation(null);
@@ -335,7 +394,7 @@ function PostMakerClient({
               <DialogClose className="transform rounded-full p-2 transition-all duration-200 hover:scale-110 hover:bg-gray-800 dark:text-white">
                 <X size={16} />
               </DialogClose>
-              <span className="text-xl font-bold text-brand">Drafts</span>
+              <DraftsTrigger count={drafts.length} onClick={() => setDraftsOpen(true)} />
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -461,6 +520,19 @@ function PostMakerClient({
             onOpenChange={setLocationDialogOpen}
             onSelect={setLocation}
             initial={location}
+          />
+          <PostDraftsDialog
+            open={draftsOpen}
+            onOpenChange={setDraftsOpen}
+            drafts={drafts}
+            activeId={draftId}
+            onOpen={openDraft}
+            onDelete={deleteDraft}
+            onDeleteAll={() => {
+              clearScope();
+              setDraftId(null);
+              setDraftsOpen(false);
+            }}
           />
           <PollCreator
             key={pollDialogOpen ? "open" : "closed"}

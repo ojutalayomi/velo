@@ -8,6 +8,7 @@ import {
   Flag,
   Heart,
   MessageCircle,
+  MapPin,
   MessageCircleX,
   Minus,
   Repeat2,
@@ -631,6 +632,23 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </p>
           ) : null}
         </div>
+
+        {data.Location?.name && (
+          <a
+            href={
+              data.Location.lat !== undefined && data.Location.lng !== undefined
+                ? `https://www.openstreetmap.org/?mlat=${data.Location.lat}&mlon=${data.Location.lng}#map=14/${data.Location.lat}/${data.Location.lng}`
+                : `https://www.openstreetmap.org/search?query=${encodeURIComponent(data.Location.name)}`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1.5 inline-flex max-w-full items-center gap-1 text-sm text-muted-foreground hover:text-brand"
+          >
+            <MapPin size={14} className="shrink-0" />
+            <span className="truncate">{data.Location.name}</span>
+          </a>
+        )}
 
         {data.Poll && (
           <PollCard

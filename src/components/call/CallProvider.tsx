@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import {
   acquireLocalMedia,
+  CallMediaError,
   CallPermissionError,
   getIceServers,
   PeerLink,
@@ -167,6 +168,9 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
         iceRef.current = ice;
         setLocalStream(media);
       } catch (error) {
+        if (error instanceof CallPermissionError || error instanceof CallMediaError) {
+          toast.error(error.message, { duration: 8000 });
+        }
         finish(error instanceof CallPermissionError ? "permission-denied" : "failed");
         return;
       }
@@ -203,6 +207,9 @@ export function CallProvider({ children, socket }: { children: ReactNode; socket
         setLocalStream(media);
       } catch (error) {
         socket.emit("call:answer", { callId, accepted: false });
+        if (error instanceof CallPermissionError || error instanceof CallMediaError) {
+          toast.error(error.message, { duration: 8000 });
+        }
         finish(error instanceof CallPermissionError ? "permission-denied" : "failed");
         return;
       }

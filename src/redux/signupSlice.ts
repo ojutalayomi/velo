@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { FormData } from "../components/pg/FormProps";
 import { ThunkAction, Action } from "@reduxjs/toolkit";
 import { RootState } from "./store";
+import { isValidPassword, PASSWORD_RULE_MESSAGE } from "../lib/passwordPolicy";
 
 // Define AppThunk type
 export type AppThunk<ReturnType = void> = ThunkAction<
@@ -112,8 +113,8 @@ export const handleValidation =
       if (!formData.password) {
         newErrors.password = "Password is required";
         valid = false;
-      } else if (formData.password.length < 8) {
-        newErrors.password = "Password must be at least 8 characters long";
+      } else if (!isValidPassword(formData.password)) {
+        newErrors.password = PASSWORD_RULE_MESSAGE;
         valid = false;
       }
     }

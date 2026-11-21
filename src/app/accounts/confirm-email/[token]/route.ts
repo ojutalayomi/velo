@@ -5,7 +5,7 @@ import { sendConfirmationEmail } from "@/lib/email";
 import { headers } from "next/headers";
 
 export async function GET(request: Request) {
-  const token = request.url.split("/").pop();
+  const token = request.url.split("/").pop()?.split("?")[0];
   const headersList = headers();
   const protocol = (await headersList).get("x-forwarded-proto");
   const host = (await headersList).get("host");
@@ -16,6 +16,15 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Reject expired or tampered tokens (jwtVerify checks signature and `exp`)
+    try {
+      await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
+    } catch {
+      return NextResponse.redirect(
+        BaseUrl + "accounts/confirm-email/failed?message=Link expired or invalid. Request a new one."
+      );
+    }
+
     // Connect to the database
     const db = await new MongoDBClient().init();
     const users = db.users();

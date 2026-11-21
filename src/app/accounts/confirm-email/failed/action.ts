@@ -1,15 +1,12 @@
 "use server";
 import { MongoDBClient } from "@/lib/mongodb";
 import { confirmationEmail } from "@/lib/email";
-import { v4 as uuidv4 } from "uuid";
+import { SignJWT } from "jose";
 
 export async function generateCode(data: { email: string }) {
   const { email } = data;
 
   try {
-    // Generate a new confirmation code
-    const confirmationToken = uuidv4();
-
     const db = await new MongoDBClient().init();
 
     const user = await db.users().findOne({ email });
@@ -18,11 +15,19 @@ export async function generateCode(data: { email: string }) {
       if (user.isEmailConfirmed) {
         return { message: "Email already confirmed" };
       }
-      // Store the confirmation code in the database
+      // Same 1-hour JWT as /api/signup so the link expires
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      const confirmationToken = await new SignJWT({ _id: user.userId })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("1h")
+        .sign(secret);
+
+      // Store the confirmation token in the database
       await db.users().updateOne({ email }, { $set: { confirmationToken } });
 
-      // Generate the confirmation link
-      const confirmationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/confirm-email?code=${confirmationToken}`;
+      // Must match the route at app/accounts/confirm-email/[token]
+      const base = (process.env.NEXT_PUBLIC_BASE_URL || "").replace(/\/+$/, "");
+      const confirmationLink = `${base}/accounts/confirm-email/${confirmationToken}`;
 
       // Send the confirmation link through email
       await confirmationEmail(email, user.firstname, user.lastname, confirmationLink);

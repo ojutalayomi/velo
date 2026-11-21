@@ -634,7 +634,7 @@ export const chatRepository = {
 
       // Tell the other members so their screens (title, composer) update without a reload.
       try {
-        await emitViaSocketServer(payload._id, "chat:updated", { chatId: id });
+        await emitViaSocketServer(payload._id, "chat:updated", { chatId: id }, { totalTimeoutMs: 3_500 });
       } catch (error) {
         console.error("Failed to announce the group update:", error);
       }

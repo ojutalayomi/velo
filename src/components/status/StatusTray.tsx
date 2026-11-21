@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -34,9 +35,36 @@ import { useAppDispatch } from "@/redux/hooks";
 import { markViewedLocal, removeStatus, upsertStatusGroup } from "@/redux/statusSlice";
 import { RootState } from "@/redux/store";
 
+const previewCache = new Map<File, string>();
+function getPreviewUrl(file: File) {
+  let url = previewCache.get(file);
+  if (!url) {
+    url = URL.createObjectURL(file);
+    previewCache.set(file, url);
+  }
+  return url;
+}
+
 const STATUS_DURATION_MS = 6000;
 const MAX_STATUS_FILES = 10;
 const MAX_STATUS_FILE_SIZE = 10 * 1024 * 1024;
+
+/** Renders @mentions that resolved to real accounts as profile links. */
+function renderCaption(caption: string, mentions: StatusClient["mentions"] = []) {
+  if (!mentions.length) return caption;
+  const known = new Set(mentions.map((m) => m.username.toLowerCase()));
+  return caption.split(/(\B@[a-zA-Z0-9_]{1,30}\b)/g).map((part, index) => {
+    const username = part.startsWith("@") ? part.slice(1) : "";
+    if (username && known.has(username.toLowerCase())) {
+      return (
+        <Link key={index} href={`/${username}`} className="font-semibold text-brand hover:underline">
+          {part}
+        </Link>
+      );
+    }
+    return part;
+  });
+}
 
 const StatusTray = () => {
   const dispatch = useAppDispatch();
@@ -144,22 +172,24 @@ const StatusComposer = ({
   const [files, setFiles] = useState<File[]>([]);
   const [caption, setCaption] = useState("");
   const [posting, setPosting] = useState(false);
+  // URLs are cached per File and revoked only when the file is removed or the composer
+  // unmounts for good (revoking in a useMemo cleanup breaks under StrictMode).
   const previewItems = useMemo(
-    () =>
-      files.map((file) => ({
-        file,
-        url: URL.createObjectURL(file),
-      })),
+    () => files.map((file) => ({ file, url: getPreviewUrl(file) })),
     [files]
   );
 
-  if (!userdata) router.push("/accounts/login");
-
   useEffect(() => {
-    return () => {
-      previewItems.forEach((item) => URL.revokeObjectURL(item.url));
-    };
-  }, [previewItems]);
+    const live = new Set(files);
+    previewCache.forEach((url, file) => {
+      if (!live.has(file)) {
+        URL.revokeObjectURL(url);
+        previewCache.delete(file);
+      }
+    });
+  }, [files]);
+
+  if (!userdata) router.push("/accounts/login");
 
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files ?? []);
@@ -206,9 +236,7 @@ const StatusComposer = ({
   const uploadStatusFile = async (file: File) => {
     const presign = await fetch("/api/upload", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json" 
-      },
+      headers: { "Content-Type": "application/json" },
       body: S3UploadBody({
         filename: file.name,
         contentType: file.type,
@@ -222,29 +250,26 @@ const StatusComposer = ({
     formData.append("file", file);
     const upload = await fetch(url, { method: "POST", body: formData });
     if (!upload.ok) throw new Error(`Failed to upload ${file.name}`);
-
-    const [group] = await createStatus({
+    return {
       mediaUrl: url + fields.key,
-      mediaKey: fields.key,
-      mediaType: file.type.startsWith("video/") ? "video" : "image",
-      caption,
-      visibility: "followers",
-    });
-    if (group) dispatch(upsertStatusGroup(group));
+      mediaKey: fields.key as string,
+      mediaType: file.type.startsWith("video/") ? ("video" as const) : ("image" as const),
+    };
   };
 
   const submit = async () => {
     if (!files.length) return;
     setPosting(true);
     try {
-      for (const item of files) {
-        await uploadStatusFile(item);
-      }
+      // Upload everything first; the status is created in one request only if all uploads worked.
+      const items = await Promise.all(files.map(uploadStatusFile));
+      const [group] = await createStatus({ ...items[0], items, caption });
+      if (group) dispatch(upsertStatusGroup(group));
       resetComposer();
       onOpenChange(false);
-      toast.success(`${files.length} status item${files.length === 1 ? "" : "s"} added`);
+      toast.success(`Status added (${items.length} item${items.length === 1 ? "" : "s"})`);
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error((error as Error).message || "Could not post your status");
     } finally {
       setPosting(false);
     }
@@ -263,7 +288,7 @@ const StatusComposer = ({
         <DialogHeader>
           <DialogTitle>Add status</DialogTitle>
           <DialogDescription>
-            Share up to {MAX_STATUS_FILES} images or videos with your followers for 24 hours.
+            Share up to {MAX_STATUS_FILES} images or videos with your followers for 24 hours. Use @username to mention someone.
           </DialogDescription>
         </DialogHeader>
         <input
@@ -510,7 +535,9 @@ export const StatusViewer = ({
 
       {status.caption && (
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-center">
-          <p className="mx-auto max-w-xl whitespace-pre-wrap text-sm">{status.caption}</p>
+          <p className="mx-auto max-w-xl whitespace-pre-wrap text-sm">
+            {renderCaption(status.caption, status.mentions)}
+          </p>
         </div>
       )}
     </div>

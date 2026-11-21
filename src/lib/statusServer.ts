@@ -8,6 +8,8 @@ import {
   StatusClient,
   StatusCreateInput,
   StatusGroup,
+  StatusMediaType,
+  StatusMention,
   StatusSchema,
   StatusVisibility,
 } from "@/lib/types/status";
@@ -25,6 +27,7 @@ type AggregatedStatus = StatusSchema & {
     displayPicture?: string;
     verified?: boolean;
   };
+  mentions?: StatusMention[];
   viewers?: {
     viewerId: string;
     viewedAt: string;
@@ -53,19 +56,16 @@ export async function ensureStatusIndexes(db: MongoDBClient) {
 
   if (!expiryBackfilled) {
     expiryBackfilled = true;
-    // Statuses created before `expiresAtDate` existed: copy it over so the TTL index covers them.
-    const legacy = await db
+    // Statuses created before `expiresAtDate` existed: one pipeline update so the TTL index covers them.
+    await db
       .statuses()
-      .find({ expiresAtDate: { $exists: false } })
-      .project({ expiresAt: 1 })
-      .toArray();
-    await Promise.all(
-      legacy.map((row) =>
-        db
-          .statuses()
-          .updateOne({ _id: row._id }, { $set: { expiresAtDate: new Date(row.expiresAt) } })
-      )
-    );
+      .updateMany({ expiresAtDate: { $exists: false } }, [
+        { $set: { expiresAtDate: { $toDate: "$expiresAt" } } },
+      ])
+      .catch((error) => {
+        expiryBackfilled = false;
+        console.error("[statuses] expiry backfill failed:", error);
+      });
   }
 }
 
@@ -73,18 +73,47 @@ export function statusExpiresAt(now = new Date()) {
   return new Date(now.getTime() + STATUS_TTL_HOURS * 60 * 60 * 1000).toISOString();
 }
 
-export function normalizeStatusInput(input: Partial<StatusCreateInput>): StatusCreateInput | null {
-  const mediaUrl = typeof input.mediaUrl === "string" ? input.mediaUrl.trim() : "";
-  const mediaKey = typeof input.mediaKey === "string" ? input.mediaKey.trim() : "";
-  const mediaType = input.mediaType;
-  const caption = typeof input.caption === "string" ? input.caption.trim().slice(0, 700) : "";
-  const visibility = input.visibility === "everyone" ? "everyone" : "followers";
+export const MAX_STATUS_ITEMS = 10;
+const MENTION_PATTERN = /\B@([a-zA-Z0-9_]{1,30})\b/g;
 
-  if (!mediaUrl || !mediaKey || (mediaType !== "image" && mediaType !== "video")) {
-    return null;
+export interface StatusBatchInput {
+  items: { mediaUrl: string; mediaKey: string; mediaType: StatusMediaType }[];
+  caption: string;
+}
+
+/** Validates a create request: one caption shared by 1-10 media items. */
+export function normalizeStatusBatch(input: unknown): StatusBatchInput | null {
+  if (!input || typeof input !== "object") return null;
+  const raw = input as Partial<StatusCreateInput> & { items?: unknown };
+  const rawItems = Array.isArray(raw.items) ? raw.items : [raw]; // single-item payloads still work
+  if (rawItems.length === 0 || rawItems.length > MAX_STATUS_ITEMS) return null;
+
+  const items: StatusBatchInput["items"] = [];
+  for (const entry of rawItems) {
+    const item = (entry ?? {}) as Partial<StatusCreateInput>;
+    const mediaUrl = typeof item.mediaUrl === "string" ? item.mediaUrl.trim() : "";
+    const mediaKey = typeof item.mediaKey === "string" ? item.mediaKey.trim() : "";
+    const mediaType = item.mediaType;
+    if (!mediaUrl || !mediaKey || (mediaType !== "image" && mediaType !== "video")) return null;
+    items.push({ mediaUrl, mediaKey, mediaType });
   }
 
-  return { mediaUrl, mediaKey, mediaType, caption, visibility };
+  const caption = typeof raw.caption === "string" ? raw.caption.trim().slice(0, 700) : "";
+  return { items, caption };
+}
+
+/** Resolves `@username` mentions in a caption to real accounts. */
+export async function resolveStatusMentions(db: MongoDBClient, caption: string) {
+  const usernames = Array.from(
+    new Set(Array.from(caption.matchAll(MENTION_PATTERN), (m) => m[1].toLowerCase()))
+  ).slice(0, 20);
+  if (usernames.length === 0) return [];
+  const users = await db
+    .users()
+    .find({ username: new RegExp(`^(?:${usernames.join("|")})$`, "i") })
+    .project({ username: 1 })
+    .toArray();
+  return users.map((user) => ({ userId: user._id.toString(), username: String(user.username) }));
 }
 
 export async function getFollowedUserIds(db: MongoDBClient, userId: string) {
@@ -111,35 +140,12 @@ export async function getStatusGroupsForUser(db: MongoDBClient, viewerId: string
   return getStatusGroups(db, visibleUserIds, viewerId);
 }
 
-/** Recent "everyone" statuses from people the viewer does not follow, for discovery on Explore. */
-export async function getPublicStatusGroups(db: MongoDBClient, viewerId: string, limit = 20) {
-  const followedIds = await getFollowedUserIds(db, viewerId);
-  const rows = await db
-    .statuses()
-    .find({
-      visibility: "everyone",
-      expiresAt: { $gt: new Date().toISOString() },
-      userId: { $nin: [viewerId, ...followedIds] },
-    })
-    .sort({ createdAt: -1 })
-    .limit(limit * 3)
-    .project({ userId: 1 })
-    .toArray();
-  const ownerIds = Array.from(new Set(rows.map((row) => row.userId))).slice(0, limit);
-  return getStatusGroups(db, ownerIds, viewerId, "everyone");
-}
-
 export async function getStatusGroupForOwner(db: MongoDBClient, ownerId: string, viewerId = ownerId) {
   const groups = await getStatusGroups(db, [ownerId], viewerId);
   return groups[0] || null;
 }
 
-async function getStatusGroups(
-  db: MongoDBClient,
-  userIds: string[],
-  viewerId: string,
-  onlyVisibility?: StatusVisibility
-) {
+async function getStatusGroups(db: MongoDBClient, userIds: string[], viewerId: string) {
   if (!userIds.length) return [];
 
   const now = new Date().toISOString();
@@ -150,9 +156,6 @@ async function getStatusGroups(
         $match: {
           userId: { $in: userIds },
           expiresAt: { $gt: now },
-          // Followers-only statuses are shown only to the owner and to people they were
-          // fetched for (the follow graph is applied by the caller via `userIds`).
-          ...(onlyVisibility ? { visibility: onlyVisibility } : {}),
         },
       },
       {
@@ -211,6 +214,7 @@ function groupStatusRows(rows: AggregatedStatus[], viewerId: string): StatusGrou
       createdAt: row.createdAt,
       expiresAt: row.expiresAt,
       visibility: row.visibility as StatusVisibility,
+      mentions: row.mentions ?? [],
       viewed,
       viewers,
     };

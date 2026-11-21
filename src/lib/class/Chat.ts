@@ -1,3 +1,4 @@
+import { messageText } from "@/lib/polls";
 import { ChatDataClient, MessageAttributes } from "../types/type";
 import { DELETED_MARKER, deletedPreview } from "@/lib/messageDeletion";
 import { Time } from "../utils";
@@ -17,7 +18,7 @@ export class Chat {
     const result = filteredResults[0];
     if (filteredResults.length === 0) return null;
     if (result.content.endsWith(DELETED_MARKER)) return deletedPreview(result.content);
-    return `${result.attachments.length > 0 ? "📷 " : ""}${result.content}`;
+    return `${result.attachments.length > 0 ? "📷 " : ""}${messageText(result)}`;
   }
 
   private getName = (uid: string) =>

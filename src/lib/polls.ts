@@ -81,3 +81,12 @@ export function lastMessagePreview(content: string | undefined) {
   const poll = parsePollContent(content);
   return poll ? pollPreview(poll) : (content ?? "");
 }
+
+/** Readable one-line text for a message (previews, quotes, copy), hiding poll JSON. */
+export function messageText(message: { messageType?: string; content?: string }) {
+  if (message.messageType === "Poll") {
+    const poll = parsePollContent(message.content);
+    if (poll) return pollPreview(poll);
+  }
+  return message.content ?? "";
+}

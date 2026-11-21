@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { CallButton, CallStatus, IncomingCall } from "@/components/call";
+import { CallButton } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "sonner";
-import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";
@@ -93,7 +92,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       : (params?.id as string);
   const [newMessage, setNewMessage] = useDraft(chatDraftKey(pid ?? ""));
   const socket = useSocket();
-  const callHooks = useCallManager(socket!) || null;
   const convo = conversations?.find((c) => c.id === pid) as ConvoType;
   const [isPinned, setIsPinned] = useState(convo?.pinned);
   const [isArchived, setIsArchived] = useState(convo?.archived);
@@ -612,9 +610,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 <CallButton
                   roomId={pid}
                   targetUserId={friendId}
-                  chatType={"DM"}
-                  onInitiateCall={callHooks.initiateCall}
-                  disabled={callHooks.callState.isInCall}
+                  chatType="DM"
+                  peer={{ name: convo?.name ?? "", avatar: convo?.displayPicture }}
                 />
               )}
               <Popover>
@@ -711,21 +708,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           </div>
         )}
       </div>
-
-      {/* Call Status */}
-      {callHooks && callHooks.callState.isInCall && (
-        <CallStatus
-          state={
-            callHooks.callState.isConnecting
-              ? "connecting"
-              : callHooks.callState.isConnected
-                ? "connected"
-                : "idle"
-          }
-          callType={callHooks.callState.callType || "audio"}
-          roomId={callHooks.callState.roomId || ""}
-        />
-      )}
 
       <div
         ref={messageBoxRef}
@@ -846,29 +828,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       )}
       {children}
 
-      {/* Incoming Call Handler */}
-      {callHooks && socket && (
-        <IncomingCall
-          socket={socket}
-          onAccept={async (callData) => {
-            // Handle incoming call acceptance
-            console.log("Incoming call accepted:", callData);
-            try {
-              await callHooks.answerCall(callData.callId, true, {
-                roomId: callData.roomId,
-                callType: callData.callType,
-                chatType: callData.chatType,
-              });
-            } catch (error) {
-              console.error("Failed to answer call:", error);
-            }
-          }}
-          onDecline={() => {
-            // Handle incoming call decline
-            console.log("Incoming call declined");
-          }}
-        />
-      )}
       <DeleteChatDialog
         chatId={pid}
         name={convo?.name ?? "this person"}

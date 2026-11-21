@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { MongoDBClient } from "@/lib/mongodb";
 import { emitViaSocketServer } from "@/lib/socket";
@@ -33,15 +33,17 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     ]);
 
     const targetUserIds = await getFollowerUserIds(db, userId);
-    try {
-      await emitViaSocketServer(userId, "status:delete", {
-        statusId: id,
-        ownerId: userId,
-        targetUserIds,
-      });
-    } catch (error) {
-      console.error("[api/statuses] status:delete socket emit failed:", error);
-    }
+    after(async () => {
+      try {
+        await emitViaSocketServer(userId, "status:delete", {
+          statusId: id,
+          ownerId: userId,
+          targetUserIds,
+        });
+      } catch (error) {
+        console.error("[api/statuses] status:delete socket emit failed:", error);
+      }
+    });
 
     return NextResponse.json({ message: "Status deleted" });
   } catch (error) {

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { CallButton, CallStatus, IncomingCall } from "@/components/call";
+import { CallButton, useOptionalCall } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
 import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import { Attachment, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
@@ -96,11 +95,23 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
   const [err, setError] = useState<boolean>();
   const gid = params?.gid as string;
+  const callCtx = useOptionalCall();
+  const liveCall = callCtx?.groupCalls[gid];
   const [newMessage, setNewMessage] = useDraft(chatDraftKey(gid ?? ""));
   const convo = conversations?.find((c) => c.id === gid) as ConvoType;
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const socket = useSocket();
-  const callHooks = useCallManager(socket!) || null;
+
+  // Ask whether a call is already running in this group, to offer a "Join" banner.
+  useEffect(() => {
+    if (!socket || !gid) return;
+    const ask = () => socket.emit("call:active", { roomId: gid });
+    if (socket.connected) ask();
+    socket.on("connect", ask);
+    return () => {
+      socket.off("connect", ask);
+    };
+  }, [socket, gid]);
   const [isPinned] = useState(convo?.pinned);
   const [isArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
@@ -481,9 +492,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               {socket && (
                 <CallButton
                   roomId={gid}
-                  chatType={"Group"}
-                  onInitiateCall={callHooks.initiateCall}
-                  disabled={callHooks.callState.isInCall}
+                  chatType="Group"
+                  peer={{ name: convo?.name ?? "", avatar: convo?.displayPicture }}
                 />
               )}
               <Popover>
@@ -580,19 +590,27 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         )}
       </div>
 
-      {/* Call Status */}
-      {callHooks && callHooks.callState.isInCall && (
-        <CallStatus
-          state={
-            callHooks.callState.isConnecting
-              ? "connecting"
-              : callHooks.callState.isConnected
-                ? "connected"
-                : "idle"
-          }
-          callType={callHooks.callState.callType || "audio"}
-          roomId={callHooks.callState.roomId || ""}
-        />
+      {liveCall && callCtx && callCtx.state.status === "idle" && (
+        <div className="flex items-center justify-between gap-3 border-b bg-green-50 px-4 py-2 text-sm dark:border-zinc-700 dark:bg-green-950/40">
+          <span className="min-w-0 truncate">
+            {liveCall.callType === "video" ? "Video" : "Voice"} call in progress ·{" "}
+            {liveCall.count} {liveCall.count === 1 ? "person" : "people"}
+          </span>
+          <button
+            type="button"
+            disabled={liveCall.count >= liveCall.max}
+            onClick={() =>
+              void callCtx.joinGroupCall({
+                roomId: gid,
+                name: convo?.name ?? "Group call",
+                avatar: convo?.displayPicture,
+              })
+            }
+            className="shrink-0 rounded-full bg-green-600 px-4 py-1 font-medium text-white hover:bg-green-500 disabled:opacity-50"
+          >
+            {liveCall.count >= liveCall.max ? "Full" : "Join"}
+          </button>
+        </div>
       )}
 
       <div
@@ -719,25 +737,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       )}
       {children}
 
-      {/* Incoming Call Handler */}
-      {callHooks && socket && (
-        <IncomingCall
-          socket={socket}
-          onAccept={async (callData) => {
-            // Handle incoming call acceptance
-            console.log("Incoming call accepted:", callData);
-            try {
-              await callHooks.answerCall(callData.callId, true);
-            } catch (error) {
-              console.error("Failed to answer call:", error);
-            }
-          }}
-          onDecline={() => {
-            // Handle incoming call decline
-            console.log("Incoming call declined");
-          }}
-        />
-      )}
       <LeaveGroupDialog
         chatId={gid}
         groupName={convo?.name ?? "this group"}

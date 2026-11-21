@@ -65,9 +65,11 @@ export async function emitSequenceViaSocketServer(
   if (!baseUrl) {
     throw new Error("Missing SOCKET_SERVER_URL or NEXT_PUBLIC_SOCKET_URL");
   }
-  const connectTimeoutMs = options?.connectTimeoutMs ?? 12_000;
-  const ackTimeoutMs = options?.ackTimeoutMs ?? 10_000;
-  const totalTimeoutMs = options?.totalTimeoutMs;
+  // Vercel kills API routes at 10s, so every emit is bounded well below that by default.
+  // Callers treat the socket as best-effort: a slow/cold socket server must not fail the request.
+  const connectTimeoutMs = options?.connectTimeoutMs ?? 3_000;
+  const ackTimeoutMs = options?.ackTimeoutMs ?? 3_000;
+  const totalTimeoutMs = options?.totalTimeoutMs ?? 4_500;
 
   const client = io(baseUrl, {
     path: SOCKET_PATH,

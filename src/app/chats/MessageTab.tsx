@@ -37,7 +37,7 @@ import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
 import { PollCard } from "@/components/PollCard";
-import { parsePollContent } from "@/lib/polls";
+import { messageText, parsePollContent } from "@/lib/polls";
 import { useReactors } from "@/hooks/useReactors";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
@@ -152,7 +152,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(messageContent);
+      await navigator.clipboard.writeText(messageText(message));
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 3000);
       openOptions(false);
@@ -169,7 +169,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
       text: "Quote",
       onClick: () =>
         setQuote({
-          message: { content: messageContent, _id: message._id as string, senderId },
+          message: { content: messageText(message), _id: message._id as string, senderId },
           state: true,
         }),
     },
@@ -564,7 +564,8 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
 
   if (!quotedMessageId) return null;
 
-  if (quotedMessageId.content.length === 0) return null;
+  const quotedText = messageText(quotedMessageId);
+  if (quotedText.length === 0) return null;
 
   return (
     <div
@@ -592,7 +593,7 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
           <span
             className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}
           >
-            {quotedMessageId?.content}
+            {quotedText}
           </span>
         </div>
       </div>

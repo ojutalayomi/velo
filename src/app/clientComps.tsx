@@ -14,8 +14,6 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import Bottombar from "@/components/Bottombar";
-import { ConfirmCall } from "@/components/callConfirmation";
-import VideoChat from "@/components/CallPage";
 import NewChatMenu from "@/components/ComposeChat";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import MetallicPaint from "@/components/MetallicPaint";
@@ -82,10 +80,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const showProfilePicture = pathname?.endsWith("/photo");
   const showPostPreview = pathname?.includes("/photo/");
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
-  const callRoute = pathname?.startsWith("/call");
   // Public info pages (About, Press, Terms, …) render full-screen without app chrome.
   const infoRoute = INFO_ROUTES.some((r) => pathname === r || pathname?.startsWith(`${r}/`));
-  const hideChrome = callRoute || infoRoute;
+  const hideChrome = infoRoute;
   const { userdata, loading } = useUser();
   const path = pathname?.replace("/", "") || "";
   const { conversations } = useSelector<RootState, ConvoTypeProp>((state) => state.chat);
@@ -95,7 +92,6 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const [, setLoad] = useState<boolean>(false);
   const { displayAnnouncement, setDisplayAnnouncement } = useAnnouncer();
   usePushSound();
-  const [incomingCallId, setIncomingCallId] = useState<string | null>(null);
   const socket = useSocket();
   const typingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const conversationsRef = useRef(conversations);
@@ -346,39 +342,6 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
         router.replace("/chats");
       }
     });
-    // New invite event to trigger call confirmation
-    socket.on(
-      "call:invite",
-      ({
-        callId,
-        roomId,
-        callerId,
-        callType,
-        chatType,
-      }: {
-        callId: string;
-        roomId: string;
-        callerId: string;
-        callType: "audio" | "video";
-        chatType: "DM" | "Group";
-      }) => {
-        console.log("[call] invite received", { callId, roomId, callerId, callType, chatType });
-        setIncomingCallId(callId);
-        // Optionally, you could store more call info in state if needed
-        // setIncomingCallInfo({ callId, roomId, callerId, callType, chatType });
-      }
-    );
-    // Back-compat: still handle offer as invite trigger
-    socket.on("offer", async (data: { offer: RTCSessionDescription; room: string }) => {
-      const { room, offer } = data as any;
-      try {
-        localStorage.setItem(
-          `webrtc:offer:${room}`,
-          typeof offer === "string" ? offer : JSON.stringify(offer)
-        );
-      } catch {}
-      setIncomingCallId(room);
-    });
     socket.on("post_response", (data: { message: string; success: boolean }) => {
       setDisplayAnnouncement({
         status: true,
@@ -533,7 +496,6 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("userStopTyping", handleStopTyping);
       socket.off("lastActive");
       socket.off("newChat", handleNewChat);
-      socket.off("offer");
       socket.off("post_response");
       socket.off("delete_post_response");
       socket.off("post_reaction_reponse");
@@ -665,9 +627,6 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            {incomingCallId && (
-              <ConfirmCall id={incomingCallId} show conversations={conversations} />
-            )}
             {!hideChrome ? (
               <Sidebar
                 setLoad={setLoad}
@@ -681,7 +640,6 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
               {children}
               {showProfilePicture && <UserPhoto />}
               {showPostPreview && <PostPreview />}
-              {callRoute && <VideoChat />}
             </div>
             {!hideChrome ? <RightSideBar /> : null}
             {!pathname?.includes("posts") &&

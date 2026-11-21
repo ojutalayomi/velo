@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { CallButton, CallStatus, IncomingCall } from "@/components/call";
+import { CallButton } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
 import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { useCallManager } from "@/hooks/useCallManager";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import { Attachment, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
@@ -100,7 +99,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const convo = conversations?.find((c) => c.id === gid) as ConvoType;
   const [group, setGroup] = useState<typeof convo>([] as unknown as typeof convo);
   const socket = useSocket();
-  const callHooks = useCallManager(socket!) || null;
   const [isPinned] = useState(convo?.pinned);
   const [isArchived] = useState(convo?.archived);
   const [searchBarOpen, openSearchBar] = useState<boolean>(false);
@@ -481,9 +479,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               {socket && (
                 <CallButton
                   roomId={gid}
-                  chatType={"Group"}
-                  onInitiateCall={callHooks.initiateCall}
-                  disabled={callHooks.callState.isInCall}
+                  chatType="Group"
+                  peer={{ name: convo?.name ?? "", avatar: convo?.displayPicture }}
                 />
               )}
               <Popover>
@@ -579,21 +576,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           </div>
         )}
       </div>
-
-      {/* Call Status */}
-      {callHooks && callHooks.callState.isInCall && (
-        <CallStatus
-          state={
-            callHooks.callState.isConnecting
-              ? "connecting"
-              : callHooks.callState.isConnected
-                ? "connected"
-                : "idle"
-          }
-          callType={callHooks.callState.callType || "audio"}
-          roomId={callHooks.callState.roomId || ""}
-        />
-      )}
 
       <div
         ref={messageBoxRef}
@@ -719,25 +701,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       )}
       {children}
 
-      {/* Incoming Call Handler */}
-      {callHooks && socket && (
-        <IncomingCall
-          socket={socket}
-          onAccept={async (callData) => {
-            // Handle incoming call acceptance
-            console.log("Incoming call accepted:", callData);
-            try {
-              await callHooks.answerCall(callData.callId, true);
-            } catch (error) {
-              console.error("Failed to answer call:", error);
-            }
-          }}
-          onDecline={() => {
-            // Handle incoming call decline
-            console.log("Incoming call declined");
-          }}
-        />
-      )}
       <LeaveGroupDialog
         chatId={gid}
         groupName={convo?.name ?? "this group"}

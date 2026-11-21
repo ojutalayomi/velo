@@ -73,6 +73,8 @@ export class Chat {
       archived: participant?.archived || false,
       lastUpdated: Time(this.chat.lastUpdated),
       participants: this.chat.participants.map((p) => p.userId),
+      isBot:
+        this.chat.chatType === "DM" && this.chat.participants.some((p) => p.userId !== uid && p.isBot),
       online: false,
       isTypingList: [],
     };

@@ -66,6 +66,8 @@ const ChatProfileDialog: React.FC<{
   const { userdata } = useUser();
   const isGroup = chat.type === "Group";
   const isPersonal = chat.type === "Personal";
+  // Bots can't answer calls.
+  const callable = !isPersonal && !chat.isBot;
   const subtitle = isGroup
     ? `Group · ${chat.participants.length} ${chat.participants.length === 1 ? "member" : "members"}`
     : isPersonal
@@ -90,17 +92,19 @@ const ChatProfileDialog: React.FC<{
     });
   };
   // You can't call yourself, and only one call can run at a time.
-  const canCall = !isPersonal && Boolean(call) && call?.state.status === "idle";
+  const canCall = callable && Boolean(call) && call?.state.status === "idle";
 
   const actions: { label: string; Icon: typeof Info; onClick: () => void; disabled?: boolean }[] = [
     { label: "Message", Icon: MessageSquareText, onClick: () => go(chatHref(chat)) },
-    ...(isPersonal
-      ? []
-      : [
+    ...(callable
+      ? [
           { label: "Voice", Icon: Phone, onClick: () => startCall("audio"), disabled: !canCall },
           { label: "Video", Icon: Video, onClick: () => startCall("video"), disabled: !canCall },
-          { label: "Info", Icon: Info, onClick: () => go(`${chatHref(chat)}/settings`) },
-        ]),
+        ]
+      : []),
+    ...(isPersonal
+      ? []
+      : [{ label: "Info", Icon: Info, onClick: () => go(`${chatHref(chat)}/settings`) }]),
   ];
 
   return (

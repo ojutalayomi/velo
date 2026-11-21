@@ -1,3 +1,4 @@
+import { isBotAccount } from "@/lib/botAccount";
 import { ObjectId } from "mongodb";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -80,6 +81,7 @@ const buildChatCopy = async (
         const user = await func(participant.userId);
         chatCopy.name[participant.userId] = user?.name ?? "";
         chatCopy.participants[index].displayPicture = user?.displayPicture ?? "";
+        chatCopy.participants[index].isBot = isBotAccount(user);
         if (await canShowLastSeen(participant.userId)) {
           const lastSeen = (user as { lastSeen?: string } | null)?.lastSeen;
           if (lastSeen) chatCopy.timestamp = new Date(lastSeen).toISOString();
@@ -281,6 +283,9 @@ export const chatRepository = {
                   return {
                     userId: participant.userId,
                     displayPicture: user?.displayPicture ?? participant.displayPicture ?? "",
+                    ...(a.chatType === "DM" && participant.userId !== payload._id
+                      ? { isBot: isBotAccount(user) }
+                      : {}),
                     unreadCount: participant.unreadCount,
                     favorite: participant.favorite,
                     pinned: participant.pinned,

@@ -12,6 +12,8 @@ export interface StatusSchema {
   caption: string;
   createdAt: string;
   expiresAt: string;
+  /** Date-typed copy of `expiresAt`, used by the TTL index. */
+  expiresAtDate?: Date;
   visibility: StatusVisibility;
 }
 

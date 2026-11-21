@@ -28,6 +28,9 @@ import DeleteChatDialog from "@/components/DeleteChatDialog";
 import { Statuser } from "@/components/VerificationComponent";
 import { ConvoType } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
+import { lastMessagePreview } from "@/lib/polls";
+import { chatDraftKey, useDraftValue } from "@/hooks/useDraft";
+import { typingLabel } from "./TypingIndicator";
 import { updateConversation, deleteConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
@@ -160,6 +163,7 @@ const Card: React.FC<Props> = ({ chat }) => {
   };
 
   const filteredIsTypingList = chat?.isTypingList.filter((i) => i.chatId === chat.id);
+  const draft = useDraftValue(chatDraftKey(chat.id));
 
   // Handlers for long-press (mobile), right-click (desktop), and ellipsis click
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -302,13 +306,15 @@ const Card: React.FC<Props> = ({ chat }) => {
             </div>
             <p className="truncate text-sm text-gray-600">
               {filteredIsTypingList?.length > 0
-                ? chat.type === "DM"
-                  ? filteredIsTypingList.map((i) => i.name).join(", ") + " " + "is" + " typing..."
-                  : filteredIsTypingList.map((i) => i.name).join(", ") +
-                    " " +
-                    (filteredIsTypingList.length > 1 ? "are" : "is") +
-                    " typing..."
-                : chat.lastMessage}
+                ? typingLabel(filteredIsTypingList)
+                : draft
+                  ? (
+                      <>
+                        <span className="text-brand">Draft: </span>
+                        {draft}
+                      </>
+                    )
+                  : lastMessagePreview(chat.lastMessage)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">

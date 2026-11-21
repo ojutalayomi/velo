@@ -1,5 +1,8 @@
 /* eslint-disable react/jsx-handler-names */
 /* eslint-disable @next/next/no-img-element */
+import { LocationPicker } from "@/components/LocationPicker";
+import { PollCreator } from "@/components/PollCreator";
+import type { PollData } from "@/lib/polls";
 import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import {
   X,
@@ -31,7 +34,7 @@ import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
-import { PostSchema } from "@/lib/types/type";
+import { PostLocation, PostSchema } from "@/lib/types/type";
 import { FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { updateLiveTime } from "@/templates/PostProps";
 import ThreadsSlide from "@/templates/ThreadSlides";
@@ -52,6 +55,7 @@ import { EmojiPicker } from "./ui/emoji-picker";
 import { Input } from "./ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Skeleton } from "./ui/skeleton";
+import { useDraft } from "@/hooks/useDraft";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface PostMakerClientProps {
@@ -83,10 +87,15 @@ function PostMakerClient({
   // const [errors, setErrors] = useState([""]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [text, setText] = useState("");
+  const draftKey = `post:${type}:${post?.PostID ?? ""}`;
+  const [text, setText] = useDraft(draftKey);
   const [isPosting, setIsPosting] = useState(false);
+  const [poll, setPoll] = useState<PollData | null>(null);
+  const [pollDialogOpen, setPollDialogOpen] = useState(false);
+  const [location, setLocation] = useState<PostLocation | null>(null);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const textLimit = userdata.verified ? 10000 : 1000; // 10000 for verified users, 1000 for others
-  const isButtonDisabled = text.length > textLimit || (!files.length && !text.length);
+  const isButtonDisabled = text.length > textLimit || (!files.length && !text.length && !poll);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   const buttons = [
@@ -101,8 +110,8 @@ function PostMakerClient({
       id: "poll",
       icon: ChartBarDecreasing,
       label: "Add Poll",
-      action: () => console.log("Add Poll"),
-      disable: true
+      action: () => setPollDialogOpen(true),
+      disable: type !== "post"
     },
     { id: "emoji", icon: Smile, label: "Add Emoji", action: () => {} },
     {
@@ -116,8 +125,8 @@ function PostMakerClient({
       id: "location",
       icon: MapPin,
       label: "Add Location",
-      action: () => console.log("Add Location"),
-      disable: true
+      action: () => setLocationDialogOpen(true),
+      disable: type === "comment"
     },
   ];
 
@@ -278,9 +287,14 @@ function PostMakerClient({
           Shared: false,
           Type: type,
           ParentId: post ? post.PostID : "",
+          ...(poll ? { Poll: poll } : {}),
+          ...(location ? { Location: location } : {}),
         };
         socket.emit("post", Post);
       }
+      setText("");
+      setPoll(null);
+      setLocation(null);
       onPosted?.(type);
     } catch (error: any) {
       console.log(error);
@@ -402,6 +416,59 @@ function PostMakerClient({
               </DialogContent>
             </Dialog>
           )}
+
+          {poll && (
+            <div className="relative mt-2 rounded-xl border border-border/70 p-3 text-sm">
+              <button
+                type="button"
+                aria-label="Remove poll"
+                onClick={() => setPoll(null)}
+                className="absolute right-2 top-2 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-zinc-800"
+              >
+                <X size={14} />
+              </button>
+              <p className="pr-6 font-semibold">{poll.question}</p>
+              <ul className="mt-2 space-y-1">
+                {poll.options.map((option, i) => (
+                  <li key={i} className="rounded-lg border px-3 py-1.5 dark:border-zinc-600">
+                    {option}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-xs text-gray-500">
+                {poll.multiple ? "Multiple answers" : "Single answer"}
+                {poll.expiresAt ? ` · closes ${new Date(poll.expiresAt).toLocaleDateString()}` : ""}
+              </p>
+            </div>
+          )}
+          {location && (
+            <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-brand/10 py-1 pl-2 pr-1 text-sm text-brand">
+              <MapPin size={14} />
+              <span className="max-w-[240px] truncate">{location.name}</span>
+              <button
+                type="button"
+                aria-label="Remove location"
+                onClick={() => setLocation(null)}
+                className="rounded-full p-0.5 hover:bg-brand/20"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+          <LocationPicker
+            key={locationDialogOpen ? "open" : "closed"}
+            open={locationDialogOpen}
+            onOpenChange={setLocationDialogOpen}
+            onSelect={setLocation}
+            initial={location}
+          />
+          <PollCreator
+            key={pollDialogOpen ? "open" : "closed"}
+            open={pollDialogOpen}
+            onOpenChange={setPollDialogOpen}
+            onCreate={setPoll}
+            initial={poll}
+          />
 
           {/** Media */}
           {files.length > 0 && (

@@ -7,6 +7,7 @@ import { useMediaQuery } from "usehooks-ts";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { MessageAttributes, Reaction } from "@/lib/types/type";
+import { useReactors } from "@/hooks/useReactors";
 import { useUser } from "../providers/UserProvider";
 import { updateMessageReactions } from "@/redux/chatSlice";
 import { ObjectId } from "mongodb";
@@ -16,8 +17,6 @@ import EmojiPicker from "@/components/ui/emoji-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SmilePlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
 
 export function ReactionsInfo({
   message,
@@ -67,6 +66,9 @@ function ReactionsInfoMain({
 }) {
   const reactionArray: Reaction[] = [];
   const { userdata } = useUser();
+  const resolveUser = useReactors(reactionsInfo.map((r) => r.userId));
+  const nameOf = (id: string) =>
+    id === String(userdata._id) ? "You" : (resolveUser(id)?.name ?? "Loading…");
   const socket = useSocket();
   const dispatch = useAppDispatch();
   const emojiPickerRef = React.useRef<HTMLButtonElement>(null);
@@ -98,8 +100,9 @@ function ReactionsInfoMain({
   };
 
   const UserCard = ({ reaction }: { reaction: Reaction }) => {
-    const userData = useSelector((state: RootState) => state.user.userdata);
     const IsMe = reaction.userId === String(userdata._id);
+    const info = resolveUser(reaction.userId);
+    const label = nameOf(reaction.userId);
 
     return (
       <li
@@ -109,13 +112,16 @@ function ReactionsInfoMain({
         <Avatar>
           <AvatarImage
             className="size-8 rounded-full"
-            src={IsMe ? userData.displayPicture : reaction.reaction}
+            src={info?.displayPicture}
+            alt={label}
           />
-          <AvatarFallback>{IsMe}</AvatarFallback>
+          <AvatarFallback className="flex size-8 items-center justify-center rounded-full bg-gray-200 text-xs dark:bg-zinc-700">
+            {label.charAt(0).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
         <div className="flex flex-col flex-1">
           <span data-user-id={reaction.userId} className="text-xs">
-            {reaction.userId === String(userdata._id) ? "You" : reaction.userId}
+            {label}
           </span>
           <span className="text-xs text-gray-500">{IsMe ? "Tap to remove" : "Tap to add"}</span>
         </div>
@@ -149,7 +155,10 @@ function ReactionsInfoMain({
                 acc.push(
                   <TabsTrigger
                     key={index}
-                    title={`${reaction.userId}`}
+                    title={reactionsInfo
+                      .filter((r) => r.reaction === reaction.reaction)
+                      .map((r) => nameOf(r.userId))
+                      .join(", ")}
                     value={reaction.reaction}
                     className="cursor-pointer text-xs"
                   >

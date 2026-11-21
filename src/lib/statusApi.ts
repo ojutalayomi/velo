@@ -17,6 +17,15 @@ export async function fetchStatusGroups(): Promise<StatusGroup[]> {
   return Array.isArray(body.data) ? body.data : [];
 }
 
+export async function fetchExploreStatusGroups(): Promise<StatusGroup[]> {
+  const body = (await parseStatusResponse(
+    await fetch("/api/statuses?scope=explore", {
+      headers: { "Content-Type": "application/json" },
+    })
+  )) as { data?: StatusGroup[] };
+  return Array.isArray(body.data) ? body.data : [];
+}
+
 export async function createStatus(input: StatusCreateInput): Promise<StatusGroup[]> {
   const body = (await parseStatusResponse(
     await fetch("/api/statuses", {

@@ -11,6 +11,7 @@ import {
   Expand,
   Shrink,
   Trash,
+  BarChart3,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -29,16 +30,9 @@ import { toast } from "sonner";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";
-import ImageDiv from "@/components/imageDiv";
+import { PollCreator } from "@/components/PollCreator";
 import { LinkPreview } from "@/components/LinkPreview";
 import { Button } from "@/components/ui/button";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
 import {
   Dialog,
   DialogTrigger,
@@ -55,11 +49,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
+import type { MessageType } from "@/lib/types/type";
+import type { PollData } from "@/lib/polls";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { setToggleDialog } from "@/redux/utilsSlice";
-import VideoDiv from "@/templates/videoDiv";
 
 type Message = {
   _id: string;
@@ -78,7 +73,11 @@ interface ChatTextareaProps {
   disabled?: boolean;
   chatId?: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
-  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
+  handleSendMessage: (
+    messageId: string,
+    mentions?: { userId: string; username: string }[],
+    override?: { content: string; messageType: MessageType }
+  ) => void;
   handleTyping?: (hasText?: boolean) => void;
   closeQuote: () => void;
 }
@@ -121,6 +120,17 @@ const ChatTextarea = ({
   const [expanded, setExpanded] = useState<boolean>(false);
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
+
+  const [pollOpen, setPollOpen] = useState(false);
+  const sendPoll = useCallback(
+    (poll: PollData) => {
+      handleSendMessage(quote.message?._id, undefined, {
+        content: JSON.stringify(poll),
+        messageType: "Poll",
+      });
+    },
+    [handleSendMessage, quote.message?._id]
+  );
 
   const handleSendWithMentions = useCallback(
     (messageId: string) => {
@@ -298,7 +308,13 @@ const ChatTextarea = ({
         )}
 
         <div className="flex items-end justify-between gap-2">
-          <Pop input={inputRef} setFileAccepts={setFileAccepts} />
+          <Pop input={inputRef} setFileAccepts={setFileAccepts} onPoll={() => setPollOpen(true)} />
+          <PollCreator
+            key={pollOpen ? "open" : "closed"}
+            open={pollOpen}
+            onOpenChange={setPollOpen}
+            onCreate={sendPoll}
+          />
           <div className="relative flex-1">
             {/* Mention picker */}
             {showPicker && (
@@ -392,9 +408,10 @@ export default ChatTextarea;
 interface PopProps {
   input: RefObject<HTMLInputElement | null>;
   setFileAccepts: Dispatch<SetStateAction<string>>;
+  onPoll?: () => void;
 }
 
-const Pop = ({ input, setFileAccepts }: PopProps) => {
+const Pop = ({ input, setFileAccepts, onPoll }: PopProps) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const options = [
@@ -424,6 +441,7 @@ const Pop = ({ input, setFileAccepts }: PopProps) => {
         }
       },
     },
+    ...(onPoll ? [{ icon: BarChart3, text: "Poll", onClick: onPoll }] : []),
   ];
   return (
     <>
@@ -467,55 +485,17 @@ interface UploadDialogProps {
   newMessage: string;
   setNewMessage: Dispatch<SetStateAction<string>>;
   handleTyping?: (hasText?: boolean) => void;
-  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
+  handleSendMessage: (
+    messageId: string,
+    mentions?: { userId: string; username: string }[],
+    override?: { content: string; messageType: MessageType }
+  ) => void;
   setFileAccepts: Dispatch<SetStateAction<string>>;
 }
 
-// Lazy-loaded carousel item component
-const LazyCarouselItem = ({
-  children,
-  className,
-  index,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  index: number;
-}) => {
-  const [isVisible, setIsVisible] = useState(index === 0); // First item is always visible
-  const itemRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const item = itemRef.current;
-    if (!item) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-          }
-        });
-      },
-      { rootMargin: "50px" } // Start loading 50px before entering viewport
-    );
-
-    observer.observe(item);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <div ref={itemRef} className={className}>
-      {isVisible ? (
-        children
-      ) : (
-        <div className="flex size-full items-center justify-center">Loading...</div>
-      )}
-    </div>
-  );
-};
+const isImageFile = (file: File) =>
+  file.type.startsWith("image/") && !/heic|heif/i.test(file.type);
+const isVideoFile = (file: File) => file.type.startsWith("video/");
 
 const UploadDialog = ({
   quote,
@@ -530,15 +510,12 @@ const UploadDialog = ({
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);
   const { files: attachments, setFiles, clearFiles } = useGlobalFileStorage();
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // Object URLs are cached per File (created lazily, so repeated renders reuse them)
-  // and revoked in an effect once the file leaves `attachments` or on unmount.
-  const objectURLs = useMemo(() => {
-    const urlMap = new Map<File, string>();
-    attachments.forEach((file) => urlMap.set(file, getObjectURL(file)));
-    return urlMap;
-  }, [attachments]);
-
+  // One object URL per File, cached so renders reuse it. URLs are revoked only once the
+  // file has left `attachments` (never on unmount, which StrictMode simulates and which
+  // would leave still-rendered files pointing at a revoked URL).
+  const urls = useMemo(() => attachments.map(getObjectURL), [attachments]);
   const liveFilesRef = useRef<File[]>([]);
   useEffect(() => {
     liveFilesRef.current.forEach((file) => {
@@ -547,104 +524,22 @@ const UploadDialog = ({
     liveFilesRef.current = attachments;
   }, [attachments]);
 
-  useEffect(
-    () => () => {
-      liveFilesRef.current.forEach(revokeObjectURL);
-      liveFilesRef.current = [];
-    },
-    []
-  );
+  const safeIndex = Math.min(activeIndex, Math.max(attachments.length - 1, 0));
+  const activeFile = attachments[safeIndex];
+  const activeUrl = urls[safeIndex];
 
-  // Memoize removeFile handler (URLs are revoked by the effect above)
   const removeFile = useCallback(
     (index: number) => {
       setFiles(attachments.filter((_, i) => i !== index));
-      toast("File removed");
+      setActiveIndex((prev) => Math.max(0, prev >= index ? prev - 1 : prev));
     },
     [attachments, setFiles]
   );
 
-  // Memoize carousel content to prevent re-renders on text input changes
-  const carouselContent = useMemo(() => {
-    if (attachments.length === 0) {
-      return null;
-    }
-
-    // Configure Embla carousel options for better performance
-    const carouselOpts = {
-      duration: 20, // Faster transition duration (default is 25)
-      dragFree: true, // Enable smooth dragging
-      containScroll: "trimSnaps" as const, // Optimize scroll calculations
-      loop: false, // Disable loop for better performance
-    };
-
-    return (
-      <Carousel className="flex max-h-full w-full flex-1 items-center" opts={carouselOpts}>
-        <CarouselContent className="flex h-full max-h-full gap-2 sm:aspect-auto">
-          {attachments.map((file, index) => {
-            const objectURL = objectURLs.get(file);
-            if (!objectURL) return null;
-
-            const [, fileType] = file.type.split("/");
-            const isImage = fileType === "png" || fileType === "jpeg" || fileType === "jpg";
-            const isVideo =
-              fileType === "mp4" ||
-              fileType === "mov" ||
-              fileType === "mkv" ||
-              fileType === "avi" ||
-              fileType === "quicktime";
-
-            // Stable key based on file properties
-            const stableKey = `${file.name}-${file.size}-${file.lastModified}-${index}`;
-
-            return (
-              <CarouselItem
-                key={stableKey}
-                className="flex size-full flex-col items-center justify-center"
-              >
-                <LazyCarouselItem
-                  index={index}
-                  className="flex size-full flex-col items-center justify-center"
-                >
-                  {isImage ? (
-                    <>
-                      <ImageDiv media={objectURL} host={false} />
-                      <CropMediaInterface
-                        files={attachments}
-                        setFiles={setFiles}
-                        imageIndex={index}
-                      >
-                        <button className="absolute left-2 top-2 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 mb:opacity-100">
-                          <Paintbrush2 size={16} />
-                        </button>
-                      </CropMediaInterface>
-                    </>
-                  ) : isVideo ? (
-                    <VideoDiv media={objectURL} host={false} />
-                  ) : (
-                    <DocCard className="w-auto" file={file} />
-                  )}
-                  <Button
-                    variant="destructive"
-                    onClick={() => removeFile(index)}
-                    className="absolute bottom-0"
-                  >
-                    <Trash size={16} className="text-white" />
-                  </Button>
-                </LazyCarouselItem>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-        {attachments.length > 1 && (
-          <>
-            <CarouselPrevious className="left-2 hidden sm:flex" />
-            <CarouselNext className="right-2 hidden sm:flex" />
-          </>
-        )}
-      </Carousel>
-    );
-  }, [attachments, objectURLs, setFiles, removeFile]);
+  const send = () => {
+    handleSendMessage(quote.message?._id);
+    dispatch(setToggleDialog(false));
+  };
 
   return (
     <Dialog
@@ -657,36 +552,101 @@ const UploadDialog = ({
       }}
     >
       <DialogTrigger className="hidden"></DialogTrigger>
-      <DialogContent className="flex h-screen w-screen max-w-none flex-col border-0 bg-transparent backdrop-blur-xl">
-        <DialogHeader>
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-            <Cross2Icon className="size-4" />
+      <DialogContent className="flex h-dvh w-screen max-w-none flex-col gap-0 border-0 bg-zinc-950/95 p-0 backdrop-blur-xl [&>button]:hidden">
+        <DialogHeader className="flex-row items-center justify-between space-y-0 px-4 py-3 text-left">
+          <DialogClose className="rounded-full p-2 text-white transition-colors hover:bg-white/10 focus:outline-none">
+            <Cross2Icon className="size-5" />
             <span className="sr-only">Close</span>
           </DialogClose>
-          <DialogTitle className="text-black dark:text-white">
-            Preview
-            <b className="block text-sm font-medium text-white dark:text-gray-700">
-              Attach Files ({attachments.length}/{FILE_VALIDATION_CONFIG.maxFiles})
-            </b>
+          <DialogTitle className="flex-1 truncate px-3 text-sm font-medium text-white">
+            {activeFile?.name ?? "Preview"}
+            <span className="block text-xs font-normal text-white/60">
+              {attachments.length}/{FILE_VALIDATION_CONFIG.maxFiles} ·{" "}
+              {formatFileSize(attachments.reduce((acc, file) => acc + file.size, 0))}
+            </span>
           </DialogTitle>
-          <DialogDescription></DialogDescription>
-        </DialogHeader>
-        <div className="flex h-full max-h-[70%] flex-1 rounded-md backdrop-blur-xl">
-          {carouselContent}
-        </div>
-        <DialogFooter className="!flex-col items-center gap-2">
-          {/* Total Size Indicator */}
-          <div className="text-sm text-white dark:text-gray-600">
-            Total Size: {formatFileSize(attachments.reduce((acc, file) => acc + file.size, 0))}
+          <div className="flex items-center gap-1">
+            {activeFile && isImageFile(activeFile) && (
+              <CropMediaInterface files={attachments} setFiles={setFiles} imageIndex={safeIndex}>
+                <button
+                  aria-label="Edit image"
+                  className="rounded-full p-2 text-white transition-colors hover:bg-white/10"
+                >
+                  <Paintbrush2 size={20} />
+                </button>
+              </CropMediaInterface>
+            )}
+            {activeFile && (
+              <button
+                aria-label="Remove file"
+                onClick={() => removeFile(safeIndex)}
+                className="rounded-full p-2 text-white transition-colors hover:bg-white/10"
+              >
+                <Trash size={20} />
+              </button>
+            )}
           </div>
-          <div className="flex w-full flex-1 items-center justify-between gap-2 sm:max-w-screen-tablets md:max-w-[700px] lg:max-w-screen-900px">
+          <DialogDescription className="sr-only">Preview attachments before sending</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex min-h-0 flex-1 items-center justify-center px-4">
+          {activeFile && activeUrl ? (
+            isImageFile(activeFile) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={activeUrl}
+                src={activeUrl}
+                alt={activeFile.name}
+                className="max-h-full max-w-full rounded-md object-contain"
+              />
+            ) : isVideoFile(activeFile) ? (
+              <video
+                key={activeUrl}
+                src={activeUrl}
+                controls
+                className="max-h-full max-w-full rounded-md"
+              />
+            ) : (
+              <DocCard className="w-auto" file={activeFile} />
+            )
+          ) : null}
+        </div>
+
+        {attachments.length > 1 && (
+          <div className="flex justify-center gap-2 overflow-x-auto px-4 py-2">
+            {attachments.map((file, index) => (
+              <button
+                key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                onClick={() => setActiveIndex(index)}
+                className={cn(
+                  "size-14 shrink-0 overflow-hidden rounded-md border-2 bg-zinc-800 transition-opacity",
+                  index === safeIndex ? "border-brand" : "border-transparent opacity-60"
+                )}
+              >
+                {urls[index] && isImageFile(file) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={urls[index]} alt="" className="size-full object-cover" />
+                ) : urls[index] && isVideoFile(file) ? (
+                  <video src={urls[index]} className="size-full object-cover" muted />
+                ) : (
+                  <span className="flex size-full items-center justify-center text-[10px] text-white">
+                    {file.name.split(".").pop()?.toUpperCase()}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <DialogFooter className="!flex-col items-center gap-2 px-4 pb-4 pt-2">
+          <div className="flex w-full items-end justify-between gap-2 md:max-w-[700px]">
             <Pop input={inputRef} setFileAccepts={setFileAccepts} />
             <div className="relative flex-1">
               <TextAreaBox
                 value={newMessage}
                 onChange={setNewMessage}
                 highlightColor="#ff6257"
-                placeholder="Type a message..."
+                placeholder="Add a caption..."
                 minHeight={20}
                 maxHeight={120}
                 ref={textAreaRef}
@@ -696,16 +656,9 @@ const UploadDialog = ({
                 fontFamily="myCustomFont, myCustomFont Fallback"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    if (e.shiftKey) {
-                      return; // Allow new line when Shift+Enter
-                    }
-
-                    e.preventDefault(); // Prevent default for all Enter cases
-
-                    if (newMessage.trim().length > 0) {
-                      handleSendMessage(quote.message?._id);
-                      dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
-                    }
+                    if (e.shiftKey) return; // Allow new line when Shift+Enter
+                    e.preventDefault();
+                    if (newMessage.trim().length > 0 || attachments.length > 0) send();
                   }
                 }}
                 className="flex-1 resize-none rounded-2xl border-none bg-gray-100 px-4 py-2 text-sm !text-black focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:bg-zinc-800 dark:!text-slate-200 dark:!caret-white dark:focus:ring-offset-zinc-900"
@@ -720,14 +673,10 @@ const UploadDialog = ({
             </div>
             <Button
               disabled={newMessage.length === 0 && attachments.length === 0}
-              onClick={() => {
-                handleSendMessage(quote.message?._id);
-                dispatch(setToggleDialog(!toggleDialog));
-                // console.log('send')
-              }}
-              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
+              onClick={send}
+              className="mb-1 size-11 shrink-0 rounded-full bg-brand p-0 text-white hover:bg-brand/90"
             >
-              <Send size={20} className="text-brand" />
+              <Send size={20} />
             </Button>
           </div>
         </DialogFooter>

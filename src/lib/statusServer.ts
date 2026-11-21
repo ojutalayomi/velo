@@ -26,7 +26,7 @@ type AggregatedStatus = StatusSchema & {
     verified?: boolean;
   };
   viewers?: {
-    userId: string;
+    viewerId: string;
     viewedAt: string;
   }[];
 };
@@ -38,13 +38,35 @@ export async function getAuthenticatedUserId() {
   return payload?._id || null;
 }
 
+let expiryBackfilled = false;
+
 export async function ensureStatusIndexes(db: MongoDBClient) {
   await Promise.all([
-    db.statuses().createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    // `expiresAt` is an ISO string, which MongoDB's TTL monitor ignores. The TTL index lives
+    // on the Date-typed `expiresAtDate` instead (the string stays for API/query compatibility).
+    db.statuses().createIndex({ expiresAtDate: 1 }, { expireAfterSeconds: 0 }),
+    db.statuses().createIndex({ visibility: 1, expiresAt: -1 }),
     db.statuses().createIndex({ userId: 1, expiresAt: -1 }),
     db.statusViewers().createIndex({ statusId: 1, viewerId: 1 }, { unique: true }),
     db.statusViewers().createIndex({ ownerId: 1, viewedAt: -1 }),
   ]);
+
+  if (!expiryBackfilled) {
+    expiryBackfilled = true;
+    // Statuses created before `expiresAtDate` existed: copy it over so the TTL index covers them.
+    const legacy = await db
+      .statuses()
+      .find({ expiresAtDate: { $exists: false } })
+      .project({ expiresAt: 1 })
+      .toArray();
+    await Promise.all(
+      legacy.map((row) =>
+        db
+          .statuses()
+          .updateOne({ _id: row._id }, { $set: { expiresAtDate: new Date(row.expiresAt) } })
+      )
+    );
+  }
 }
 
 export function statusExpiresAt(now = new Date()) {
@@ -89,12 +111,35 @@ export async function getStatusGroupsForUser(db: MongoDBClient, viewerId: string
   return getStatusGroups(db, visibleUserIds, viewerId);
 }
 
+/** Recent "everyone" statuses from people the viewer does not follow, for discovery on Explore. */
+export async function getPublicStatusGroups(db: MongoDBClient, viewerId: string, limit = 20) {
+  const followedIds = await getFollowedUserIds(db, viewerId);
+  const rows = await db
+    .statuses()
+    .find({
+      visibility: "everyone",
+      expiresAt: { $gt: new Date().toISOString() },
+      userId: { $nin: [viewerId, ...followedIds] },
+    })
+    .sort({ createdAt: -1 })
+    .limit(limit * 3)
+    .project({ userId: 1 })
+    .toArray();
+  const ownerIds = Array.from(new Set(rows.map((row) => row.userId))).slice(0, limit);
+  return getStatusGroups(db, ownerIds, viewerId, "everyone");
+}
+
 export async function getStatusGroupForOwner(db: MongoDBClient, ownerId: string, viewerId = ownerId) {
   const groups = await getStatusGroups(db, [ownerId], viewerId);
   return groups[0] || null;
 }
 
-async function getStatusGroups(db: MongoDBClient, userIds: string[], viewerId: string) {
+async function getStatusGroups(
+  db: MongoDBClient,
+  userIds: string[],
+  viewerId: string,
+  onlyVisibility?: StatusVisibility
+) {
   if (!userIds.length) return [];
 
   const now = new Date().toISOString();
@@ -105,7 +150,9 @@ async function getStatusGroups(db: MongoDBClient, userIds: string[], viewerId: s
         $match: {
           userId: { $in: userIds },
           expiresAt: { $gt: now },
-          $or: [{ visibility: "everyone" }, { visibility: "followers" }, { userId: viewerId }],
+          // Followers-only statuses are shown only to the owner and to people they were
+          // fetched for (the follow graph is applied by the caller via `userIds`).
+          ...(onlyVisibility ? { visibility: onlyVisibility } : {}),
         },
       },
       {
@@ -149,7 +196,7 @@ function groupStatusRows(rows: AggregatedStatus[], viewerId: string): StatusGrou
       row.owner?.username ||
       "Velo user";
     const viewers = (row.viewers ?? []).map((viewer) => ({
-      userId: viewer.userId,
+      userId: viewer.viewerId,
       viewedAt: viewer.viewedAt,
     }));
     const isOwner = ownerId === viewerId;

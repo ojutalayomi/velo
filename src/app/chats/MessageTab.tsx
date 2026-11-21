@@ -36,6 +36,9 @@ import { Statuser } from "@/components/VerificationComponent";
 import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
+import { PollCard } from "@/components/PollCard";
+import { parsePollContent } from "@/lib/polls";
+import { useReactors } from "@/hooks/useReactors";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import {
@@ -234,7 +237,8 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
     return text.match(urlRegex) || [""];
   };
 
-  const urls = extractUrls(messageContent);
+  const pollData = message.messageType === "Poll" ? parsePollContent(message.content) : null;
+  const urls = pollData ? [] : extractUrls(messageContent);
   const firstUrl = urls[0]; // Only show preview for the first URL
 
   const handleTouch = (e: TouchEvent<HTMLDivElement>) => {
@@ -369,6 +373,17 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                       ? messageContent.slice(0, MAX_LENGTH) + "..."
                       : messageContent;
 
+                  if (pollData) {
+                    return (
+                      <PollCard
+                        targetType="message"
+                        targetId={String(message._id)}
+                        poll={pollData}
+                        className="min-w-[220px]"
+                      />
+                    );
+                  }
+
                   return (
                     <>
                       {message.messageType === "Markdown" ? (
@@ -467,6 +482,10 @@ const ReactionSection = ({
   setReactionInfoDisplay: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const { userdata } = useUser();
+  const resolveUser = useReactors(
+    message.reactions.map((r) => r.userId),
+    false
+  );
 
   const reactionArray: Reaction[] = [];
 
@@ -487,7 +506,16 @@ const ReactionSection = ({
             (r) => r.reaction === reaction.reaction
           ).length;
           acc.push(
-            <span key={index} title={`${reaction.userId}`} className="cursor-pointer text-xs">
+            <span
+              key={index}
+              title={message.reactions
+                .filter((r) => r.reaction === reaction.reaction)
+                .map((r) =>
+                  r.userId === userdata._id ? "You" : (resolveUser(r.userId)?.name ?? "Someone")
+                )
+                .join(", ")}
+              className="cursor-pointer text-xs"
+            >
               {reaction.reaction}
               {reactionCount > 1 && <sub className="ml-0.5 text-xs">{reactionCount}</sub>}
             </span>

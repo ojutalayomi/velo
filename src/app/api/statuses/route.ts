@@ -6,6 +6,7 @@ import {
   ensureStatusIndexes,
   getAuthenticatedUserId,
   getFollowerUserIds,
+  getPublicStatusGroups,
   getStatusGroupForOwner,
   getStatusGroupsForUser,
   normalizeStatusInput,
@@ -13,14 +14,18 @@ import {
 } from "@/lib/statusServer";
 import { MongoDBClient } from "@/lib/mongodb";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const userId = await getAuthenticatedUserId();
     if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
     const db = await new MongoDBClient().init();
     await ensureStatusIndexes(db);
-    const groups = await getStatusGroupsForUser(db, userId);
+    const scope = new URL(request.url).searchParams.get("scope");
+    const groups =
+      scope === "explore"
+        ? await getPublicStatusGroups(db, userId)
+        : await getStatusGroupsForUser(db, userId);
 
     return NextResponse.json({ data: groups });
   } catch (error) {
@@ -51,6 +56,7 @@ export async function POST(request: Request) {
       visibility: input.visibility || "followers",
       createdAt: now,
       expiresAt: statusExpiresAt(new Date(now)),
+      expiresAtDate: new Date(statusExpiresAt(new Date(now))),
     });
 
     const [group, targetUserIds] = await Promise.all([

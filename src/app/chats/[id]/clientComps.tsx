@@ -39,6 +39,9 @@ import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
+import { lastMessagePreview } from "@/lib/polls";
+import { chatDraftKey, useDraft } from "@/hooks/useDraft";
+import { TypingBubble } from "../TypingIndicator";
 import ChatTextarea from "../ChatTextarea";
 import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
 import { DELETED_MARKER } from "@/lib/messageDeletion";
@@ -83,12 +86,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [time, setTime] = useState("");
   const [load, setLoading] = useState<boolean>();
   const [err, setError] = useState<boolean>();
-  const [newMessage, setNewMessage] = useState("");
   const [otherPerson, setOtherPerson] = useState<UserData>({} as UserData);
   const pid =
     params?.id === "me"
       ? (conversations.find((c) => c.type === "Personal")?.id as string)
       : (params?.id as string);
+  const [newMessage, setNewMessage] = useDraft(chatDraftKey(pid ?? ""));
   const socket = useSocket();
   const callHooks = useCallManager(socket!) || null;
   const convo = conversations?.find((c) => c.id === pid) as ConvoType;
@@ -238,8 +241,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
   }, [socket, pid, friendId, userdata]);
 
-  const handleSendMessage = async (id: string, mentions?: { userId: string; username: string }[]) => {
-    if (newMessage.trim() === "" && attachments.length === 0) {
+  const handleSendMessage = async (
+    id: string,
+    mentions?: { userId: string; username: string }[],
+    override?: { content: string; messageType: MessageType }
+  ) => {
+    if (!override && newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
     let lastMessageId = "";
@@ -264,10 +271,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           username: userdata?.username || "",
         },
         receiverId: friendId || userdata._id,
-        content: newMessage,
+        content: override?.content ?? newMessage,
         timestamp: new Date().toISOString(),
         chatType: "DM" as ChatType,
-        messageType: "Markdown" as MessageType,
+        messageType: override?.messageType ?? ("Markdown" as MessageType),
         reactions: [],
         attachments: [] as Attachment[], // Will be populated with file data
         quotedMessageId: id,
@@ -276,7 +283,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       });
       lastMessageId = msg._id;
 
-      if (attachments.length) {
+      if (attachments.length && !override) {
         // Read and process all files
         const fileReadPromises = attachments.map((file) => {
           return new Promise<void>((resolve, reject) => {
@@ -321,7 +328,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           id: msg._id as string,
           updates: {
             unread: isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
-            lastMessage: msg.content,
+            lastMessage: lastMessagePreview(msg.content),
             lastUpdated: msg.timestamp,
           },
         })
@@ -359,7 +366,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
 
       // Reset the message input and attachments
-      setNewMessage("");
+      if (!override) setNewMessage("");
       stopTypingSignal();
       clearFiles();
       closeQuote();
@@ -595,9 +602,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                       : convo?.lastSeenHidden
                         ? "Offline"
                         : `Last seen: ${time}`}
-                    {convo?.isTypingList.filter((i) => i.chatId === pid).map((i) => i.name).length >
-                      0 &&
-                      ` • ${convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...`}
+                    {convo?.isTypingList.some((i) => i.chatId === pid) && " • typing…"}
                   </p>
                 </div>
               )}
@@ -813,16 +818,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             </DateGroup>
           ))}
         </div>
-        {convo?.isTypingList?.filter((i) => i.chatId === pid).map((i) => i.name).length > 0 && (
-          <div
-            key={`typing-${convo?.isTypingList.find((i) => i.chatId === pid)?.id}`}
-            className="my-2 mb-4 text-left"
-          >
-            <span className="rounded-full rounded-bl-none bg-gray-100 px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-              Typing...
-            </span>
-          </div>
-        )}
+        <TypingBubble users={convo?.isTypingList?.filter((i) => i.chatId === pid) ?? []} />
       </div>
 
       {showScrollButton && (

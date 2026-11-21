@@ -35,6 +35,7 @@ import { RootState } from "@/redux/store";
 import { DELETED_MARKER } from "@/lib/messageDeletion";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
+import { TypingBubble, typingLabel } from "../../TypingIndicator";
 import ChatTextarea from "../../ChatTextarea";
 import { canSendMessage } from "@/lib/chatPermissions";
 import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
@@ -464,8 +465,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                     {group?.verified && <Statuser className="ml-1 size-4" />}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {filteredIsTypingList?.length > 0 &&
-                      `${filteredIsTypingList.map((i) => i.name)[0]} is typing...`}
+                    {filteredIsTypingList?.length > 0 && typingLabel(filteredIsTypingList)}
                     <b className="collapse">Group</b>
                   </p>
                 </>
@@ -673,36 +673,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             </DateGroup>
           ))}
         </div>
-        {filteredIsTypingList?.length > 0 && (
-          <div key={`typing-${filteredIsTypingList[0].id}`} className="my-2 mb-4 text-left">
-            <div className="flex flex-wrap items-center justify-start gap-2">
-              <div className="flex items-center gap-2 rounded-full rounded-bl-none bg-gray-100 p-3 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-                <div className="flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background">
-                  {filteredIsTypingList.slice(0, 3).map((i) => (
-                    <Avatar
-                      className="size-8 ring-4 ring-offset-background"
-                      key={i.id}
-                      data-src={i.displayPicture}
-                    >
-                      <AvatarFallback className="size-8 capitalize">
-                        {i.name?.slice(0, 2)}
-                      </AvatarFallback>
-                      <AvatarImage
-                        src={i.displayPicture}
-                        className="displayPicture size-8 rounded-full object-cover dark:border-slate-200"
-                        width={16}
-                        height={16}
-                        alt="User Display Picture"
-                      />
-                    </Avatar>
-                  ))}
-                </div>
-                {filteredIsTypingList.slice(0, 3).map((i) => i.name).length > 1 ? "are" : "is"}{" "}
-                typing...
-              </div>
-            </div>
-          </div>
-        )}
+        <TypingBubble users={filteredIsTypingList ?? []} showAvatars />
       </div>
       <div
         className={`absolute bottom-20 right-0 mr-4 flex items-center gap-2 rounded-full bg-gray-100 p-2 shadow-lg dark:bg-zinc-900 dark:text-slate-200 ${showScrollButton ? "opacity-100" : "pointer-events-none opacity-0"}`}

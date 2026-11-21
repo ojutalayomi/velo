@@ -28,6 +28,7 @@ import DeleteChatDialog from "@/components/DeleteChatDialog";
 import { Statuser } from "@/components/VerificationComponent";
 import { ConvoType } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
+import { typingLabel } from "./TypingIndicator";
 import { updateConversation, deleteConversation } from "@/redux/chatSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
@@ -302,12 +303,7 @@ const Card: React.FC<Props> = ({ chat }) => {
             </div>
             <p className="truncate text-sm text-gray-600">
               {filteredIsTypingList?.length > 0
-                ? chat.type === "DM"
-                  ? filteredIsTypingList.map((i) => i.name).join(", ") + " " + "is" + " typing..."
-                  : filteredIsTypingList.map((i) => i.name).join(", ") +
-                    " " +
-                    (filteredIsTypingList.length > 1 ? "are" : "is") +
-                    " typing..."
+                ? typingLabel(filteredIsTypingList)
                 : chat.lastMessage}
             </p>
           </div>

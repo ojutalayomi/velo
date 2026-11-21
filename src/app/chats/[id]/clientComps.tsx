@@ -39,6 +39,7 @@ import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
+import { TypingBubble } from "../TypingIndicator";
 import ChatTextarea from "../ChatTextarea";
 import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
 import { DELETED_MARKER } from "@/lib/messageDeletion";
@@ -595,9 +596,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                       : convo?.lastSeenHidden
                         ? "Offline"
                         : `Last seen: ${time}`}
-                    {convo?.isTypingList.filter((i) => i.chatId === pid).map((i) => i.name).length >
-                      0 &&
-                      ` • ${convo?.isTypingList.find((i) => i.chatId === pid)?.name} is typing...`}
+                    {convo?.isTypingList.some((i) => i.chatId === pid) && " • typing…"}
                   </p>
                 </div>
               )}
@@ -813,16 +812,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             </DateGroup>
           ))}
         </div>
-        {convo?.isTypingList?.filter((i) => i.chatId === pid).map((i) => i.name).length > 0 && (
-          <div
-            key={`typing-${convo?.isTypingList.find((i) => i.chatId === pid)?.id}`}
-            className="my-2 mb-4 text-left"
-          >
-            <span className="rounded-full rounded-bl-none bg-gray-100 px-3 py-1 text-sm text-gray-600 shadow-sm dark:bg-zinc-800 dark:text-gray-400">
-              Typing...
-            </span>
-          </div>
-        )}
+        <TypingBubble users={convo?.isTypingList?.filter((i) => i.chatId === pid) ?? []} />
       </div>
 
       {showScrollButton && (

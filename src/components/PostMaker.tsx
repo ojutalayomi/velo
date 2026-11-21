@@ -1,5 +1,7 @@
 /* eslint-disable react/jsx-handler-names */
 /* eslint-disable @next/next/no-img-element */
+import { PollCreator } from "@/components/PollCreator";
+import type { PollData } from "@/lib/polls";
 import { TextAreaBox } from "@ojutalayomi/react-textarea-enhanced";
 import {
   X,
@@ -87,8 +89,10 @@ function PostMakerClient({
   const draftKey = `post:${type}:${post?.PostID ?? ""}`;
   const [text, setText] = useDraft(draftKey);
   const [isPosting, setIsPosting] = useState(false);
+  const [poll, setPoll] = useState<PollData | null>(null);
+  const [pollDialogOpen, setPollDialogOpen] = useState(false);
   const textLimit = userdata.verified ? 10000 : 1000; // 10000 for verified users, 1000 for others
-  const isButtonDisabled = text.length > textLimit || (!files.length && !text.length);
+  const isButtonDisabled = text.length > textLimit || (!files.length && !text.length && !poll);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   const buttons = [
@@ -103,8 +107,8 @@ function PostMakerClient({
       id: "poll",
       icon: ChartBarDecreasing,
       label: "Add Poll",
-      action: () => console.log("Add Poll"),
-      disable: true
+      action: () => setPollDialogOpen(true),
+      disable: type !== "post"
     },
     { id: "emoji", icon: Smile, label: "Add Emoji", action: () => {} },
     {
@@ -280,10 +284,12 @@ function PostMakerClient({
           Shared: false,
           Type: type,
           ParentId: post ? post.PostID : "",
+          ...(poll ? { Poll: poll } : {}),
         };
         socket.emit("post", Post);
       }
       setText("");
+      setPoll(null);
       onPosted?.(type);
     } catch (error: any) {
       console.log(error);
@@ -405,6 +411,38 @@ function PostMakerClient({
               </DialogContent>
             </Dialog>
           )}
+
+          {poll && (
+            <div className="relative mt-2 rounded-xl border border-border/70 p-3 text-sm">
+              <button
+                type="button"
+                aria-label="Remove poll"
+                onClick={() => setPoll(null)}
+                className="absolute right-2 top-2 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-zinc-800"
+              >
+                <X size={14} />
+              </button>
+              <p className="pr-6 font-semibold">{poll.question}</p>
+              <ul className="mt-2 space-y-1">
+                {poll.options.map((option, i) => (
+                  <li key={i} className="rounded-lg border px-3 py-1.5 dark:border-zinc-600">
+                    {option}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-xs text-gray-500">
+                {poll.multiple ? "Multiple answers" : "Single answer"}
+                {poll.expiresAt ? ` · closes ${new Date(poll.expiresAt).toLocaleDateString()}` : ""}
+              </p>
+            </div>
+          )}
+          <PollCreator
+            key={pollDialogOpen ? "open" : "closed"}
+            open={pollDialogOpen}
+            onOpenChange={setPollDialogOpen}
+            onCreate={setPoll}
+            initial={poll}
+          />
 
           {/** Media */}
           {files.length > 0 && (

@@ -2,6 +2,7 @@ import { Db, MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { IResult } from "ua-parser-js";
 
 import { UserSchema } from "./class/User";
+import type { PollVoteSchema } from "./types/poll";
 import { StatusSchema, StatusViewerSchema } from "./types/status";
 import {
   AnnouncementSchema,
@@ -314,6 +315,10 @@ export class MongoDBClient {
    */
   files() {
     return this.db.collection<AttachmentSchema>("Files");
+  }
+
+  pollVotes() {
+    return this.db.collection<PollVoteSchema>("Poll_Votes");
   }
 
   statuses() {

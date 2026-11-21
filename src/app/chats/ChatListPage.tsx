@@ -28,6 +28,7 @@ import DeleteChatDialog from "@/components/DeleteChatDialog";
 import { Statuser } from "@/components/VerificationComponent";
 import { ConvoType } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
+import { lastMessagePreview } from "@/lib/polls";
 import { chatDraftKey, useDraftValue } from "@/hooks/useDraft";
 import { typingLabel } from "./TypingIndicator";
 import { updateConversation, deleteConversation } from "@/redux/chatSlice";
@@ -313,7 +314,7 @@ const Card: React.FC<Props> = ({ chat }) => {
                         {draft}
                       </>
                     )
-                  : chat.lastMessage}
+                  : lastMessagePreview(chat.lastMessage)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">

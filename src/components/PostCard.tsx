@@ -1,4 +1,5 @@
 "use client";
+import { PollCard } from "@/components/PollCard";
 import {
   Bookmark,
   Copy,
@@ -630,6 +631,15 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
             </p>
           ) : null}
         </div>
+
+        {data.Poll && (
+          <PollCard
+            targetType="post"
+            targetId={data.PostID}
+            poll={data.Poll}
+            className="mt-3 rounded-xl border border-border/70 p-3"
+          />
+        )}
 
         {(data.Image?.length ?? 0) > 0 && showMedia && (
           <ThreadsSlide postData={data} className="mt-3 max-w-md" isLink />

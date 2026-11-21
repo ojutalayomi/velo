@@ -11,6 +11,7 @@ import {
   Expand,
   Shrink,
   Trash,
+  BarChart3,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -29,6 +30,7 @@ import { toast } from "sonner";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";
+import { PollCreator } from "@/components/PollCreator";
 import { LinkPreview } from "@/components/LinkPreview";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +49,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
+import type { MessageType } from "@/lib/types/type";
+import type { PollData } from "@/lib/polls";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
@@ -69,7 +73,11 @@ interface ChatTextareaProps {
   disabled?: boolean;
   chatId?: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
-  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
+  handleSendMessage: (
+    messageId: string,
+    mentions?: { userId: string; username: string }[],
+    override?: { content: string; messageType: MessageType }
+  ) => void;
   handleTyping?: (hasText?: boolean) => void;
   closeQuote: () => void;
 }
@@ -112,6 +120,17 @@ const ChatTextarea = ({
   const [expanded, setExpanded] = useState<boolean>(false);
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
+
+  const [pollOpen, setPollOpen] = useState(false);
+  const sendPoll = useCallback(
+    (poll: PollData) => {
+      handleSendMessage(quote.message?._id, undefined, {
+        content: JSON.stringify(poll),
+        messageType: "Poll",
+      });
+    },
+    [handleSendMessage, quote.message?._id]
+  );
 
   const handleSendWithMentions = useCallback(
     (messageId: string) => {
@@ -289,7 +308,13 @@ const ChatTextarea = ({
         )}
 
         <div className="flex items-end justify-between gap-2">
-          <Pop input={inputRef} setFileAccepts={setFileAccepts} />
+          <Pop input={inputRef} setFileAccepts={setFileAccepts} onPoll={() => setPollOpen(true)} />
+          <PollCreator
+            key={pollOpen ? "open" : "closed"}
+            open={pollOpen}
+            onOpenChange={setPollOpen}
+            onCreate={sendPoll}
+          />
           <div className="relative flex-1">
             {/* Mention picker */}
             {showPicker && (
@@ -383,9 +408,10 @@ export default ChatTextarea;
 interface PopProps {
   input: RefObject<HTMLInputElement | null>;
   setFileAccepts: Dispatch<SetStateAction<string>>;
+  onPoll?: () => void;
 }
 
-const Pop = ({ input, setFileAccepts }: PopProps) => {
+const Pop = ({ input, setFileAccepts, onPoll }: PopProps) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const options = [
@@ -415,6 +441,7 @@ const Pop = ({ input, setFileAccepts }: PopProps) => {
         }
       },
     },
+    ...(onPoll ? [{ icon: BarChart3, text: "Poll", onClick: onPoll }] : []),
   ];
   return (
     <>
@@ -458,7 +485,11 @@ interface UploadDialogProps {
   newMessage: string;
   setNewMessage: Dispatch<SetStateAction<string>>;
   handleTyping?: (hasText?: boolean) => void;
-  handleSendMessage: (messageId: string, mentions?: { userId: string; username: string }[]) => void;
+  handleSendMessage: (
+    messageId: string,
+    mentions?: { userId: string; username: string }[],
+    override?: { content: string; messageType: MessageType }
+  ) => void;
   setFileAccepts: Dispatch<SetStateAction<string>>;
 }
 

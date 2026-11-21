@@ -1,3 +1,4 @@
+import type { PollData } from "@/lib/polls";
 import { ObjectId } from "mongodb";
 
 export interface User {
@@ -537,6 +538,14 @@ export interface PostSchema {
   Type: "post" | "comment" | "repost" | "quote";
   ParentId: string;
   OriginalPostId?: string;
+  Poll?: PollData;
+  Location?: PostLocation;
+}
+
+export interface PostLocation {
+  name: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface PostInfo {

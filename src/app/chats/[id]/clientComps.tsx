@@ -39,6 +39,7 @@ import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
+import { lastMessagePreview } from "@/lib/polls";
 import { chatDraftKey, useDraft } from "@/hooks/useDraft";
 import { TypingBubble } from "../TypingIndicator";
 import ChatTextarea from "../ChatTextarea";
@@ -240,8 +241,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     socket.emit("stopTyping", { user: userdata, to: `user:${friendId}`, chatId: pid });
   }, [socket, pid, friendId, userdata]);
 
-  const handleSendMessage = async (id: string, mentions?: { userId: string; username: string }[]) => {
-    if (newMessage.trim() === "" && attachments.length === 0) {
+  const handleSendMessage = async (
+    id: string,
+    mentions?: { userId: string; username: string }[],
+    override?: { content: string; messageType: MessageType }
+  ) => {
+    if (!override && newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
     let lastMessageId = "";
@@ -266,10 +271,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           username: userdata?.username || "",
         },
         receiverId: friendId || userdata._id,
-        content: newMessage,
+        content: override?.content ?? newMessage,
         timestamp: new Date().toISOString(),
         chatType: "DM" as ChatType,
-        messageType: "Markdown" as MessageType,
+        messageType: override?.messageType ?? ("Markdown" as MessageType),
         reactions: [],
         attachments: [] as Attachment[], // Will be populated with file data
         quotedMessageId: id,
@@ -278,7 +283,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       });
       lastMessageId = msg._id;
 
-      if (attachments.length) {
+      if (attachments.length && !override) {
         // Read and process all files
         const fileReadPromises = attachments.map((file) => {
           return new Promise<void>((resolve, reject) => {
@@ -323,7 +328,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           id: msg._id as string,
           updates: {
             unread: isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
-            lastMessage: msg.content,
+            lastMessage: lastMessagePreview(msg.content),
             lastUpdated: msg.timestamp,
           },
         })
@@ -361,7 +366,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
 
       // Reset the message input and attachments
-      setNewMessage("");
+      if (!override) setNewMessage("");
       stopTypingSignal();
       clearFiles();
       closeQuote();

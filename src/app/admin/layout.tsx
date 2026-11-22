@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { getAdminUser, hasAdminStepUp } from "@/lib/admin";
 
 import AdminNav from "./AdminNav";
 import StepUp from "./StepUp";
+
+export const metadata: Metadata = {
+  title: { default: "Admin", template: "%s | Velo" },
+  robots: { index: false, follow: false },
+};
 
 export const dynamic = "force-dynamic";
 

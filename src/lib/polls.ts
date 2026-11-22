@@ -1,4 +1,6 @@
 import { callPreview, parseCallRecord } from "@/lib/callRecord";
+import { parseContactContent, parseLocationContent } from "@/lib/chatShare";
+import { ATTACHMENT_LABELS } from "@/lib/messageType";
 
 /** Poll definition stored on a post (`Poll`) or serialized as a chat message's content. */
 export interface PollData {
@@ -89,6 +91,20 @@ export function messageText(message: { messageType?: string; content?: string })
   if (message.messageType === "Poll") {
     const poll = parsePollContent(message.content);
     if (poll) return pollPreview(poll);
+  }
+  if (!(message.content ?? "").trim()) {
+    const label = ATTACHMENT_LABELS[message.messageType ?? ""];
+    if (label) return label;
+  }
+  if (message.messageType === "AnimatedGIF") return "🎞 GIF";
+  if (message.messageType === "Sticker") return "🏷 Sticker";
+  if (message.messageType === "Location") {
+    const location = parseLocationContent(message.content);
+    if (location) return `📍 ${location.name}`;
+  }
+  if (message.messageType === "Contact") {
+    const contact = parseContactContent(message.content);
+    if (contact) return `👤 ${contact.name}`;
   }
   if (message.messageType === "Call") {
     const record = parseCallRecord(message.content);

@@ -23,7 +23,7 @@ export async function generateMetadata({
   const image = user.displayPicture || defaultImage;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     openGraph: {
       images: [{ url: image }],

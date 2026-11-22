@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       post.Image && post.Image.length > 0 ? post.Image[0] : post.DisplayPicture || defaultImage;
 
     return {
-      title,
+      title: { absolute: title },
       description,
       openGraph: {
         images: [{ url: ogImage }],
@@ -111,8 +111,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch (e) {
     return {
-      title: siteName,
-      description: (e as Error).message,
+      title: { absolute: siteName },
+      description: "This post is unavailable.",
       openGraph: {
         images: [{ url: defaultImage }],
         siteName,

@@ -8,7 +8,11 @@ export function getSocketServerUrl(): string {
     typeof window !== "undefined"
       ? process.env.NEXT_PUBLIC_SOCKET_URL
       : process.env.SOCKET_SERVER_URL || process.env.NEXT_PUBLIC_SOCKET_URL;
-  return String(raw ?? "").replace(/\/$/, "");
+  const url = String(raw ?? "").trim().replace(/\/$/, "");
+  if (!url || /^(https?|wss?):\/\//i.test(url)) return url;
+  // socket.io-client only infers a missing scheme from `window.location`, which doesn't exist in
+  // API routes, so a bare host ("my-app.koyeb.app") would fail to connect there.
+  return `${/^(localhost|127\.0\.0\.1)(:|$)/.test(url) ? "http" : "https"}://${url}`;
 }
 
 // Initialize socket connection once (legacy; prefer `emitViaSocketServer` from API routes on serverless)

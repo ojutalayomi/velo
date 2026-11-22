@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Card, CtaLink, InfoPage, Section } from "@/components/info/InfoPage";
 
 export const metadata: Metadata = {
-  title: "Locations | Velo",
+  title: "Locations",
   description: "Where Velo is built and where it's available.",
 };
 

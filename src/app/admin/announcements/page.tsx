@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import AnnouncementsAdmin from "./AnnouncementsAdmin";
+
+export const metadata: Metadata = {
+  title: "Admin · Announcements",
+  description: "Manage announcements.",
+  robots: { index: false, follow: false },
+};
 
 export default function AnnouncementsPage() {
   return (

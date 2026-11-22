@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Callout, InfoPage, Prose, Toc } from "@/components/info/InfoPage";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Velo",
+  title: "Privacy Policy",
   description: "How Velo collects, uses and protects your information.",
 };
 

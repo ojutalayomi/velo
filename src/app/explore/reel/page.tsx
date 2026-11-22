@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import ExploreReel from "@/components/ExploreReel";
+
+export const metadata: Metadata = {
+  title: "Reels",
+  description: "Watch short videos on Velo.",
+};
 
 export default function ExploreReelPage() {
   return (

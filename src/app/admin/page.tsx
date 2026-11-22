@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import UsersAdmin from "./UsersAdmin";
+
+export const metadata: Metadata = {
+  title: "Admin · Users",
+  description: "Manage users.",
+  robots: { index: false, follow: false },
+};
 
 export default function AdminPage() {
   return (

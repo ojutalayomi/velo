@@ -4,7 +4,9 @@ import { Download, FileText, Share } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import { DocCard } from "@/components/DocCard";
+import { AudioFileCard } from "@/components/chat/AudioFileCard";
 import { VoiceNotePlayer } from "@/components/VoiceNotePlayer";
+import { isVoiceNoteName } from "@/lib/voiceNote";
 import ImageDiv from "@/components/imageDiv";
 import {
   Carousel,
@@ -68,16 +70,19 @@ const fileMeta = (subtype?: string) => {
 
 type MediaCollageProps = {
   media: (Attachment & { uploadedAt: string })[];
+  /** A recorded voice note (gets the compact player); other audio is shown as a file. */
+  voiceNote?: boolean;
 };
 
-const MediaCollage = ({ media }: MediaCollageProps) => {
+const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
   const [mediaDialog, toggleMediaDialog] = useState({ open: false, index: 0 });
   const mediaLength = media.length;
   const moreThanFour = mediaLength > 4;
   const excess = mediaLength - 4;
   const mediaType = media.map((m) => m.type?.split("/")[0])[0];
   const isImage = mediaType === "image";
-  const isAudio = mediaType === "audio";
+  // Voice notes sent before the VoiceNote type existed are recognised by their name.
+  const isAudio = mediaType === "audio" && (voiceNote || media.every((m) => isVoiceNoteName(m.name)));
 
   return (
     <div className="w-full overflow-hidden rounded-xl">
@@ -87,6 +92,18 @@ const MediaCollage = ({ media }: MediaCollageProps) => {
         <div className="flex flex-col gap-1 rounded-xl bg-white px-3 py-1 shadow-sm dark:bg-zinc-800 dark:text-white">
           {media.map((m) => (
             <VoiceNotePlayer key={m.name} url={m.url || ""} name={m.name} />
+          ))}
+        </div>
+      ) : mediaType === "audio" ? (
+        <div className="flex flex-col gap-2">
+          {media.map((m) => (
+            <AudioFileCard
+              key={m.name}
+              url={m.url || ""}
+              name={m.name}
+              size={m.size}
+              onDownload={() => downloadFile(m.url || "", m.name)}
+            />
           ))}
         </div>
       ) : isImage ? (

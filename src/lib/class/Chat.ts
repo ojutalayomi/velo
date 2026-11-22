@@ -20,10 +20,13 @@ export class Chat {
     if (filteredResults.length === 0) return null;
     if (result.content.endsWith(DELETED_MARKER)) return deletedPreview(result.content);
     const text = messageText(result);
-    // Attachments here are stored keys, and voice notes carry a recognisable name.
-    const voice = result.attachments.some((a) => isVoiceNoteName(typeof a === "string" ? a : a?.key));
-    if (voice && !text) return "🎤 Voice message";
-    return `${result.attachments.length > 0 ? "📷 " : ""}${text}`;
+    const hasContent = result.content.trim() !== "";
+    if (text) return `${hasContent && result.attachments.length > 0 ? "📷 " : ""}${text}`;
+    // Older messages have no specific type; a voice note is recognisable by its stored name.
+    if (result.attachments.some((a) => isVoiceNoteName(typeof a === "string" ? a : a?.key))) {
+      return "🎤 Voice message";
+    }
+    return result.attachments.length > 0 ? "📎 Attachment" : "";
   }
 
   private getName = (uid: string) =>

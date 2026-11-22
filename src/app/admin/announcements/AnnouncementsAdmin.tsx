@@ -110,6 +110,20 @@ export default function AnnouncementsAdmin() {
     setRows((prev) => prev.map((r) => (r._id === id ? { ...r, active } : r)));
   };
 
+  const remove = async (r: Row) => {
+    if (!confirm(`Permanently delete "${r.title}"? This cannot be undone.`)) return;
+    const res = await fetch("/api/admin/announcements", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: r._id }),
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok) return toast.error(json?.message || "Delete failed");
+    setRows((prev) => prev.filter((x) => x._id !== r._id));
+    if (editingId === r._id) resetForm();
+    toast.success("Announcement deleted");
+  };
+
   const isLive = (r: Row) => r.active && (!r.expiresAt || new Date(r.expiresAt) > new Date());
 
   return (
@@ -189,6 +203,11 @@ export default function AnnouncementsAdmin() {
               >
                 {r.active ? "Retire" : "Republish"}
               </Button>
+              {!r.active && (
+                <Button size="sm" variant="destructive" onClick={() => remove(r)}>
+                  Delete
+                </Button>
+              )}
             </li>
           ))}
         </ul>

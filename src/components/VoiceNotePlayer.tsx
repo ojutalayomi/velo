@@ -3,25 +3,31 @@
 import { Mic, Pause, Play } from "lucide-react";
 import { useRef, useState } from "react";
 
+import { PlaybackSpeedButton } from "@/components/chat/PlaybackSpeedButton";
+import { usePlaybackRate } from "@/hooks/usePlaybackRate";
 import { formatClock, voiceNoteSeconds } from "@/lib/voiceNote";
 import { cn } from "@/lib/utils";
 
-/** Compact play/pause + progress player for a voice note. */
+/** Compact play/pause + progress + speed player for a voice note. */
 export function VoiceNotePlayer({
   url,
   name,
+  durationHint,
   className,
 }: {
   url: string;
   name?: string;
+  /** Length in seconds when the file itself doesn't report one (fresh recordings). */
+  durationHint?: number;
   className?: string;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const rate = usePlaybackRate();
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [loadedDuration, setLoadedDuration] = useState(0);
   // Freshly recorded files often report an infinite length, so the name's copy is the fallback.
-  const duration = loadedDuration || voiceNoteSeconds(name) || 0;
+  const duration = loadedDuration || durationHint || voiceNoteSeconds(name) || 0;
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -60,18 +66,27 @@ export function VoiceNotePlayer({
           <Mic size={12} />
         </div>
       </div>
+      <PlaybackSpeedButton />
       <audio
         ref={audioRef}
         src={url}
         preload="metadata"
-        onPlay={() => setPlaying(true)}
+        onPlay={(event) => {
+          event.currentTarget.playbackRate = rate;
+          setPlaying(true);
+        }}
         onPause={() => setPlaying(false)}
         onEnded={() => {
           setPlaying(false);
           setTime(0);
         }}
-        onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
+        onTimeUpdate={(event) => {
+          // Keep a playing note in step with a speed change made on any message.
+          if (event.currentTarget.playbackRate !== rate) event.currentTarget.playbackRate = rate;
+          setTime(event.currentTarget.currentTime);
+        }}
         onLoadedMetadata={(event) => {
+          event.currentTarget.playbackRate = rate;
           const d = event.currentTarget.duration;
           if (Number.isFinite(d)) setLoadedDuration(d);
         }}

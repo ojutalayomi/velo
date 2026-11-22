@@ -38,6 +38,12 @@ import { updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
 import { CallCard } from "@/components/CallCard";
 import { PollCard } from "@/components/PollCard";
+import { ContactCard } from "@/components/chat/ContactCard";
+import { LinkMessage } from "@/components/chat/LinkMessage";
+import { GifMessage } from "@/components/chat/GifMessage";
+import { LocationCard } from "@/components/chat/LocationCard";
+import { parseContactContent, parseLocationContent } from "@/lib/chatShare";
+import { parseKlipyContent } from "@/lib/klipy";
 import { parseCallRecord } from "@/lib/callRecord";
 import { messageText, parsePollContent } from "@/lib/polls";
 import { useReactors } from "@/hooks/useReactors";
@@ -241,7 +247,13 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
 
   const pollData = message.messageType === "Poll" ? parsePollContent(message.content) : null;
   const callRecord = message.messageType === "Call" ? parseCallRecord(message.content) : null;
-  const urls = pollData || callRecord ? [] : extractUrls(messageContent);
+  const locationData = message.messageType === "Location" ? parseLocationContent(message.content) : null;
+  const contactData = message.messageType === "Contact" ? parseContactContent(message.content) : null;
+  const isGifType = message.messageType === "AnimatedGIF" || message.messageType === "Sticker";
+  const gifData = isGifType ? parseKlipyContent(message.content) : null;
+  const isLinkMessage = message.messageType === "Link";
+  // A link-only message gets its own card instead of a preview above the text.
+  const urls = pollData || callRecord || isLinkMessage || locationData || contactData || gifData ? [] : extractUrls(messageContent);
   const firstUrl = urls[0]; // Only show preview for the first URL
 
   const handleTouch = (e: TouchEvent<HTMLDivElement>) => {
@@ -331,6 +343,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
           >
             {message.attachments.length ? (
               <MediaCollage
+                voiceNote={message.messageType === "VoiceNote"}
                 media={message.attachments as (Attachment & { uploadedAt: string })[]}
               />
             ) : (
@@ -339,10 +352,14 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
 
             {/* Message Bubble */}
             <div
-              className={`relative ${message.content.length > 0 ? "flex" : "hidden"} min-w-[4.5rem] max-w-full flex-col overflow-hidden rounded-lg px-2.5 pb-1 pt-1.5 shadow-sm ${
-                senderId === userdata._id
-                  ? `${isFirstInGroup ? "rounded-tr-none" : ""} bg-brand/15 text-gray-900 dark:bg-brand/25 dark:text-white`
-                  : `${isFirstInGroup ? "rounded-tl-none" : ""} bg-white text-gray-900 dark:bg-zinc-800 dark:text-white`
+              className={`relative ${message.content.length > 0 ? "flex" : "hidden"} min-w-[4.5rem] max-w-full flex-col overflow-hidden rounded-lg px-2.5 pb-1 pt-1.5 ${
+                message.messageType === "Sticker"
+                  ? "bg-transparent text-gray-900 dark:text-white"
+                  : `shadow-sm ${
+                      senderId === userdata._id
+                        ? `${isFirstInGroup ? "rounded-tr-none" : ""} bg-brand/15 text-gray-900 dark:bg-brand/25 dark:text-white`
+                        : `${isFirstInGroup ? "rounded-tl-none" : ""} bg-white text-gray-900 dark:bg-zinc-800 dark:text-white`
+                    }`
               } text-left`}
               onTouchStart={handleTouch1}
               onContextMenu={handleContextMenu1}
@@ -375,6 +392,14 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                     messageContent.length > MAX_LENGTH && !isExpanded
                       ? messageContent.slice(0, MAX_LENGTH) + "..."
                       : messageContent;
+
+                  if (gifData) return <GifMessage item={gifData} sticker={message.messageType === "Sticker"} />;
+                  if (locationData) return <LocationCard location={locationData} />;
+                  if (contactData) return <ContactCard contact={contactData} />;
+
+                  if (isLinkMessage) {
+                    return <LinkMessage url={messageContent.trim()} own={senderId === userdata._id} />;
+                  }
 
                   if (callRecord) {
                     return (

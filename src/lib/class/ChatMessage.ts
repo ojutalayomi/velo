@@ -7,6 +7,7 @@ import {
   msgStatus,
   Reaction,
 } from "../types/type";
+import { deriveMessageType } from "../messageType";
 
 /**
  * Represents a simplified chat message object in the application's database.
@@ -80,68 +81,27 @@ export class ChatMessage implements MessageAttributes {
   }
 
   /**
-   * Implements the logic hierarchy to determine the correct messageType
-   * based on attachments and content.
+   * The type follows from the content and attachments (see lib/messageType.ts). It is derived
+   * again by `retype()` once attachments have been added, and by the server, which is authoritative.
    */
   private static determineMessageType(data: any): MessageType {
-    const content = data.content || "";
-    const attachments: Attachment[] = data.attachments || [];
-    const mimeType = attachments.length > 0 ? attachments[0].type : null;
+    // Marker fields that predate the explicit type.
+    if (data.pollData) return "Poll";
+    if (data.isSystemMessage) return "Announcement";
+    return deriveMessageType({
+      content: data.content,
+      attachments: data.attachments,
+      requested: data.messageType,
+    });
+  }
 
-    // --- 1. Structured & Interactive Types (Highest Priority) ---
-
-    // Note: Poll/PollResponse/Announcement typically rely on specific
-    // structured data fields (e.g., data.pollData, data.isSystemMessage)
-    // An explicit structured type set by the composer wins over content sniffing; otherwise a
-    // poll (whose content is JSON) would be re-typed as Markdown and render as raw text.
-    if (data.messageType === "Poll") {
-      return "Poll";
-    }
-    if (data.messageType === "Call") {
-      return "Call";
-    }
-    if (data.pollData) {
-      // Logic to distinguish Poll/PollResponse/etc would go here
-      return "Poll";
-    }
-    if (data.isSystemMessage) {
-      return "Announcement";
-    }
-
-    // --- 2. Media & File Types (High Priority) ---
-    if (mimeType) {
-      if (mimeType === "image/gif") return "AnimatedGIF";
-      if (mimeType.startsWith("image/")) return "Image";
-      if (mimeType.startsWith("video/")) return "Video";
-      if (mimeType.startsWith("audio/")) return "Audio";
-
-      // Fallback for all other files
-      return "File";
-    }
-
-    // --- 3. Text-Based Types (Lowest Priority) ---
-
-    // Check for Link (Content is ONLY a URL)
-    const urlPattern = /^(http|https):\/\/[^ "]+$/;
-    if (urlPattern.test(content.trim())) {
-      return "Link"; // Use the recommended specific type for rich previews
-    }
-
-    // Check for Sticker (Simplified check - usually based on matching a database ID or large emoji)
-    // NOTE: In production, this is done via a specific Sticker ID field, not content matching.
-    if (content.length > 0 && content.length <= 10 && !/\s/.test(content)) {
-      // Very basic heuristic for a short, single item (like a single large emoji)
-      // For real apps, you'd check for a 'stickerId' field.
-      // Assuming it's not a sticker for simplicity, letting it fall to Text
-      // return "Sticker";
-    }
-
-    // Default Fallback
-    if (content.length > 0) {
-      return "Markdown";
-    }
-
-    // Failsafe for an empty message (shouldn't happen in a valid chat system)
-    return "Markdown";
+  /** Re-derives the type; call after attachments were added to a freshly built message. */
+  public retype(requested?: string): this {
+    this.messageType = deriveMessageType({
+      content: this.content,
+      attachments: this.attachments,
+      requested: requested ?? this.messageType,
+    });
+    return this;
   }
 }

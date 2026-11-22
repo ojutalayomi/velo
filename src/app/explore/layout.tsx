@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Explore | Velo",
-  description: "Explore",
+  title: "Explore",
+  description: "Explore trending posts, people and topics on Velo.",
   keywords: [],
   authors: [],
   creator: "",
   publisher: "",
   robots: "index, follow",
   openGraph: {
-    title: "Explore | Velo",
+    title: "Explore",
     description: "Explore",
     url: "",
     siteName: "Velo",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Explore | Velo",
+    title: "Explore",
     description: "Explore",
     images: [],
   },

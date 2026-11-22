@@ -13,6 +13,11 @@ import {
   Trash,
   BarChart3,
   Mic,
+  MapPin,
+  Music,
+  Sticker,
+  Type,
+  UserRound,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -50,8 +55,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
+import { klipyCustomerId, klipyEnabled, reportKlipyShare } from "@/lib/klipy";
+import { setMarkdownPreference, useMarkdownPreference } from "@/hooks/useMarkdownPreference";
+import { GifPicker } from "@/components/chat/GifPicker";
+import { ContactPicker } from "@/components/chat/ContactPicker";
+import { LocationPicker } from "@/components/LocationPicker";
+import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
-import { formatClock } from "@/lib/voiceNote";
 import type { MessageType } from "@/lib/types/type";
 import type { PollData } from "@/lib/polls";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
@@ -124,6 +134,22 @@ const ChatTextarea = ({
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
 
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [gifOpen, setGifOpen] = useState(false);
+  const [klipyId, setKlipyId] = useState("");
+  // KLIPY wants a stable id per person; a hash of the user id keeps the real one private.
+  const userId = userdata._id;
+  useEffect(() => {
+    if (!gifOpen || klipyId) return;
+    void klipyCustomerId(String(userId)).then(setKlipyId);
+  }, [gifOpen, klipyId, userId]);
+  const sendShare = useCallback(
+    (content: string, messageType: MessageType) =>
+      handleSendMessage(quote.message?._id, undefined, { content, messageType }),
+    [handleSendMessage, quote.message?._id]
+  );
+  const markdown = useMarkdownPreference();
   const voice = useVoiceRecorder();
   const sendVoiceNote = useCallback(async () => {
     const file = await voice.stop();
@@ -341,39 +367,55 @@ const ChatTextarea = ({
         )}
 
         {(voice.recording || voice.processing) && (
-          <div className="flex items-center gap-3 px-2 py-1.5">
-            <Button
-              variant="ghost"
-              aria-label="Cancel voice note"
-              onClick={voice.cancel}
-              disabled={voice.processing}
-              className="h-auto rounded-full p-2 text-gray-600 hover:text-red-500 dark:text-gray-300"
-            >
-              <Trash size={20} />
-            </Button>
-            <span className="flex flex-1 items-center gap-2 text-sm dark:text-white">
-              <span className="size-2.5 animate-pulse rounded-full bg-red-500" />
-              {voice.processing ? (
-                <span className="text-sm text-gray-500">Preparing voice note…</span>
-              ) : (
-                <>
-                  {formatClock(voice.seconds)}
-                  <span className="text-xs text-gray-500">/ {formatClock(MAX_VOICE_SECONDS)}</span>
-                </>
-              )}
-            </span>
-            <Button
-              aria-label="Send voice note"
-              onClick={() => void sendVoiceNote()}
-              disabled={voice.processing}
-              className="h-auto rounded-full bg-brand p-2.5 text-white hover:bg-brand/90"
-            >
-              <Send size={20} />
-            </Button>
-          </div>
+          <VoiceRecorderBar voice={voice} onSend={() => void sendVoiceNote()} />
+        )}
+        {markdown && !voice.recording && !voice.processing && (
+          <button
+            type="button"
+            onClick={() => setMarkdownPreference(false)}
+            title="Sending as Markdown. Click to switch back to plain text."
+            className="mb-1 ml-2 inline-flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand hover:bg-brand/20"
+          >
+            <Type size={12} />
+            Markdown on
+            <X size={12} />
+          </button>
         )}
         <div className={cn("flex items-end justify-between gap-2", (voice.recording || voice.processing) && "hidden")}>
-          <Pop input={inputRef} setFileAccepts={setFileAccepts} onPoll={() => setPollOpen(true)} />
+          <Pop
+            input={inputRef}
+            setFileAccepts={setFileAccepts}
+            onPoll={() => setPollOpen(true)}
+            onLocation={() => setLocationOpen(true)}
+            onContact={() => setContactOpen(true)}
+            onGif={klipyEnabled() ? () => setGifOpen(true) : undefined}
+            markdown={markdown}
+          />
+          <LocationPicker
+            key={locationOpen ? "location-open" : "location-closed"}
+            open={locationOpen}
+            onOpenChange={setLocationOpen}
+            onSelect={(location) => sendShare(JSON.stringify(location), "Location")}
+          />
+          {klipyEnabled() && (
+            <GifPicker
+              open={gifOpen}
+              onOpenChange={setGifOpen}
+              customerId={klipyId}
+              onSelect={({ kind, item, query }) => {
+                sendShare(
+                  JSON.stringify({ provider: "klipy", ...item }),
+                  kind === "stickers" ? "Sticker" : "AnimatedGIF"
+                );
+                reportKlipyShare(kind, item.slug, klipyId, query);
+              }}
+            />
+          )}
+          <ContactPicker
+            open={contactOpen}
+            onOpenChange={setContactOpen}
+            onSelect={(contact) => sendShare(JSON.stringify(contact), "Contact")}
+          />
           <PollCreator
             key={pollOpen ? "open" : "closed"}
             open={pollOpen}
@@ -484,9 +526,13 @@ interface PopProps {
   input: RefObject<HTMLInputElement | null>;
   setFileAccepts: Dispatch<SetStateAction<string>>;
   onPoll?: () => void;
+  onLocation?: () => void;
+  onContact?: () => void;
+  onGif?: () => void;
+  markdown?: boolean;
 }
 
-const Pop = ({ input, setFileAccepts, onPoll }: PopProps) => {
+const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, onGif, markdown }: PopProps) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const options = [
@@ -516,7 +562,28 @@ const Pop = ({ input, setFileAccepts, onPoll }: PopProps) => {
         }
       },
     },
+    {
+      icon: Music,
+      text: "Audio",
+      onClick: () => {
+        setFileAccepts(".mp3, .wav, .m4a, .aac, .ogg, .flac");
+        if (input.current) {
+          // The accept attribute must change before click(), so state alone is too late.
+          // eslint-disable-next-line react-hooks/immutability
+          input.current.accept = ".mp3, .wav, .m4a, .aac, .ogg, .flac";
+          input.current.click();
+        }
+      },
+    },
+    ...(onGif ? [{ icon: Sticker, text: "GIF & Stickers", onClick: onGif }] : []),
+    ...(onLocation ? [{ icon: MapPin, text: "Location", onClick: onLocation }] : []),
+    ...(onContact ? [{ icon: UserRound, text: "Contact", onClick: onContact }] : []),
     ...(onPoll ? [{ icon: BarChart3, text: "Poll", onClick: onPoll }] : []),
+    {
+      icon: Type,
+      text: markdown ? "Markdown: on" : "Markdown: off",
+      onClick: () => setMarkdownPreference(!markdown),
+    },
   ];
   return (
     <>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Callout, InfoPage, Prose, Toc } from "@/components/info/InfoPage";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Velo",
+  title: "Terms of Service",
   description: "The rules for using Velo.",
 };
 

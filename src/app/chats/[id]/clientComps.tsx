@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-unused-vars */
 "use client";
+import { getMarkdownPreference } from "@/hooks/useMarkdownPreference";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-react";
@@ -302,7 +303,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         content: override?.content ?? newMessage,
         timestamp: new Date().toISOString(),
         chatType: "DM" as ChatType,
-        messageType: override?.messageType ?? ("Text" as MessageType),
+        messageType: override?.messageType ??
+          ((getMarkdownPreference() ? "Markdown" : "Text") as MessageType),
         reactions: [],
         attachments: [] as Attachment[], // Will be populated with file data
         quotedMessageId: id,

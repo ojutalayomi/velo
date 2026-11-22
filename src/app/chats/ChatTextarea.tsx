@@ -14,6 +14,7 @@ import {
   BarChart3,
   Mic,
   Music,
+  Type,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -51,6 +52,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
+import { setMarkdownPreference, useMarkdownPreference } from "@/hooks/useMarkdownPreference";
 import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import type { MessageType } from "@/lib/types/type";
@@ -125,6 +127,7 @@ const ChatTextarea = ({
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
 
+  const markdown = useMarkdownPreference();
   const voice = useVoiceRecorder();
   const sendVoiceNote = useCallback(async () => {
     const file = await voice.stop();
@@ -344,8 +347,25 @@ const ChatTextarea = ({
         {(voice.recording || voice.processing) && (
           <VoiceRecorderBar voice={voice} onSend={() => void sendVoiceNote()} />
         )}
+        {markdown && !voice.recording && !voice.processing && (
+          <button
+            type="button"
+            onClick={() => setMarkdownPreference(false)}
+            title="Sending as Markdown. Click to switch back to plain text."
+            className="mb-1 ml-2 inline-flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand hover:bg-brand/20"
+          >
+            <Type size={12} />
+            Markdown on
+            <X size={12} />
+          </button>
+        )}
         <div className={cn("flex items-end justify-between gap-2", (voice.recording || voice.processing) && "hidden")}>
-          <Pop input={inputRef} setFileAccepts={setFileAccepts} onPoll={() => setPollOpen(true)} />
+          <Pop
+            input={inputRef}
+            setFileAccepts={setFileAccepts}
+            onPoll={() => setPollOpen(true)}
+            markdown={markdown}
+          />
           <PollCreator
             key={pollOpen ? "open" : "closed"}
             open={pollOpen}
@@ -456,9 +476,10 @@ interface PopProps {
   input: RefObject<HTMLInputElement | null>;
   setFileAccepts: Dispatch<SetStateAction<string>>;
   onPoll?: () => void;
+  markdown?: boolean;
 }
 
-const Pop = ({ input, setFileAccepts, onPoll }: PopProps) => {
+const Pop = ({ input, setFileAccepts, onPoll, markdown }: PopProps) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const options = [
@@ -502,6 +523,11 @@ const Pop = ({ input, setFileAccepts, onPoll }: PopProps) => {
       },
     },
     ...(onPoll ? [{ icon: BarChart3, text: "Poll", onClick: onPoll }] : []),
+    {
+      icon: Type,
+      text: markdown ? "Markdown: on" : "Markdown: off",
+      onClick: () => setMarkdownPreference(!markdown),
+    },
   ];
   return (
     <>

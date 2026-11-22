@@ -1,4 +1,5 @@
 "use client";
+import { getMarkdownPreference } from "@/hooks/useMarkdownPreference";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-react";
@@ -257,7 +258,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         content: override?.content ?? newMessage,
         timestamp: new Date().toISOString(),
         chatType: "Group",
-        messageType: override?.messageType ?? ("Text" as MessageType),
+        messageType: override?.messageType ??
+          ((getMarkdownPreference() ? "Markdown" : "Text") as MessageType),
         reactions: [],
         attachments: [] as Attachment[],
         quotedMessageId: id,

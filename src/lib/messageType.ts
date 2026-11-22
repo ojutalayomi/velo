@@ -19,6 +19,15 @@ const STRUCTURED: ReadonlySet<string> = new Set([
 
 const URL_ONLY = /^https?:\/\/[^\s"]+$/i;
 
+/** One-line stand-ins for messages that have no text of their own (chat list, quotes, copy). */
+export const ATTACHMENT_LABELS: Record<string, string> = {
+  Image: "📷 Photo",
+  Video: "🎥 Video",
+  Audio: "🎵 Audio",
+  VoiceNote: "🎤 Voice message",
+  File: "📄 File",
+};
+
 export const isUrlOnly = (content: string) => URL_ONLY.test(content.trim());
 
 export interface TypeInput {

@@ -1,4 +1,5 @@
 import { callPreview, parseCallRecord } from "@/lib/callRecord";
+import { ATTACHMENT_LABELS } from "@/lib/messageType";
 
 /** Poll definition stored on a post (`Poll`) or serialized as a chat message's content. */
 export interface PollData {
@@ -89,6 +90,10 @@ export function messageText(message: { messageType?: string; content?: string })
   if (message.messageType === "Poll") {
     const poll = parsePollContent(message.content);
     if (poll) return pollPreview(poll);
+  }
+  if (!(message.content ?? "").trim()) {
+    const label = ATTACHMENT_LABELS[message.messageType ?? ""];
+    if (label) return label;
   }
   if (message.messageType === "Call") {
     const record = parseCallRecord(message.content);

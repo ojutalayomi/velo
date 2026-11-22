@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 
 import { DocCard } from "@/components/DocCard";
 import { VoiceNotePlayer } from "@/components/VoiceNotePlayer";
+import { isVoiceNoteName } from "@/lib/voiceNote";
 import ImageDiv from "@/components/imageDiv";
 import {
   Carousel,
@@ -68,16 +69,19 @@ const fileMeta = (subtype?: string) => {
 
 type MediaCollageProps = {
   media: (Attachment & { uploadedAt: string })[];
+  /** A recorded voice note (gets the compact player); other audio is shown as a file. */
+  voiceNote?: boolean;
 };
 
-const MediaCollage = ({ media }: MediaCollageProps) => {
+const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
   const [mediaDialog, toggleMediaDialog] = useState({ open: false, index: 0 });
   const mediaLength = media.length;
   const moreThanFour = mediaLength > 4;
   const excess = mediaLength - 4;
   const mediaType = media.map((m) => m.type?.split("/")[0])[0];
   const isImage = mediaType === "image";
-  const isAudio = mediaType === "audio";
+  // Voice notes sent before the VoiceNote type existed are recognised by their name.
+  const isAudio = mediaType === "audio" && (voiceNote || media.every((m) => isVoiceNoteName(m.name)));
 
   return (
     <div className="w-full overflow-hidden rounded-xl">

@@ -4,6 +4,7 @@ import { Download, FileText, Share } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import { DocCard } from "@/components/DocCard";
+import { AudioFileCard } from "@/components/chat/AudioFileCard";
 import { VoiceNotePlayer } from "@/components/VoiceNotePlayer";
 import { isVoiceNoteName } from "@/lib/voiceNote";
 import ImageDiv from "@/components/imageDiv";
@@ -91,6 +92,18 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
         <div className="flex flex-col gap-1 rounded-xl bg-white px-3 py-1 shadow-sm dark:bg-zinc-800 dark:text-white">
           {media.map((m) => (
             <VoiceNotePlayer key={m.name} url={m.url || ""} name={m.name} />
+          ))}
+        </div>
+      ) : mediaType === "audio" ? (
+        <div className="flex flex-col gap-2">
+          {media.map((m) => (
+            <AudioFileCard
+              key={m.name}
+              url={m.url || ""}
+              name={m.name}
+              size={m.size}
+              onDownload={() => downloadFile(m.url || "", m.name)}
+            />
           ))}
         </div>
       ) : isImage ? (

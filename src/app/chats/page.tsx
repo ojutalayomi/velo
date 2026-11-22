@@ -8,7 +8,7 @@ const ChatPage: React.FC = () => {
 
   return (
     <div
-      className={`bg-white tablets1:bg-white/55 tablets1:flex hidden dark:bg-black/55 shadow-md flex-col min-h-screen flex-1 rounded-lg overflow-hidden absolute tablets1:relative tablets1:w-auto h-full w-full`}
+      className={`bg-white tablets1:bg-white/55 border-l tablets1:flex hidden dark:bg-black/55 shadow-md flex-col min-h-screen flex-1 rounded-lg overflow-hidden absolute tablets1:relative tablets1:w-auto h-full w-full`}
     >
       <div className="p-4 flex flex-col flex-1 justify-center gap-2 items-center">
         <h1 className="dark:text-white font-semibold text-2xl">Select a message</h1>

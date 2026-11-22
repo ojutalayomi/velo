@@ -1,8 +1,8 @@
 "use client";
-import { Ellipsis, Info, MessageSquareText, Phone, Pin, Video } from "lucide-react";
+import { Check, CheckCheck, Ellipsis, Info, MessageSquareText, Phone, Pin, Video } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useMediaQuery } from "usehooks-ts";
 
@@ -29,8 +29,9 @@ import { useOptionalCall } from "@/components/call/callContext";
 import { Statuser } from "@/components/VerificationComponent";
 import type { CallType } from "@/lib/call/callState";
 import { ConvoType } from "@/lib/types/type";
-import { updateLiveTime } from "@/lib/utils";
-import { lastMessagePreview } from "@/lib/polls";
+import { isSystemPreview } from "@/lib/chatPreview";
+import { formatChatTime } from "@/lib/chatTime";
+import { cn } from "@/lib/utils";
 import { chatDraftKey, useDraftValue } from "@/hooks/useDraft";
 import { typingLabel } from "./TypingIndicator";
 import { updateConversation, deleteConversation } from "@/redux/chatSlice";
@@ -155,7 +156,6 @@ const ChatProfileDialog: React.FC<{
 };
 
 const Card: React.FC<Props> = ({ chat }) => {
-  const [time, setTime] = useState<string>();
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const socket = useSocket();
   const [isPinned, setIsPinned] = useState(chat?.pinned);
@@ -167,36 +167,12 @@ const Card: React.FC<Props> = ({ chat }) => {
   const { userdata } = useUser();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const time = formatChatTime(chat.lastUpdated);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 640px)");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    const updateTimer = () => {
-      const timeDifference = Date.now() - Date.parse(chat.lastUpdated);
-      if (timeDifference > 86400 * 1000) {
-        const today = new Date();
-        const lastUpdatedDate = new Date(chat.lastUpdated);
-        if (today.toISOString().split("T")[0] !== lastUpdatedDate.toISOString().split("T")[0]) {
-          if (today.getDate() - lastUpdatedDate.getDate() === 1) {
-            setTime("Yesterday.");
-          } else {
-            const date = lastUpdatedDate.toLocaleDateString("en-US", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            });
-            setTime(date);
-          }
-        }
-      } else {
-        setTime(updateLiveTime("chat-time", chat.lastUpdated));
-      }
-    };
-    updateTimer();
-  }, [chat.lastUpdated]);
 
   const options = [
     {
@@ -272,7 +248,16 @@ const Card: React.FC<Props> = ({ chat }) => {
   };
 
   const filteredIsTypingList = chat?.isTypingList.filter((i) => i.chatId === chat.id);
+  const typing = filteredIsTypingList?.length > 0;
   const draft = useDraftValue(chatDraftKey(chat.id));
+  // The latest message: "Name:" in groups, a read tick on my own in a DM.
+  const fromMe = chat.lastSenderId === userdata._id;
+  const system = !chat.lastMessageId || isSystemPreview(chat.lastMessage);
+  const showTick = chat.type === "DM" && fromMe && !system;
+  const senderPrefix =
+    chat.type === "Group" && chat.lastSenderId && !system
+      ? `${fromMe ? "You" : (chat.lastSenderName?.split(" ")[0] ?? "Someone")}: `
+      : "";
 
   // Handlers for long-press (mobile), right-click (desktop), and ellipsis click
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -310,7 +295,10 @@ const Card: React.FC<Props> = ({ chat }) => {
         href={chatHref(chat)}
       >
         <div
-          className="group relative flex cursor-pointer items-center gap-3 overflow-visible rounded-lg bg-white p-3 shadow-bar transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 dark:bg-zinc-900 dark:text-white dark:shadow-bar-dark hover:dark:bg-zinc-700"
+          className={cn(
+            "group relative flex cursor-pointer items-center gap-3 overflow-visible border-b border-gray-100 px-3 py-2.5 transition-colors duration-150 hover:bg-slate-100 dark:border-zinc-800 dark:text-white hover:dark:bg-zinc-800",
+            chat.pinned && "bg-gray-50 dark:bg-zinc-900/70"
+          )}
           onContextMenu={handleContextMenu}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
@@ -400,54 +388,79 @@ const Card: React.FC<Props> = ({ chat }) => {
                 <div className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-white bg-green-500" />
               )}
           </div>
-          <div className="w-1/4 flex-grow">
-            <div className="flex items-baseline justify-between">
-              <div className="flex items-center gap-1">
-                <h2 className="truncate font-semibold">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1">
+                <h2 className={cn("truncate", chat.unread > 0 ? "font-bold" : "font-semibold")}>
                   {chat.name + (chat.type === "Personal" ? " (You)" : "")}
                 </h2>
                 {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
               </div>
+              <span
+                className={cn(
+                  "flex-shrink-0 text-nowrap text-xs group-hover:hidden",
+                  chat.unread > 0 ? "font-medium text-brand" : "text-gray-500"
+                )}
+              >
+                {time}
+              </span>
             </div>
-            <p className="truncate text-sm text-gray-600">
-              {filteredIsTypingList?.length > 0
-                ? typingLabel(filteredIsTypingList)
-                : draft
-                  ? (
-                      <>
-                        <span className="text-brand">Draft: </span>
-                        {draft}
-                      </>
-                    )
-                  : lastMessagePreview(chat.lastMessage)}
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-nowrap text-sm text-gray-500 group-hover:hidden">{time}</span>
-            <div className="flex items-center gap-2">
-              {chat.unread > 0 && (
-                <div className="flex size-5 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-                  {chat.unread}
-                </div>
-              )}
-              {chat.pinned && (
-                <Pin
-                  size={21}
-                  className={`cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (socket) {
-                      socket.emit("updateConversation", {
-                        id: chat.id,
-                        updates: { pinned: !isPinned, userId: userdata._id },
-                      });
-                      dispatch(
-                        updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } })
-                      );
-                    }
-                  }}
-                />
-              )}
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <p
+                className={cn(
+                  "flex min-w-0 items-center gap-1 truncate text-sm",
+                  chat.unread > 0
+                    ? "font-medium text-gray-900 dark:text-gray-100"
+                    : "text-gray-600 dark:text-gray-400"
+                )}
+              >
+                {typing ? (
+                  <span className="truncate italic text-brand">{typingLabel(filteredIsTypingList)}</span>
+                ) : draft ? (
+                  <>
+                    <span className="flex-shrink-0 text-red-500">Draft:</span>
+                    <span className="truncate">{draft}</span>
+                  </>
+                ) : (
+                  <>
+                    {showTick &&
+                      (chat.lastRead ? (
+                        <CheckCheck className="size-4 flex-shrink-0 text-sky-500" aria-label="Read" />
+                      ) : (
+                        <Check className="size-4 flex-shrink-0 text-gray-500" aria-label="Sent" />
+                      ))}
+                    <span className="truncate">
+                      {senderPrefix}
+                      {chat.lastMessage}
+                    </span>
+                  </>
+                )}
+              </p>
+              <div className="flex flex-shrink-0 items-center gap-2">
+                {chat.unread > 0 && (
+                  <div className="flex min-w-5 items-center justify-center rounded-full bg-brand px-1.5 py-0.5 text-xs font-bold leading-none text-white">
+                    {chat.unread}
+                  </div>
+                )}
+                {chat.pinned && (
+                  <Pin
+                    size={16}
+                    className="cursor-pointer text-gray-500 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (socket) {
+                        socket.emit("updateConversation", {
+                          id: chat.id,
+                          updates: { pinned: !isPinned, userId: userdata._id },
+                        });
+                        dispatch(
+                          updateConversation({ id: chat.id, updates: { pinned: !chat.pinned } })
+                        );
+                      }
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -468,12 +481,12 @@ const Card: React.FC<Props> = ({ chat }) => {
 
 const ChatListPage: React.FC<FilteredChatsProps> = ({
   filteredChats,
-  className = "overflow-auto p-4 pt-2",
+  className = "overflow-auto px-2 pb-4 pt-1",
   className1 = "mb-10",
 }) => {
   return (
     <div className={`h-full flex-grow ${className}`}>
-      <div className={`flex flex-col gap-2 ${className1} tablets1:mb-0`}>
+      <div className={`flex flex-col ${className1} tablets1:mb-0`}>
         {filteredChats()
           .sort((a, b) => {
             // First sort by pinned status

@@ -39,7 +39,7 @@ import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
-import { lastMessagePreview } from "@/lib/polls";
+import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { chatDraftKey, useDraft } from "@/hooks/useDraft";
 import { TypingBubble } from "../TypingIndicator";
 import ChatTextarea from "../ChatTextarea";
@@ -356,10 +356,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       dispatch(addMessage(msgCopy));
       dispatch(
         updateConversation({
-          id: msg._id as string,
+          id: pid,
           updates: {
             unread: isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
-            lastMessage: lastMessagePreview(msg.content),
+            ...convoPreviewUpdate(msg),
             lastUpdated: msg.timestamp,
           },
         })
@@ -379,9 +379,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             dispatch(addMessage(botResponse));
             dispatch(
               updateConversation({
-                id: msg._id as string,
+                id: pid,
                 updates: {
-                  lastMessage: botResponse.content,
+                  ...convoPreviewUpdate(botResponse),
                   lastUpdated: botResponse.timestamp,
                 },
               })
@@ -649,7 +649,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               {socket && otherPerson?.accountType !== "bot" && (
                 <CallButton
                   roomId={pid}

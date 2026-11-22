@@ -5,13 +5,13 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import { POLL_LIMITS, PollData, sanitizePoll } from "@/lib/polls";
 
@@ -53,12 +53,12 @@ export function PollCreator({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white dark:bg-zinc-900">
-        <DialogHeader>
-          <DialogTitle>Create poll</DialogTitle>
-          <DialogDescription>Ask a question and add up to {POLL_LIMITS.maxOptions} options.</DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-md bg-white dark:bg-zinc-900">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Create poll</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>Ask a question and add up to {POLL_LIMITS.maxOptions} options.</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <div className="space-y-3">
           <Input
             value={question}
@@ -123,15 +123,15 @@ export function PollCreator({
             </select>
           </label>
         </div>
-        <DialogFooter>
+        <ResponsiveDialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button disabled={!valid} onClick={submit} className="bg-brand text-white hover:bg-brand/90">
             Add poll
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

@@ -415,6 +415,12 @@ export interface ConvoType {
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
   lastMessage: string;
+  /** The latest message, so the list can show who sent it and whether it was read. */
+  lastMessageId?: string;
+  lastSenderId?: string;
+  lastSenderName?: string;
+  /** Someone other than the sender has read the latest message. */
+  lastRead?: boolean;
   timestamp: string;
   /** DMs only: the other person hides their last seen time. */
   lastSeenHidden?: boolean;

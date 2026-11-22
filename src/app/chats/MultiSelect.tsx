@@ -63,7 +63,7 @@ export const MultiSelect = () => {
         continue;
       }
       const convo = conversations.find((c) => c.id === msg.chatId);
-      if (convo && convo.lastMessage === msg.content) {
+      if (convo && (convo.lastMessageId === id || convo.lastMessage === msg.content)) {
         dispatch(
           updateConversation({ id: msg.chatId, updates: { lastMessage: deletedPreview(deletion === "admin" ? ADMIN_DELETED_CONTENT : SENDER_DELETED_CONTENT) } })
         );

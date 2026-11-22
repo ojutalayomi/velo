@@ -1,7 +1,5 @@
-import { messageText } from "@/lib/polls";
-import { isVoiceNoteName } from "@/lib/voiceNote";
+import { previewFor } from "@/lib/chatPreview";
 import { ChatDataClient, MessageAttributes } from "../types/type";
-import { DELETED_MARKER, deletedPreview } from "@/lib/messageDeletion";
 import { Time } from "../utils";
 
 export class Chat {
@@ -13,20 +11,8 @@ export class Chat {
     this.messages = messages || [];
   }
 
-  private filter(param: string) {
-    if (!this.messages) return;
-    const filteredResults = this.messages.filter((msg) => msg._id === param);
-    const result = filteredResults[0];
-    if (filteredResults.length === 0) return null;
-    if (result.content.endsWith(DELETED_MARKER)) return deletedPreview(result.content);
-    const text = messageText(result);
-    const hasContent = result.content.trim() !== "";
-    if (text) return `${hasContent && result.attachments.length > 0 ? "📷 " : ""}${text}`;
-    // Older messages have no specific type; a voice note is recognisable by its stored name.
-    if (result.attachments.some((a) => isVoiceNoteName(typeof a === "string" ? a : a?.key))) {
-      return "🎤 Voice message";
-    }
-    return result.attachments.length > 0 ? "📎 Attachment" : "";
+  private lastMessage(id: string) {
+    return this.messages.find((msg) => msg._id === id) ?? null;
   }
 
   private getName = (uid: string) =>
@@ -38,6 +24,7 @@ export class Chat {
 
   public getConvo(uid: string) {
     const participant = this.chat.participants.find((p) => p.userId === uid);
+    const last = this.chat.lastMessageId ? this.lastMessage(this.chat.lastMessageId) : null;
     const displayPicture = this.chat.participants
       ? this.chat.participants.length > 1
         ? this.chat.participants.find((p) => p.userId !== uid)?.displayPicture
@@ -56,8 +43,14 @@ export class Chat {
       adminIds: this.chat.adminIds,
       onlyAdminsCanSend: this.chat.onlyAdminsCanSend ?? false,
       lastMessage: this.chat.lastMessageId
-        ? this.filter(this.chat.lastMessageId) || "🚫 Message not found"
+        ? (last && previewFor(last)) || "🚫 Message not found"
         : "📝 Be the first to send a message",
+      lastMessageId: this.chat.lastMessageId || undefined,
+      lastSenderId: last?.sender?.id,
+      lastSenderName: last?.sender?.name,
+      lastRead: last
+        ? Object.entries(last.isRead ?? {}).some(([id, read]) => id !== last.sender?.id && read)
+        : false,
       timestamp: this.chat.timestamp,
       lastSeenHidden: this.chat.lastSeenHidden ?? false,
       unread: participant?.unreadCount || 0,

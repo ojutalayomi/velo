@@ -480,7 +480,7 @@ const ChatPage = () => {
       clearFiles();
       closeQuote();
       const txt = document.getElementById("txt");
-      if (txt) txt.style.height = "38px";
+      if (txt) txt.style.height = "20px";
 
       dispatch(setNewGroupMembers([]));
       router.push(`/chats/${result.chat.chatType === "Group" ? "group/" : ""}${result.chat._id}`);

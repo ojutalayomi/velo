@@ -334,7 +334,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       clearFiles();
       closeQuote();
       const txt = document.getElementById("txt");
-      if (txt) txt.style.height = "38px";
+      if (txt) txt.style.height = "20px";
 
       setTimeout(() => {
         scrollToBottom();

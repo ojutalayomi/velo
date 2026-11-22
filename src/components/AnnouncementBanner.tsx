@@ -43,7 +43,6 @@ export default function AnnouncementBanner() {
   useEffect(() => {
     if (!socket) return;
     const onNew = (data: Announcement) => show(data);
-    // Refetch rather than just clearing: an older live announcement may take over.
     const onRemoved = (data: { id: string }) => setItem((cur) => (cur?.id === data?.id ? null : cur));
     socket.on("announcement:new", onNew);
     socket.on("announcement:removed", onRemoved);
@@ -67,8 +66,13 @@ export default function AnnouncementBanner() {
 
   const external = item.url?.startsWith("http");
 
+  // Floats over the page rather than sitting in the layout: many pages size themselves to the full
+  // viewport (chats, home, ...), so an in-flow banner would push their bottoms off-screen.
   return (
-    <div role="status" className="flex items-start gap-3 bg-brand px-4 py-2 text-sm text-foreground">
+    <div
+      role="status"
+      className="fixed left-1/2 top-2 z-[60] flex w-[min(40rem,calc(100vw-1rem))] -translate-x-1/2 items-start gap-3 rounded-lg border border-primary/20 bg-brand px-4 py-2 text-sm text-foreground shadow-lg"
+    >
       <Megaphone className="mt-0.5 size-4 shrink-0" />
       <p className="min-w-0 flex-1">
         <b>{item.title}</b> {item.message}{" "}

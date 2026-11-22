@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { logAdminAction, requireAdmin } from "@/lib/admin";
 import { MongoDBClient } from "@/lib/mongodb";
-import { emitViaSocketServer } from "@/lib/socket";
+import { broadcastAnnouncementEvent } from "@/lib/socket";
 
 const MAX_TITLE = 100;
 const MAX_MESSAGE = 500;
@@ -26,13 +26,23 @@ function parseFields(body: Record<string, unknown> | undefined) {
   return { title, message, url, expires };
 }
 
-/** Live-push to connected users; failures are logged because users still get it on next load. */
-async function broadcast(adminId: string, event: "announcement:publish" | "announcement:retire", id: string) {
-  try {
-    await emitViaSocketServer(adminId, event, { id }, { totalTimeoutMs: 8000 });
-  } catch (error) {
-    console.error("Announcement broadcast failed:", error);
+/**
+ * Live-push to connected users via the socket server's HTTP endpoint, retrying once.
+ * Returns whether the server accepted it; the announcement is saved either way and users still
+ * get it on their next load or reconnect.
+ */
+async function broadcast(
+  event: "publish" | "retire",
+  id: string
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      return await broadcastAnnouncementEvent(event, id);
+    } catch (error) {
+      console.error(`Announcement broadcast failed (attempt ${attempt}):`, error);
+    }
   }
+  return false;
 }
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
@@ -70,8 +80,8 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         targetId: String(doc._id),
         details: { title },
       });
-      await broadcast(admin._id, "announcement:publish", String(doc._id));
-      return res.status(201).json({ data: doc });
+      const live = await broadcast("publish", String(doc._id));
+      return res.status(201).json({ data: doc, live });
     }
 
     if (req.method === "PUT") {
@@ -100,10 +110,10 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         details: { title, previousTitle: target.title },
       });
       // Re-broadcast so live viewers see the corrected text (the socket server ignores inactive ones).
-      if (target.active) await broadcast(admin._id, "announcement:publish", id);
+      const live = target.active ? await broadcast("publish", id) : true;
       return res
         .status(200)
-        .json({ data: { ...target, title, message, expiresAt, url: url || undefined } });
+        .json({ data: { ...target, title, message, expiresAt, url: url || undefined }, live });
     }
 
     if (req.method === "PATCH") {
@@ -120,8 +130,8 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         targetId: id,
         details: { title: target.title },
       });
-      await broadcast(admin._id, active ? "announcement:publish" : "announcement:retire", id);
-      return res.status(200).json({ data: { active } });
+      const live = await broadcast(active ? "publish" : "retire", id);
+      return res.status(200).json({ data: { active }, live });
     }
 
     if (req.method === "DELETE") {

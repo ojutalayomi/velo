@@ -43,9 +43,7 @@ export type ServerEvent =
   | "chatMessage"
   | "chat:updated"
   | "chat:participantsAdded"
-  | "chat:participantsRemoved"
-  | "announcement:publish"
-  | "announcement:retire";
+  | "chat:participantsRemoved";
 
 export type EmitOptions = {
   connectTimeoutMs?: number;
@@ -156,4 +154,30 @@ export async function emitViaSocketServer(
   options?: EmitOptions
 ): Promise<void> {
   await emitSequenceViaSocketServer(userId, [{ event, payload }], options);
+}
+
+/**
+ * Asks the socket server to push an announcement change to connected users, over plain HTTPS.
+ * Unlike `emitViaSocketServer` this needs no socket handshake and no fake user connection (which
+ * would flip the sender's presence/last-seen). Resolves true only if the server accepted the call.
+ */
+export async function broadcastAnnouncementEvent(
+  event: "publish" | "retire",
+  id: string,
+  options?: { timeoutMs?: number }
+): Promise<boolean> {
+  // The socket URL may be configured as ws(s)://, which fetch cannot use.
+  const baseUrl = getSocketServerUrl().replace(/^ws(s?):\/\//i, "http$1://");
+  const secret = process.env.SOCKET_BROADCAST_SECRET;
+  if (!baseUrl || !secret) {
+    throw new Error("Missing SOCKET_SERVER_URL/NEXT_PUBLIC_SOCKET_URL or SOCKET_BROADCAST_SECRET");
+  }
+  const res = await fetch(`${baseUrl}/api/announcements/broadcast`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+    body: JSON.stringify({ event, id }),
+    signal: AbortSignal.timeout(options?.timeoutMs ?? 8000),
+  });
+  if (!res.ok) throw new Error(`Socket server responded ${res.status}`);
+  return true;
 }

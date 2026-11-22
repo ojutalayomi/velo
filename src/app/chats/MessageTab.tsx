@@ -11,6 +11,7 @@ import {
   CircleCheck,
   CircleX,
   SmilePlus,
+  Ban,
 } from "lucide-react";
 import React, { TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -350,6 +351,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
               <></>
             )}
 
+            {/* The bubble below is hidden when there is no text, which would also hide the time and
+                the sent/read ticks of an attachment-only message. */}
+            {message.attachments.length > 0 && message.content.length === 0 && (
+              <div className="flex items-center justify-end gap-1 px-1 text-[11px] leading-none text-gray-500 dark:text-gray-400">
+                <span>{time}</span>
+                {senderId === userdata._id && renderStatusIcon(message.status)}
+              </div>
+            )}
+
             {/* Message Bubble */}
             <div
               className={`relative ${message.content.length > 0 ? "flex" : "hidden"} min-w-[4.5rem] max-w-full flex-col overflow-hidden rounded-lg px-2.5 pb-1 pt-1.5 ${
@@ -442,9 +452,10 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                         </div>
                       ) : (
                         <p
-                          className="whitespace-pre-wrap break-words text-[15px] leading-snug"
+                          className={`whitespace-pre-wrap break-words text-[15px] leading-snug ${message.content.endsWith(DELETED_MARKER) ? "flex items-center" : ""}`}
                           style={{ fontFamily: "inherit" }}
                         >
+                          {message.content.endsWith(DELETED_MARKER) && <Ban className="size-4 mr-1" />}
                           {renderTextWithLinks(
                             contentToDisplay,
                             [

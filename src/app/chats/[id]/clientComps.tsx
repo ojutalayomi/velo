@@ -302,7 +302,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         content: override?.content ?? newMessage,
         timestamp: new Date().toISOString(),
         chatType: "DM" as ChatType,
-        messageType: override?.messageType ?? ("Markdown" as MessageType),
+        messageType: override?.messageType ?? ("Text" as MessageType),
         reactions: [],
         attachments: [] as Attachment[], // Will be populated with file data
         quotedMessageId: id,
@@ -337,6 +337,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
         // Wait for all files to be read
         await Promise.all(fileReadPromises);
+        msg.retype(); // the type depends on what was attached
       }
 
       // Dispatch actions to update the state

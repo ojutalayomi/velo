@@ -68,6 +68,7 @@ export type MessageType =
   | "Sticker"
   | "Poll"
   | "Call"
+  | "VoiceNote"
   | "PollResponse"
   | "PollEnd"
   | "PollResult"

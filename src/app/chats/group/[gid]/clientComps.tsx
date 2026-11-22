@@ -291,6 +291,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
         // Wait for all files to be read
         await Promise.all(fileReadPromises);
+        msg.retype(); // the type depends on what was attached
       }
 
       const msgCopy = { ...msg };

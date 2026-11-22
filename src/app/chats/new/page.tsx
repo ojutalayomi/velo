@@ -35,6 +35,7 @@ import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
 import { UserDataPartial } from "@/redux/userSlice";
+import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 import { formatNo, timeFormatter } from "@/templates/PostProps";
 
@@ -443,7 +444,7 @@ const ChatPage = () => {
               updateConversation({
                 id: msg.chatId,
                 updates: {
-                  lastMessage: botResponse.content,
+                  ...convoPreviewUpdate(botResponse),
                   lastUpdated: botResponse.timestamp,
                 },
               })
@@ -469,7 +470,7 @@ const ChatPage = () => {
           id: msg.chatId,
           updates: {
             unread: 1,
-            lastMessage: msg.content,
+            ...convoPreviewUpdate(msg),
             lastUpdated: msg.timestamp,
           },
         })

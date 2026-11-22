@@ -4,14 +4,14 @@ import { Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 
 interface Found {
   _id: string;
@@ -57,12 +57,12 @@ export function ContactPicker({
   const loading = query.length >= 2 && settled === null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Share a contact</DialogTitle>
-          <DialogDescription>Search for someone on Velo.</DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-sm">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Share a contact</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>Search for someone on Velo.</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
           <Input
@@ -73,7 +73,7 @@ export function ContactPicker({
             className="pl-8"
           />
         </div>
-        <ul className="max-h-72 overflow-y-auto">
+        <ul className="max-h-72 overflow-y-auto" data-vaul-no-drag>
           {loading && (
             <li className="flex justify-center p-4">
               <Loader2 className="size-5 animate-spin text-gray-400" />
@@ -110,7 +110,7 @@ export function ContactPicker({
             </li>
           ))}
         </ul>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

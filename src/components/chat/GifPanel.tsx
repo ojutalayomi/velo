@@ -4,15 +4,8 @@
 import { Loader2, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { fetchKlipy, KlipyItem, KlipyKind } from "@/lib/klipy";
+import { fetchKlipy, klipyCustomerId, KlipyItem, KlipyKind } from "@/lib/klipy";
 import { cn } from "@/lib/utils";
 
 interface Results {
@@ -23,28 +16,25 @@ interface Results {
   error: string;
 }
 
-const TABS: { kind: KlipyKind; label: string }[] = [
-  { kind: "gifs", label: "GIFs" },
-  { kind: "stickers", label: "Stickers" },
-];
-
-/** Browse or search KLIPY and send a GIF or sticker. Requests go straight from the browser to KLIPY. */
-export function GifPicker({
-  open,
-  onOpenChange,
-  customerId,
+/** The GIF or sticker grid with its search box; lives inside the expression picker. */
+export function GifPanel({
+  kind,
+  userId,
   onSelect,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  customerId: string;
-  onSelect: (pick: { kind: KlipyKind; item: KlipyItem; query: string }) => void;
+  kind: KlipyKind;
+  userId: string;
+  onSelect: (pick: { kind: KlipyKind; item: KlipyItem; query: string; customerId: string }) => void;
 }) {
-  const [kind, setKind] = useState<KlipyKind>("gifs");
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Results | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [customerId, setCustomerId] = useState("");
+  // KLIPY wants a stable id per person; a hash of the user id keeps the real one private.
+  useEffect(() => {
+    void klipyCustomerId(userId).then(setCustomerId);
+  }, [userId]);
   const key = `${kind}|${query}`;
   const keyRef = useRef(key);
   useEffect(() => {
@@ -58,7 +48,7 @@ export function GifPicker({
   }, [text]);
 
   useEffect(() => {
-    if (!open || !customerId) return;
+    if (!customerId) return;
     const controller = new AbortController();
     fetchKlipy(kind, { q: query, page: 1, customerId }, controller.signal)
       .then((page) => setResults({ key, items: page.items, page: 1, hasNext: page.hasNext, error: "" }))
@@ -67,7 +57,7 @@ export function GifPicker({
         setResults({ key, items: [], page: 1, hasNext: false, error: error instanceof Error ? error.message : "Could not load" });
       });
     return () => controller.abort();
-  }, [open, kind, query, customerId, key]);
+  }, [kind, query, customerId, key]);
 
   const current = results?.key === key ? results : null;
 
@@ -93,27 +83,7 @@ export function GifPicker({
   }, [current, customerId, kind, loadingMore, query]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[70vh] max-w-md flex-col gap-3">
-        <DialogHeader>
-          <DialogTitle>GIFs & stickers</DialogTitle>
-          <DialogDescription className="sr-only">Search KLIPY for a GIF or sticker to send</DialogDescription>
-        </DialogHeader>
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-zinc-800">
-          {TABS.map((tab) => (
-            <button
-              key={tab.kind}
-              type="button"
-              onClick={() => setKind(tab.kind)}
-              className={cn(
-                "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors",
-                kind === tab.kind ? "bg-white shadow-sm dark:bg-zinc-700 dark:text-white" : "text-gray-600 dark:text-gray-400"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    <div className="flex h-full min-h-0 flex-col gap-3">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
           <Input
@@ -123,7 +93,7 @@ export function GifPicker({
             className="pl-8"
           />
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto" data-vaul-no-drag>
           {!current ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="size-6 animate-spin text-gray-400" />
@@ -138,8 +108,7 @@ export function GifPicker({
                     key={item.slug}
                     type="button"
                     onClick={() => {
-                      onSelect({ kind, item, query });
-                      onOpenChange(false);
+                      onSelect({ kind, item, query, customerId });
                     }}
                     className="aspect-square overflow-hidden rounded-lg bg-gray-100 transition hover:ring-2 hover:ring-brand dark:bg-zinc-800"
                   >
@@ -167,7 +136,6 @@ export function GifPicker({
           )}
         </div>
         <p className="text-center text-[11px] text-gray-500">Powered by KLIPY</p>
-      </DialogContent>
-    </Dialog>
+    </div>
   );
 }

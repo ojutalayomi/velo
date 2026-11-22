@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSelector, useStore } from "react-redux";
 
+import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { deletedPreview, SENDER_DELETED_CONTENT } from "@/lib/messageDeletion";
 import { toast } from "sonner";
 
@@ -202,7 +203,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
               unread: msg.isRead?.[String(userdata._id)]
                 ? conversation.unread
                 : (conversation.unread ?? 0) + 1,
-              lastMessage: msg.content,
+              ...convoPreviewUpdate(msg),
               lastUpdated: msg.timestamp,
             },
           })
@@ -308,6 +309,18 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     );
     socket.on("messagesRead", (data: { readerId: string; messageIds: string[] }) => {
       dispatch(markMessagesRead({ messageIds: data.messageIds, readerId: data.readerId }));
+      // The list shows a read tick on the latest message, so mark it when it was read.
+      if (data.readerId === userdata._id) return;
+      for (const convo of store.getState().chat.conversations) {
+        if (
+          convo.lastMessageId &&
+          convo.lastSenderId === userdata._id &&
+          !convo.lastRead &&
+          data.messageIds.includes(convo.lastMessageId)
+        ) {
+          dispatch(updateConversation({ id: convo.id, updates: { lastRead: true } }));
+        }
+      }
     });
     // A message was deleted for everyone (by its sender or a group admin).
     socket.on(
@@ -328,7 +341,10 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
 
         // Only touch the chat-list preview when the deleted message is the one it shows.
         const convo = state.chat.conversations.find((c) => c.id === data.chatId);
-        if (convo && old && convo.lastMessage.endsWith(old.content)) {
+        if (
+          convo &&
+          (convo.lastMessageId === data.messageId || (old && convo.lastMessage.endsWith(old.content)))
+        ) {
           dispatch(
             updateConversation({ id: data.chatId, updates: { lastMessage: deletedPreview(content) } })
           );

@@ -5,13 +5,13 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import type { PostLocation } from "@/lib/types/type";
 
@@ -78,12 +78,12 @@ export function LocationPicker({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white dark:bg-zinc-900">
-        <DialogHeader>
-          <DialogTitle>Add location</DialogTitle>
-          <DialogDescription>Tag a place, or use your current location.</DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-md bg-white dark:bg-zinc-900">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Add location</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>Tag a place, or use your current location.</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <div className="space-y-3">
           <Input
             value={name}
@@ -105,7 +105,7 @@ export function LocationPicker({
           </Button>
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
-        <DialogFooter>
+        <ResponsiveDialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -116,8 +116,8 @@ export function LocationPicker({
           >
             Add location
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

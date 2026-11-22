@@ -18,6 +18,7 @@ import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
+import ForwardDialog from "@/components/ForwardDialog";
 import { LinkPreview } from "@/components/LinkPreview";
 import { Markdown } from "@/components/Markdown";
 import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
@@ -172,6 +173,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
 
   // Update the optionss array to use the defined type
   const IsSelected = selectedMessages.includes(String(message._id));
+  const [forwardOpen, setForwardOpen] = useState(false);
   const optionss: Option[] = [
     {
       icon: TextQuote,
@@ -224,6 +226,18 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
           },
         ]
       : []),
+    ...(message.content.endsWith(DELETED_MARKER) || message.status === "sending"
+      ? []
+      : [
+          {
+            icon: Forward,
+            text: "Forward",
+            onClick: () => {
+              openOptions(false);
+              setForwardOpen(true);
+            },
+          },
+        ]),
     {
       icon: SmilePlus,
       text: "React",
@@ -342,6 +356,18 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
           <div
             className={`flex max-w-full flex-1 flex-col gap-1 ${senderId === userdata._id ? "items-end" : "items-start"}`}
           >
+            {/* The bubble that normally carries the sender's name is hidden for attachment-only
+                messages, so the name goes above the attachment instead. */}
+            {message.attachments.length > 0 &&
+              message.content.length === 0 &&
+              senderId !== userdata._id &&
+              message.chatType === "Group" &&
+              isFirstInGroup && (
+                <div className="flex items-center gap-1 px-1">
+                  <span className="text-[13px] font-semibold text-brand dark:text-brand">{sender}</span>
+                  {verified && <Statuser className="size-3.5" />}
+                </div>
+              )}
             {message.attachments.length ? (
               <MediaCollage
                 voiceNote={message.messageType === "VoiceNote"}
@@ -513,6 +539,14 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
           <OptionsComponent options={optionss} open={open} setOpen={setOpen} />
         )}
       </div>
+      {forwardOpen && (
+        <ForwardDialog
+          messageIds={[String(message._id)]}
+          open={forwardOpen}
+          onOpenChange={setForwardOpen}
+          onForwarded={() => setForwardOpen(false)}
+        />
+      )}
       {rectionInfoDisplay && (
         <ReactionsInfo message={message} setReactionInfoDisplay={setReactionInfoDisplay} />
       )}

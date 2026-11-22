@@ -249,7 +249,7 @@ const ChatSettingsPage: React.FC = () => {
           )}
         </div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">{convo.name}</h2>
-        <p className="mx-auto mt-1 max-w-sm whitespace-pre-line text-sm text-gray-500 dark:text-gray-400">
+        <p className="mx-auto mt-1 max-w-sm whitespace-pre-line break-words text-sm text-gray-500 dark:text-gray-400">
           {convo.description || <span className="italic">No description</span>}
         </p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">

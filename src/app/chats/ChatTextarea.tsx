@@ -15,7 +15,6 @@ import {
   Mic,
   MapPin,
   Music,
-  Sticker,
   Type,
   UserRound,
 } from "lucide-react";
@@ -51,13 +50,23 @@ import {
 } from "@/components/ui/dialog";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Input } from "@/components/ui/input";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MOBILE_QUERY } from "@/components/ui/responsive-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useMediaQuery } from "usehooks-ts";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
-import { klipyCustomerId, klipyEnabled, reportKlipyShare } from "@/lib/klipy";
+import { klipyEnabled, reportKlipyShare } from "@/lib/klipy";
 import { setMarkdownPreference, useMarkdownPreference } from "@/hooks/useMarkdownPreference";
-import { GifPicker } from "@/components/chat/GifPicker";
+import { ExpressionPicker } from "@/components/chat/ExpressionPicker";
 import { ContactPicker } from "@/components/chat/ContactPicker";
 import { LocationPicker } from "@/components/LocationPicker";
 import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
@@ -114,6 +123,8 @@ const ChatTextarea = ({
     state.chat.conversations.find((convo) => convo.id === chatId)
   );
   const isGroup = groupInfo?.type === "Group";
+  // A bot only reads text, so files and polls are not offered in its chat.
+  const isBotChat = Boolean(groupInfo?.isBot);
   const isGroupAdmin = isGroup && Boolean(groupInfo?.adminIds?.includes(String(userdata._id)));
   // @all is offered to admins only (the server enforces this too); @ai to anyone in a group.
   const specials = useMemo(
@@ -136,14 +147,7 @@ const ChatTextarea = ({
 
   const [locationOpen, setLocationOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  const [gifOpen, setGifOpen] = useState(false);
-  const [klipyId, setKlipyId] = useState("");
-  // KLIPY wants a stable id per person; a hash of the user id keeps the real one private.
   const userId = userdata._id;
-  useEffect(() => {
-    if (!gifOpen || klipyId) return;
-    void klipyCustomerId(String(userId)).then(setKlipyId);
-  }, [gifOpen, klipyId, userId]);
   const sendShare = useCallback(
     (content: string, messageType: MessageType) =>
       handleSendMessage(quote.message?._id, undefined, { content, messageType }),
@@ -385,10 +389,10 @@ const ChatTextarea = ({
           <Pop
             input={inputRef}
             setFileAccepts={setFileAccepts}
-            onPoll={() => setPollOpen(true)}
+            onPoll={isBotChat ? undefined : () => setPollOpen(true)}
+            textOnly={isBotChat}
             onLocation={() => setLocationOpen(true)}
             onContact={() => setContactOpen(true)}
-            onGif={klipyEnabled() ? () => setGifOpen(true) : undefined}
             markdown={markdown}
           />
           <LocationPicker
@@ -397,20 +401,6 @@ const ChatTextarea = ({
             onOpenChange={setLocationOpen}
             onSelect={(location) => sendShare(JSON.stringify(location), "Location")}
           />
-          {klipyEnabled() && (
-            <GifPicker
-              open={gifOpen}
-              onOpenChange={setGifOpen}
-              customerId={klipyId}
-              onSelect={({ kind, item, query }) => {
-                sendShare(
-                  JSON.stringify({ provider: "klipy", ...item }),
-                  kind === "stickers" ? "Sticker" : "AnimatedGIF"
-                );
-                reportKlipyShare(kind, item.slug, klipyId, query);
-              }}
-            />
-          )}
           <ContactPicker
             open={contactOpen}
             onOpenChange={setContactOpen}
@@ -489,15 +479,27 @@ const ChatTextarea = ({
                   )}
                 </Button>
               )}
-              <EmojiPicker
+              <ExpressionPicker
+                userId={String(userId)}
                 triggerClassName={emojiPickerTriggerClassName}
-                onChange={handleEmojiChange}
+                onEmoji={handleEmojiChange}
+                onGif={
+                  klipyEnabled()
+                    ? ({ kind, item, query, customerId }) => {
+                        sendShare(
+                          JSON.stringify({ provider: "klipy", ...item }),
+                          kind === "stickers" ? "Sticker" : "AnimatedGIF"
+                        );
+                        reportKlipyShare(kind, item.slug, customerId, query);
+                      }
+                    : undefined
+                }
               >
                 <Smile size={20} className="flex-1 text-brand" />
-              </EmojiPicker>
+              </ExpressionPicker>
             </>
           </div>
-          {newMessage.length === 0 && attachments.length === 0 && !disabled ? (
+          {newMessage.length === 0 && attachments.length === 0 && !disabled && !isBotChat ? (
             <Button
               aria-label="Record a voice note"
               onClick={() => void startVoiceNote()}
@@ -528,14 +530,16 @@ interface PopProps {
   onPoll?: () => void;
   onLocation?: () => void;
   onContact?: () => void;
-  onGif?: () => void;
+  /** Hides the file, photo and audio items. */
+  textOnly?: boolean;
   markdown?: boolean;
 }
 
-const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, onGif, markdown }: PopProps) => {
+const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, textOnly, markdown }: PopProps) => {
   const [open, setOpen] = useState<boolean>(false);
+  const isMobile = useMediaQuery(MOBILE_QUERY);
 
-  const options = [
+  const fileOptions = [
     {
       icon: Folder,
       text: "File",
@@ -575,7 +579,9 @@ const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, onGif, mark
         }
       },
     },
-    ...(onGif ? [{ icon: Sticker, text: "GIF & Stickers", onClick: onGif }] : []),
+  ];
+  const options = [
+    ...(textOnly ? [] : fileOptions),
     ...(onLocation ? [{ icon: MapPin, text: "Location", onClick: onLocation }] : []),
     ...(onContact ? [{ icon: UserRound, text: "Contact", onClick: onContact }] : []),
     ...(onPoll ? [{ icon: BarChart3, text: "Poll", onClick: onPoll }] : []),
@@ -585,38 +591,69 @@ const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, onGif, mark
       onClick: () => setMarkdownPreference(!markdown),
     },
   ];
-  return (
-    <>
-      <Popover open={open} onOpenChange={() => setOpen(!open)}>
-        <PopoverTrigger asChild>
-          <Button className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent p-2 text-white transition-colors dark:hover:bg-neutral-800">
-            <Plus size={20} className="text-brand" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg dark:bg-zinc-800"
-          align="start"
-          sideOffset={10}
-        >
-          <div className="flex flex-col">
+  const trigger = (
+    <Button className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent p-2 text-white transition-colors dark:hover:bg-neutral-800">
+      <Plus size={20} className="text-brand" />
+    </Button>
+  );
+
+  // Phones get a bottom drawer with larger rows, like the message options.
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Attach</DrawerTitle>
+            <DrawerDescription className="sr-only">Choose what to share in this chat</DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-4">
             {options.map(({ icon: Icon, text, onClick }, index) => (
               <button
                 key={index}
                 type="button"
-                className="flex items-center gap-2 rounded p-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                className="flex w-full items-center gap-3 rounded px-2 py-3 hover:bg-gray-100 dark:hover:bg-zinc-700"
                 onClick={() => {
                   onClick();
                   setOpen(false);
                 }}
               >
-                <Icon size={16} className="dark:text-gray-400" />
-                <span className="text-sm dark:text-white">{text}</span>
+                <Icon size={20} className="dark:text-gray-400" />
+                <span className="text-base dark:text-white">{text}</span>
               </button>
             ))}
           </div>
-        </PopoverContent>
-      </Popover>
-    </>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        className="w-auto min-w-[160px] rounded-md bg-white p-1 shadow-lg dark:bg-zinc-800"
+        align="start"
+        sideOffset={10}
+      >
+        <div className="flex flex-col">
+          {options.map(({ icon: Icon, text, onClick }, index) => (
+            <button
+              key={index}
+              type="button"
+              className="flex items-center gap-2 rounded p-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
+              onClick={() => {
+                onClick();
+                setOpen(false);
+              }}
+            >
+              <Icon size={16} className="dark:text-gray-400" />
+              <span className="text-sm dark:text-white">{text}</span>
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

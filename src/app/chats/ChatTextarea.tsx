@@ -13,8 +13,10 @@ import {
   Trash,
   BarChart3,
   Mic,
+  MapPin,
   Music,
   Type,
+  UserRound,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -53,6 +55,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
 import { setMarkdownPreference, useMarkdownPreference } from "@/hooks/useMarkdownPreference";
+import { ContactPicker } from "@/components/chat/ContactPicker";
+import { LocationPicker } from "@/components/LocationPicker";
 import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import type { MessageType } from "@/lib/types/type";
@@ -127,6 +131,13 @@ const ChatTextarea = ({
   const { files: attachments, clearFiles, setFiles } = useGlobalFileStorage();
   const [txtButton, setTxtButton] = useState(false);
 
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const sendShare = useCallback(
+    (content: string, messageType: MessageType) =>
+      handleSendMessage(quote.message?._id, undefined, { content, messageType }),
+    [handleSendMessage, quote.message?._id]
+  );
   const markdown = useMarkdownPreference();
   const voice = useVoiceRecorder();
   const sendVoiceNote = useCallback(async () => {
@@ -364,7 +375,20 @@ const ChatTextarea = ({
             input={inputRef}
             setFileAccepts={setFileAccepts}
             onPoll={() => setPollOpen(true)}
+            onLocation={() => setLocationOpen(true)}
+            onContact={() => setContactOpen(true)}
             markdown={markdown}
+          />
+          <LocationPicker
+            key={locationOpen ? "location-open" : "location-closed"}
+            open={locationOpen}
+            onOpenChange={setLocationOpen}
+            onSelect={(location) => sendShare(JSON.stringify(location), "Location")}
+          />
+          <ContactPicker
+            open={contactOpen}
+            onOpenChange={setContactOpen}
+            onSelect={(contact) => sendShare(JSON.stringify(contact), "Contact")}
           />
           <PollCreator
             key={pollOpen ? "open" : "closed"}
@@ -476,10 +500,12 @@ interface PopProps {
   input: RefObject<HTMLInputElement | null>;
   setFileAccepts: Dispatch<SetStateAction<string>>;
   onPoll?: () => void;
+  onLocation?: () => void;
+  onContact?: () => void;
   markdown?: boolean;
 }
 
-const Pop = ({ input, setFileAccepts, onPoll, markdown }: PopProps) => {
+const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, markdown }: PopProps) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const options = [
@@ -522,6 +548,8 @@ const Pop = ({ input, setFileAccepts, onPoll, markdown }: PopProps) => {
         }
       },
     },
+    ...(onLocation ? [{ icon: MapPin, text: "Location", onClick: onLocation }] : []),
+    ...(onContact ? [{ icon: UserRound, text: "Contact", onClick: onContact }] : []),
     ...(onPoll ? [{ icon: BarChart3, text: "Poll", onClick: onPoll }] : []),
     {
       icon: Type,

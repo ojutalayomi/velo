@@ -38,7 +38,10 @@ import { updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
 import { CallCard } from "@/components/CallCard";
 import { PollCard } from "@/components/PollCard";
+import { ContactCard } from "@/components/chat/ContactCard";
 import { LinkMessage } from "@/components/chat/LinkMessage";
+import { LocationCard } from "@/components/chat/LocationCard";
+import { parseContactContent, parseLocationContent } from "@/lib/chatShare";
 import { parseCallRecord } from "@/lib/callRecord";
 import { messageText, parsePollContent } from "@/lib/polls";
 import { useReactors } from "@/hooks/useReactors";
@@ -242,9 +245,11 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
 
   const pollData = message.messageType === "Poll" ? parsePollContent(message.content) : null;
   const callRecord = message.messageType === "Call" ? parseCallRecord(message.content) : null;
+  const locationData = message.messageType === "Location" ? parseLocationContent(message.content) : null;
+  const contactData = message.messageType === "Contact" ? parseContactContent(message.content) : null;
   const isLinkMessage = message.messageType === "Link";
   // A link-only message gets its own card instead of a preview above the text.
-  const urls = pollData || callRecord || isLinkMessage ? [] : extractUrls(messageContent);
+  const urls = pollData || callRecord || isLinkMessage || locationData || contactData ? [] : extractUrls(messageContent);
   const firstUrl = urls[0]; // Only show preview for the first URL
 
   const handleTouch = (e: TouchEvent<HTMLDivElement>) => {
@@ -379,6 +384,9 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                     messageContent.length > MAX_LENGTH && !isExpanded
                       ? messageContent.slice(0, MAX_LENGTH) + "..."
                       : messageContent;
+
+                  if (locationData) return <LocationCard location={locationData} />;
+                  if (contactData) return <ContactCard contact={contactData} />;
 
                   if (isLinkMessage) {
                     return <LinkMessage url={messageContent.trim()} own={senderId === userdata._id} />;

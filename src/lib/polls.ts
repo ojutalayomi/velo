@@ -96,6 +96,8 @@ export function messageText(message: { messageType?: string; content?: string })
     const label = ATTACHMENT_LABELS[message.messageType ?? ""];
     if (label) return label;
   }
+  if (message.messageType === "AnimatedGIF") return "🎞 GIF";
+  if (message.messageType === "Sticker") return "🏷 Sticker";
   if (message.messageType === "Location") {
     const location = parseLocationContent(message.content);
     if (location) return `📍 ${location.name}`;

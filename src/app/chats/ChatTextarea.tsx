@@ -15,6 +15,7 @@ import {
   Mic,
   MapPin,
   Music,
+  Sticker,
   Type,
   UserRound,
 } from "lucide-react";
@@ -54,7 +55,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
+import { klipyCustomerId, klipyEnabled, reportKlipyShare } from "@/lib/klipy";
 import { setMarkdownPreference, useMarkdownPreference } from "@/hooks/useMarkdownPreference";
+import { GifPicker } from "@/components/chat/GifPicker";
 import { ContactPicker } from "@/components/chat/ContactPicker";
 import { LocationPicker } from "@/components/LocationPicker";
 import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
@@ -133,6 +136,14 @@ const ChatTextarea = ({
 
   const [locationOpen, setLocationOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [gifOpen, setGifOpen] = useState(false);
+  const [klipyId, setKlipyId] = useState("");
+  // KLIPY wants a stable id per person; a hash of the user id keeps the real one private.
+  const userId = userdata._id;
+  useEffect(() => {
+    if (!gifOpen || klipyId) return;
+    void klipyCustomerId(String(userId)).then(setKlipyId);
+  }, [gifOpen, klipyId, userId]);
   const sendShare = useCallback(
     (content: string, messageType: MessageType) =>
       handleSendMessage(quote.message?._id, undefined, { content, messageType }),
@@ -377,6 +388,7 @@ const ChatTextarea = ({
             onPoll={() => setPollOpen(true)}
             onLocation={() => setLocationOpen(true)}
             onContact={() => setContactOpen(true)}
+            onGif={klipyEnabled() ? () => setGifOpen(true) : undefined}
             markdown={markdown}
           />
           <LocationPicker
@@ -385,6 +397,20 @@ const ChatTextarea = ({
             onOpenChange={setLocationOpen}
             onSelect={(location) => sendShare(JSON.stringify(location), "Location")}
           />
+          {klipyEnabled() && (
+            <GifPicker
+              open={gifOpen}
+              onOpenChange={setGifOpen}
+              customerId={klipyId}
+              onSelect={({ kind, item, query }) => {
+                sendShare(
+                  JSON.stringify({ provider: "klipy", ...item }),
+                  kind === "stickers" ? "Sticker" : "AnimatedGIF"
+                );
+                reportKlipyShare(kind, item.slug, klipyId, query);
+              }}
+            />
+          )}
           <ContactPicker
             open={contactOpen}
             onOpenChange={setContactOpen}
@@ -502,10 +528,11 @@ interface PopProps {
   onPoll?: () => void;
   onLocation?: () => void;
   onContact?: () => void;
+  onGif?: () => void;
   markdown?: boolean;
 }
 
-const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, markdown }: PopProps) => {
+const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, onGif, markdown }: PopProps) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const options = [
@@ -548,6 +575,7 @@ const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, markdown }:
         }
       },
     },
+    ...(onGif ? [{ icon: Sticker, text: "GIF & Stickers", onClick: onGif }] : []),
     ...(onLocation ? [{ icon: MapPin, text: "Location", onClick: onLocation }] : []),
     ...(onContact ? [{ icon: UserRound, text: "Contact", onClick: onContact }] : []),
     ...(onPoll ? [{ icon: BarChart3, text: "Poll", onClick: onPoll }] : []),

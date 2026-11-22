@@ -13,6 +13,7 @@ import {
   Trash,
   BarChart3,
   Mic,
+  Music,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -512,6 +513,19 @@ const Pop = ({ input, setFileAccepts, onPoll }: PopProps) => {
           // The accept attribute must change before click(), so state alone is too late.
           // eslint-disable-next-line react-hooks/immutability
           input.current.accept = ".jpg, .jpeg, .png, .gif, .mp4, .mov, .mkv";
+          input.current.click();
+        }
+      },
+    },
+    {
+      icon: Music,
+      text: "Audio",
+      onClick: () => {
+        setFileAccepts(".mp3, .wav, .m4a, .aac, .ogg, .flac");
+        if (input.current) {
+          // The accept attribute must change before click(), so state alone is too late.
+          // eslint-disable-next-line react-hooks/immutability
+          input.current.accept = ".mp3, .wav, .m4a, .aac, .ogg, .flac";
           input.current.click();
         }
       },

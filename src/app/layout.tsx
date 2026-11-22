@@ -18,7 +18,8 @@ const siteName = "Velo";
 const image = baseUrl + "/velo11.png";
 
 export const metadata: Metadata = {
-  title,
+  metadataBase: baseUrl ? new URL(baseUrl) : undefined,
+  title: { default: title, template: `%s | ${siteName}` },
   description,
   openGraph: {
     images: [

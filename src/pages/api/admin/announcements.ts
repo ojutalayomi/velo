@@ -124,7 +124,28 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       return res.status(200).json({ data: { active } });
     }
 
-    res.setHeader("Allow", "GET, POST, PUT, PATCH");
+    if (req.method === "DELETE") {
+      const id = req.body?.id;
+      if (typeof id !== "string" || !ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid request" });
+      }
+      const target = await col.findOne({ _id: new ObjectId(id) });
+      if (!target) return res.status(404).json({ message: "Announcement not found" });
+      // Live announcements must be retired first so viewers' banners are cleared.
+      if (target.active) {
+        return res.status(409).json({ message: "Retire the announcement before deleting it" });
+      }
+      await col.deleteOne({ _id: target._id, active: false });
+      await logAdminAction({
+        adminId: admin._id,
+        action: "announcement_delete",
+        targetId: id,
+        details: { title: target.title, message: target.message },
+      });
+      return res.status(200).json({ data: { deleted: true } });
+    }
+
+    res.setHeader("Allow", "GET, POST, PUT, PATCH, DELETE");
     return res.status(405).json({ message: "Method Not Allowed" });
   } catch (error) {
     console.error("Admin announcements error:", error);

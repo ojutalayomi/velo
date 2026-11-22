@@ -5,7 +5,7 @@ import Link from "next/link";
 import TrendingTopics from "@/components/TrendingTopics";
 
 export const metadata: Metadata = {
-  title: "Trending | Velo",
+  title: "Trending",
   description: "Discover the public conversations trending on Velo in the last 24 hours.",
 };
 

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { CtaLink, FeatureCard, InfoPage, Section } from "@/components/info/InfoPage";
 
 export const metadata: Metadata = {
-  title: "About | Velo",
+  title: "About",
   description:
     "Velo is a modern social platform for sharing, connecting and chatting in real time. Built in Nigeria.",
 };

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import ConnectionsClient from "./ConnectionsClient";
 
 type ConnectionTab = "followers" | "following";
@@ -5,6 +7,25 @@ type ConnectionTab = "followers" | "following";
 function normalizeTab(tab: string | string[] | undefined): ConnectionTab {
   const value = Array.isArray(tab) ? tab[0] : tab;
   return value === "following" ? "following" : "followers";
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ username: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
+}): Promise<Metadata> {
+  const { username } = await params;
+  const { tab } = await searchParams;
+  const handle = `@${decodeURIComponent(username).replace(/^@/, "")}`;
+  const following = normalizeTab(tab) === "following";
+  return {
+    title: following ? `People ${handle} follows` : `${handle}'s followers`,
+    description: following
+      ? `See who ${handle} follows on Velo.`
+      : `See who follows ${handle} on Velo.`,
+  };
 }
 
 export default async function ConnectionsPage({

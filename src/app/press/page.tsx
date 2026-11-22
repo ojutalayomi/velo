@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Card, CtaLink, InfoPage, Section } from "@/components/info/InfoPage";
 
 export const metadata: Metadata = {
-  title: "Press | Velo",
+  title: "Press",
   description: "Press resources, brand assets and company facts for Velo.",
 };
 

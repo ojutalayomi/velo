@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Callout, CtaLink, FeatureCard, InfoPage, Section } from "@/components/info/InfoPage";
 
 export const metadata: Metadata = {
-  title: "API | Velo",
+  title: "API",
   description: "Build with Velo. Our developer platform is in early access.",
 };
 

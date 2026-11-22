@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import ReportsQueue from "./ReportsQueue";
+
+export const metadata: Metadata = {
+  title: "Admin · Reports",
+  description: "Review user reports.",
+  robots: { index: false, follow: false },
+};
 
 export default function ReportsPage() {
   return (

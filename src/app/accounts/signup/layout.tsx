@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Velo App",
-  description: "Created by Ayomide",
+  title: "Sign up",
+  description: "Create your Velo account.",
 };
 
 export const viewport: Viewport = {

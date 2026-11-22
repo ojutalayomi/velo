@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { sql } from "@vercel/postgres";
+
+export const metadata: Metadata = {
+  title: "Postgres",
+  description: "Internal database test page.",
+  robots: { index: false, follow: false },
+};
 
 // Function to generate a random user
 // function generateRandomUser() {

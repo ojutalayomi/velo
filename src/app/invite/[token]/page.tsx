@@ -4,6 +4,7 @@ import InviteJoin from "./clientComps";
 
 export const metadata: Metadata = {
   title: "Join a group",
+  robots: { index: false, follow: false },
   description: "Accept a Velo group invite",
 };
 

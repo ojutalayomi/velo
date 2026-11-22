@@ -91,7 +91,11 @@ export default function AnnouncementsAdmin() {
         setRows((prev) => [json.data, ...prev]);
       }
       resetForm();
-      toast.success(editingId ? "Announcement updated" : "Announcement published");
+      if (json.live === false) {
+        toast.warning("Saved, but live delivery failed. Users will see it on their next page load.");
+      } else {
+        toast.success(editingId ? "Announcement updated" : "Announcement published");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to publish");
     } finally {
@@ -108,6 +112,9 @@ export default function AnnouncementsAdmin() {
     const json = await res.json().catch(() => null);
     if (!res.ok) return toast.error(json?.message || "Action failed");
     setRows((prev) => prev.map((r) => (r._id === id ? { ...r, active } : r)));
+    if (json?.live === false) {
+      toast.warning("Saved, but live delivery failed. Users will see the change on their next page load.");
+    }
   };
 
   const remove = async (r: Row) => {

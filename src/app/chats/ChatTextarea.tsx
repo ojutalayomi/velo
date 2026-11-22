@@ -503,7 +503,7 @@ const ChatTextarea = ({
               onClick={() => void startVoiceNote()}
               className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
             >
-              <Mic size={20} className="text-brand" />
+              <Mic size={30} className="text-brand" />
             </Button>
           ) : (
             <Button
@@ -511,7 +511,7 @@ const ChatTextarea = ({
               onClick={handleSendClick}
               className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
             >
-              <Send size={20} className="text-brand" />
+              <Send size={30} className="text-brand" />
             </Button>
           )}
         </div>

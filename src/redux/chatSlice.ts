@@ -329,9 +329,7 @@ async function loadFreshChats(cached: AllChats | null): Promise<AllChats> {
   return chatSystem.getAllChats();
 }
 
-// Fetch chats on app load. Pass `userId` to paint instantly from the IndexedDB cache
-// (and to fall back to it while offline) before the network response arrives.
-export const fetchChats = async (dispatch: Dispatch, userId?: string) => {
+async function runFetchChats(dispatch: Dispatch, userId?: string) {
   try {
     const cached = userId ? await loadChatSnapshot(userId) : null;
     const networkStatus = networkMonitor.getNetworkStatus();
@@ -357,6 +355,23 @@ export const fetchChats = async (dispatch: Dispatch, userId?: string) => {
   } finally {
     dispatch(setLoading(false));
   }
+}
+
+const inFlightFetches = new Map<string, ReturnType<typeof runFetchChats>>();
+
+// Fetch chats on app load. Pass `userId` to paint instantly from the IndexedDB cache
+// (and to fall back to it while offline) before the network response arrives.
+//
+// Several places ask for the chats at startup (the app shell and the user provider). Calls that
+// pass a `userId` while one is already running share it, so they don't each hit the API with the
+// same cursor. Calls without a `userId` (e.g. after joining a chat by invite) always fetch afresh.
+export const fetchChats = (dispatch: Dispatch, userId?: string) => {
+  if (!userId) return runFetchChats(dispatch);
+  const running = inFlightFetches.get(userId);
+  if (running) return running;
+  const request = runFetchChats(dispatch, userId).finally(() => inFlightFetches.delete(userId));
+  inFlightFetches.set(userId, request);
+  return request;
 };
 
 export function fetchMoreChatMessages() {

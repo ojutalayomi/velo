@@ -398,7 +398,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
               className={`relative ${message.content.length > 0 ? "flex" : "hidden"} min-w-[4.5rem] max-w-full flex-col overflow-hidden rounded-lg px-2.5 pb-1 pt-1.5 ${
                 message.messageType === "Sticker"
                   ? "bg-transparent text-gray-900 dark:text-white"
-                  : `shadow-sm ${
+                  : `shadow ${
                       senderId === userdata._id
                         ? `${isFirstInGroup ? "rounded-tr-none" : ""} bg-brand/15 text-gray-900 dark:bg-brand/25 dark:text-white`
                         : `${isFirstInGroup ? "rounded-tl-none" : ""} bg-white text-gray-900 dark:bg-zinc-800 dark:text-white`

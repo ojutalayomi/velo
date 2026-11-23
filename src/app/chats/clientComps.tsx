@@ -114,7 +114,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
           />
         </div>
         {/* Search */}
-        <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3 relative">
+        <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full py-2 px-3 relative">
           <div className="dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -167,7 +167,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
           </div>
         </div>
         {/* Tabs */}
-        <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full my-2 px-3">
+        <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full border-b py-2 px-3">
           {tabs.map((tab) => (
             <div
               key={tab}

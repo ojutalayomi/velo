@@ -57,6 +57,7 @@ import {
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePosts } from "@/redux/postsSlice";
+import { registerServiceWorker } from "@/lib/serviceWorker";
 import { startChatPersistence } from "@/redux/chatPersistence";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
@@ -129,6 +130,11 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     setLoad(false);
     if (pathname?.includes("/chats/")) setActiveRouteState("chats");
   }, [pathname, setActiveRouteState]);
+
+  // Run the service worker for every visitor, not just those using push, so the app can open offline.
+  useEffect(() => {
+    void registerServiceWorker();
+  }, []);
 
   // Save chat changes (new messages, pins, unread counts...) to IndexedDB as they happen.
   useEffect(() => startChatPersistence(store), [store]);

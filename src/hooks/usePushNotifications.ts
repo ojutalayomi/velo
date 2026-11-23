@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useUser } from "@/app/providers/UserProvider";
+import { SW_SCOPE, serviceWorkerUrl } from "@/lib/serviceWorker";
 
 export type PushPermissionState = "unsupported" | NotificationPermission;
 
@@ -11,8 +12,6 @@ export interface PushTestResult {
   message: string;
 }
 
-const SW_URL = "/sw.js";
-const SW_SCOPE = "/";
 
 function isPushSupported(): boolean {
   return (
@@ -37,7 +36,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
-  const registration = await navigator.serviceWorker.register(SW_URL, {
+  const registration = await navigator.serviceWorker.register(serviceWorkerUrl(), {
     scope: SW_SCOPE,
     updateViaCache: "none",
   });

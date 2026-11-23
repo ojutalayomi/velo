@@ -136,4 +136,22 @@ describe("UserProvider offline", () => {
     await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("recent-user"));
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("falls back to the saved user when the request fails although the browser says online", async () => {
+    savedUser("stale-user", 24 * 60 * 60 * 1000);
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    mount();
+
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("stale-user"));
+  });
+
+  it("stays without a user when the request fails and nothing is saved", async () => {
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    mount();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.getByTestId("user")).toHaveTextContent("none");
+  });
 });

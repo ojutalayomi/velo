@@ -147,7 +147,17 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           break;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      // The request failed (no connection, even if the browser still says "online"): fall back to
+      // the last saved user, however old, so the chats saved on this device can open.
+      const saved = readCachedUser({ ignoreExpiry: true });
+      if (saved) {
+        dispatch(setUserData(saved));
+        staleUserRef.current = true;
+        fetchedRef.current = true;
+        setError(null);
+      } else {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      }
     } finally {
       setLoading(false);
     }

@@ -1,11 +1,8 @@
-import { SignJWT } from "jose";
 import { NextResponse } from "next/server";
 
 import { createRateLimiter } from "@/lib/rateLimit";
+import { SOCKET_TOKEN_TTL_SECONDS, signSocketToken } from "@/lib/socketTokenServer";
 import { getAuthenticatedUserId } from "@/lib/statusServer";
-
-/** How long a socket token lives; clients ask for a new one before it runs out. */
-export const SOCKET_TOKEN_TTL_SECONDS = 60 * 60;
 
 const limiter = createRateLimiter(30, 60_000);
 
@@ -26,19 +23,11 @@ export async function GET() {
     );
   }
 
-  const secret = process.env.SOCKET_AUTH_SECRET;
-  if (!secret) {
+  const token = await signSocketToken(userId);
+  if (!token) {
     // Not configured: clients carry on without a token (the socket server decides if that is allowed).
     return NextResponse.json({ token: null }, { headers: { "Cache-Control": "private, no-store" } });
   }
-
-  const token = await new SignJWT({})
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(userId)
-    .setAudience("velo-socket")
-    .setIssuedAt()
-    .setExpirationTime(`${SOCKET_TOKEN_TTL_SECONDS}s`)
-    .sign(new TextEncoder().encode(secret));
 
   return NextResponse.json(
     { token, expiresIn: SOCKET_TOKEN_TTL_SECONDS },

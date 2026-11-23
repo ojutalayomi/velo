@@ -73,10 +73,16 @@ export async function emitSequenceViaSocketServer(
   const ackTimeoutMs = options?.ackTimeoutMs ?? 3_000;
   const totalTimeoutMs = options?.totalTimeoutMs ?? 4_500;
 
+  // These emits run in API routes that have already authenticated `userId`, so the route vouches
+  // for them with a short token (the socket server may require one).
+  const { signSocketToken } = await import("@/lib/socketTokenServer");
+  const token = await signSocketToken(userId, 120);
+
   const client = io(baseUrl, {
     path: SOCKET_PATH,
     transports: ["websocket", "polling"],
     query: { userId },
+    ...(token ? { auth: { token } } : {}),
     forceNew: true,
     autoConnect: true,
     withCredentials: true,

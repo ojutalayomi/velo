@@ -318,6 +318,28 @@ async function handleNavigation(event) {
   );
 }
 
+/**
+ * Page data (RSC) for a navigation: always the network first, so it is never stale online. A
+ * good response is kept, and used only when the network fails. Without it, Next answers a failed
+ * fetch by reloading the page, which makes the same fetch again, and so on.
+ */
+async function handleRsc(event) {
+  const key = event.request.url;
+  try {
+    const response = await fetch(event.request);
+    const type = response.headers.get("content-type") || "";
+    if (response.status === 200 && !response.redirected && type.includes("text/x-component")) {
+      event.waitUntil(put(PAGES_CACHE, key, response.clone()));
+    }
+    return response;
+  } catch (error) {
+    const cache = await caches.open(PAGES_CACHE);
+    const copy = await cache.match(key, { ignoreVary: true });
+    if (copy) return copy;
+    throw error;
+  }
+}
+
 async function precacheOfflinePage() {
   try {
     const response = await fetch(OFFLINE_URL, { cache: "reload" });
@@ -354,7 +376,14 @@ self.addEventListener("fetch", (event) => {
   if (request.headers.get("range")) return;
 
   const url = new URL(request.url);
-  if (isRscRequest(request, url)) return;
+  if (isRscRequest(request, url)) {
+    // Prefetches and never-cached paths go straight to the network; real page-data requests are
+    // kept so an offline page does not fall into Next's "reload the page" fallback (a loop).
+    if (!request.headers.get("next-router-prefetch") && isCacheablePath(url.pathname)) {
+      event.respondWith(handleRsc(event));
+    }
+    return;
+  }
 
   if (request.mode === "navigate") {
     if (isCacheablePath(url.pathname)) event.respondWith(handleNavigation(event));

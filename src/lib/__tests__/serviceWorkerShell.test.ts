@@ -149,8 +149,8 @@ describe("requests it must leave alone", () => {
     ["another origin", req("https://files-for-chat.s3.amazonaws.com/a.png", { destination: "image" })],
     ["an API call", req("/api/chats")],
     ["a Range request", req("/_next/static/a.js", { headers: { range: "bytes=0-10" } })],
-    ["an RSC fetch (query)", req("/chats?_rsc=abc")],
-    ["an RSC fetch (header)", req("/chats", { headers: { RSC: "1" } })],
+    ["an RSC prefetch", req("/chats?_rsc=abc", { headers: { RSC: "1", "Next-Router-Prefetch": "1" } })],
+    ["an RSC fetch of a never-cached path", req("/accounts/login?_rsc=abc", { headers: { RSC: "1" } })],
     ["the worker script", req("/sw.js")],
   ])("passes through %s", async (_label, request) => {
     const worker = loadWorker();
@@ -164,6 +164,52 @@ describe("requests it must leave alone", () => {
       expect((await dispatchFetch(worker, navigate(path))).handled).toBe(false);
     }
   );
+});
+
+const flight = (body = "flight-data") =>
+  new Response(body, { status: 200, headers: { "content-type": "text/x-component" } });
+
+describe("page data (RSC) fetches", () => {
+  const rsc = (path = "/chats/1?_rsc=abc") => req(path, { headers: { RSC: "1" } });
+
+  it("uses the network first and keeps a copy", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockResolvedValue(flight("live"));
+
+    const result = await dispatchFetch(worker, rsc());
+    await result.settle();
+
+    expect(await result.response!.text()).toBe("live");
+    expect(worker.store.names("velo-pages-v1")).toEqual(["https://app.test/chats/1?_rsc=abc"]);
+  });
+
+  it("answers from the saved copy when the network is down, so Next never reloads the page", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockResolvedValueOnce(flight("saved"));
+    await (await dispatchFetch(worker, rsc())).settle();
+
+    worker.fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    const offline = await dispatchFetch(worker, rsc());
+
+    expect(await offline.response!.text()).toBe("saved");
+  });
+
+  it("still fails when nothing was saved", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(dispatchFetch(worker, rsc())).rejects.toThrow("Failed to fetch");
+  });
+
+  it("does not keep error or non-flight responses", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockResolvedValueOnce(new Response("nope", { status: 500, headers: { "content-type": "text/x-component" } }));
+    await (await dispatchFetch(worker, rsc())).settle();
+    worker.fetchMock.mockResolvedValueOnce(html("<html>login</html>"));
+    await (await dispatchFetch(worker, rsc("/chats/2?_rsc=abc"))).settle();
+
+    expect(worker.store.names("velo-pages-v1")).toEqual([]);
+  });
 });
 
 describe("page navigations", () => {

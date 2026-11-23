@@ -192,7 +192,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       }
       return null;
     },
-    [friendId]
+    []
   );
 
   const fetchFromAPI = useCallback(
@@ -214,7 +214,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         );
       return row;
     },
-    [friendId]
+    []
   );
 
   const fetchData = useCallback(async () => {
@@ -509,8 +509,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     // Only the URL drives this; depending on searchQuery would reset what the user is typing.
   }, [searchParams]);
 
+  const OnOpenSettings = () => router.push(`/chats/${pid}/settings`)
+
   const options = [
-    { id: 1, name: "View contact", action: () => router.push(`/chats/${pid}/settings`) },
+    { id: 1, name: "View contact", action: () => OnOpenSettings() },
     {
       id: 2,
       name: "Search",
@@ -621,9 +623,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   return (
     <div
-      className={`bg-white tablets1:flex ${chaT} border-l z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-black`}
+      className={`tablets1:flex ${chaT} border-l z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute`}
     >
-      <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 border-b flex min-h-12 items-center justify-between gap-4 px-3 py-2 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -636,7 +638,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               {load && !otherPerson.name ? (
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
-                <div>
+                <div onClick={() => OnOpenSettings()}>
                   <div className="flex items-center text-left text-sm font-semibold">
                     <div className="truncate">{otherPerson?.name}</div>
                     {otherPerson?.verified && <Statuser className="ml-1 size-4" />}

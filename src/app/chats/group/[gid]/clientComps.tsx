@@ -409,8 +409,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     // Only the URL drives this; depending on searchQuery would reset what the user is typing.
   }, [searchParams]);
 
+  const OnOpenSettings = () => router.push(`/chats/group/${gid}/settings`)
+
   const options = [
-    { id: 1, name: "View info", action: () => router.push(`/chats/group/${gid}/settings`) },
+    { id: 1, name: "View info", action: () => OnOpenSettings() },
     {
       id: 2,
       name: "Search",
@@ -514,9 +516,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   return (
     <div
-      className={`bg-white tablets1:flex ${chaT} border-l z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute dark:bg-black`}
+      className={`tablets1:flex ${chaT} border-l z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden rounded-lg shadow-md tablets1:z-[unset] tablets1:w-auto mobile:absolute`}
     >
-      <div className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-4 bg-gray-100 px-3 py-2 dark:bg-zinc-900 dark:text-slate-200">
+      <div className="sticky top-0 z-10 border-b flex min-h-12 items-center justify-between gap-4 px-3 py-2 dark:text-slate-200">
         {!searchBarOpen ? (
           <>
             <div className="flex items-center justify-start gap-4">
@@ -530,7 +532,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
                 <>
-                  <div className="flex items-center text-left text-sm font-semibold">
+                  <div className="flex items-center text-left text-sm font-semibold" onClick={() => options[0].action()}>
                     <div className="truncate">{group?.name}</div>
                     {group?.verified && <Statuser className="ml-1 size-4" />}
                   </div>
@@ -698,7 +700,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             </>
           )}
 
-          <div className="text-center">
+          <div className="text-center max-w-full">
             <p className="flex items-center justify-center text-sm font-bold dark:text-slate-200">
               {load ? (
                 <span className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-200" />
@@ -716,7 +718,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </p>
             {/* <p className="text-xs text-gray-500 dark:text-gray-400">{load || !group?.username ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" /> : '@'+group.username }</p> */}
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="break-words text-xs text-gray-500 dark:text-gray-400">
               {load || !group?.description ? (
                 <span className="mb-1 h-4 w-36 animate-pulse rounded bg-gray-200" />
               ) : (

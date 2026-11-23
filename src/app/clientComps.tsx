@@ -130,6 +130,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   }, [pathname, setActiveRouteState]);
 
   useEffect(() => {
+    // Wait until the user is known. With no id the cache can't be used (it is keyed by user),
+    // so firing now would download every chat and message on each reload.
+    if (!userdata._id) return;
     async function fetchData() {
       await fetchChats(dispatch, userdata._id);
     }

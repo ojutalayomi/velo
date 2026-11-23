@@ -14,6 +14,7 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 import { networkMonitor, NetworkStatus } from "@/lib/network";
+import { readCachedUser, writeCachedUser } from "@/lib/userCache";
 import { UserData } from "@/lib/types/user";
 import { delay } from "@/lib/utils";
 import { fetchChats } from "@/redux/chatSlice";
@@ -23,8 +24,6 @@ import { setUserData } from "@/redux/userSlice";
 
 import { useSocket } from "./SocketProvider";
 
-const CACHE_KEY = "userData";
-const CACHE_TTL_MS = 60_000;
 const MAX_RETRIES = 3;
 const RATE_LIMIT_WAIT_MS = 30_000;
 const DEBOUNCE_MS = 300;
@@ -45,25 +44,6 @@ type FetchOutcome =
 const UserContext = createContext<UseUserReturn | undefined>(undefined);
 
 /* ---------- helpers ---------- */
-
-function readCachedUser(): UserData | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return Date.now() - parsed.timestamp < CACHE_TTL_MS ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCachedUser(data: UserData) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-  } catch {
-    // Storage unavailable or full; caching is best-effort.
-  }
-}
 
 async function requestUser(): Promise<FetchOutcome> {
   const response = await fetch("/api/getuser");
@@ -100,10 +80,12 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchedRef = useRef(false);
+  // The user on screen came from an old saved copy (opened offline); refresh it once online.
+  const staleUserRef = useRef(false);
 
-  useEffect(() => {
-    setNetworkStatus(networkMonitor.getNetworkStatus());
-  }, []);
+  // Follow the connection, not just its state at mount: a page opened offline must pick the user
+  // up when the network returns.
+  useEffect(() => networkMonitor.subscribe(setNetworkStatus), []);
 
   // One fetch attempt. Resolves to true when the caller should try again
   // (after a rate-limit wait), false otherwise.
@@ -196,13 +178,29 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (!hasUser && !fetchedRef.current && isOnline) {
       refetchUser();
     } else {
+      if (!hasUser && networkStatus && !isOnline) {
+        // Offline: use the last saved user, however old, so the chats saved on this device can open.
+        const saved = readCachedUser({ ignoreExpiry: true });
+        if (saved) {
+          dispatch(setUserData(saved));
+          staleUserRef.current = true;
+        }
+      }
       setLoading(false);
     }
 
     return () => {
       debouncedFetchUser.cancel();
     };
-  }, [hasUser, isOnline, refetchUser, debouncedFetchUser]);
+  }, [hasUser, isOnline, networkStatus, dispatch, refetchUser, debouncedFetchUser]);
+
+  // Back online after starting from a saved copy: load the real, current user.
+  useEffect(() => {
+    if (!isOnline || !staleUserRef.current) return;
+    staleUserRef.current = false;
+    fetchedRef.current = false;
+    refetchUser();
+  }, [isOnline, refetchUser]);
 
   // After a fresh login/signup (`success` set via dispatch(setSuccess(true))),
   // load the session's chats once.

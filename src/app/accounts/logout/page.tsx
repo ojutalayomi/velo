@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { clearChatCache } from "@/lib/chatCache";
 import { clearMediaCache } from "@/lib/mediaCache";
 import { clearOfflineShell } from "@/lib/serviceWorker";
+import { clearCachedUser } from "@/lib/userCache";
 import { resetChatPersistence } from "@/redux/chatPersistence";
 import { clearSocketToken } from "@/lib/socketToken";
 
@@ -42,6 +43,7 @@ export default function Logout() {
       void clearChatCache(); // cached messages must not outlive the session
       void clearMediaCache(); // nor the files that came with them
       void clearOfflineShell(); // nor the pages and images saved for offline use
+      clearCachedUser(); // nor the saved profile that offline mode would sign them back in with
       clearSocketToken(); // the next sign-in must not reuse this user's token
       if (response.ok) {
         setMessage("Logged out successfully");

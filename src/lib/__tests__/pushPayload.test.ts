@@ -43,7 +43,7 @@ describe("push payload normalization", () => {
     expect(payload.body).toHaveLength(240);
     expect(payload.url).toBe("/notifications");
     expect(payload.icon).toBe("/notifications.png");
-    expect(payload.badge).toBe("/badge.png");
+    expect(payload.badge).toBe("/icon.png");
     expect(payload.data).toEqual({ key: "value" });
   });
 

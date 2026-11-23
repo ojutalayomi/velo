@@ -118,7 +118,6 @@ describe("GET /api/chats (full load)", () => {
     expect(filter).not.toHaveProperty("$and");
     expect(filter.$or).toEqual([
       { chatId: { $in: [chatId] } },
-      { senderId: userId },
       { receiverId: userId },
     ]);
     expect(sinceLookups()).toHaveLength(0);
@@ -143,7 +142,6 @@ describe("GET /api/chats?since=", () => {
     expect(filter.$and).toHaveLength(2);
     expect(filter.$and[0].$or).toEqual([
       { chatId: { $in: [chatId] } },
-      { senderId: userId },
       { receiverId: userId },
     ]);
     expect(filter.$and[1].$or).toEqual([

@@ -3,8 +3,6 @@ import {
   AllChats,
   ChatUpdate,
   ChatDataClient,
-  Err,
-  MessageAttributes,
   NewChat,
   NewChat_,
   NewChatSettings,
@@ -92,26 +90,6 @@ class ChatSystem {
 
   async deleteChat(id: string): Promise<void> {
     await this.chatRepository.deleteChat(id);
-  }
-
-  async sendMessage(newMessage: MessageAttributes, id: string): Promise<MessageAttributes | Err> {
-    const createdMessage = await this.chatRepository.sendMessage(newMessage, id);
-    return createdMessage;
-  }
-
-  async deleteMessageForMe(id: { [x: string]: string }): Promise<string> {
-    return await this.chatRepository.deleteMessageForMe(id);
-  }
-
-  async deleteMyMessage(id: { [x: string]: string }): Promise<string> {
-    return await this.chatRepository.deleteMyMessage(id);
-  }
-
-  async editMessage(
-    id: { [x: string]: string },
-    updatedAttributes: Partial<MessageAttributes>
-  ): Promise<string> {
-    return await this.chatRepository.editMessage(id, updatedAttributes);
   }
 }
 

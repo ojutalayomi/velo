@@ -36,6 +36,7 @@ import { RootState } from "@/redux/store";
 import { DELETED_MARKER } from "@/lib/messageDeletion";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
+import { resolveSender } from "@/lib/senderProfile";
 import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { chatDraftKey, useDraft } from "@/hooks/useDraft";
 import { TypingBubble, typingLabel } from "../../TypingIndicator";
@@ -188,10 +189,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (!needle) return [];
     return Messages.filter((msg) => {
       if (msg.content.endsWith(DELETED_MARKER)) return false;
-      const sender = msg.sender?.name ?? "";
+      const sender = resolveSender(msg.sender, convo?.profiles)?.name ?? "";
       return msg.content.toLowerCase().includes(needle) || sender.toLowerCase().includes(needle);
     });
-  }, [searchQuery, Messages]);
+  }, [searchQuery, Messages, convo?.profiles]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);

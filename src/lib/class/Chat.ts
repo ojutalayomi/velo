@@ -1,4 +1,5 @@
 import { previewFor } from "@/lib/chatPreview";
+import type { SenderProfile } from "@/lib/senderProfile";
 import { ChatDataClient, MessageAttributes } from "../types/type";
 import { Time } from "../utils";
 
@@ -24,6 +25,16 @@ export class Chat {
 
   public getConvo(uid: string) {
     const participant = this.chat.participants.find((p) => p.userId === uid);
+    const profiles: Record<string, SenderProfile> = {};
+    for (const p of this.chat.participants) {
+      if (p.name === undefined) continue; // the fetch could not load this person
+      profiles[p.userId] = {
+        name: p.name,
+        username: p.username ?? "",
+        displayPicture: p.displayPicture ?? "",
+        verified: p.verified === true,
+      };
+    }
     const last = this.chat.lastMessageId ? this.lastMessage(this.chat.lastMessageId) : null;
     const displayPicture = this.chat.participants
       ? this.chat.participants.length > 1
@@ -47,7 +58,8 @@ export class Chat {
         : "📝 Be the first to send a message",
       lastMessageId: this.chat.lastMessageId || undefined,
       lastSenderId: last?.sender?.id,
-      lastSenderName: last?.sender?.name,
+      lastSenderName: (last?.sender?.id && profiles[last.sender.id]?.name) || last?.sender?.name,
+      profiles,
       lastRead: last
         ? Object.entries(last.isRead ?? {}).some(([id, read]) => id !== last.sender?.id && read)
         : false,

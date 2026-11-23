@@ -43,3 +43,25 @@ export function mergeSender(stored: Partial<MessageSender> & { id: string }, acc
   };
 }
 
+
+/** The profile fields of a user, as kept per chat. */
+export type SenderProfile = Pick<MessageSender, "name" | "username" | "displayPicture" | "verified">;
+
+/**
+ * How to show a message's sender: the chat member's current profile when we have one, otherwise
+ * the copy that came with the message (a person who left, or who joined since the last fetch).
+ */
+export function resolveSender<T extends { id: string } & Partial<MessageSender>>(
+  sender: T | undefined,
+  profiles?: Record<string, SenderProfile>
+): (T & SenderProfile) | undefined {
+  if (!sender) return sender;
+  const profile = profiles?.[sender.id];
+  return {
+    ...sender,
+    name: profile?.name || sender.name || "",
+    username: profile?.username || sender.username || "",
+    displayPicture: profile ? profile.displayPicture : (sender.displayPicture ?? ""),
+    verified: profile ? profile.verified : (sender.verified ?? false),
+  };
+}

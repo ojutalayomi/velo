@@ -306,6 +306,15 @@ export const chatRepository = {
                   return {
                     userId: participant.userId,
                     displayPicture: user?.displayPicture ?? participant.displayPicture ?? "",
+                    // The chat screens show senders from here, so a rename or new photo applies
+                    // to messages already on the device instead of staying frozen in the cache.
+                    ...(user
+                      ? {
+                          name: user.name ?? "",
+                          username: user.username ?? "",
+                          verified: user.verified === true,
+                        }
+                      : {}),
                     ...(a.chatType === "DM" && participant.userId !== payload._id
                       ? { isBot: isBotAccount(user) }
                       : {}),

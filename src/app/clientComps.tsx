@@ -545,6 +545,15 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOnline && isClient){
+      setDisplayAnnouncement({
+        status: true,
+        message: "You're Offline. Please check your internet connection"
+      })
+    }
+  }, [isOnline, isClient]);
+
   const setActiveRoute = useCallback((route: string) => {
     setActiveRouteState(route);
   }, []);
@@ -636,15 +645,6 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
           <FileStorageProvider>
             <PostMaker open={isPostMakerModalOpen} onOpenChange={setPostMakerModalOpen} />
             <NewChatMenu />
-            {!isOnline && isClient && (
-              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80">
-                <WifiOff className="size-12 text-muted-foreground" />
-                <h3 className="mt-2 text-lg font-semibold">You&apos;re Offline</h3>
-                <p className="text-sm text-muted-foreground">
-                  Please check your internet connection
-                </p>
-              </div>
-            )}
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>

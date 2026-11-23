@@ -87,7 +87,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
   return (
     <div className={`flex items-center justify-between ${!chaT && "relative"}`}>
       <div className="9f4q9d4a flex flex-col h-screen w-full tablets1:w-2/4 relative">
-        <div className="flex gap-4 items-center justify-between w-full px-3 py-2">
+        <div className="flex gap-4 items-center justify-between w-full my-1 px-3 py-2">
           <FontAwesomeIcon
             onClick={() => router.push("/home")}
             icon={"arrow-left"}

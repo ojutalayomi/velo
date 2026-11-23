@@ -7,7 +7,8 @@ import {
   SYNC_OVERLAP_MS,
   sinceForCache,
 } from "@/lib/chatSync";
-import type { AllChats, MessageAttributes } from "@/lib/types/type";
+import type { ChatSnapshot } from "@/lib/chatCache";
+import type { AllChats, ConvoType, MessageAttributes } from "@/lib/types/type";
 
 const NOW = Date.parse("2026-06-10T12:00:00.000Z");
 
@@ -94,15 +95,29 @@ describe("deltaOverflowed", () => {
   });
 });
 
+/** What the cache holds: conversations (the UI shape), not the server's chat objects. */
+const cachedSnap = (
+  chatIds: string[],
+  messages: MessageAttributes[],
+  extra: Partial<ChatSnapshot> = {}
+): ChatSnapshot => ({
+  requestId: "u1",
+  conversations: chatIds.map((id) => ({ id }) as unknown as ConvoType),
+  chatSettings: {},
+  messages,
+  pagination: { messages: { skip: 0, limit: 500, hasMore: false } },
+  ...extra,
+});
+
 describe("mergeDelta", () => {
   it("adds new messages and keeps untouched cached ones", () => {
-    const merged = mergeDelta(snap(["c1"], [msg("1", "c1")]), snap(["c1"], [msg("2", "c1")]));
+    const merged = mergeDelta(cachedSnap(["c1"], [msg("1", "c1")]), snap(["c1"], [msg("2", "c1")]));
     expect(merged.messages?.map((m) => m._id).sort()).toEqual(["1", "2"]);
   });
 
   it("replaces a cached message with its changed copy (edit/reaction/read)", () => {
     const merged = mergeDelta(
-      snap(["c1"], [msg("1", "c1", "old")]),
+      cachedSnap(["c1"], [msg("1", "c1", "old")]),
       snap(["c1"], [msg("1", "c1", "new")])
     );
     expect(merged.messages).toHaveLength(1);
@@ -112,7 +127,7 @@ describe("mergeDelta", () => {
   it("applies a deletion tombstone over the cached original", () => {
     const placeholder = "This message was deleted.≤≤≤";
     const merged = mergeDelta(
-      snap(["c1"], [msg("1", "c1", "secret")]),
+      cachedSnap(["c1"], [msg("1", "c1", "secret")]),
       snap(["c1"], [msg("1", "c1", placeholder)])
     );
     expect(merged.messages?.[0].content).toBe(placeholder);
@@ -120,19 +135,19 @@ describe("mergeDelta", () => {
 
   it("drops messages of a chat that no longer exists", () => {
     const merged = mergeDelta(
-      snap(["c1", "c2"], [msg("1", "c1"), msg("2", "c2")]),
+      cachedSnap(["c1", "c2"], [msg("1", "c1"), msg("2", "c2")]),
       snap(["c1"], [])
     );
     expect(merged.messages?.map((m) => m._id)).toEqual(["1"]);
   });
 
   it("keeps messages whose chat was never in the cached chat list", () => {
-    const merged = mergeDelta(snap(["c1"], [msg("9", "legacy")]), snap(["c1"], []));
+    const merged = mergeDelta(cachedSnap(["c1"], [msg("9", "legacy")]), snap(["c1"], []));
     expect(merged.messages?.map((m) => m._id)).toEqual(["9"]);
   });
 
   it("takes chats, settings and serverTime from the delta but pagination from the cache", () => {
-    const cached = snap(["c1"], [], {
+    const cached = cachedSnap(["c1"], [], {
       pagination: { messages: { skip: 0, limit: 500, hasMore: true } },
     });
     const delta = snap(["c1", "c3"], [], {

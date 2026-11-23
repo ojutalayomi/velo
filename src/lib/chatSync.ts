@@ -1,3 +1,4 @@
+import type { ChatSnapshot } from "@/lib/chatCache";
 import type { AllChats, MessageAttributes } from "@/lib/types/type";
 
 /**
@@ -39,7 +40,10 @@ export function changedSinceFilter(since: string, receiptMessageIds: unknown[] =
 }
 
 /** Client side: the `since` value to send for a cached snapshot, or null to do a full load. */
-export function sinceForCache(cached: AllChats | null, now = Date.now()): string | null {
+export function sinceForCache(
+  cached: { serverTime?: string } | null,
+  now = Date.now()
+): string | null {
   const t = cached?.serverTime ? Date.parse(cached.serverTime) : NaN;
   if (Number.isNaN(t) || now - t > MAX_CACHE_AGE_MS || t > now) return null;
   return new Date(t - SYNC_OVERLAP_MS).toISOString();
@@ -57,9 +61,9 @@ export function deltaOverflowed(delta: AllChats): boolean {
  * - Chats, settings and the request id always come from the fresh response.
  * - Pagination stays the cached one: it describes how much older history is still unloaded.
  */
-export function mergeDelta(cached: AllChats, delta: AllChats): AllChats {
+export function mergeDelta(cached: ChatSnapshot, delta: AllChats): AllChats {
   const freshChats = new Set((delta.chats ?? []).map((c) => String(c._id)));
-  const knownChats = new Set((cached.chats ?? []).map((c) => String(c._id)));
+  const knownChats = new Set((cached.conversations ?? []).map((c) => String(c.id)));
 
   const byId = new Map<string, MessageAttributes>();
   for (const m of cached.messages ?? []) {

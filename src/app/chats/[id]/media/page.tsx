@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { CachedMedia } from "@/components/chat/CachedMedia";
+import { downloadFile } from "@/lib/downloadFile";
 import ImageDiv from "@/components/imageDiv";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,7 +18,6 @@ import { formatFileSize, updateLiveTime } from "@/lib/utils";
 import { ConvoType } from "@/redux/chatSlice";
 import { RootState } from "@/redux/store";
 import VideoDiv from "@/templates/videoDiv";
-import { saveAs } from "file-saver";
 
 interface Params {
   id?: string;
@@ -27,9 +28,6 @@ const extractUrls = (text: string) => {
   return text.match(urlRegex) || [];
 };
 
-const downloadFile = (url: string, filename: string) => {
-  saveAs(url, filename);
-};
 
 // Helper function to format date for grouping
 const formatDateForGrouping = (timestamp: string): string => {
@@ -243,14 +241,20 @@ const MediaPage: React.FC = () => {
                           className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-gray-100 transition hover:ring-2 hover:ring-brand/60 dark:bg-neutral-800"
                         >
                           {isImage ? (
-                            <img
-                              src={attachment.url}
-                              alt={attachment.name}
-                              className="size-full object-cover"
-                            />
+                            <CachedMedia url={attachment.url} kind="image">
+                              {(src) => (
+                                <img
+                                  src={src}
+                                  alt={attachment.name}
+                                  className="size-full object-cover"
+                                />
+                              )}
+                            </CachedMedia>
                           ) : isVideo ? (
                             <>
-                              <video src={attachment.url} className="size-full object-cover" />
+                              <CachedMedia url={attachment.url} kind="video">
+                                {(src) => <video src={src} className="size-full object-cover" />}
+                              </CachedMedia>
                               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                                 <div className="rounded-full bg-black/50 p-2 transition group-hover:bg-black/70">
                                   <svg
@@ -402,9 +406,13 @@ const MediaPage: React.FC = () => {
           {selectedMedia.media && (
             <div className="flex max-h-[70vh] items-center justify-center overflow-hidden">
               {selectedMedia.media.type?.startsWith("image/") ? (
-                <ImageDiv media={selectedMedia.media.url || ""} host={false} />
+                <CachedMedia url={selectedMedia.media.url} kind="image" save="on-mount">
+                  {(src) => <ImageDiv media={src} host={false} />}
+                </CachedMedia>
               ) : selectedMedia.media.type?.startsWith("video/") ? (
-                <VideoDiv media={selectedMedia.media.url || ""} host={false} />
+                <CachedMedia url={selectedMedia.media.url} kind="video" save="on-mount">
+                  {(src) => <VideoDiv media={src} host={false} />}
+                </CachedMedia>
               ) : null}
             </div>
           )}

@@ -1,10 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
-import { saveAs } from "file-saver";
 import { Download, FileText, Share } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import { DocCard } from "@/components/DocCard";
 import { AudioFileCard } from "@/components/chat/AudioFileCard";
+import { CachedMedia } from "@/components/chat/CachedMedia";
 import { VoiceNotePlayer } from "@/components/VoiceNotePlayer";
 import { isVoiceNoteName } from "@/lib/voiceNote";
 import ImageDiv from "@/components/imageDiv";
@@ -26,13 +26,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { downloadFile } from "@/lib/downloadFile";
 import { Attachment } from "@/lib/types/type";
 import { cn, formatFileSize, updateLiveTime } from "@/lib/utils";
 import VideoDiv from "@/templates/videoDiv";
-
-const downloadFile = (url: string, filename: string) => {
-  saveAs(url, filename);
-};
 
 // Resolve a friendly extension label + theme from a MIME subtype.
 const fileMeta = (subtype?: string) => {
@@ -124,7 +121,11 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
                   single ? "aspect-video" : wideThird ? "col-span-2 aspect-video" : "aspect-square"
                 )}
               >
-                <img src={m.url} alt={m.name} className="size-full object-cover" />
+                <CachedMedia url={m.url} kind="image">
+                  {(src, save) => (
+                    <img src={src} alt={m.name} onLoad={save} className="size-full object-cover" />
+                  )}
+                </CachedMedia>
                 <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-sm">
                   {updateLiveTime("chat-time", m.uploadedAt)}
                 </span>
@@ -138,7 +139,11 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
               onClick={() => toggleMediaDialog({ open: true, index: 3 })}
               className="relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-gray-100 transition hover:ring-2 hover:ring-brand/60 dark:bg-neutral-800"
             >
-              <img src={media[3].url} alt={media[3].name} className="size-full object-cover" />
+              <CachedMedia url={media[3].url} kind="image">
+                {(src, save) => (
+                  <img src={src} alt={media[3].name} onLoad={save} className="size-full object-cover" />
+                )}
+              </CachedMedia>
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-semibold text-white backdrop-blur-sm">
                 +{excess}
               </div>
@@ -263,9 +268,21 @@ const MediaDialogComponent = ({ files, mediaDialog, toggleMediaDialog }: MediaDi
                     className="flex size-full items-center justify-center"
                   >
                     {isImage ? (
-                      <ImageDiv media={objectURL} host={false} />
+                      <CachedMedia
+                        url={objectURL}
+                        kind="image"
+                        save={file === activeFile ? "on-mount" : "never"}
+                      >
+                        {(src) => <ImageDiv media={src} host={false} />}
+                      </CachedMedia>
                     ) : isVideo ? (
-                      <VideoDiv media={objectURL} host={false} />
+                      <CachedMedia
+                        url={objectURL}
+                        kind="video"
+                        save={file === activeFile ? "on-mount" : "never"}
+                      >
+                        {(src) => <VideoDiv media={src} host={false} />}
+                      </CachedMedia>
                     ) : (
                       <DocCard className="w-auto" file={file} />
                     )}

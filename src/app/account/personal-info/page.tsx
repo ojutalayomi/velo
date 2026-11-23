@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useUser } from "@/app/providers/UserProvider";
+import { LocationPicker } from "@/components/LocationPicker";
 import { SettingsGroup, SettingsHeader, SettingsRow } from "@/components/settings/SettingsUI";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ const PersonalInfoPage = () => {
   const router = useRouter();
   const { userdata, loading, refetchUser } = useUser();
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [locationOpen, setLocationOpen] = useState(false);
   const [saved, setSaved] = useState<FormState>(EMPTY);
   const [saving, setSaving] = useState(false);
 
@@ -137,9 +139,25 @@ const PersonalInfoPage = () => {
                 id="location"
                 name="location"
                 value={form.location}
-                onChange={handleChange}
-                maxLength={30}
-                placeholder="City, Country"
+                readOnly
+                onClick={() => setLocationOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setLocationOpen(true);
+                  }
+                }}
+                className="cursor-pointer"
+                placeholder="Select location"
+              />
+              <LocationPicker
+                key={locationOpen ? "open" : "closed"}
+                open={locationOpen}
+                onOpenChange={setLocationOpen}
+                onSelect={(loc) =>
+                  setForm((prev) => ({ ...prev, location: loc.name.slice(0, 30) }))
+                }
+                initial={form.location ? { name: form.location } : null}
               />
             </div>
           </div>

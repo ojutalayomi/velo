@@ -4,6 +4,7 @@ import { Download, Music, Pause, Play } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { PlaybackSpeedButton } from "@/components/chat/PlaybackSpeedButton";
+import { useCachedMedia } from "@/hooks/useCachedMedia";
 import { usePlaybackRate } from "@/hooks/usePlaybackRate";
 import { formatFileSize } from "@/lib/utils";
 import { formatClock } from "@/lib/voiceNote";
@@ -22,6 +23,8 @@ export function AudioFileCard({
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const rate = usePlaybackRate();
+  // Plays from the offline copy when there is one; the first play saves it for next time.
+  const { src, cacheInBackground } = useCachedMedia(url, "audio");
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -86,11 +89,12 @@ export function AudioFileCard({
       </div>
       <audio
         ref={audioRef}
-        src={url}
+        src={src}
         preload="metadata"
         onPlay={(event) => {
           event.currentTarget.playbackRate = rate;
           setPlaying(true);
+          cacheInBackground();
         }}
         onPause={() => setPlaying(false)}
         onEnded={() => {

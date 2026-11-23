@@ -57,6 +57,7 @@ import {
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePosts } from "@/redux/postsSlice";
+import { startChatPersistence } from "@/redux/chatPersistence";
 import { addRoute } from "@/redux/routeSlice";
 import { RootState } from "@/redux/store";
 
@@ -128,6 +129,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     setLoad(false);
     if (pathname?.includes("/chats/")) setActiveRouteState("chats");
   }, [pathname, setActiveRouteState]);
+
+  // Save chat changes (new messages, pins, unread counts...) to IndexedDB as they happen.
+  useEffect(() => startChatPersistence(store), [store]);
 
   useEffect(() => {
     // Wait until the user is known. With no id the cache can't be used (it is keyed by user),

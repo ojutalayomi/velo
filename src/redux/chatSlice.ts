@@ -4,7 +4,7 @@ import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
 import { Chat } from "@/lib/class/Chat";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
-import { loadChatSnapshot, saveChatSnapshot } from "@/lib/chatCache";
+import { type ChatSnapshot, loadChatSnapshot, saveChatMeta } from "@/lib/chatCache";
 import { deltaOverflowed, mergeDelta, sinceForCache } from "@/lib/chatSync";
 import { networkMonitor } from "@/lib/network";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/lib/types/type";
 
 import { UserDataPartial } from "./userSlice";
+import { flushChatPersistence } from "./chatPersistence";
 import type { AppDispatch, RootState } from "./store";
 export type { ConvoType };
 
@@ -314,9 +315,27 @@ function applyChats(dispatch: Dispatch, chats: AllChats) {
   return conversations;
 }
 
+// Paint the chats saved in IndexedDB. They are already in the shape the UI reads.
+function applySnapshot(dispatch: Dispatch, snapshot: ChatSnapshot) {
+  dispatch(setUserId(snapshot.requestId));
+  dispatch(setConversations(snapshot.conversations));
+  dispatch(setMessages(snapshot.messages));
+
+  const pg = snapshot.pagination?.messages;
+  dispatch(
+    setMessagesPagination({
+      nextSkip: pg ? pg.skip + pg.limit : 0,
+      hasMore: pg?.hasMore ?? false,
+    })
+  );
+
+  dispatch(setSettings(snapshot.chatSettings));
+  return snapshot.conversations;
+}
+
 // With a usable cache, ask only for what changed since it was saved and merge that in.
 // Anything unexpected (no cursor, too old, delta too large, request failed) falls back to a full load.
-async function loadFreshChats(cached: AllChats | null): Promise<AllChats> {
+async function loadFreshChats(cached: ChatSnapshot | null): Promise<AllChats> {
   const since = cached ? sinceForCache(cached) : null;
   if (cached && since) {
     try {
@@ -335,11 +354,11 @@ async function runFetchChats(dispatch: Dispatch, userId?: string) {
     const networkStatus = networkMonitor.getNetworkStatus();
 
     if (!networkStatus.online) {
-      return cached ? applyChats(dispatch, cached) : undefined;
+      return cached ? applySnapshot(dispatch, cached) : undefined;
     }
 
     if (cached) {
-      applyChats(dispatch, cached);
+      applySnapshot(dispatch, cached);
       dispatch(setLoading(false));
     } else {
       dispatch(setLoading(true));
@@ -347,7 +366,17 @@ async function runFetchChats(dispatch: Dispatch, userId?: string) {
 
     const chats = await loadFreshChats(cached);
     const conversations = applyChats(dispatch, chats);
-    void saveChatSnapshot(chats);
+
+    // The live persister writes the rows; record the sync cursor only once they are stored, so
+    // the cursor never gets ahead of the data it describes. (It waits while `loading` is true.)
+    dispatch(setLoading(false));
+    if (await flushChatPersistence()) {
+      await saveChatMeta({
+        requestId: chats.requestId,
+        pagination: chats.pagination,
+        serverTime: chats.serverTime,
+      });
+    }
     return conversations;
   } catch (error) {
     dispatch(setError("Failed to fetch chats"));

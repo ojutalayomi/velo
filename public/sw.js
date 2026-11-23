@@ -138,7 +138,7 @@ self.addEventListener("push", (event) => {
       const options = {
         body: typeof payload.body === "string" ? payload.body : "",
         icon: typeof payload.icon === "string" ? payload.icon : "/notifications.png",
-        badge: typeof payload.badge === "string" ? payload.badge : "/badge.png",
+        badge: typeof payload.badge === "string" ? payload.badge : "/icon.png",
         tag: typeof payload.tag === "string" ? payload.tag : undefined,
         data: { ...data, url: safeUrl(payload.url) },
         vibrate: [100, 50, 100],

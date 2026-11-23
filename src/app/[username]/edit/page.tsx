@@ -5,6 +5,7 @@ import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 
+import { LocationPicker } from "@/components/LocationPicker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export default function EditProfile() {
   const router = useRouter();
   const navigate = useNavigateWithHistory();
   const [isLoading, setIsLoading] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
@@ -186,7 +188,7 @@ export default function EditProfile() {
   };
 
   return (
-    <div className="h-screen max-h-screen w-full flex-1 overflow-auto dark:bg-black">
+    <div className="h-screen max-h-screen w-full flex-1 overflow-auto">
       <div className="sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg">
         <ArrowLeft onClick={() => navigate()} className="size-6 cursor-pointer" />
         <h1 className="text-xl font-bold">Edit Profile</h1>
@@ -302,8 +304,25 @@ export default function EditProfile() {
               id="location"
               name="location"
               value={formData.location}
-              onChange={handleInputChange}
-              maxLength={30}
+              readOnly
+              onClick={() => setLocationOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setLocationOpen(true);
+                }
+              }}
+              className="cursor-pointer"
+              placeholder="Select location"
+            />
+            <LocationPicker
+              key={locationOpen ? "open" : "closed"}
+              open={locationOpen}
+              onOpenChange={setLocationOpen}
+              onSelect={(loc) =>
+                setFormData((prev) => ({ ...prev, location: loc.name.slice(0, 30) }))
+              }
+              initial={formData.location ? { name: formData.location } : null}
             />
           </div>
 

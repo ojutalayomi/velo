@@ -29,6 +29,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "backfill:bookmarks": "npx --yes tsx --env-file=.env.local src/scripts/backfill-bookmark-search-text.ts",
+    "cleanup:message-senders": "npx --yes tsx --env-file=.env.local scripts/trim-message-senders.ts",
     "backfill:post-counts": "npx --yes tsx --env-file=.env.local scripts/update-post-counts.ts",
     "backfill:trends": "npx --yes tsx --env-file=.env.local src/scripts/backfill-post-trends.ts",
     "migration": "node ./playground/play.js"
@@ -140,6 +141,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-tailwindcss": "^3.18.3",
+    "fake-indexeddb": "^6.2.8",
     "handlebars": "^4.7.8",
     "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",

@@ -198,6 +198,10 @@ export interface ChatParticipant {
   displayPicture: string;
   userId: string;
   chatType: ChatType;
+  /** Public profile, filled in when chats are fetched (not stored on the participant row). */
+  name?: string;
+  username?: string;
+  verified?: boolean;
   /** Set for DM participants that are bot accounts (calls are not offered). */
   isBot?: boolean;
 }
@@ -300,6 +304,8 @@ export interface Message {
   receiverId: string;
   content: string;
   timestamp: string;
+  /** Server-stamped on insert, delete and reaction changes; drives `since` syncs. */
+  updatedAt?: string;
   isRead?: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
   chatType: ChatType;
   messageType: MessageType;
@@ -382,6 +388,8 @@ export type AllChats = {
   };
   messages?: MessageAttributes[];
   requestId: string;
+  /** Server clock when the response was built; the cursor for the next `since` request. */
+  serverTime?: string;
   pagination?: {
     messages: MessagesPaginationMeta;
   };
@@ -394,6 +402,8 @@ export type AllChatsServer = {
   };
   messages?: MessageAttributes[];
   requestId: string;
+  /** Server clock when the response was built; the cursor for the next `since` request. */
+  serverTime?: string;
   pagination?: {
     messages: MessagesPaginationMeta;
   };
@@ -430,6 +440,8 @@ export interface ConvoType {
   verified: boolean;
   /** A DM with a bot account. */
   isBot?: boolean;
+  /** Current public profile of each member, by user id: how senders are shown. */
+  profiles?: Record<string, { name: string; username: string; displayPicture: string; verified: boolean }>;
   favorite: boolean;
   pinned: boolean;
   deleted: boolean;

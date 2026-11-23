@@ -41,7 +41,7 @@ export interface PushSendResult {
 }
 
 const DEFAULT_ICON = "/notifications.png";
-const DEFAULT_BADGE = "/badge.png";
+const DEFAULT_BADGE = "/icon.png";
 const DEFAULT_URL = "/notifications";
 const MAX_TITLE_LENGTH = 120;
 const MAX_BODY_LENGTH = 240;

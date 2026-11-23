@@ -256,7 +256,7 @@ const Card: React.FC<Props> = ({ chat }) => {
   const showTick = chat.type === "DM" && fromMe && !system;
   const senderPrefix =
     chat.type === "Group" && chat.lastSenderId && !system
-      ? `${fromMe ? "You" : (chat.lastSenderName?.split(" ")[0] ?? "Someone")}: `
+      ? `${fromMe ? "You" : ((chat.profiles?.[chat.lastSenderId ?? ""]?.name || chat.lastSenderName)?.split(" ")[0] ?? "Someone")}: `
       : "";
 
   // Handlers for long-press (mobile), right-click (desktop), and ellipsis click

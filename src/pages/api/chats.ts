@@ -7,30 +7,22 @@ import { ensureChatDmIndex, isChatMember, isDuplicateKeyError } from "@/lib/chat
 import { UserSchema } from "@/lib/class/User";
 import { DEFAULT_MESSAGE_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient } from "@/lib/mongodb";
-import { canSendMessage } from "@/lib/chatPermissions";
 import { emitSequenceViaSocketServer, emitViaSocketServer } from "@/lib/socket";
 import {
   AllChats,
   ChatDataClient,
   ChatParticipant,
   ChatType,
-  Err,
   MessageAttributes,
-  msgStatus,
   NewChat,
   NewChat_,
   NewChatSettings,
 } from "@/lib/types/type";
+import { parseSince } from "@/lib/chatSync";
+import { buildMessageFilter } from "@/lib/chatSyncServer";
 import { dmKeyFor } from "@/lib/dmKey";
+import { withSenders } from "@/lib/messageSender";
 import { canShowLastSeen } from "@/lib/userPrivacy";
-
-function generateRandom16DigitNumber(): string {
-  let randomNumber = "";
-  for (let i = 0; i < 24; i++) {
-    randomNumber += Math.floor(Math.random() * 10).toString();
-  }
-  return randomNumber;
-}
 
 interface Payload {
   _id: string;
@@ -50,7 +42,19 @@ const CHAT_FIELD_VALIDATORS: Record<string, (v: unknown) => boolean> = {
     Object.values(v).every((entry) => typeof entry === "string" && entry.length <= 100),
 };
 
-const db = await new MongoDBClient().init();
+// Connected on the first request rather than at import, so the module can be imported (and tested)
+// without a top-level await. Everything below runs only after the handler has called `ensureDb()`.
+let db: MongoDBClient;
+let dbReady: Promise<MongoDBClient> | undefined;
+const ensureDb = async () => {
+  dbReady ??= new MongoDBClient().init();
+  try {
+    db = await dbReady;
+  } catch (error) {
+    dbReady = undefined; // a failed connect must not stay cached forever
+    throw error;
+  }
+};
 
 const func = async (_id: string): Promise<UserSchema | null> => {
   const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
@@ -150,30 +154,37 @@ export const chatRepository = {
       });
       const fetchMessageCount = msgPaging.limit + 1;
 
+      // Taken before any query runs, so anything written while we read is re-sent next time.
+      const serverTime = new Date().toISOString();
+      const since = parseSince(req.query.since);
+
+      const visibleToUser = {
+        $or: [
+          ...(chatIds.length > 0
+            ? [
+                {
+                  chatId: {
+                    $in: chatIds,
+                  },
+                },
+              ]
+            : []),
+          { receiverId: payload._id },
+        ],
+      };
+
+      const messageFilter = await buildMessageFilter(db, visibleToUser, chatIds, since);
+
       const messageDocs = await db
         .chatMessages()
-        .find({
-          $or: [
-            ...(chatIds.length > 0
-              ? [
-                  {
-                    chatId: {
-                      $in: chatIds,
-                    },
-                  },
-                ]
-              : []),
-            { senderId: payload._id },
-            { receiverId: payload._id },
-          ],
-        })
+        .find(messageFilter)
         .sort({ timestamp: -1, _id: -1 })
         .skip(msgPaging.skip)
         .limit(fetchMessageCount)
         .toArray();
 
       const hasMoreMessages = messageDocs.length > msgPaging.limit;
-      const messages = messageDocs.slice(0, msgPaging.limit);
+      const messages = await withSenders(db, messageDocs.slice(0, msgPaging.limit));
 
       const readReceipts = await db
         .readReceipts()
@@ -283,6 +294,15 @@ export const chatRepository = {
                   return {
                     userId: participant.userId,
                     displayPicture: user?.displayPicture ?? participant.displayPicture ?? "",
+                    // The chat screens show senders from here, so a rename or new photo applies
+                    // to messages already on the device instead of staying frozen in the cache.
+                    ...(user
+                      ? {
+                          name: user.name ?? "",
+                          username: user.username ?? "",
+                          verified: user.verified === true,
+                        }
+                      : {}),
                     ...(a.chatType === "DM" && participant.userId !== payload._id
                       ? { isBot: isBotAccount(user) }
                       : {}),
@@ -334,6 +354,7 @@ export const chatRepository = {
         chatSettings,
         messages: newMessages,
         requestId: payload._id,
+        serverTime,
         pagination: {
           messages: pagingMeta(msgPaging.skip, msgPaging.limit, hasMoreMessages),
         },
@@ -650,41 +671,6 @@ export const chatRepository = {
     }
   },
 
-  updateChatSettings: async (req: NextApiRequest, res: NextApiResponse) => {
-    try {
-      // const { id } = req.query;
-      // const updatedSettings: Partial<ChatSettings> = req.body;
-      // const updateObject: { [key: string]: any } = {};
-
-      // // Create a proper update object
-      // Object.keys(updatedSettings).forEach(key => {
-      //   updateObject[`participants.$[elem].chatSettings.${key}`] = updatedSettings[key as keyof ChatSettings];
-      // });
-
-      // await db.chats().updateOne(
-      //   { _id: new ObjectId(id as string) },
-      //   { $set: updateObject },
-      //   {
-      //     arrayFilters: [{ "elem.id": payload._id }],
-      //     upsert: true
-      //   }
-      // );
-
-      // // Fetch the updated chat to return the new settings
-      // const updatedChat = await db.chats().findOne(
-      //   { _id: new ObjectId(id as string) },
-      //   { projection: { "participants.$[elem].chatSettings": 1 } }
-      // );
-
-      // const updatedChatSettings = updatedChat?.participants.find((p) => p.userId === payload._id)?.chatSettings;
-
-      res.status(200).json("");
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Failed to update chat settings" });
-    }
-  },
-
   deleteChat: async (req: NextApiRequest, res: NextApiResponse, payload: Payload) => {
     try {
       const { id } = req.query;
@@ -706,148 +692,12 @@ export const chatRepository = {
       res.status(500).json({ error: "Failed to delete chat" });
     }
   },
-
-  addMessage: async (
-    req: NextApiRequest,
-    res: NextApiResponse<MessageAttributes | Err>,
-    payload: Payload
-  ) => {
-    try {
-      const { chatId } = req.query;
-      const chatData: MessageAttributes = req.body;
-      if (typeof chatId !== "string" || !ObjectId.isValid(chatId)) {
-        return res.status(400).json({ error: "Invalid chat id" });
-      }
-      const chats = await db.chats().findOne({ _id: new ObjectId(chatId) });
-      if (
-        chats &&
-        !canSendMessage({
-          chatType: chats.chatType,
-          onlyAdminsCanSend: chats.onlyAdminsCanSend,
-          adminIds: chats.adminIds,
-          userId: payload._id,
-        })
-      ) {
-        return res.status(403).json({ error: "Only admins can send messages in this group" });
-      }
-
-      if (!chats) {
-        return res.status(404).json({ error: "Chat not found" });
-      }
-      if (!(await isChatMember(db, chatId, payload._id))) {
-        return res.status(403).json({ error: "You are not a member of this chat" });
-      }
-      if (chatData.sender?.id !== payload._id) {
-        return res.status(403).json({ error: "Sender does not match the authenticated user" });
-      }
-
-      // Messages Collection
-      const message = {
-        _id: new ObjectId(chatData._id as string),
-        chatId: chatId as string, // Reference to the chat in DM collection
-        sender: chatData.sender,
-        receiverId: chatData.receiverId,
-        content: chatData.content,
-        timestamp: chatData.timestamp
-          ? new Date(chatData.timestamp).toISOString()
-          : new Date().toISOString(),
-        chatType: chatData.chatType,
-        messageType: chatData.messageType,
-        isRead: {
-          [chatData.sender.id]: true,
-          [chatData.receiverId]: false,
-        }, // Object with participant IDs as keys and their read status as values
-        reactions: chatData.reactions || [],
-        attachments: chatData.attachments || [],
-        quotedMessageId: "0",
-        status: "sent" as msgStatus,
-      };
-      await db.chats().updateOne(
-        { _id: new ObjectId(message.chatId) },
-        {
-          $set: {
-            lastMessageId: message._id.toString(),
-            lastUpdated: new Date().toISOString(),
-          },
-        }
-      );
-      await db
-        .chatParticipants()
-        .updateOne(
-          { chatId: message.chatId, userId: message.receiverId },
-          { $inc: { unreadCount: 1 } }
-        );
-      if (chatData.attachments.length > 0) {
-        await db.files().insertMany(
-          chatData.attachments.map((attachment) => ({
-            _id: new ObjectId(generateRandom16DigitNumber()),
-            key: attachment.key,
-            name: attachment.name,
-            type: attachment.type,
-            url: attachment.url || "",
-            size: attachment.size || 0,
-            uploadedAt: attachment.lastModified || new Date().toISOString(),
-          }))
-        );
-      }
-      await db.chatMessages().insertOne({
-        ...message,
-        attachments: chatData.attachments.map((attachment) => attachment.key),
-      });
-      res.status(201).json({ ...message, _id: message._id.toString() });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Failed to add message" });
-    }
-  },
-
-  deleteMyMessage: async (req: NextApiRequest, res: NextApiResponse) => {
-    try {
-      const { chatId, messageId, userId } = req.query;
-      await db.chatMessages().deleteOne({
-        _id: new ObjectId(messageId as string),
-        chatId: chatId as string,
-        senderId: userId, // Assuming you have user authentication
-      });
-      res.status(200).json("Successfully deleted");
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Failed to delete message" });
-    }
-  },
-
-  deleteMessageForMe: async (req: NextApiRequest, res: NextApiResponse) => {
-    try {
-      const { chatId, messageId, userId } = req.query;
-      await db.chatMessages().updateOne(
-        { _id: new ObjectId(messageId as string), chatId: chatId as string },
-        { $set: { deletedFor: { $push: userId } } } // Assuming you have user authentication
-      );
-      res.status(200).json("Successfully deleted");
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Failed to delete message for you" });
-    }
-  },
-
-  editMessage: async (req: NextApiRequest, res: NextApiResponse) => {
-    try {
-      const { chatId, messageId, userId } = req.query;
-      const updatedContent = req.body.content;
-      await db.chatMessages().updateOne(
-        { _id: new ObjectId(messageId as string), chatId: chatId as string, "sender.id": userId },
-        { $set: { content: updatedContent } } // Assuming you have user authentication
-      );
-      res.status(200).json("success");
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Failed to edit message" });
-    }
-  },
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
+
+  await ensureDb();
 
   // Improved cookie extraction
   const rawCookie = req.cookies.velo_12;
@@ -878,25 +728,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return chatRepository.getAllChats(req, res, payload);
       }
     case "POST":
-      if (req.query.chatId) {
-        return chatRepository.addMessage(req, res, payload);
-      } else {
-        return chatRepository.createChat(req, res, payload);
-      }
+      return chatRepository.createChat(req, res, payload);
     case "PUT":
-      if (req.query.messageId) {
-        return chatRepository.editMessage(req, res);
-      } else {
-        return chatRepository.updateChat(req, res, payload);
-      }
+      return chatRepository.updateChat(req, res, payload);
     case "DELETE":
-      if (req.query.option === "me") {
-        return chatRepository.deleteMessageForMe(req, res);
-      } else if (req.query.option === "all") {
-        return chatRepository.deleteMyMessage(req, res);
-      } else {
-        return chatRepository.deleteChat(req, res, payload);
-      }
+      return chatRepository.deleteChat(req, res, payload);
     default:
       res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
       return res.status(405).json(`Method ${method} Not Allowed`);

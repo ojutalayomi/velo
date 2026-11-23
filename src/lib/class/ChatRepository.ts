@@ -6,8 +6,6 @@ import {
   ChatInvitePreview,
   ChatParticipant,
   ChatSettings,
-  Err,
-  MessageAttributes,
   NewChat,
   NewChat_,
 } from "../types/type";
@@ -17,9 +15,14 @@ const CHAT_MESSAGE_PAGE = 500;
 
 class ChatRepository {
   /** One GET /api/chats page (paginated messages). */
-  async fetchChatsPage(messageSkip: number, messageLimit = CHAT_MESSAGE_PAGE): Promise<AllChats> {
+  async fetchChatsPage(
+    messageSkip: number,
+    messageLimit = CHAT_MESSAGE_PAGE,
+    since?: string
+  ): Promise<AllChats> {
+    const sinceParam = since ? `&since=${encodeURIComponent(since)}` : "";
     const response = await fetch(
-      `/api/chats?messageSkip=${messageSkip}&messageLimit=${messageLimit}`
+      `/api/chats?messageSkip=${messageSkip}&messageLimit=${messageLimit}${sinceParam}`
     );
     if (!response.ok) {
       throw new Error(await response.text());
@@ -29,6 +32,11 @@ class ChatRepository {
 
   async getAllChats(): Promise<AllChats> {
     return this.fetchChatsPage(0, CHAT_MESSAGE_PAGE);
+  }
+
+  /** Only messages changed after `since` (new, edited/deleted, reactions, read receipts). */
+  async getChatsSince(since: string): Promise<AllChats> {
+    return this.fetchChatsPage(0, CHAT_MESSAGE_PAGE, since);
   }
 
   async getChatById(id: string): Promise<ChatDataClient | undefined> {
@@ -206,52 +214,6 @@ class ChatRepository {
       method: "DELETE",
     });
     await response.json();
-  }
-
-  async sendMessage(newMessage: MessageAttributes, id: string): Promise<MessageAttributes | Err> {
-    const response = await fetch(`/api/chats?chatId=${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newMessage),
-    });
-    const message = await response.json();
-    return message;
-  }
-
-  async deleteMessageForMe(id: { [x: string]: string }): Promise<string> {
-    const response = await fetch(
-      `/api/chats/?chatId=${id}&messageId=${id}&userId=${id}&option=me`,
-      {
-        method: "DELETE",
-      }
-    );
-    return await response.json();
-  }
-
-  async deleteMyMessage(id: { [x: string]: string }): Promise<string> {
-    const response = await fetch(
-      `/api/chats?chatId=${id}&messageId=${id}&userId=${id}&option=all`,
-      {
-        method: "DELETE",
-      }
-    );
-    return await response.json();
-  }
-
-  async editMessage(
-    id: { [x: string]: string },
-    updatedAttributes: Partial<MessageAttributes>
-  ): Promise<string> {
-    const response = await fetch(`/api/chats?chatId=${id}&messageId=${id}&userId=${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedAttributes),
-    });
-    return await response.json();
   }
 }
 

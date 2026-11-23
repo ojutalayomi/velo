@@ -20,6 +20,7 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import ForwardDialog from "@/components/ForwardDialog";
 import { LinkPreview } from "@/components/LinkPreview";
+import { resolveSender } from "@/lib/senderProfile";
 import { Markdown } from "@/components/Markdown";
 import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -112,10 +113,16 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   const [isExpanded, setIsExpanded] = useState(false);
   const MAX_LENGTH = 300; // Adjust this number to change when the "Read more" appears
 
+  // Who sent it is shown from the chat's current member profiles, so a rename or new photo
+  // applies to old messages too; the copy that came with the message is only a fallback.
+  const profiles = useSelector(
+    (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.profiles
+  );
+  const shownSender = resolveSender(message?.sender, profiles);
   const senderId = message?.sender?.id || "";
-  const sender = message?.sender?.name || "";
-  const verified = message?.sender?.verified ?? false;
-  const displayPicture = message?.sender?.displayPicture || "";
+  const sender = shownSender?.name || "";
+  const verified = shownSender?.verified ?? false;
+  const displayPicture = shownSender?.displayPicture || "";
 
   useEffect(() => {
     setMessageContent(message.content.replace("≤≤≤", ""));
@@ -632,6 +639,9 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
   });
 
   const quotedMessageId = Messages?.find((m) => (m._id as string) === message.quotedMessageId);
+  const profiles = useSelector(
+    (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.profiles
+  );
 
   const handleQuoteClick = () => {
     const messageElement = document.getElementById(message.quotedMessageId as string);
@@ -673,7 +683,7 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
           <span
             className={`text-xs font-medium ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-300"}`}
           >
-            {quotedMessageId?.sender?.name || ""}
+            {resolveSender(quotedMessageId?.sender, profiles)?.name || ""}
           </span>
           <span
             className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}

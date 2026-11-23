@@ -249,8 +249,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   }, [friendId, userdata]);
 
   useEffect(() => {
+    // Never redirect before the user is known or while offline: the chat list may just not have
+    // loaded yet, and offline a failed navigation becomes a full page reload (a reload loop).
+    if (!userdata._id || (typeof navigator !== "undefined" && !navigator.onLine)) return;
     if (!friendId && pid !== userdata._id && !convo && !convoLoading) {
-      // console.log('Redirecting to /chats due to missing friendId and convo');
       router.push("/chats");
     }
   }, [convo, convoLoading, friendId, pid, router, userdata._id]);

@@ -376,7 +376,7 @@ const UserComponentLoading = ({
 
       <Ellipsis
         size={25}
-        className={`hidden cursor-pointer ${isCollapsed ? "hidden" : "md:!block"} dark:text-gray-400`}
+        className={`cursor-pointer ${isCollapsed ? "hidden" : "!block"} dark:text-gray-400`}
       />
     </div>
   );
@@ -391,7 +391,7 @@ const UserComponent = ({
 }) => {
   return (
     <div
-      className={`${isCollapsed ? "!shadow-none" : ""} user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between dark:hover:bg-neutral-900`}
+      className={`${isCollapsed ? "!shadow-none" : ""} user !mx-0 !my-[.5em] w-full !px-2 !py-1 hover:bg-slate-200 dark:hover:bg-neutral-900 ${isCollapsed ? "!justify-center" : "!items-center !justify-between"}`}
     >
       <div className="img size-10 max-h-10 max-w-10">
         <Image
@@ -407,7 +407,7 @@ const UserComponent = ({
       </div>
 
       <div
-        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "md:flex"}`}
+        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "!flex"}`}
       >
         <div className="flex max-w-full dark:text-slate-200">
           <p className="truncate">{userdata.name}</p>
@@ -418,7 +418,7 @@ const UserComponent = ({
 
       <Ellipsis
         size={25}
-        className={`hidden cursor-pointer ${isCollapsed ? "hidden" : "md:!block"} dark:text-gray-400`}
+        className={`cursor-pointer ${isCollapsed ? "hidden" : "!block"} dark:text-gray-400`}
       />
     </div>
   );

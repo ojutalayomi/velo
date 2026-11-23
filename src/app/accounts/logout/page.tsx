@@ -2,6 +2,7 @@
 import { LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { clearSocketToken } from "@/lib/socketToken";
 
 export default function Logout() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function Logout() {
         body: JSON.stringify({}),
       });
 
+      clearSocketToken(); // the next sign-in must not reuse this user's token
       if (response.ok) {
         setMessage("Logged out successfully");
         setLogout(true);

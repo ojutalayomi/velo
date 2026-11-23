@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { EllipsisVertical, UserMinus2, UserPlus2 } from "lucide-react";

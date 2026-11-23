@@ -17,9 +17,14 @@ const CHAT_MESSAGE_PAGE = 500;
 
 class ChatRepository {
   /** One GET /api/chats page (paginated messages). */
-  async fetchChatsPage(messageSkip: number, messageLimit = CHAT_MESSAGE_PAGE): Promise<AllChats> {
+  async fetchChatsPage(
+    messageSkip: number,
+    messageLimit = CHAT_MESSAGE_PAGE,
+    since?: string
+  ): Promise<AllChats> {
+    const sinceParam = since ? `&since=${encodeURIComponent(since)}` : "";
     const response = await fetch(
-      `/api/chats?messageSkip=${messageSkip}&messageLimit=${messageLimit}`
+      `/api/chats?messageSkip=${messageSkip}&messageLimit=${messageLimit}${sinceParam}`
     );
     if (!response.ok) {
       throw new Error(await response.text());
@@ -29,6 +34,11 @@ class ChatRepository {
 
   async getAllChats(): Promise<AllChats> {
     return this.fetchChatsPage(0, CHAT_MESSAGE_PAGE);
+  }
+
+  /** Only messages changed after `since` (new, edited/deleted, reactions, read receipts). */
+  async getChatsSince(since: string): Promise<AllChats> {
+    return this.fetchChatsPage(0, CHAT_MESSAGE_PAGE, since);
   }
 
   async getChatById(id: string): Promise<ChatDataClient | undefined> {

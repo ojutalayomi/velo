@@ -23,6 +23,10 @@ class ChatSystem {
     // return chatAttributes.map((attributes) => new Chat(attributes));
   }
 
+  async getChatsSince(since: string): Promise<AllChats> {
+    return this.chatRepository.getChatsSince(since);
+  }
+
   async getChatById(id: string): Promise<ChatDataClient | undefined> {
     const chatAttributes = await this.chatRepository.getChatById(id);
     return chatAttributes || undefined;

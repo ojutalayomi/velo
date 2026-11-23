@@ -2,6 +2,7 @@
 import { LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { clearChatCache } from "@/lib/chatCache";
 import { clearSocketToken } from "@/lib/socketToken";
 
 export default function Logout() {
@@ -34,6 +35,7 @@ export default function Logout() {
         body: JSON.stringify({}),
       });
 
+      void clearChatCache(); // cached messages must not outlive the session
       clearSocketToken(); // the next sign-in must not reuse this user's token
       if (response.ok) {
         setMessage("Logged out successfully");

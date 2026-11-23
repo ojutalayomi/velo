@@ -300,6 +300,8 @@ export interface Message {
   receiverId: string;
   content: string;
   timestamp: string;
+  /** Server-stamped on insert, delete and reaction changes; drives `since` syncs. */
+  updatedAt?: string;
   isRead?: { [participantId: string]: boolean }; // Object with participant IDs as keys and their read status as values
   chatType: ChatType;
   messageType: MessageType;
@@ -382,6 +384,8 @@ export type AllChats = {
   };
   messages?: MessageAttributes[];
   requestId: string;
+  /** Server clock when the response was built; the cursor for the next `since` request. */
+  serverTime?: string;
   pagination?: {
     messages: MessagesPaginationMeta;
   };
@@ -394,6 +398,8 @@ export type AllChatsServer = {
   };
   messages?: MessageAttributes[];
   requestId: string;
+  /** Server clock when the response was built; the cursor for the next `since` request. */
+  serverTime?: string;
   pagination?: {
     messages: MessagesPaginationMeta;
   };

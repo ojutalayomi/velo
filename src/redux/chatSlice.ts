@@ -4,8 +4,11 @@ import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
 import { Chat } from "@/lib/class/Chat";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
+import { loadChatSnapshot, saveChatSnapshot } from "@/lib/chatCache";
+import { deltaOverflowed, mergeDelta, sinceForCache } from "@/lib/chatSync";
 import { networkMonitor } from "@/lib/network";
 import {
+  AllChats,
   ChatType,
   ConvoType,
   MessageAttributes,
@@ -288,35 +291,65 @@ export const {
 } = chatSlice.actions;
 export default chatSlice.reducer;
 
-// Fetch chats on app load
-export const fetchChats = async (dispatch: Dispatch) => {
+function applyChats(dispatch: Dispatch, chats: AllChats) {
+  const uid = chats.requestId;
+  dispatch(setUserId(uid));
+
+  const conversations = chats.chats?.map((chat) => {
+    return new Chat(chat, chats.messages).getConvo(uid);
+  });
+
+  dispatch(setConversations(conversations));
+  dispatch(setMessages((chats.messages ?? []) as MessageAttributes[]));
+
+  const pg = chats.pagination?.messages;
+  dispatch(
+    setMessagesPagination({
+      nextSkip: pg ? pg.skip + pg.limit : 0,
+      hasMore: pg?.hasMore ?? false,
+    })
+  );
+
+  dispatch(setSettings(chats.chatSettings));
+  return conversations;
+}
+
+// With a usable cache, ask only for what changed since it was saved and merge that in.
+// Anything unexpected (no cursor, too old, delta too large, request failed) falls back to a full load.
+async function loadFreshChats(cached: AllChats | null): Promise<AllChats> {
+  const since = cached ? sinceForCache(cached) : null;
+  if (cached && since) {
+    try {
+      const delta = await chatSystem.getChatsSince(since);
+      if (!deltaOverflowed(delta)) return mergeDelta(cached, delta);
+    } catch {
+      // fall through to the full load
+    }
+  }
+  return chatSystem.getAllChats();
+}
+
+// Fetch chats on app load. Pass `userId` to paint instantly from the IndexedDB cache
+// (and to fall back to it while offline) before the network response arrives.
+export const fetchChats = async (dispatch: Dispatch, userId?: string) => {
   try {
+    const cached = userId ? await loadChatSnapshot(userId) : null;
     const networkStatus = networkMonitor.getNetworkStatus();
 
-    if (!networkStatus.online) return;
+    if (!networkStatus.online) {
+      return cached ? applyChats(dispatch, cached) : undefined;
+    }
 
-    dispatch(setLoading(true));
-    const chats = await chatSystem.getAllChats();
+    if (cached) {
+      applyChats(dispatch, cached);
+      dispatch(setLoading(false));
+    } else {
+      dispatch(setLoading(true));
+    }
 
-    const uid = chats.requestId;
-    dispatch(setUserId(uid));
-
-    const conversations = chats.chats?.map((chat) => {
-      return new Chat(chat, chats.messages).getConvo(uid);
-    });
-
-    dispatch(setConversations(conversations));
-    dispatch(setMessages((chats.messages ?? []) as MessageAttributes[]));
-
-    const pg = chats.pagination?.messages;
-    dispatch(
-      setMessagesPagination({
-        nextSkip: pg ? pg.skip + pg.limit : 0,
-        hasMore: pg?.hasMore ?? false,
-      })
-    );
-
-    dispatch(setSettings(chats.chatSettings));
+    const chats = await loadFreshChats(cached);
+    const conversations = applyChats(dispatch, chats);
+    void saveChatSnapshot(chats);
     return conversations;
   } catch (error) {
     dispatch(setError("Failed to fetch chats"));

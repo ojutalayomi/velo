@@ -211,12 +211,12 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     (async () => {
       try {
-        await fetchChats(dispatch);
+        await fetchChats(dispatch, userdata._id);
       } catch (err) {
         console.error("Failed to fetch chats", err);
       }
     })();
-  }, [success, dispatch]);
+  }, [success, dispatch, userdata._id]);
 
   // Register this user with the socket server after login/signup.
   // Kept separate from the chat fetch so socket changes don't refetch chats.

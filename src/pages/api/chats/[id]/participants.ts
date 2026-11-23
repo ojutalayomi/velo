@@ -7,6 +7,7 @@ import {
   isChatMember,
   isDuplicateMemberError,
 } from "@/lib/chatMembership";
+import { mergeSender, storedSender } from "@/lib/messageSender";
 import { MongoDBClient } from "@/lib/mongodb";
 import { emitViaSocketServer } from "@/lib/socket";
 import { ChatParticipant, MessageSchema, NewChatSettings } from "@/lib/types/type";
@@ -95,13 +96,7 @@ const addMembers = async (
     const announcement: MessageSchema = {
       _id: new ObjectId(),
       chatId: id,
-      sender: {
-        id: callerId,
-        name: adder?.name ?? "",
-        displayPicture: adder?.displayPicture ?? "",
-        username: adder?.username ?? "",
-        verified: false,
-      },
+      sender: storedSender({ id: callerId }),
       receiverId: id,
       content: `${adder?.name || "An admin"} added ${joined}`,
       timestamp: new Date().toISOString(),
@@ -116,6 +111,7 @@ const addMembers = async (
       await db.chatMessages().insertOne(announcement);
       await emitViaSocketServer(callerId, "chatMessage", {
         ...announcement,
+        sender: mergeSender({ id: callerId }, adder),
         _id: announcement._id.toString(),
       });
     } catch (error) {

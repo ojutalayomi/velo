@@ -131,10 +131,10 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
 
   useEffect(() => {
     async function fetchData() {
-      await fetchChats(dispatch);
+      await fetchChats(dispatch, userdata._id);
     }
     fetchData();
-  }, [dispatch]);
+  }, [dispatch, userdata._id]);
 
   const gt = useCallback((chatid: string) => {
     return conversationsRef.current.find((obj) => obj.id === chatid);

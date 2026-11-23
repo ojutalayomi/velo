@@ -21,7 +21,10 @@ import {
   NewChat_,
   NewChatSettings,
 } from "@/lib/types/type";
+import { parseSince } from "@/lib/chatSync";
+import { buildMessageFilter } from "@/lib/chatSyncServer";
 import { dmKeyFor } from "@/lib/dmKey";
+import { storedSender, withSenders } from "@/lib/messageSender";
 import { canShowLastSeen } from "@/lib/userPrivacy";
 
 function generateRandom16DigitNumber(): string {
@@ -50,7 +53,19 @@ const CHAT_FIELD_VALIDATORS: Record<string, (v: unknown) => boolean> = {
     Object.values(v).every((entry) => typeof entry === "string" && entry.length <= 100),
 };
 
-const db = await new MongoDBClient().init();
+// Connected on the first request rather than at import, so the module can be imported (and tested)
+// without a top-level await. Everything below runs only after the handler has called `ensureDb()`.
+let db: MongoDBClient;
+let dbReady: Promise<MongoDBClient> | undefined;
+const ensureDb = async () => {
+  dbReady ??= new MongoDBClient().init();
+  try {
+    db = await dbReady;
+  } catch (error) {
+    dbReady = undefined; // a failed connect must not stay cached forever
+    throw error;
+  }
+};
 
 const func = async (_id: string): Promise<UserSchema | null> => {
   const objectId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
@@ -150,30 +165,38 @@ export const chatRepository = {
       });
       const fetchMessageCount = msgPaging.limit + 1;
 
+      // Taken before any query runs, so anything written while we read is re-sent next time.
+      const serverTime = new Date().toISOString();
+      const since = parseSince(req.query.since);
+
+      const visibleToUser = {
+        $or: [
+          ...(chatIds.length > 0
+            ? [
+                {
+                  chatId: {
+                    $in: chatIds,
+                  },
+                },
+              ]
+            : []),
+          { senderId: payload._id },
+          { receiverId: payload._id },
+        ],
+      };
+
+      const messageFilter = await buildMessageFilter(db, visibleToUser, chatIds, since);
+
       const messageDocs = await db
         .chatMessages()
-        .find({
-          $or: [
-            ...(chatIds.length > 0
-              ? [
-                  {
-                    chatId: {
-                      $in: chatIds,
-                    },
-                  },
-                ]
-              : []),
-            { senderId: payload._id },
-            { receiverId: payload._id },
-          ],
-        })
+        .find(messageFilter)
         .sort({ timestamp: -1, _id: -1 })
         .skip(msgPaging.skip)
         .limit(fetchMessageCount)
         .toArray();
 
       const hasMoreMessages = messageDocs.length > msgPaging.limit;
-      const messages = messageDocs.slice(0, msgPaging.limit);
+      const messages = await withSenders(db, messageDocs.slice(0, msgPaging.limit));
 
       const readReceipts = await db
         .readReceipts()
@@ -334,6 +357,7 @@ export const chatRepository = {
         chatSettings,
         messages: newMessages,
         requestId: payload._id,
+        serverTime,
         pagination: {
           messages: pagingMeta(msgPaging.skip, msgPaging.limit, hasMoreMessages),
         },
@@ -792,6 +816,8 @@ export const chatRepository = {
       }
       await db.chatMessages().insertOne({
         ...message,
+        sender: storedSender(message.sender),
+        updatedAt: new Date().toISOString(),
         attachments: chatData.attachments.map((attachment) => attachment.key),
       });
       res.status(201).json({ ...message, _id: message._id.toString() });
@@ -836,7 +862,7 @@ export const chatRepository = {
       const updatedContent = req.body.content;
       await db.chatMessages().updateOne(
         { _id: new ObjectId(messageId as string), chatId: chatId as string, "sender.id": userId },
-        { $set: { content: updatedContent } } // Assuming you have user authentication
+        { $set: { content: updatedContent, updatedAt: new Date().toISOString() } } // Assuming you have user authentication
       );
       res.status(200).json("success");
     } catch (error) {
@@ -848,6 +874,8 @@ export const chatRepository = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
+
+  await ensureDb();
 
   // Improved cookie extraction
   const rawCookie = req.cookies.velo_12;

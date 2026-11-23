@@ -3,6 +3,7 @@ import io, { Socket } from "socket.io-client";
 
 import { useUser } from "@/app/providers/UserProvider";
 import { networkMonitor, NetworkStatus } from "@/lib/network";
+import { getSocketToken } from "@/lib/socketToken";
 import { useAppDispatch } from "@/redux/hooks";
 import { updateSettings } from "@/redux/userSlice";
 import { addOnlineUser, removeOnlineUser, setOnlineUsers } from "@/redux/utilsSlice";
@@ -43,6 +44,10 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
       path: "/wxyrt",
       query: { userId },
+      // A function, so every reconnect sends a fresh token.
+      auth: (done) => {
+        void getSocketToken().then((token) => done(token ? { token } : {}));
+      },
       transports: ["websocket", "polling"],
     });
 

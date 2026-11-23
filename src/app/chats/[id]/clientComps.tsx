@@ -40,6 +40,7 @@ import { RootState } from "@/redux/store";
 import { clearSelectedMessages } from "@/redux/utilsSlice";
 
 import { convoPreviewUpdate } from "@/lib/chatPreview";
+import { socketAuthHeaders } from "@/lib/socketToken";
 import { chatDraftKey, useDraft } from "@/hooks/useDraft";
 import { TypingBubble } from "../TypingIndicator";
 import ChatTextarea from "../ChatTextarea";
@@ -369,9 +370,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       if (socket) {
         try {
           if (otherPerson.accountType === "bot") {
-            const response = await axiosApi.post("/api/chat", {
-              messages: [...Messages, msg],
-            });
+            const response = await axiosApi.post(
+              "/api/chat",
+              { messages: [...Messages, msg] },
+              { headers: await socketAuthHeaders() }
+            );
             if (response.status !== 200) {
               throw new Error("Failed to get bot response");
             }

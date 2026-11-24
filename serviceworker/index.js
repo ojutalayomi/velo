@@ -342,7 +342,7 @@ async function handleRsc(event) {
 
 /** Pages the app may ask to have saved ahead of time (keep in sync with src/lib/offlinePages.ts). */
 const SAVE_PAGES_MESSAGE = "save-pages";
-const SAVABLE_PAGE = /^\/chats\/(me|group\/[\w-]+(\/settings)?|[\w-]+(\/settings)?)$/;
+const SAVABLE_PAGE = /^\/((?!(?:api|accounts|auth|admin|_next|sw\.js)$)[\w.-]+|chats\/(me|group\/[\w-]+(\/settings)?|[\w-]+(\/settings)?))$/;
 const MAX_SAVED_PAGES_PER_REQUEST = 80;
 /** A page saved this recently is not downloaded again. */
 const SAVED_PAGE_FRESH_MS = 12 * 60 * 60 * 1000;

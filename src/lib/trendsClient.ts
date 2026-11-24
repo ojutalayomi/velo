@@ -14,6 +14,27 @@ export type TrendsState = {
   error: boolean;
 };
 
+const SAVED_KEY = "velo-trends-snapshot";
+
+/** The last good list, kept so the panel still has something to show offline. Not user specific. */
+function saveSnapshot(snapshot: TrendsResponse) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(snapshot));
+  } catch {
+    // storage unavailable or full
+  }
+}
+
+function readSavedSnapshot(): TrendsResponse | null {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return isSnapshot(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 const initialState: TrendsState = { snapshot: null, loading: true, error: false };
 let state = initialState;
 let expiresAt = 0;
@@ -73,9 +94,10 @@ export function refreshTrends(force = false): Promise<void> {
       if (!isSnapshot(snapshot)) throw new Error("Invalid trends response");
       // Do not extend a server snapshot's lifetime by another client cache window.
       expiresAt = Math.min(Date.now(), Date.parse(snapshot.generatedAt)) + TREND_CACHE_TTL_MS;
+      saveSnapshot(snapshot);
       publish({ snapshot, loading: false, error: false });
     } catch {
-      publish({ ...state, loading: false, error: true });
+      publish({ snapshot: state.snapshot ?? readSavedSnapshot(), loading: false, error: true });
     } finally {
       clearTimeout(timeout);
       inFlight = null;

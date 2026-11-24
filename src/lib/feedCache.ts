@@ -11,7 +11,14 @@ const DB_NAME = "velo-feed-cache";
 const DB_VERSION = 1;
 const STORE = "feeds";
 
-export type FeedKey = "forYou" | "following" | "status";
+export type FeedKey =
+  | "forYou"
+  | "following"
+  | "status"
+  | "suggestions"
+  | "notifications:all"
+  | "notifications:mentions"
+  | "notifications:verified";
 
 export type CachedFeed<T> = {
   key: FeedKey;

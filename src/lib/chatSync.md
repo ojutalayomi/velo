@@ -302,6 +302,25 @@ you view (up to 200 entries, `velo-assets-v1`) and they show offline. Videos str
 are not cached. The feeds are read-only offline: likes, bookmarks, comments and new posts
 need a connection.
 
+### Notifications
+
+`/notifications` is saved ahead of time with the chat pages (the service worker's `save-pages`
+list now accepts it). The page keeps the first page of each tab (All, Mentions, Verified) in the
+`feeds` store of `velo-feed-cache` under `notifications:<tab>`. When a load fails it shows that
+copy with an "offline" note instead of an error, and it does not mark anything read until a real
+load succeeds (the mark-read retries on reconnect). Load more and push settings need a connection.
+Not yet verified in a real browser.
+
+### Profile, Trending and suggested people
+
+- **Profiles:** your own profile page (`/<username>`) is saved ahead of time; any profile you open is
+  kept by the service worker's normal page cache. The save list accepts a single-segment path except
+  reserved ones (`api`, `accounts`, `auth`, `admin`, `_next`, `sw.js`).
+- **Trending:** the last good list is kept in `localStorage` (`velo-trends-snapshot`, not user
+  specific) and shown with "Couldn't refresh trends. Showing the previous list." when a request fails.
+- **Suggested people:** saved under `suggestions` in `velo-feed-cache` (per user, cleared on logout)
+  and shown when the request fails.
+
 ## 9. Logout
 
 `logout/page.tsx` calls `resetChatPersistence()`, `clearChatCache()`,

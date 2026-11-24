@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useSocket } from "@/app/providers/SocketProvider";
+import { useUser } from "@/app/providers/UserProvider";
 import NotificationPreferencesCard from "@/components/NotificationPreferencesCard";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +35,7 @@ import {
 } from "@/lib/notificationGroups";
 import type { NotificationGroup, NotificationTab } from "@/lib/types/type";
 import { updateLiveTime } from "@/lib/utils";
+import { loadFeed, saveFeed, type FeedKey } from "@/lib/feedCache";
 import { useAppDispatch } from "@/redux/hooks";
 import { resetUnread, setUnreadCount } from "@/redux/notificationSlice";
 
@@ -134,6 +136,12 @@ export default function NotificationPage() {
   const navigate = useNavigateWithHistory();
   const socket = useSocket();
   const dispatch = useAppDispatch();
+  const { userdata } = useUser();
+  const userId = userdata?._id ?? "";
+  const userIdRef = useRef(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
 
   const [tab, setTab] = useState<NotificationTab>("all");
   const [groups, setGroups] = useState<NotificationGroup[]>([]);
@@ -142,6 +150,7 @@ export default function NotificationPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [offlineCopy, setOfflineCopy] = useState(false);
 
   const nextSkipRef = useRef(0);
   const requestIdRef = useRef(0);
@@ -166,7 +175,10 @@ export default function NotificationPage() {
         credentials: "include",
         body: JSON.stringify({ before: openedAt }),
       });
-      if (!response.ok) return;
+      if (!response.ok) {
+        markedReadRef.current = false;
+        return;
+      }
 
       const body = (await response.json()) as ReadResponse;
       if (typeof body.unreadCount === "number") dispatch(setUnreadCount(body.unreadCount));
@@ -178,7 +190,8 @@ export default function NotificationPage() {
         )
       );
     } catch {
-      // Badge and rows resync on the next load.
+      // Offline: try again the next time a list loads.
+      markedReadRef.current = false;
     }
   }, [dispatch]);
 
@@ -190,6 +203,7 @@ export default function NotificationPage() {
       if (append) setLoadingMore(true);
       else setLoading(true);
       setError(null);
+      setOfflineCopy(false);
 
       try {
         const params = new URLSearchParams({
@@ -212,6 +226,11 @@ export default function NotificationPage() {
         if (requestId !== requestIdRef.current) return false;
 
         const chunk = body.data ?? [];
+        if (!append) {
+          void saveFeed(`notifications:${targetTab}` as FeedKey, userIdRef.current, chunk, {
+            ...(body.pagination as PaginationMeta),
+          });
+        }
         setGroups((prev) => (append ? [...prev, ...chunk] : chunk));
         nextSkipRef.current = skip + chunk.length;
         setHasMore(Boolean(body.pagination?.hasMore));
@@ -221,8 +240,28 @@ export default function NotificationPage() {
 
         return true;
       } catch {
+        if (requestId !== requestIdRef.current) return false;
+        // Offline or the server is unreachable: show the last list this device saw.
+        if (!append) {
+          const saved = await loadFeed<NotificationGroup>(
+            `notifications:${targetTab}` as FeedKey,
+            userIdRef.current
+          );
+          if (requestId !== requestIdRef.current) return false;
+          if (saved) {
+            setGroups(saved.data);
+            nextSkipRef.current = saved.data.length;
+            setHasMore(false);
+            setOfflineCopy(true);
+            return false;
+          }
+        }
         if (requestId === requestIdRef.current) {
-          setError("Could not load notifications.");
+          setError(
+            typeof navigator !== "undefined" && !navigator.onLine
+              ? "You're offline. Notifications will load when you reconnect."
+              : "Could not load notifications."
+          );
           if (!append) {
             setGroups([]);
             setHasMore(false);
@@ -302,7 +341,9 @@ export default function NotificationPage() {
 
     const handleConnect = () => {
       nextSkipRef.current = 0;
-      loadPage(tabRef.current, false);
+      loadPage(tabRef.current, false).then((ok) => {
+        if (ok) void markRead();
+      });
     };
 
     socket.on("notification:new", handleNew);
@@ -314,7 +355,7 @@ export default function NotificationPage() {
       socket.off("notification:removed", handleRemoved);
       socket.off("connect", handleConnect);
     };
-  }, [dispatch, loadPage, socket]);
+  }, [dispatch, loadPage, markRead, socket]);
 
   const emptyMessage =
     tab === "mentions"
@@ -365,6 +406,12 @@ export default function NotificationPage() {
             ))}
           </TabsList>
         </Tabs>
+
+        {offlineCopy && !loading && (
+          <p className="mt-3 text-center text-sm text-gray-500 dark:text-slate-400" role="status">
+            You&apos;re offline. Showing what was saved on this device.
+          </p>
+        )}
 
         <div className="mt-4">
           {loading ? (

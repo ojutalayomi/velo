@@ -6,6 +6,7 @@ const snapshot = () => ({
 
 beforeEach(() => {
   jest.resetModules();
+  localStorage.clear();
   jest.useFakeTimers();
   global.fetch = jest
     .fn()
@@ -80,4 +81,17 @@ it("exposes a stable server snapshot without starting requests", async () => {
   const store = await import("../trendsClient");
   expect(store.getServerTrendsState()).toBe(store.getServerTrendsState());
   expect(fetch).not.toHaveBeenCalled();
+});
+
+it("falls back to the last saved list when the first request fails (offline start)", async () => {
+  const first = await import("../trendsClient");
+  await first.refreshTrends();
+  const saved = first.getTrendsState().snapshot;
+  expect(saved).not.toBeNull();
+
+  jest.resetModules();
+  jest.mocked(fetch).mockRejectedValueOnce(new Error("Offline"));
+  const fresh = await import("../trendsClient");
+  await fresh.refreshTrends();
+  expect(fresh.getTrendsState()).toEqual({ snapshot: saved, loading: false, error: true });
 });

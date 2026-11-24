@@ -235,6 +235,13 @@ describe("saving pages ahead of time", () => {
     ]);
   });
 
+  it("also keeps the notifications page", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockImplementation(async () => html("<html>notifications</html>"));
+    await send(worker, { type: "save-pages", urls: ["/notifications", "/ayo", "/api/x", "/admin/y"] });
+    expect(worker.store.names("velo-pages-v1").sort()).toEqual(["https://app.test/ayo", "https://app.test/notifications"]);
+  });
+
   it("serves a saved page offline, even though it was never opened", async () => {
     const worker = loadWorker();
     worker.fetchMock.mockResolvedValueOnce(html("<html>saved ahead</html>"));

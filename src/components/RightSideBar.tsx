@@ -13,6 +13,7 @@ import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
 import { Button } from "@/components/ui/button";
 import { axiosApi } from "@/lib/api";
 import { SocialMediaUser } from "@/lib/class/User";
+import { loadFeed, saveFeed } from "@/lib/feedCache";
 import { cn } from "@/lib/utils";
 import { RootState } from "@/redux/store";
 
@@ -37,6 +38,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
       .then((suggestionsRes) => {
         const root = suggestionsRes.data as { data?: SocialMediaUser[] };
         const rows = root?.data ?? [];
+        void saveFeed("suggestions", userdata._id, rows, { skip: 0, limit: rows.length, hasMore: false });
         setSuggestions(
           rows.filter(
             (d: SocialMediaUser) =>
@@ -44,8 +46,17 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
           )
         );
       })
-      .catch((error) => {
+      .catch(async (error) => {
         console.error("Error fetching suggestions:", error);
+        // Offline: show the people suggested the last time this device was online.
+        const saved = await loadFeed<SocialMediaUser>("suggestions", userdata._id);
+        if (saved) {
+          setSuggestions(
+            saved.data.filter(
+              (d) => d.isFollowing === false && d._id.toString() !== userdata._id.toString()
+            )
+          );
+        }
       })
       .finally(() => {
         setLoading(false);

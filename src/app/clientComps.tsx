@@ -160,7 +160,11 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   useOutbox(userdata._id, socket, chatsLoading);
   useEffect(() => {
     if (!userdata._id || chatsLoading || !conversations.length) return;
-    const urls = pagesToSave(conversations);
+    const urls = [
+      "/notifications",
+      ...(userdata.username ? [`/${userdata.username}`] : []),
+      ...pagesToSave(conversations),
+    ];
     const key = [...urls].sort().join("|");
     if (key === savedPagesKey.current) return;
     const timer = setTimeout(() => {
@@ -169,7 +173,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       void requestPageSave(urls);
     }, 5000);
     return () => clearTimeout(timer);
-  }, [conversations, chatsLoading, userdata._id]);
+  }, [conversations, chatsLoading, userdata._id, userdata.username]);
 
   const gt = useCallback((chatid: string) => {
     return conversationsRef.current.find((obj) => obj.id === chatid);

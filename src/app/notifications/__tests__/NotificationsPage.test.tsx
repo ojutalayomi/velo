@@ -26,6 +26,17 @@ jest.mock("@/app/providers/SocketProvider", () => ({
   useSocket: () => mockSocket,
 }));
 
+jest.mock("@/app/providers/UserProvider", () => ({
+  useUser: () => ({ userdata: { _id: "u1" } }),
+}));
+
+const mockSaveFeed = jest.fn();
+const mockLoadFeed = jest.fn();
+jest.mock("@/lib/feedCache", () => ({
+  saveFeed: (...args: unknown[]) => mockSaveFeed(...args),
+  loadFeed: (...args: unknown[]) => mockLoadFeed(...args),
+}));
+
 jest.mock("@/redux/hooks", () => ({
   useAppDispatch: () => mockDispatch,
 }));
@@ -125,6 +136,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSocket.handlers.clear();
   global.fetch = fetchMock as unknown as typeof fetch;
+  mockSaveFeed.mockResolvedValue(true);
+  mockLoadFeed.mockResolvedValue(null);
 });
 
 describe("Notifications page", () => {
@@ -212,5 +225,32 @@ describe("Notifications page", () => {
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/accounts/login");
     });
+  });
+
+  it("saves the first page of each tab for offline use", async () => {
+    installFetch([group()]);
+    render(<NotificationPage />);
+    await screen.findByText("Alex Johnson and Sam Lee liked your post");
+    expect(mockSaveFeed).toHaveBeenCalledWith(
+      "notifications:all",
+      "u1",
+      [expect.objectContaining({ groupKey: "like:post:p1" })],
+      expect.anything()
+    );
+  });
+
+  it("shows the saved list when offline and does not mark it read", async () => {
+    mockLoadFeed.mockResolvedValue({ data: [group()], pagination: {}, savedAt: 1 });
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    render(<NotificationPage />);
+    expect(await screen.findByText("Alex Johnson and Sam Lee liked your post")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Showing what was saved");
+    expect(requestUrls().some((u) => u.includes("/read"))).toBe(false);
+  });
+
+  it("says so when offline with nothing saved", async () => {
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    render(<NotificationPage />);
+    expect(await screen.findByText("Could not load notifications.")).toBeInTheDocument();
   });
 });

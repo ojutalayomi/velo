@@ -21,12 +21,13 @@ import { useUser } from "@/app/providers/UserProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { createStatus, deleteStatus, markStatusViewed } from "@/lib/statusApi";
 import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
@@ -283,14 +284,14 @@ const StatusComposer = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Add status</DialogTitle>
-          <DialogDescription>
+    <ResponsiveDialog open={open} onOpenChange={handleOpenChange} mobile="fullscreen">
+      <ResponsiveDialogContent className="max-w-lg">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Add status</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Share up to {MAX_STATUS_FILES} images or videos with your followers for 24 hours. Use @username to mention someone.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <input
           ref={inputRef}
           type="file"
@@ -306,9 +307,9 @@ const StatusComposer = ({
         >
           {previewItems[0] ? (
             previewItems[0].file.type.startsWith("video/") ? (
-              <video src={previewItems[0].url} className="max-h-80 w-full object-contain" controls />
+              <video src={previewItems[0].url} className="max-h-80 w-full object-contain mb:max-h-[55dvh]" controls />
             ) : (
-              <img src={previewItems[0].url} alt="" className="max-h-80 w-full object-contain" />
+              <img src={previewItems[0].url} alt="" className="max-h-80 w-full object-contain mb:max-h-[55dvh]" />
             )
           ) : (
             <span className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
@@ -354,7 +355,7 @@ const StatusComposer = ({
           maxLength={700}
           placeholder="Add a caption"
         />
-        <div className="flex justify-end gap-2">
+        <ResponsiveDialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={posting}>
             Cancel
           </Button>
@@ -362,9 +363,9 @@ const StatusComposer = ({
             {posting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             Share {files.length > 1 ? files.length : ""}
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 };
 

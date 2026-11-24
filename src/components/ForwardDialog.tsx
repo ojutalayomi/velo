@@ -7,14 +7,14 @@ import { toast } from "sonner";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { RootState } from "@/redux/store";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 
 /** Mirrors the limits the socket server enforces. */
 export const MAX_FORWARD_CHATS = 5;
@@ -93,13 +93,13 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>Forward to</DialogTitle>
-        <DialogDescription>
+      <ResponsiveDialogHeader>
+        <ResponsiveDialogTitle>Forward to</ResponsiveDialogTitle>
+        <ResponsiveDialogDescription>
           {messageIds.length} {messageIds.length === 1 ? "message" : "messages"} selected. Choose up
           to {MAX_FORWARD_CHATS} chats.
-        </DialogDescription>
-      </DialogHeader>
+        </ResponsiveDialogDescription>
+      </ResponsiveDialogHeader>
 
       <input
         value={query}
@@ -163,12 +163,12 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
 };
 
 const ForwardDialog: React.FC<Props> = (props) => (
-  <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-    <DialogContent className="max-w-md">
+  <ResponsiveDialog open={props.open} onOpenChange={props.onOpenChange}>
+    <ResponsiveDialogContent className="max-w-md">
       {/* Mounted only while open, so the selection always starts empty. */}
       <ForwardForm {...props} />
-    </DialogContent>
-  </Dialog>
+    </ResponsiveDialogContent>
+  </ResponsiveDialog>
 );
 
 export default ForwardDialog;

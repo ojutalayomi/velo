@@ -7,17 +7,15 @@ import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { CachedMedia } from "@/components/chat/CachedMedia";
+import { MediaViewer } from "@/components/chat/MediaViewer";
 import { downloadFile } from "@/lib/downloadFile";
-import ImageDiv from "@/components/imageDiv";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { Attachment, MessageAttributes } from "@/lib/types/type";
 import { formatFileSize, updateLiveTime } from "@/lib/utils";
 import { ConvoType } from "@/redux/chatSlice";
 import { RootState } from "@/redux/store";
-import VideoDiv from "@/templates/videoDiv";
 
 interface Params {
   gid?: string;
@@ -71,10 +69,7 @@ const MediaPage: React.FC = () => {
   const params = useParams() as Params;
   const { gid } = params;
   const { messages, conversations } = useSelector((state: RootState) => state.chat);
-  const [selectedMedia, setSelectedMedia] = useState<{ open: boolean; media: Attachment | null }>({
-    open: false,
-    media: null,
-  });
+  const [viewer, setViewer] = useState({ open: false, index: 0 });
 
   const convo = useMemo(
     () => conversations?.find((c) => c.id === gid) as ConvoType,
@@ -125,6 +120,8 @@ const MediaPage: React.FC = () => {
     });
     return media; // Already sorted by most recent first
   }, [mediaMessages]);
+
+  const viewerFiles = useMemo(() => allMedia.map((item) => item.attachment), [allMedia]);
 
   // Get all documents
   const allDocs = useMemo(() => {
@@ -237,7 +234,12 @@ const MediaPage: React.FC = () => {
                         <button
                           type="button"
                           key={`${message._id}-${index}`}
-                          onClick={() => setSelectedMedia({ open: true, media: attachment })}
+                          onClick={() =>
+                            setViewer({
+                              open: true,
+                              index: Math.max(0, allMedia.findIndex((item) => item.attachment === attachment)),
+                            })
+                          }
                           className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-gray-100 transition hover:ring-2 hover:ring-brand/60 dark:bg-neutral-800"
                         >
                           {isImage ? (
@@ -394,30 +396,13 @@ const MediaPage: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Media Preview Dialog */}
-      <Dialog
-        open={selectedMedia.open}
-        onOpenChange={(open) => setSelectedMedia({ open, media: null })}
-      >
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle className="truncate pr-6">{selectedMedia.media?.name}</DialogTitle>
-          </DialogHeader>
-          {selectedMedia.media && (
-            <div className="flex max-h-[70vh] items-center justify-center overflow-hidden">
-              {selectedMedia.media.type?.startsWith("image/") ? (
-                <CachedMedia url={selectedMedia.media.url} kind="image" save="on-mount">
-                  {(src) => <ImageDiv media={src} host={false} />}
-                </CachedMedia>
-              ) : selectedMedia.media.type?.startsWith("video/") ? (
-                <CachedMedia url={selectedMedia.media.url} kind="video" save="on-mount">
-                  {(src) => <VideoDiv media={src} host={false} />}
-                </CachedMedia>
-              ) : null}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Full-screen viewer: swipe through every photo and video in this chat. */}
+      <MediaViewer
+        files={viewerFiles}
+        open={viewer.open}
+        index={viewer.index}
+        onOpenChange={(open) => setViewer((prev) => ({ ...prev, open }))}
+      />
     </div>
   );
 };

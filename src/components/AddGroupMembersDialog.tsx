@@ -6,12 +6,12 @@ import { toast } from "sonner";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
@@ -222,17 +222,17 @@ const MemberPicker: React.FC<PickerProps> = ({
 
 // The picker is mounted only while open so each session starts with a clean search.
 const AddGroupMembersDialog: React.FC<Props> = ({ open, ...pickerProps }) => (
-  <Dialog open={open} onOpenChange={pickerProps.onOpenChange}>
-    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-      <DialogHeader>
-        <DialogTitle>Add members</DialogTitle>
-        <DialogDescription>
+  <ResponsiveDialog open={open} onOpenChange={pickerProps.onOpenChange}>
+    <ResponsiveDialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <ResponsiveDialogHeader>
+        <ResponsiveDialogTitle>Add members</ResponsiveDialogTitle>
+        <ResponsiveDialogDescription>
           Search for people to add to this group. Existing members are hidden.
-        </DialogDescription>
-      </DialogHeader>
+        </ResponsiveDialogDescription>
+      </ResponsiveDialogHeader>
       {open && <MemberPicker {...pickerProps} />}
-    </DialogContent>
-  </Dialog>
+    </ResponsiveDialogContent>
+  </ResponsiveDialog>
 );
 
 export default AddGroupMembersDialog;

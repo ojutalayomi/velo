@@ -1,35 +1,16 @@
 /* eslint-disable @next/next/no-img-element */
-import { Download, FileText, Share } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { Download, FileText } from "lucide-react";
+import React, { useState } from "react";
 
-import { DocCard } from "@/components/DocCard";
 import { AudioFileCard } from "@/components/chat/AudioFileCard";
 import { CachedMedia } from "@/components/chat/CachedMedia";
+import { MediaViewer } from "@/components/chat/MediaViewer";
 import { VoiceNotePlayer } from "@/components/VoiceNotePlayer";
 import { isVoiceNoteName } from "@/lib/voiceNote";
-import ImageDiv from "@/components/imageDiv";
-import {
-  Carousel,
-  CarouselApi,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { downloadFile } from "@/lib/downloadFile";
 import { Attachment } from "@/lib/types/type";
 import { cn, formatFileSize, updateLiveTime } from "@/lib/utils";
-import VideoDiv from "@/templates/videoDiv";
 
 // Resolve a friendly extension label + theme from a MIME subtype.
 const fileMeta = (subtype?: string) => {
@@ -217,119 +198,14 @@ type MediaDialogProps = {
   toggleMediaDialog: React.Dispatch<React.SetStateAction<{ open: boolean; index: number }>>;
 };
 
-const MediaDialogComponent = ({ files, mediaDialog, toggleMediaDialog }: MediaDialogProps) => {
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(1);
-  const [count, setCount] = useState(0);
-  const showControls = files.length > 1;
-  const activeFile = files[current - 1];
-
-  useEffect(() => {
-    if (!api) return;
-    api.scrollTo(mediaDialog.index, true);
-  }, [api, mediaDialog.index]);
-
-  useEffect(() => {
-    if (!api) return;
-
-    setCount(api.scrollSnapList().length);
-    setCurrent(api.selectedScrollSnap() + 1);
-
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap() + 1);
-    });
-  }, [api]);
-
-  return (
-    <Dialog
-      open={mediaDialog.open}
-      onOpenChange={(open) => toggleMediaDialog((prev) => ({ ...prev, open }))}
-    >
-      <DialogTrigger className="hidden" />
-      <DialogContent className="flex h-screen w-screen max-w-none flex-col justify-between gap-0 border-none bg-black/80 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle className="truncate pr-6 text-white">{activeFile?.name || "Preview"}</DialogTitle>
-          <DialogDescription className="text-xs font-medium text-gray-400">
-            {current} / {count}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex min-h-0 flex-1 items-center justify-center">
-          <Carousel setApi={setApi} className="flex max-h-full w-full flex-1 items-center">
-            <CarouselContent className="flex h-full max-h-full items-center">
-              {files.map((file, key) => {
-                const objectURL = file.url as string;
-                const isImage = file.type?.startsWith("image/");
-                const isVideo = file.type?.startsWith("video/");
-
-                return (
-                  <CarouselItem
-                    key={key + file.name}
-                    className="flex size-full items-center justify-center"
-                  >
-                    {isImage ? (
-                      <CachedMedia
-                        url={objectURL}
-                        kind="image"
-                        save={file === activeFile ? "on-mount" : "never"}
-                      >
-                        {(src) => <ImageDiv media={src} host={false} />}
-                      </CachedMedia>
-                    ) : isVideo ? (
-                      <CachedMedia
-                        url={objectURL}
-                        kind="video"
-                        save={file === activeFile ? "on-mount" : "never"}
-                      >
-                        {(src) => <VideoDiv media={src} host={false} />}
-                      </CachedMedia>
-                    ) : (
-                      <DocCard className="w-auto" file={file} />
-                    )}
-                  </CarouselItem>
-                );
-              })}
-            </CarouselContent>
-            {showControls && (
-              <>
-                <CarouselPrevious className="left-2 hidden border-0 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 sm:flex" />
-                <CarouselNext className="right-2 hidden border-0 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 sm:flex" />
-              </>
-            )}
-          </Carousel>
-        </div>
-
-        <DialogFooter className="items-center justify-center gap-2 sm:justify-center sm:space-x-0">
-          <div className="flex w-full items-center justify-center gap-2 sm:max-w-96">
-            <button
-              type="button"
-              disabled={!activeFile}
-              className="group flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
-              onClick={(e) => {
-                e.preventDefault();
-                if (activeFile) downloadFile(activeFile.url || "", activeFile.name);
-              }}
-            >
-              <Download size={16} />
-              <span>Download</span>
-            </button>
-            <button
-              type="button"
-              disabled={!activeFile}
-              className="group flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
-              onClick={(e) => {
-                e.preventDefault();
-              }}
-            >
-              <Share size={16} />
-              <span>Share</span>
-            </button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
+const MediaDialogComponent = ({ files, mediaDialog, toggleMediaDialog }: MediaDialogProps) => (
+  <MediaViewer
+    files={files}
+    open={mediaDialog.open}
+    index={mediaDialog.index}
+    onOpenChange={(open) => toggleMediaDialog((prev) => ({ ...prev, open }))}
+  />
+);
 
 MediaDialogComponent.displayName = "MediaDialogComponent";
 

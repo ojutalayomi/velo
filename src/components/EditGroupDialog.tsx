@@ -5,12 +5,12 @@ import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
 import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
@@ -130,12 +130,12 @@ const EditGroupForm: React.FC<Props> = ({
 
   return (
     <>
-        <DialogHeader>
-          <DialogTitle>Edit group</DialogTitle>
-          <DialogDescription>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Edit group</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Changes are visible to everyone in the group. Only admins can edit these details.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <form
           className="space-y-4"
@@ -233,12 +233,12 @@ const EditGroupForm: React.FC<Props> = ({
 };
 
 const EditGroupDialog: React.FC<Props> = (props) => (
-  <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-    <DialogContent className="max-w-md">
+  <ResponsiveDialog open={props.open} onOpenChange={props.onOpenChange}>
+    <ResponsiveDialogContent className="max-w-md">
       {/* Mounted only while open, so drafts always start from the saved values. */}
       <EditGroupForm {...props} />
-    </DialogContent>
-  </Dialog>
+    </ResponsiveDialogContent>
+  </ResponsiveDialog>
 );
 
 export default EditGroupDialog;

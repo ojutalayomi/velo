@@ -4,12 +4,12 @@ import { FilePenLine, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { draftPreview, type PostDraft } from "@/lib/postDrafts";
 
 function when(timestamp: number) {
@@ -38,14 +38,14 @@ export function PostDraftsDialog({
   onDeleteAll: () => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white dark:bg-zinc-900">
-        <DialogHeader>
-          <DialogTitle>Drafts</DialogTitle>
-          <DialogDescription>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-md bg-white dark:bg-zinc-900">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Drafts</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Saved on this device. Pick one to keep writing, or delete the ones you don&apos;t need.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         {drafts.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">No drafts yet.</p>
         ) : (
@@ -83,8 +83,8 @@ export function PostDraftsDialog({
             Delete all drafts
           </Button>
         )}
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 

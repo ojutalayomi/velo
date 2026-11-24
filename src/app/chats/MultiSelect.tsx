@@ -15,6 +15,7 @@ import {
   SENDER_DELETED_CONTENT,
 } from "@/lib/messageDeletion";
 import ForwardDialog, { MAX_FORWARD_MESSAGES } from "@/components/ForwardDialog";
+import { canForward } from "@/lib/messageActions";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 
@@ -27,7 +28,21 @@ export const MultiSelect = () => {
 
   const [forwardOpen, setForwardOpen] = useState(false);
 
-  const forwardMessages = () => setForwardOpen(true);
+  // Calls, polls, announcements and deleted messages can't be forwarded; the rest of the selection can.
+  const forwardableIds = selectedMessages.filter((id) => {
+    const msg = messages.find((m) => String(m._id) === id);
+    return msg ? canForward(msg) : false;
+  });
+  const skippedForward = selectedMessages.length - forwardableIds.length;
+
+  const forwardMessages = () => {
+    if (skippedForward > 0) {
+      toast.info(
+        `${skippedForward} selected message${skippedForward === 1 ? "" : "s"} can't be forwarded (calls, polls, announcements and deleted messages) and ${skippedForward === 1 ? "was" : "were"} left out.`
+      );
+    }
+    setForwardOpen(true);
+  };
 
   const deleteMessages = () => {
     if (!socket) return;
@@ -93,11 +108,13 @@ export const MultiSelect = () => {
       label: "Forward",
       icon: Forward,
       onClick: forwardMessages,
-      disabled: selectedMessages.length > MAX_FORWARD_MESSAGES,
+      disabled: forwardableIds.length === 0 || forwardableIds.length > MAX_FORWARD_MESSAGES,
       title:
-        selectedMessages.length > MAX_FORWARD_MESSAGES
-          ? `Select ${MAX_FORWARD_MESSAGES} messages or fewer to forward`
-          : "Forward",
+        forwardableIds.length === 0
+          ? "Calls, polls, announcements and deleted messages can't be forwarded"
+          : forwardableIds.length > MAX_FORWARD_MESSAGES
+            ? `Select ${MAX_FORWARD_MESSAGES} messages or fewer to forward`
+            : "Forward",
       danger: false,
     },
     { label: "Delete", icon: Trash2, onClick: deleteMessages, disabled: false, title: "Delete", danger: true },
@@ -136,7 +153,7 @@ export const MultiSelect = () => {
         ))}
       </div>
       <ForwardDialog
-        messageIds={selectedMessages}
+        messageIds={forwardableIds}
         open={forwardOpen}
         onOpenChange={setForwardOpen}
         onForwarded={() => dispatch(clearSelectedMessages())}

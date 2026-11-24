@@ -1,890 +1,730 @@
-import { TextOverlay } from "@/lib/types/type";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from "./ui/dialog";
-import {
-  Crop,
-  Sliders,
-  MessageSquare,
-  Type,
-  Flag,
-  ChevronLeft,
-  ChevronRight,
-  AlignLeft,
-  Bold,
-  Italic,
-  AlignCenter,
-  AlignRight,
-  Maximize2,
-  Search,
-  MinusCircle,
-  PlusCircle,
-  ImageIcon,
-  Loader,
-  Loader2,
-} from "lucide-react";
-import { ChangeEvent, MouseEvent, TouchEvent, ReactNode, useEffect, useRef, useState } from "react";
-import { DialogHeader, DialogFooter } from "./ui/dialog";
-import { Property } from "csstype";
-import { useTheme } from "@/app/providers/ThemeProvider";
+"use client";
 
-const CropMediaInterface = ({
-  children,
-  files,
-  setFiles,
-  imageIndex,
-}: {
+/* eslint-disable @next/next/no-img-element */
+import {
+  Bold,
+  Check,
+  Crop,
+  Italic,
+  Loader2,
+  Minus,
+  Plus,
+  RotateCw,
+  SlidersHorizontal,
+  Sparkles,
+  Trash2,
+  Type,
+  X,
+} from "lucide-react";
+import {
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { toast } from "sonner";
+
+import {
+  FullscreenSheet,
+  FullscreenSheetContent,
+  FullscreenSheetDescription,
+  FullscreenSheetTitle,
+  FullscreenSheetTrigger,
+  SheetIconButton,
+} from "@/components/ui/fullscreen-sheet";
+import {
+  ASPECTS,
+  clamp,
+  clampOffset,
+  DEFAULT_EDIT,
+  editedName,
+  FILTER_PRESETS,
+  type FilterId,
+  filterString,
+  frameRatio,
+  isUnchanged,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  outputSize,
+  outputType,
+  paintEdit,
+  type PhotoEdit,
+  rotatedSize,
+  baseRegion,
+  type Rotation,
+  type TextItem,
+} from "@/lib/imageEdit";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  /** The button that opens the editor. */
   children: ReactNode;
   files: File[];
   setFiles: (files: File[]) => void;
   imageIndex: number;
-}) => {
-  const { theme } = useTheme();
-  const [zoomLevel, setZoomLevel] = useState(0);
-  const [activeTab, setActiveTab] = useState("crop");
-  const [aspectRatio, setAspectRatio] = useState("original");
-  const [altText, setAltText] = useState("");
-  const [activeFilter, setActiveFilter] = useState("none");
-  const [brightness, setBrightness] = useState(50);
-  const [contrast, setContrast] = useState(50);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+};
 
-  // Content warning states
-  const [hasContentWarning, setHasContentWarning] = useState(false);
-  const [contentWarningType, setContentWarningType] = useState("none");
-  const [customWarning, setCustomWarning] = useState("");
-
-  // Text overlay states
-  const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
-  const [activeTextId, setActiveTextId] = useState("");
-  const [textInput, setTextInput] = useState("");
-  const [textColor, setTextColor] = useState("#ffffff");
-  const [fontSize, setFontSize] = useState(24);
-  const [fontFamily, setFontFamily] = useState("Arial");
-  const [textBold, setTextBold] = useState(false);
-  const [textItalic, setTextItalic] = useState(false);
-  const [textAlign, setTextAlign] = useState("left");
-
-  // Media Carousel States
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Function to add new text overlay
-  const addTextOverlay = () => {
-    if (!textInput.trim() || !imageContainerRef.current) return;
-
-    const newTextId = Date.now().toString();
-    const containerRect = imageContainerRef.current.getBoundingClientRect();
-
-    const newTextOverlay = {
-      id: newTextId,
-      text: textInput,
-      x: containerRect.width / 2 - 75, // Center horizontally
-      y: containerRect.height / 2 - 20, // Center vertically
-      color: textColor,
-      fontSize,
-      fontFamily,
-      bold: textBold,
-      italic: textItalic,
-      align: textAlign,
-      isDragging: false,
-      dragOffset: { x: 0, y: 0 },
-    };
-
-    setTextOverlays([...textOverlays, newTextOverlay]);
-    setActiveTextId(newTextId);
-    setTextInput("");
-  };
-
-  // Text drag handlers
-  const handleTextMouseDown = (e: MouseEvent, id: string) => {
-    e.preventDefault();
-
-    const textElement = textOverlays.find((t) => t.id === id);
-    if (!textElement) return;
-
-    // Calculate offset from mouse position to text element position
-    const offsetX = e.clientX - textElement.x;
-    const offsetY = e.clientY - textElement.y;
-
-    // Update the text overlay
-    setTextOverlays(
-      textOverlays.map((item) =>
-        item.id === id
-          ? { ...item, isDragging: true, dragOffset: { x: offsetX, y: offsetY } }
-          : item
-      )
-    );
-
-    setActiveTextId(id);
-  };
-
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!activeTextId || !imageContainerRef.current) return;
-
-    const draggingText = textOverlays.find((t) => t.id === activeTextId && t.isDragging);
-    if (!draggingText) return;
-
-    const containerRect = imageContainerRef.current.getBoundingClientRect();
-    const boundedX = Math.max(
-      0,
-      Math.min(
-        e.clientX - draggingText.dragOffset.x,
-        containerRect.width - 150 // Approximate text width
-      )
-    );
-
-    const boundedY = Math.max(
-      0,
-      Math.min(
-        e.clientY - draggingText.dragOffset.y,
-        containerRect.height - 40 // Approximate text height
-      )
-    );
-
-    setTextOverlays(
-      textOverlays.map((item) =>
-        item.id === activeTextId ? { ...item, x: boundedX, y: boundedY } : item
-      )
-    );
-  };
-
-  const handleMouseUp = () => {
-    setTextOverlays(
-      textOverlays.map((item) => (item.isDragging ? { ...item, isDragging: false } : item))
-    );
-  };
-
-  // Function to update active text properties
-  const updateActiveText = (property: string, value: any) => {
-    if (!activeTextId) return;
-
-    setTextOverlays(
-      textOverlays.map((item) => (item.id === activeTextId ? { ...item, [property]: value } : item))
-    );
-  };
-
-  // Function to delete active text
-  const deleteActiveText = () => {
-    if (!activeTextId) return;
-
-    setTextOverlays(textOverlays.filter((item) => item.id !== activeTextId));
-    setActiveTextId("");
-  };
-
-  // Function to toggle content warning
-  const toggleContentWarning = () => {
-    setHasContentWarning(!hasContentWarning);
-    if (!hasContentWarning && contentWarningType === "none") {
-      setContentWarningType("sensitive");
-    }
-  };
-
-  // Aspect ratio calculations
-  const getAspectRatioDimensions = () => {
-    if (!imageRef.current) {
-      return {};
-    }
-
-    // console.log(imageRef.current.width / 2, imageRef.current.height / 2);
-    const containerWidth = imageRef.current.width / 2; // Base container width
-    const containerHeight = imageRef.current.height / 2; // Base container height
-    let width, height;
-
-    switch (aspectRatio) {
-      case "1:1":
-        width = containerWidth;
-        height = containerWidth;
-        break;
-      case "16:9":
-        width = containerWidth;
-        height = containerWidth * (9 / 16);
-        break;
-      case "4:3":
-        width = containerWidth;
-        height = containerWidth * (3 / 4);
-        break;
-      case "original":
-      default:
-        width = containerWidth;
-        height = containerHeight; // Assuming original is 4:3 for demo
-        break;
-    }
-
-    return { width: `${width}px`, height: `${height}px` };
-  };
-
-  // Filter styles
-  const getFilterStyles = () => {
-    let filterStyle = `brightness(${brightness / 50}) contrast(${contrast / 50})`;
-
-    switch (activeFilter) {
-      case "vivid":
-        filterStyle += " saturate(1.5)";
-        break;
-      case "b&w":
-        filterStyle += " grayscale(1)";
-        break;
-      case "retro":
-        filterStyle += " sepia(0.5) hue-rotate(-30deg)";
-        break;
-      case "none":
-      default:
-        break;
-    }
-
-    return filterStyle;
-  };
-
-  const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(prev + 5, 100));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 5, 0));
-  };
-
-  const handleSliderClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (!sliderRef.current) return;
-
-    const rect = sliderRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = (x / rect.width) * 100;
-
-    setZoomLevel(Math.max(0, Math.min(100, percentage)));
-  };
-
-  const handleSliderDrag = (e: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) => {
-    if ("buttons" in e && e.buttons !== 1) return; // Handle MouseEvent
-    if ("touches" in e && e.touches.length === 0) return; // Handle TouchEvent
-
-    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX; // Get clientX for both events
-    handleSliderClick({ clientX } as MouseEvent<HTMLDivElement>);
-  };
-
-  const handleBrightnessChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setBrightness(Number(e.target.value));
-  };
-
-  const handleContrastChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setContrast(Number(e.target.value));
-  };
-
-  // Tab configuration
-  const tabs = [
-    { id: "crop", icon: <Crop className="h-6 w-6" />, label: "Crop" },
-    { id: "adjust", icon: <Sliders className="h-6 w-6" />, label: "Adjust" },
-    { id: "filters", icon: <ImageIcon className="h-6 w-6" />, label: "Filters" },
-    { id: "alt", icon: <MessageSquare className="h-6 w-6" />, label: "Alt Text" },
-    { id: "text", icon: <Type className="h-6 w-6" />, label: "Text" },
-    { id: "flag", icon: <Flag className="h-6 w-6" />, label: "Flag" },
-  ];
-
-  const processImage = async (
-    file: File,
-    textOverlays: TextOverlay[],
-    filters: string,
-    zoomLevel: number,
-    aspectRatio: string
-  ) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    // Load the image
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-
-    await new Promise((resolve) => {
-      img.onload = resolve;
-    });
-
-    // Calculate the scale and cropping area
-    const scale = 0.5 + (zoomLevel / 100) * 1.5;
-    let cropWidth = img.width / scale;
-    let cropHeight = img.height / scale;
-
-    let cropX = (img.width - cropWidth) / 2; // Center horizontally
-    let cropY = (img.height - cropHeight) / 2; // Center vertically
-
-    // Adjust cropping area based on aspect ratio
-    switch (aspectRatio) {
-      case "1:1": // Square
-        if (cropWidth > cropHeight) {
-          cropX += (cropWidth - cropHeight) / 2;
-          cropWidth = cropHeight;
-        } else {
-          cropY += (cropHeight - cropWidth) / 2;
-          cropHeight = cropWidth;
-        }
-        break;
-      case "16:9": // Widescreen
-        if (cropWidth / cropHeight > 16 / 9) {
-          cropWidth = cropHeight * (16 / 9);
-          cropX = (img.width - cropWidth) / 2;
-        } else {
-          cropHeight = cropWidth * (9 / 16);
-          cropY = (img.height - cropHeight) / 2;
-        }
-        break;
-      case "4:3": // Standard
-        if (cropWidth / cropHeight > 4 / 3) {
-          cropWidth = cropHeight * (4 / 3);
-          cropX = (img.width - cropWidth) / 2;
-        } else {
-          cropHeight = cropWidth * (3 / 4);
-          cropY = (img.height - cropHeight) / 2;
-        }
-        break;
-      case "original": // Original aspect ratio
-      default:
-        // No changes needed
-        break;
-    }
-
-    // Set canvas dimensions to match the cropped area
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
-
-    // Apply filters
-    ctx.filter = filters;
-
-    // Draw the cropped portion of the image onto the canvas
-    ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
-
-    // Draw text overlays
-    textOverlays.forEach((overlay) => {
-      ctx.font = `${overlay.bold ? "bold" : ""} ${overlay.italic ? "italic" : ""} ${overlay.fontSize}px ${overlay.fontFamily}`;
-      ctx.fillStyle = overlay.color;
-      ctx.textAlign = overlay.align as CanvasTextAlign;
-      ctx.fillText(overlay.text, overlay.x * scale, overlay.y * scale);
-    });
-
-    // Export the canvas as a new image
-    return new Promise<File | null>((resolve) => {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            const editedFile = new File([blob], `edited-${file.name}`, { type: file.type });
-            resolve(editedFile);
-          } else {
-            resolve(null);
-          }
-        },
-        file.type,
-        0.95
-      );
-    });
-  };
-
-  const handleSave = async () => {
-    if (imageIndex < 0 || imageIndex >= files.length) return; // Ensure the index is valid
-
-    setIsLoading(true);
-
-    try {
-      // Process only the active image
-      const editedFile = await processImage(
-        files[imageIndex], // Active image
-        textOverlays,
-        getFilterStyles(),
-        zoomLevel,
-        aspectRatio
-      );
-
-      if (editedFile) {
-        // Replace the active image in the files array with the edited version
-        const updatedFiles = [...files];
-        updatedFiles[imageIndex] = editedFile;
-        setFiles(updatedFiles);
-      }
-
-      // Close the modal
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error processing the image:", error);
-    } finally {
-      setIsLoading(false); // Ensure loading state is reset
-    }
-  };
+/**
+ * Photo editor: crop (shape, zoom, drag, rotate), light and colour, filters and text.
+ * It opens full screen, so it works the same on a phone and on a desktop, and edits the photo
+ * non-destructively until Save replaces the file in the list.
+ */
+const CropMediaInterface = ({ children, files, setFiles, imageIndex }: Props) => {
+  const [open, setOpen] = useState(false);
+  const file = files[imageIndex];
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="bg-white dialogCloseBtnHide max-h-screen mb:max-w-none h-[95%] gap-0 p-0 dark:bg-zinc-900 overflow-hidden mb:h-full flex flex-col">
-        <DialogHeader className="dark:text-white">
-          <DialogTitle className="text-center"></DialogTitle>
-          <DialogDescription className="flex justify-between items-center px-4 py-2 border-b border-gray-800">
-            <span className="flex items-center gap-4">
-              <DialogClose>
-                <ChevronLeft className="h-6 w-6" />
-              </DialogClose>
-              <span className="text-xl font-bold">Crop media</span>
-            </span>
-            <span className="flex items-center gap-2">
-              {/* <button disabled={!api?.canScrollPrev()} onClick={() => api?.scrollPrev()} className="disabled:cursor-not-allowed p-2 rounded-full dark:bg-gray-800">
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button disabled={!api?.canScrollNext()} onClick={() => api?.scrollNext()} className="disabled:cursor-not-allowed p-2 rounded-full dark:bg-gray-800">
-                <ChevronRight className="h-5 w-5" />
-              </button> */}
-              <button
-                disabled={isLoading}
-                onClick={handleSave}
-                className={`flex items-center bg-brand text-white font-semibold py-2 px-6 rounded-full ml-2`}
-              >
-                {isLoading ? "Saving" : "Save"}
-                {isLoading && <Loader2 className="animate-spin size-4" />}
-              </button>
-            </span>
-          </DialogDescription>
+    <FullscreenSheet open={open} onOpenChange={setOpen}>
+      <FullscreenSheetTrigger asChild>{children}</FullscreenSheetTrigger>
+      <FullscreenSheetContent>
+        {/* Mounted only while open, so every edit session starts fresh. */}
+        {open && file && (
+          <Editor
+            file={file}
+            onCancel={() => setOpen(false)}
+            onSave={(edited) => {
+              const next = [...files];
+              next[imageIndex] = edited;
+              setFiles(next);
+              setOpen(false);
+            }}
+          />
+        )}
+      </FullscreenSheetContent>
+    </FullscreenSheet>
+  );
+};
 
-          {/* Toolbar with Tab Control */}
-          <div className="flex justify-between items-center p-2">
-            <div className="flex items-center gap-8 justify-evenly w-full">
-              <div className="flex">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    className={`flex flex-col items-center px-4 py-2 relative ${
-                      activeTab === tab.id ? "text-brand" : "text-gray-500"
-                    } transition-colors hover:text-brand/90`}
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    {tab.icon}
-                    <span className="text-xs mt-1">{tab.label}</span>
-                    {activeTab === tab.id && (
-                      <div className="absolute bottom-0 left-0 w-full h-1 bg-brand rounded-full" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* <div className="text-gray-400 text-lg font-medium">
-              {activeTab === 'alt' && 'ALT Text'}
-              {activeTab === 'flag' && 'Content Warning'}
-            </div> */}
-          </div>
-        </DialogHeader>
+type Tab = "crop" | "adjust" | "filters" | "text";
 
-        {/* Main Content Area */}
-        <div
-          className="relative w-full flex items-center justify-center flex-1 overflow-hidden"
-          style={{ flexShrink: 1, maxHeight: "calc(100% - 120px)" }} // Adjust height dynamically
+const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
+  { id: "crop", label: "Crop", icon: <Crop size={20} /> },
+  { id: "adjust", label: "Adjust", icon: <SlidersHorizontal size={20} /> },
+  { id: "filters", label: "Filters", icon: <Sparkles size={20} /> },
+  { id: "text", label: "Text", icon: <Type size={20} /> },
+];
+
+const TEXT_COLORS = ["#ffffff", "#000000", "#ff6257", "#ffd23f", "#3ddc97", "#4cc9f0", "#9b5de5"];
+const TEXT_SIZES = [
+  { label: "S", value: 0.045 },
+  { label: "M", value: 0.07 },
+  { label: "L", value: 0.1 },
+  { label: "XL", value: 0.14 },
+];
+
+const FRAME_PADDING = 16;
+
+function Editor({
+  file,
+  onCancel,
+  onSave,
+}: {
+  file: File;
+  onCancel: () => void;
+  onSave: (file: File) => void;
+}) {
+  const [edit, setEdit] = useState<PhotoEdit>(DEFAULT_EDIT);
+  const [tab, setTab] = useState<Tab>("crop");
+  const [natural, setNatural] = useState<{ width: number; height: number } | null>(null);
+  const [stage, setStage] = useState({ width: 0, height: 0 });
+  const [selectedId, setSelectedId] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const imageRef = useRef<HTMLImageElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+
+  // One object URL per editing session, released when the editor closes.
+  const url = useMemo(() => URL.createObjectURL(file), [file]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+
+  useEffect(() => {
+    const node = stageRef.current;
+    if (!node) return;
+    const measure = () => setStage({ width: node.clientWidth, height: node.clientHeight });
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  // Geometry shared by the preview and the saved file.
+  const rotated = natural ? rotatedSize(natural.width, natural.height, edit.rotation) : null;
+  const ratio = rotated ? frameRatio(edit.aspect, rotated.width, rotated.height) : 1;
+  const availW = Math.max(stage.width - FRAME_PADDING * 2, 0);
+  const availH = Math.max(stage.height - FRAME_PADDING * 2, 0);
+  const frame =
+    !availW || !availH
+      ? { width: 0, height: 0 }
+      : availW / availH > ratio
+        ? { width: availH * ratio, height: availH }
+        : { width: availW, height: availW / ratio };
+  const base = rotated ? baseRegion(rotated.width, rotated.height, ratio) : null;
+  // Frame pixels per photo pixel.
+  const scale = base ? (frame.width * edit.zoom) / base.width : 1;
+
+  const patch = useCallback((changes: Partial<PhotoEdit>) => setEdit((prev) => ({ ...prev, ...changes })), []);
+
+  /** Change something that affects how far the photo can be dragged, keeping it inside the frame. */
+  const reframe = useCallback(
+    (changes: Partial<Pick<PhotoEdit, "aspect" | "zoom" | "rotation">>) => {
+      if (!natural) return;
+      setEdit((prev) => {
+        const next = { ...prev, ...changes };
+        next.zoom = clamp(next.zoom, MIN_ZOOM, MAX_ZOOM);
+        const size = rotatedSize(natural.width, natural.height, next.rotation);
+        const nextRatio = frameRatio(next.aspect, size.width, size.height);
+        next.offset = clampOffset(next.offset, size.width, size.height, nextRatio, next.zoom);
+        return next;
+      });
+    },
+    [natural]
+  );
+
+  const zoomBy = useCallback(
+    (factor: number) => reframe({ zoom: edit.zoom * factor }),
+    [edit.zoom, reframe]
+  );
+
+  /* ---- dragging the photo, pinching to zoom, scrolling to zoom ---- */
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<number | null>(null);
+
+  const onFrameDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    setSelectedId("");
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinch.current = Math.hypot(a.x - b.x, a.y - b.y);
+    }
+  };
+
+  const onFrameMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const previous = pointers.current.get(event.pointerId);
+    if (!previous || !rotated || !frame.width) return;
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      const distance = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch.current) zoomBy(distance / pinch.current);
+      pinch.current = distance;
+      return;
+    }
+
+    const dx = (event.clientX - previous.x) / frame.width;
+    const dy = (event.clientY - previous.y) / frame.height;
+    setEdit((prev) => ({
+      ...prev,
+      offset: clampOffset(
+        { x: prev.offset.x + dx, y: prev.offset.y + dy },
+        rotated.width,
+        rotated.height,
+        ratio,
+        prev.zoom
+      ),
+    }));
+  };
+
+  const onFrameUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pointers.current.delete(event.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+  };
+
+  // React attaches wheel listeners as passive, so a native one is needed to stop the page scrolling.
+  useEffect(() => {
+    const node = frameRef.current;
+    if (!node) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      zoomBy(Math.exp(-event.deltaY * 0.0015));
+    };
+    node.addEventListener("wheel", onWheel, { passive: false });
+    return () => node.removeEventListener("wheel", onWheel);
+  }, [zoomBy, natural]);
+
+  /* ---- text ---- */
+  const selected = edit.texts.find((item) => item.id === selectedId);
+
+  const updateText = (id: string, changes: Partial<TextItem>) =>
+    setEdit((prev) => ({
+      ...prev,
+      texts: prev.texts.map((item) => (item.id === id ? { ...item, ...changes } : item)),
+    }));
+
+  const addText = () => {
+    const item: TextItem = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      text: "Your text",
+      x: 0.5,
+      y: 0.5,
+      color: selected?.color ?? "#ffffff",
+      size: selected?.size ?? 0.07,
+      bold: selected?.bold ?? true,
+      italic: false,
+    };
+    setEdit((prev) => ({ ...prev, texts: [...prev.texts, item] }));
+    setSelectedId(item.id);
+  };
+
+  const removeText = () => {
+    if (!selected) return;
+    setEdit((prev) => ({ ...prev, texts: prev.texts.filter((item) => item.id !== selected.id) }));
+    setSelectedId("");
+  };
+
+  const textDrag = useRef<string | null>(null);
+
+  const onTextDown = (event: ReactPointerEvent<HTMLDivElement>, id: string) => {
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    textDrag.current = id;
+    setSelectedId(id);
+    setTab("text");
+  };
+
+  const onTextMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const id = textDrag.current;
+    const node = frameRef.current;
+    if (!id || !node) return;
+    const rect = node.getBoundingClientRect();
+    updateText(id, {
+      x: clamp((event.clientX - rect.left) / rect.width, 0, 1),
+      y: clamp((event.clientY - rect.top) / rect.height, 0, 1),
+    });
+  };
+
+  const onTextUp = () => {
+    textDrag.current = null;
+  };
+
+  /* ---- save ---- */
+  const handleSave = async () => {
+    const image = imageRef.current;
+    if (!image || !natural) return;
+    if (isUnchanged(edit)) {
+      onCancel();
+      return;
+    }
+    setSaving(true);
+    try {
+      const size = outputSize(natural.width, natural.height, edit.rotation, edit.aspect, edit.zoom);
+      const canvas = document.createElement("canvas");
+      canvas.width = size.width;
+      canvas.height = size.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas isn't available");
+
+      const type = outputType(file.type);
+      if (type === "image/jpeg") {
+        // JPEG has no transparency: paint white first so transparent areas don't turn black.
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      const filtered = paintEdit(ctx, image, size, natural.width, natural.height, edit);
+      if (!filtered && filterString(edit) !== filterString(DEFAULT_EDIT)) {
+        toast.info("This browser can't apply filters or light changes, so they were left out.");
+      }
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.92));
+      if (!blob) throw new Error("Couldn't export the image");
+      onSave(new File([blob], editedName(file.name, type), { type, lastModified: Date.now() }));
+    } catch (error) {
+      console.error("Error processing the image:", error);
+      toast.error("Couldn't save your changes", { description: "Try again, or send the original photo." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const filter = filterString(edit);
+  const imageStyle = natural
+    ? {
+        width: natural.width,
+        height: natural.height,
+        transform: `translate(-50%, -50%) translate(${edit.offset.x * frame.width}px, ${edit.offset.y * frame.height}px) rotate(${edit.rotation}deg) scale(${scale})`,
+        filter,
+      }
+    : undefined;
+  const changed = !isUnchanged(edit);
+
+  return (
+    <>
+      <header className="flex items-center gap-1 px-2 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <SheetIconButton aria-label="Cancel editing" onClick={onCancel}>
+          <X size={22} />
+        </SheetIconButton>
+        <FullscreenSheetTitle className="flex-1 px-1 text-base font-semibold">Edit photo</FullscreenSheetTitle>
+        <FullscreenSheetDescription className="sr-only">
+          Crop, adjust, filter and add text to the photo before sending
+        </FullscreenSheetDescription>
+        <button
+          type="button"
+          disabled={!changed || saving}
+          onClick={() => {
+            setEdit(DEFAULT_EDIT);
+            setSelectedId("");
+          }}
+          className="rounded-full px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 disabled:opacity-40"
         >
-          <div className="absolute inset-0 bg-black bg-opacity-70 z-30 flex flex-col items-center justify-center max-h-full">
-            <div
-              ref={imageContainerRef}
-              className={`border-4 border-brand max-h-full overflow-hidden absolute -translate-x-1/2 -translate-y-1/2 bg-transparent top-1/2 left-1/2 z-30`}
-              style={{
-                ...getAspectRatioDimensions(),
-                boxShadow: `0 0 0 9999px rgba(${theme === "dark" ? "0, 0, 0" : "255, 255, 255"}, 0.9)`, // Create the cut-out effect
-              }}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-            >
-              {/* Content warning overlay */}
-              {hasContentWarning && activeTab === "flag" && (
-                <div className="absolute inset-0 bg-black bg-opacity-70 z-30 flex items-center justify-center flex-col p-4">
-                  <Flag className="h-10 w-10 text-yellow-500 mb-2" />
-                  <h3 className="text-lg font-bold text-white">Content Warning</h3>
-                  <p className="text-center text-white mt-1">
-                    {contentWarningType === "custom"
-                      ? customWarning || "Custom warning"
-                      : contentWarningType === "sensitive"
-                        ? "Sensitive Content"
-                        : contentWarningType === "violence"
-                          ? "Violent Content"
-                          : contentWarningType === "nudity"
-                            ? "Nudity"
-                            : "Political Content"}
-                  </p>
+          Reset
+        </button>
+        <button
+          type="button"
+          disabled={saving || !natural}
+          onClick={() => void handleSave()}
+          className="flex h-10 items-center gap-2 rounded-full bg-brand px-5 text-sm font-semibold text-white transition-opacity hover:bg-brand/90 disabled:opacity-60"
+        >
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+          {saving ? "Saving" : "Done"}
+        </button>
+      </header>
+
+      {/* Stage: the photo is dragged and pinched inside the frame; what's outside it is dimmed. */}
+      <div ref={stageRef} className="relative min-h-0 flex-1 overflow-hidden bg-black">
+        {!natural && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="animate-spin text-white/60" />
+          </div>
+        )}
+        {/* Hidden copy that is measured and painted onto the canvas when saving. */}
+        <img
+          ref={imageRef}
+          src={url}
+          alt=""
+          className="hidden"
+          onLoad={(event) =>
+            setNatural({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })
+          }
+        />
+        {natural && frame.width > 0 && (
+          <div
+            ref={frameRef}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 touch-none select-none"
+            style={{ width: frame.width, height: frame.height, cursor: "grab" }}
+            onPointerDown={onFrameDown}
+            onPointerMove={onFrameMove}
+            onPointerUp={onFrameUp}
+            onPointerCancel={onFrameUp}
+          >
+            {/* The part of the photo outside the frame, faded, so it's clear what gets cut off. */}
+            <img
+              src={url}
+              alt=""
+              draggable={false}
+              className="pointer-events-none absolute left-1/2 top-1/2 max-w-none opacity-30"
+              style={imageStyle}
+            />
+            <div className="absolute inset-0 overflow-hidden rounded-sm ring-2 ring-white/90">
+              <img
+                src={url}
+                alt={file.name}
+                draggable={false}
+                className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
+                style={imageStyle}
+              />
+
+              {tab === "crop" && (
+                <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3">
+                  {Array.from({ length: 9 }, (_, i) => (
+                    <div key={i} className="border border-white/25" />
+                  ))}
                 </div>
               )}
 
-              {/* Text overlays */}
-              {textOverlays.map((overlay) => (
+              {edit.texts.map((item) => (
                 <div
-                  key={overlay.id}
-                  className={`absolute cursor-move ${overlay.isDragging ? "z-20" : "z-10"} ${
-                    activeTextId === overlay.id ? "outline outline-2 outline-brand" : ""
-                  }`}
+                  key={item.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Text: ${item.text}`}
+                  onPointerDown={(event) => onTextDown(event, item.id)}
+                  onPointerMove={onTextMove}
+                  onPointerUp={onTextUp}
+                  onPointerCancel={onTextUp}
+                  className={cn(
+                    "absolute -translate-x-1/2 -translate-y-1/2 cursor-move touch-none whitespace-pre px-1 leading-none",
+                    selectedId === item.id && "outline outline-2 outline-dashed outline-white/90"
+                  )}
                   style={{
-                    left: overlay.x,
-                    top: overlay.y,
-                    color: overlay.color,
-                    fontSize: `${overlay.fontSize}px`,
-                    fontFamily: overlay.fontFamily,
-                    fontWeight: overlay.bold ? "bold" : "normal",
-                    fontStyle: overlay.italic ? "italic" : "normal",
-                    textAlign: overlay.align as Property.TextAlign,
-                    minWidth: "100px",
-                    userSelect: "none",
+                    left: `${item.x * 100}%`,
+                    top: `${item.y * 100}%`,
+                    color: item.color,
+                    fontSize: item.size * frame.height,
+                    fontWeight: item.bold ? 700 : 400,
+                    fontStyle: item.italic ? "italic" : "normal",
+                    fontFamily: "Arial, Helvetica, sans-serif",
                   }}
-                  onMouseDown={(e) => handleTextMouseDown(e, overlay.id)}
                 >
-                  {overlay.text}
+                  {item.text}
                 </div>
               ))}
             </div>
           </div>
+        )}
+      </div>
 
-          {files[imageIndex] && (
-            <div className="flex flex-col items-center justify-center max-h-full">
-              <div>
-                <img
-                  ref={imageRef}
-                  src={URL.createObjectURL(files[imageIndex])}
-                  alt={altText}
-                  className="w-full h-full object-cover"
-                  style={{
-                    transform: `scale(${0.5 + (zoomLevel / 100) * 1.5})`,
-                    filter: getFilterStyles(),
-                  }}
+      {/* Tool panel + tab bar. On wide screens the panel stays a comfortable width. */}
+      <div className="border-t border-white/10 bg-zinc-900">
+        <div className="mx-auto min-h-28 w-full max-w-2xl px-4 py-3">
+          {tab === "crop" && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1" role="radiogroup" aria-label="Crop shape">
+                {ASPECTS.map((item) => (
+                  <Chip
+                    key={item.id}
+                    active={edit.aspect === item.id}
+                    onClick={() => reframe({ aspect: item.id })}
+                  >
+                    {item.label}
+                  </Chip>
+                ))}
+                <button
+                  type="button"
+                  aria-label="Rotate 90 degrees"
+                  onClick={() => reframe({ rotation: ((edit.rotation + 90) % 360) as Rotation })}
+                  className="ml-auto flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                >
+                  <RotateCw size={18} />
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Zoom out"
+                  onClick={() => zoomBy(1 / 1.15)}
+                  className="rounded-full p-1 text-white/70 hover:text-white"
+                >
+                  <Minus size={20} />
+                </button>
+                <input
+                  type="range"
+                  aria-label="Zoom"
+                  min={MIN_ZOOM}
+                  max={MAX_ZOOM}
+                  step={0.01}
+                  value={edit.zoom}
+                  onChange={(event) => reframe({ zoom: Number(event.target.value) })}
+                  className="h-8 flex-1 accent-brand"
                 />
+                <button
+                  type="button"
+                  aria-label="Zoom in"
+                  onClick={() => zoomBy(1.15)}
+                  className="rounded-full p-1 text-white/70 hover:text-white"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
+              <p className="text-center text-xs text-white/50">Drag to reposition. Pinch or scroll to zoom.</p>
+            </div>
+          )}
+
+          {tab === "adjust" && (
+            <div className="space-y-1">
+              <Slider label="Brightness" value={edit.brightness} onChange={(brightness) => patch({ brightness })} />
+              <Slider label="Contrast" value={edit.contrast} onChange={(contrast) => patch({ contrast })} />
+              <Slider label="Saturation" value={edit.saturation} onChange={(saturation) => patch({ saturation })} />
+            </div>
+          )}
+
+          {tab === "filters" && (
+            <div className="flex gap-3 overflow-x-auto pb-1" role="radiogroup" aria-label="Filter">
+              {FILTER_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={edit.filter === preset.id}
+                  onClick={() => patch({ filter: preset.id as FilterId })}
+                  className="flex shrink-0 flex-col items-center gap-1.5"
+                >
+                  <span
+                    className={cn(
+                      "block size-16 overflow-hidden rounded-xl border-2 bg-zinc-800 transition",
+                      edit.filter === preset.id ? "border-brand" : "border-transparent"
+                    )}
+                  >
+                    <img
+                      src={url}
+                      alt=""
+                      draggable={false}
+                      className="size-full object-cover"
+                      style={{ filter: preset.css || undefined }}
+                    />
+                  </span>
+                  <span className={cn("text-xs", edit.filter === preset.id ? "text-brand" : "text-white/70")}>
+                    {preset.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {tab === "text" && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  aria-label="Text"
+                  value={selected?.text ?? ""}
+                  disabled={!selected}
+                  maxLength={120}
+                  onChange={(event) => selected && updateText(selected.id, { text: event.target.value })}
+                  placeholder={selected ? "Type your text" : "Add text, then drag it into place"}
+                  className="h-10 min-w-0 flex-1 rounded-full bg-zinc-800 px-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={addText}
+                  className="h-10 shrink-0 rounded-full bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90"
+                >
+                  Add text
+                </button>
+              </div>
+              <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-2", !selected && "pointer-events-none opacity-40")}>
+                <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Text colour">
+                  {TEXT_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected?.color === color}
+                      aria-label={`Colour ${color}`}
+                      onClick={() => selected && updateText(selected.id, { color })}
+                      className={cn(
+                        "size-7 rounded-full border-2 transition",
+                        selected?.color === color ? "scale-110 border-brand" : "border-white/30"
+                      )}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-1" role="radiogroup" aria-label="Text size">
+                  {TEXT_SIZES.map((size) => (
+                    <Chip
+                      key={size.label}
+                      small
+                      active={selected?.size === size.value}
+                      onClick={() => selected && updateText(selected.id, { size: size.value })}
+                    >
+                      {size.label}
+                    </Chip>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Chip
+                    small
+                    aria-label="Bold"
+                    active={!!selected?.bold}
+                    onClick={() => selected && updateText(selected.id, { bold: !selected.bold })}
+                  >
+                    <Bold size={15} />
+                  </Chip>
+                  <Chip
+                    small
+                    aria-label="Italic"
+                    active={!!selected?.italic}
+                    onClick={() => selected && updateText(selected.id, { italic: !selected.italic })}
+                  >
+                    <Italic size={15} />
+                  </Chip>
+                  <button
+                    type="button"
+                    aria-label="Delete text"
+                    onClick={removeText}
+                    className="flex size-8 items-center justify-center rounded-full text-red-400 transition-colors hover:bg-red-500/15"
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Bottom Toolbar */}
-        <DialogFooter className="bg-white dark:bg-zinc-900">
-          <div className="flex justify-between items-center sticky bottom-0 border-gray-800 flex-1 py-3">
-            {/* Tab Content Area - Shows different controls based on active tab */}
-            <div className="p-2 border-gray-800 w-full">
-              {activeTab === "crop" && (
-                <>
-                  <div className="flex items-center gap-4 mb-2 justify-center">
-                    <span className="text-sm text-gray-400">Aspect ratio:</span>
-                    <button
-                      className={`px-3 py-1 ${aspectRatio === "original" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                      onClick={() => setAspectRatio("original")}
-                    >
-                      Original
-                    </button>
-                    <button
-                      className={`px-3 py-1 ${aspectRatio === "1:1" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                      onClick={() => setAspectRatio("1:1")}
-                    >
-                      1:1
-                    </button>
-                    <button
-                      className={`px-3 py-1 ${aspectRatio === "16:9" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                      onClick={() => setAspectRatio("16:9")}
-                    >
-                      16:9
-                    </button>
-                    <button
-                      className={`px-3 py-1 ${aspectRatio === "4:3" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                      onClick={() => setAspectRatio("4:3")}
-                    >
-                      4:3
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-4 justify-center">
-                    <Search className="h-6 w-6" />
-                    <div className="flex items-center">
-                      <button
-                        onClick={handleZoomOut}
-                        className="focus:outline-none hover:text-brand/90 transition-colors"
-                      >
-                        <MinusCircle className="h-6 w-6 text-gray-500" />
-                      </button>
-                      <div
-                        ref={sliderRef}
-                        className="relative w-52 h-2 bg-gray-700 rounded-full mx-2 cursor-pointer"
-                        onClick={handleSliderClick}
-                        onMouseMove={handleSliderDrag}
-                        onTouchMove={handleSliderDrag}
-                        onTouchEnd={handleSliderDrag}
-                      >
-                        <div
-                          className="absolute top-0 left-0 h-2 bg-brand rounded-full"
-                          style={{ width: `${zoomLevel}%` }}
-                        />
-                        <div
-                          className="absolute top-0 h-6 w-6 bg-brand rounded-full -mt-2 cursor-grab active:cursor-grabbing"
-                          style={{ left: `${zoomLevel}%`, transform: "translateX(-50%)" }}
-                        />
-                      </div>
-                      <button
-                        onClick={handleZoomIn}
-                        className="focus:outline-none hover:text-brand/90 transition-colors"
-                      >
-                        <PlusCircle className="h-6 w-6 text-gray-500" />
-                      </button>
-                    </div>
-                  </div>
-                </>
+        <nav
+          className="mx-auto flex w-full max-w-2xl justify-around border-t border-white/10 pb-[max(0.25rem,env(safe-area-inset-bottom))]"
+          aria-label="Editing tools"
+        >
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={tab === item.id}
+              onClick={() => setTab(item.id)}
+              className={cn(
+                "flex min-w-16 flex-1 flex-col items-center gap-1 py-2.5 text-xs transition-colors",
+                tab === item.id ? "text-brand" : "text-white/60 hover:text-white"
               )}
-
-              {activeTab === "adjust" && (
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-400">Brightness:</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={brightness}
-                    onChange={handleBrightnessChange}
-                    className="w-32"
-                  />
-                  <span className="text-sm text-gray-400 ml-4">Contrast:</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={contrast}
-                    onChange={handleContrastChange}
-                    className="w-32"
-                  />
-                </div>
-              )}
-
-              {activeTab === "filters" && (
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    className={`px-3 py-1 ${activeFilter === "none" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                    onClick={() => setActiveFilter("none")}
-                  >
-                    None
-                  </button>
-                  <button
-                    className={`px-3 py-1 ${activeFilter === "vivid" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                    onClick={() => setActiveFilter("vivid")}
-                  >
-                    Vivid
-                  </button>
-                  <button
-                    className={`px-3 py-1 ${activeFilter === "b&w" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                    onClick={() => setActiveFilter("b&w")}
-                  >
-                    B&W
-                  </button>
-                  <button
-                    className={`px-3 py-1 ${activeFilter === "retro" ? "bg-brand" : "dark:bg-gray-800"} rounded-md text-sm`}
-                    onClick={() => setActiveFilter("retro")}
-                  >
-                    Retro
-                  </button>
-                </div>
-              )}
-
-              {activeTab === "alt" && (
-                <div className="flex items-center gap-3 w-full">
-                  <span className="text-sm text-gray-400">Alt text description:</span>
-                  <input
-                    type="text"
-                    value={altText}
-                    onChange={(e) => setAltText(e.target.value)}
-                    className="flex-1 dark:bg-gray-800 border border-gray-700 rounded px-3 py-1 text-sm"
-                    placeholder="Describe this image for screen readers..."
-                  />
-                </div>
-              )}
-
-              {activeTab === "flag" && (
-                <div className="flex flex-col gap-3 w-full">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="content-warning-toggle"
-                      checked={hasContentWarning}
-                      onChange={toggleContentWarning}
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="content-warning-toggle" className="text-sm">
-                      Put a content warning on this post
-                    </label>
-                  </div>
-
-                  {hasContentWarning && (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-400">Warning type:</span>
-                        <select
-                          value={contentWarningType}
-                          onChange={(e) => setContentWarningType(e.target.value)}
-                          className="dark:bg-gray-800 border border-gray-700 rounded px-3 py-1 text-sm"
-                        >
-                          <option value="sensitive">Sensitive Content</option>
-                          <option value="violence">Violence</option>
-                          <option value="nudity">Nudity</option>
-                          <option value="political">Political</option>
-                          <option value="custom">Custom Warning</option>
-                        </select>
-                      </div>
-
-                      {contentWarningType === "custom" && (
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-gray-400">Custom warning:</span>
-                          <input
-                            type="text"
-                            value={customWarning}
-                            onChange={(e) => setCustomWarning(e.target.value)}
-                            className="flex-1 dark:bg-gray-800 border border-gray-700 rounded px-3 py-1 text-sm"
-                            placeholder="Enter custom warning..."
-                          />
-                        </div>
-                      )}
-
-                      <div className="mt-2 p-3 dark:bg-gray-800 rounded">
-                        <p className="text-sm text-gray-300">
-                          Content warnings help viewers know what to expect in your post. When
-                          enabled, your media will be blurred in feeds with a warning message.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "text" && (
-                <>
-                  <div className="flex items-center gap-3 mb-2">
-                    <input
-                      type="text"
-                      value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
-                      className="flex-1 dark:bg-gray-800 border border-gray-700 rounded px-3 py-1 text-sm"
-                      placeholder="Enter text to add..."
-                    />
-                    <button
-                      className="px-3 py-1 bg-brand rounded-md text-sm"
-                      onClick={addTextOverlay}
-                    >
-                      Add Text
-                    </button>
-
-                    {activeTextId && (
-                      <button
-                        className="px-3 py-1 bg-red-500 rounded-md text-sm"
-                        onClick={deleteActiveText}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Text formatting options */}
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">Font:</span>
-                      <select
-                        className="dark:bg-gray-800 rounded px-2 py-1 text-sm"
-                        value={fontFamily}
-                        onChange={(e) => {
-                          setFontFamily(e.target.value);
-                          if (activeTextId) updateActiveText("fontFamily", e.target.value);
-                        }}
-                      >
-                        <option value="Arial">Arial</option>
-                        <option value="Helvetica">Helvetica</option>
-                        <option value="Times New Roman">Times New Roman</option>
-                        <option value="Courier New">Courier New</option>
-                        <option value="Georgia">Georgia</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">Size:</span>
-                      <select
-                        className="dark:bg-gray-800 rounded px-2 py-1 text-sm"
-                        value={fontSize}
-                        onChange={(e) => {
-                          setFontSize(Number(e.target.value));
-                          if (activeTextId) updateActiveText("fontSize", Number(e.target.value));
-                        }}
-                      >
-                        <option value="12">12</option>
-                        <option value="16">16</option>
-                        <option value="20">20</option>
-                        <option value="24">24</option>
-                        <option value="32">32</option>
-                        <option value="48">48</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">Color:</span>
-                      <input
-                        type="color"
-                        value={textColor}
-                        onChange={(e) => {
-                          setTextColor(e.target.value);
-                          if (activeTextId) updateActiveText("color", e.target.value);
-                        }}
-                        className="w-6 h-6 rounded"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        className={`p-1 rounded ${textBold ? "bg-brand" : "dark:bg-gray-800"}`}
-                        onClick={() => {
-                          setTextBold(!textBold);
-                          if (activeTextId) updateActiveText("bold", !textBold);
-                        }}
-                      >
-                        <Bold size={16} />
-                      </button>
-                      <button
-                        className={`p-1 rounded ${textItalic ? "bg-brand" : "dark:bg-gray-800"}`}
-                        onClick={() => {
-                          setTextItalic(!textItalic);
-                          if (activeTextId) updateActiveText("italic", !textItalic);
-                        }}
-                      >
-                        <Italic size={16} />
-                      </button>
-
-                      <div className="border-l border-gray-700 h-6 mx-1"></div>
-
-                      <button
-                        className={`p-1 rounded ${textAlign === "left" ? "bg-brand" : "dark:bg-gray-800"}`}
-                        onClick={() => {
-                          setTextAlign("left");
-                          if (activeTextId) updateActiveText("align", "left");
-                        }}
-                      >
-                        <AlignLeft size={16} />
-                      </button>
-                      <button
-                        className={`p-1 rounded ${textAlign === "center" ? "bg-brand" : "dark:bg-gray-800"}`}
-                        onClick={() => {
-                          setTextAlign("center");
-                          if (activeTextId) updateActiveText("align", "center");
-                        }}
-                      >
-                        <AlignCenter size={16} />
-                      </button>
-                      <button
-                        className={`p-1 rounded ${textAlign === "right" ? "bg-brand" : "dark:bg-gray-800"}`}
-                        onClick={() => {
-                          setTextAlign("right");
-                          if (activeTextId) updateActiveText("align", "right");
-                        }}
-                      >
-                        <AlignRight size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </>
   );
-};
+}
+
+function Chip({
+  active,
+  small,
+  children,
+  className,
+  ...props
+}: {
+  active: boolean;
+  small?: boolean;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors",
+        small ? "h-8 min-w-8 px-2.5" : "h-9 px-4",
+        active ? "bg-brand text-white" : "bg-white/10 text-white/80 hover:bg-white/20",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Slider({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="flex items-center gap-3 py-1 text-sm text-white/80">
+      <span className="w-24 shrink-0">{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={200}
+        step={1}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        onDoubleClick={() => onChange(100)}
+        className="h-8 flex-1 accent-brand"
+      />
+      <span className="w-10 shrink-0 text-right tabular-nums text-white/60">{value - 100 > 0 ? "+" : ""}{value - 100}</span>
+    </label>
+  );
+}
 
 export default CropMediaInterface;

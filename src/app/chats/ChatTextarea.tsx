@@ -17,6 +17,8 @@ import {
   Music,
   Type,
   UserRound,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -38,17 +40,15 @@ import { DocCard } from "@/components/DocCard";
 import { PollCreator } from "@/components/PollCreator";
 import { LinkPreview } from "@/components/LinkPreview";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
+import {
+  FullscreenSheet,
+  FullscreenSheetClose,
+  FullscreenSheetContent,
+  FullscreenSheetDescription,
+  FullscreenSheetTitle,
+  SheetIconButton,
+} from "@/components/ui/fullscreen-sheet";
 import { Input } from "@/components/ui/input";
 import {
   Drawer,
@@ -735,8 +735,13 @@ const UploadDialog = ({
     dispatch(setToggleDialog(false));
   };
 
+  const touchStartX = useRef<number | null>(null);
+  const step = (delta: number) =>
+    setActiveIndex(Math.min(Math.max(safeIndex + delta, 0), attachments.length - 1));
+  const canSend = newMessage.length > 0 || attachments.length > 0;
+
   return (
-    <Dialog
+    <FullscreenSheet
       open={toggleDialog}
       onOpenChange={() => {
         if (toggleDialog) {
@@ -745,45 +750,54 @@ const UploadDialog = ({
         }
       }}
     >
-      <DialogTrigger className="hidden"></DialogTrigger>
-      <DialogContent className="flex h-dvh w-screen max-w-none flex-col gap-0 border-0 bg-zinc-950/95 p-0 backdrop-blur-xl [&>button]:hidden">
-        <DialogHeader className="flex-row items-center justify-between space-y-0 px-4 py-3 text-left">
-          <DialogClose className="rounded-full p-2 text-white transition-colors hover:bg-white/10 focus:outline-none">
-            <Cross2Icon className="size-5" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
-          <DialogTitle className="flex-1 truncate px-3 text-sm font-medium text-white">
-            {activeFile?.name ?? "Preview"}
-            <span className="block text-xs font-normal text-white/60">
-              {attachments.length}/{FILE_VALIDATION_CONFIG.maxFiles} ·{" "}
+      <FullscreenSheetContent>
+        <header className="flex items-center gap-1 px-2 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <FullscreenSheetClose asChild>
+            <SheetIconButton aria-label="Close preview">
+              <Cross2Icon className="size-5" />
+            </SheetIconButton>
+          </FullscreenSheetClose>
+          <div className="min-w-0 flex-1 px-1">
+            <FullscreenSheetTitle className="truncate text-sm font-medium">
+              {activeFile?.name ?? "Preview"}
+            </FullscreenSheetTitle>
+            <p className="truncate text-xs text-white/60">
+              {attachments.length > 1 ? `${safeIndex + 1} of ${attachments.length} · ` : ""}
+              {attachments.length}/{FILE_VALIDATION_CONFIG.maxFiles} files ·{" "}
               {formatFileSize(attachments.reduce((acc, file) => acc + file.size, 0))}
-            </span>
-          </DialogTitle>
-          <div className="flex items-center gap-1">
-            {activeFile && isImageFile(activeFile) && (
-              <CropMediaInterface files={attachments} setFiles={setFiles} imageIndex={safeIndex}>
-                <button
-                  aria-label="Edit image"
-                  className="rounded-full p-2 text-white transition-colors hover:bg-white/10"
-                >
-                  <Paintbrush2 size={20} />
-                </button>
-              </CropMediaInterface>
-            )}
-            {activeFile && (
-              <button
-                aria-label="Remove file"
-                onClick={() => removeFile(safeIndex)}
-                className="rounded-full p-2 text-white transition-colors hover:bg-white/10"
-              >
-                <Trash size={20} />
-              </button>
-            )}
+            </p>
           </div>
-          <DialogDescription className="sr-only">Preview attachments before sending</DialogDescription>
-        </DialogHeader>
+          {activeFile && isImageFile(activeFile) && (
+            <CropMediaInterface files={attachments} setFiles={setFiles} imageIndex={safeIndex}>
+              <SheetIconButton aria-label="Edit image">
+                <Paintbrush2 size={20} />
+              </SheetIconButton>
+            </CropMediaInterface>
+          )}
+          {activeFile && (
+            <SheetIconButton aria-label="Remove file" onClick={() => removeFile(safeIndex)}>
+              <Trash size={20} />
+            </SheetIconButton>
+          )}
+          <FullscreenSheetDescription className="sr-only">
+            Preview attachments before sending
+          </FullscreenSheetDescription>
+        </header>
 
-        <div className="flex min-h-0 flex-1 items-center justify-center px-4">
+        {/* The picture gets every spare pixel. Swipe on phones, arrow buttons on larger screens. */}
+        <div
+          className="relative flex min-h-0 flex-1 items-center justify-center px-2 sm:px-16"
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0]?.clientX ?? null;
+          }}
+          onTouchEnd={(e) => {
+            const start = touchStartX.current;
+            touchStartX.current = null;
+            const end = e.changedTouches[0]?.clientX;
+            if (start == null || end == null || Math.abs(end - start) < 60) return;
+            step(end < start ? 1 : -1);
+          }}
+        >
           {activeFile && activeUrl ? (
             isImageFile(activeFile) ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -791,51 +805,82 @@ const UploadDialog = ({
                 key={activeUrl}
                 src={activeUrl}
                 alt={activeFile.name}
-                className="max-h-full max-w-full rounded-md object-contain"
+                draggable={false}
+                className="max-h-full max-w-full select-none rounded-lg object-contain"
               />
             ) : isVideoFile(activeFile) ? (
               <video
                 key={activeUrl}
                 src={activeUrl}
                 controls
-                className="max-h-full max-w-full rounded-md"
+                playsInline
+                className="max-h-full max-w-full rounded-lg bg-black"
               />
             ) : (
-              <DocCard className="w-auto" file={activeFile} />
+              <DocCard className="w-auto max-w-[90%]" file={activeFile} />
             )
           ) : null}
+
+          {attachments.length > 1 && (
+            <>
+              <SheetIconButton
+                aria-label="Previous file"
+                disabled={safeIndex === 0}
+                onClick={() => step(-1)}
+                className="absolute left-3 top-1/2 hidden -translate-y-1/2 bg-black/50 backdrop-blur-sm sm:flex"
+              >
+                <ChevronLeft size={24} />
+              </SheetIconButton>
+              <SheetIconButton
+                aria-label="Next file"
+                disabled={safeIndex === attachments.length - 1}
+                onClick={() => step(1)}
+                className="absolute right-3 top-1/2 hidden -translate-y-1/2 bg-black/50 backdrop-blur-sm sm:flex"
+              >
+                <ChevronRight size={24} />
+              </SheetIconButton>
+            </>
+          )}
         </div>
 
         {attachments.length > 1 && (
-          <div className="flex justify-center gap-2 overflow-x-auto px-4 py-2">
-            {attachments.map((file, index) => (
-              <button
-                key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
-                onClick={() => setActiveIndex(index)}
-                className={cn(
-                  "size-14 shrink-0 overflow-hidden rounded-md border-2 bg-zinc-800 transition-opacity",
-                  index === safeIndex ? "border-brand" : "border-transparent opacity-60"
-                )}
-              >
-                {urls[index] && isImageFile(file) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={urls[index]} alt="" className="size-full object-cover" />
-                ) : urls[index] && isVideoFile(file) ? (
-                  <video src={urls[index]} className="size-full object-cover" muted />
-                ) : (
-                  <span className="flex size-full items-center justify-center text-[10px] text-white">
-                    {file.name.split(".").pop()?.toUpperCase()}
-                  </span>
-                )}
-              </button>
-            ))}
+          // `mx-auto` on the inner row centres a short strip but, unlike `justify-center`, never
+          // clips the first thumbnails when the row is wider than the screen.
+          <div className="flex overflow-x-auto px-3 py-2">
+            <div className="mx-auto flex gap-2">
+              {attachments.map((file, index) => (
+                <button
+                  type="button"
+                  key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                  aria-label={`Show ${file.name}`}
+                  aria-current={index === safeIndex}
+                  onClick={() => setActiveIndex(index)}
+                  className={cn(
+                    "size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-zinc-800 transition-opacity",
+                    index === safeIndex ? "border-brand" : "border-transparent opacity-60 hover:opacity-100"
+                  )}
+                >
+                  {urls[index] && isImageFile(file) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={urls[index]} alt="" className="size-full object-cover" />
+                  ) : urls[index] && isVideoFile(file) ? (
+                    <video src={urls[index]} className="size-full object-cover" muted />
+                  ) : (
+                    <span className="flex size-full items-center justify-center text-[10px] text-white">
+                      {file.name.split(".").pop()?.toUpperCase().slice(0, 4)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        <DialogFooter className="!flex-col items-center gap-2 px-4 pb-4 pt-2">
-          <div className="flex w-full items-end justify-between gap-2 md:max-w-[700px]">
+        {/* Caption bar: pinned to the bottom, clear of the home indicator and the keyboard. */}
+        <div className="border-t border-white/10 bg-zinc-900/90 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl">
+          <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
             <Pop input={inputRef} setFileAccepts={setFileAccepts} />
-            <div className="relative flex-1">
+            <div className="relative min-w-0 flex-1">
               <TextAreaBox
                 value={newMessage}
                 onChange={setNewMessage}
@@ -852,11 +897,11 @@ const UploadDialog = ({
                   if (e.key === "Enter") {
                     if (e.shiftKey) return; // Allow new line when Shift+Enter
                     e.preventDefault();
-                    if (newMessage.trim().length > 0 || attachments.length > 0) send();
+                    if (canSend) send();
                   }
                 }}
-                className="flex-1 resize-none rounded-2xl border-none bg-gray-100 px-4 py-2 text-sm !text-black focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:bg-zinc-800 dark:!text-slate-200 dark:!caret-white dark:focus:ring-offset-zinc-900"
-                textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
+                className="flex-1 resize-none rounded-2xl border-none bg-zinc-800 px-4 py-2 pr-11 text-sm !text-slate-100 focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-zinc-900"
+                textareaClassName="!caret-white placeholder:!text-slate-400"
               />
               <EmojiPicker
                 triggerClassName="absolute inset-y-0 right-0 flex items-center p-3 hover:text-brand/80 rounded-full"
@@ -866,16 +911,17 @@ const UploadDialog = ({
               </EmojiPicker>
             </div>
             <Button
-              disabled={newMessage.length === 0 && attachments.length === 0}
+              aria-label="Send"
+              disabled={!canSend}
               onClick={send}
-              className="mb-1 size-11 shrink-0 rounded-full bg-brand p-0 text-white hover:bg-brand/90"
+              className="mb-0.5 size-11 shrink-0 rounded-full bg-brand p-0 text-white hover:bg-brand/90"
             >
               <Send size={20} />
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </FullscreenSheetContent>
+    </FullscreenSheet>
   );
 };
 

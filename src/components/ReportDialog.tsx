@@ -3,7 +3,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { REPORT_REASONS, ReportReason } from "@/lib/reports";
 
 interface ReportDialogProps {
@@ -47,11 +52,11 @@ export default function ReportDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onClick={(e) => e.stopPropagation()}>
-        <DialogHeader>
-          <DialogTitle>Report {type}</DialogTitle>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent onClick={(e) => e.stopPropagation()}>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Report {type}</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
         <div className="flex flex-col gap-2">
           {REPORT_REASONS.map((r) => (
             <label key={r.value} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -75,7 +80,7 @@ export default function ReportDialog({
             {submitting ? "Submitting..." : "Submit report"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

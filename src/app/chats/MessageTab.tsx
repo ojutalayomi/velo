@@ -7,6 +7,7 @@ import {
   Forward,
   Loader,
   TextQuote,
+  Reply,
   Trash2,
   CircleCheck,
   CircleX,
@@ -60,6 +61,9 @@ import {
   SENDER_DELETED_CONTENT,
 } from "@/lib/messageDeletion";
 import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
+
+import { useSwipeToReply } from "@/hooks/useSwipeToReply";
+import { canForward, canQuote } from "@/lib/messageActions";
 
 import { MediaCollage } from "./FilesView";
 import { ReactionsInfo } from "./ReactionsInfo";
@@ -181,16 +185,19 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   // Update the optionss array to use the defined type
   const IsSelected = selectedMessages.includes(String(message._id));
   const [forwardOpen, setForwardOpen] = useState(false);
+  const quoteMessage = () =>
+    setQuote({
+      message: { content: messageText(message), _id: message._id as string, senderId },
+      state: true,
+    });
+  const quotable = canQuote(message);
+  // Swipe right to quote on touch screens, except while a selection is in progress.
+  const { rowRef, iconRef } = useSwipeToReply({
+    enabled: quotable && selectedMessages.length === 0,
+    onTrigger: quoteMessage,
+  });
   const optionss: Option[] = [
-    {
-      icon: TextQuote,
-      text: "Quote",
-      onClick: () =>
-        setQuote({
-          message: { content: messageText(message), _id: message._id as string, senderId },
-          state: true,
-        }),
-    },
+    ...(quotable ? [{ icon: TextQuote, text: "Quote", onClick: quoteMessage }] : []),
     {
       icon: Copy,
       text: isCopied ? "Copied!" : "Copy message",
@@ -233,7 +240,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
           },
         ]
       : []),
-    ...(message.content.endsWith(DELETED_MARKER) || message.status === "sending"
+    ...(!canForward(message)
       ? []
       : [
           {
@@ -350,12 +357,24 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   return (
     <>
       <div
+        ref={rowRef}
         id={message._id as string}
         onClick={handleClick}
         onTouchStart={handleTouch}
         // onContextMenu={handleContextMenu}
-        className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} ${isFirstInGroup ? "mt-2" : "mt-0.5"} flex flex-col px-1 transition-colors duration-300 dark:text-gray-400`}
+        className={`${senderId === userdata._id ? "items-end" : "items-start"} ${IsSelected && "bg-brand/20 py-2"} ${isFirstInGroup ? "mt-2" : "mt-0.5"} relative flex flex-col px-1 transition-colors duration-300 dark:text-gray-400`}
       >
+        {/* Revealed from the left while the message is swiped right (see useSwipeToReply). */}
+        {quotable && (
+          <span
+            ref={iconRef}
+            aria-hidden
+            className="pointer-events-none absolute -left-10 top-1/2 flex size-8 items-center justify-center rounded-full bg-gray-200 text-gray-600 opacity-0 dark:bg-zinc-700 dark:text-gray-200"
+            style={{ transform: "translateY(-50%) scale(0.6)" }}
+          >
+            <Reply size={16} />
+          </span>
+        )}
         {/* Main Message Container */}
         <div
           className={`flex ${message.messageType !== "Markdown" ? "max-w-[85%] tablets1:max-w-[75%]" : "max-w-full"} flex-1 ${senderId === userdata._id ? "ml-auto flex-row-reverse" : "mr-auto"} relative items-end gap-1.5`}

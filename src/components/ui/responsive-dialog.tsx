@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import * as React from "react";
 import { useMediaQuery } from "usehooks-ts";
 
@@ -12,6 +13,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  FullscreenSheet,
+  FullscreenSheetClose,
+  FullscreenSheetContent,
+  FullscreenSheetDescription,
+  FullscreenSheetTitle,
+  SheetIconButton,
+} from "@/components/ui/fullscreen-sheet";
+import {
   Drawer,
   DrawerContent,
   DrawerDescription,
@@ -22,22 +31,29 @@ import {
 /** The same breakpoint the emoji picker uses for its drawer. */
 export const MOBILE_QUERY = "(max-width: 640px)";
 
-const ModeContext = React.createContext(false);
+type Mode = "dialog" | "drawer" | "sheet";
+const ModeContext = React.createContext<Mode>("dialog");
 
-/** A dialog on larger screens and a bottom drawer on phones. */
+/**
+ * A dialog on larger screens. On phones it becomes a bottom drawer, or, for content that needs the
+ * whole screen (a photo preview with a caption, say), a full-screen sheet: `mobile="fullscreen"`.
+ */
 export function ResponsiveDialog({
   open,
   onOpenChange,
+  mobile = "drawer",
   children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mobile?: "drawer" | "fullscreen";
   children: React.ReactNode;
 }) {
   const isMobile = useMediaQuery(MOBILE_QUERY);
-  const Root = isMobile ? Drawer : Dialog;
+  const mode: Mode = !isMobile ? "dialog" : mobile === "fullscreen" ? "sheet" : "drawer";
+  const Root = mode === "dialog" ? Dialog : mode === "sheet" ? FullscreenSheet : Drawer;
   return (
-    <ModeContext.Provider value={isMobile}>
+    <ModeContext.Provider value={mode}>
       <Root open={open} onOpenChange={onOpenChange}>
         {children}
       </Root>
@@ -47,41 +63,68 @@ export function ResponsiveDialog({
 
 export function ResponsiveDialogContent({
   className,
+  onClick,
   children,
 }: {
   className?: string;
+  /** For dialogs opened from inside a clickable card: stop a click here from reaching the card. */
+  onClick?: React.MouseEventHandler<HTMLElement>;
   children: React.ReactNode;
 }) {
-  const isMobile = React.useContext(ModeContext);
+  const mode = React.useContext(ModeContext);
+  if (mode === "sheet") {
+    return (
+      // Forms and previews follow the app's light/dark theme, unlike the always-dark media viewer.
+      <FullscreenSheetContent className="bg-background text-foreground" onClick={onClick}>
+        <div className="flex items-center justify-end px-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <FullscreenSheetClose asChild>
+            <SheetIconButton aria-label="Close" className="text-foreground hover:bg-foreground/10 active:bg-foreground/15">
+              <X size={22} />
+            </SheetIconButton>
+          </FullscreenSheetClose>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {children}
+        </div>
+      </FullscreenSheetContent>
+    );
+  }
   // The dialog's width classes do not apply to a full-width drawer, so only the dialog gets them.
-  return isMobile ? (
-    <DrawerContent className="max-h-[90vh]">
-      <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-4 pb-6" data-vaul-no-drag>
+  return mode === "drawer" ? (
+    <DrawerContent className="max-h-[90vh]" onClick={onClick}>
+      <div
+        className="flex min-h-0 flex-col gap-4 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+        data-vaul-no-drag
+      >
         {children}
       </div>
     </DrawerContent>
   ) : (
-    <DialogContent className={className}>{children}</DialogContent>
+    <DialogContent className={className} onClick={onClick}>
+      {children}
+    </DialogContent>
   );
 }
 
 export function ResponsiveDialogHeader({ children }: { children: React.ReactNode }) {
-  const isMobile = React.useContext(ModeContext);
-  return isMobile ? <DrawerHeader className="px-0">{children}</DrawerHeader> : <DialogHeader>{children}</DialogHeader>;
+  const mode = React.useContext(ModeContext);
+  if (mode === "sheet") return <div className="flex flex-col gap-1.5">{children}</div>;
+  return mode === "drawer" ? <DrawerHeader className="px-0">{children}</DrawerHeader> : <DialogHeader>{children}</DialogHeader>;
 }
 
 export function ResponsiveDialogFooter({ children }: { children: React.ReactNode }) {
-  const isMobile = React.useContext(ModeContext);
-  return isMobile ? (
-    <div className="flex flex-col-reverse gap-2">{children}</div>
-  ) : (
+  const mode = React.useContext(ModeContext);
+  return mode === "dialog" ? (
     <DialogFooter>{children}</DialogFooter>
+  ) : (
+    <div className="flex flex-col-reverse gap-2">{children}</div>
   );
 }
 
 export function ResponsiveDialogTitle({ children }: { children: React.ReactNode }) {
-  const isMobile = React.useContext(ModeContext);
-  return isMobile ? <DrawerTitle>{children}</DrawerTitle> : <DialogTitle>{children}</DialogTitle>;
+  const mode = React.useContext(ModeContext);
+  if (mode === "sheet") return <FullscreenSheetTitle className="text-lg font-semibold">{children}</FullscreenSheetTitle>;
+  return mode === "drawer" ? <DrawerTitle>{children}</DrawerTitle> : <DialogTitle>{children}</DialogTitle>;
 }
 
 export function ResponsiveDialogDescription({
@@ -91,8 +134,15 @@ export function ResponsiveDialogDescription({
   className?: string;
   children: React.ReactNode;
 }) {
-  const isMobile = React.useContext(ModeContext);
-  return isMobile ? (
+  const mode = React.useContext(ModeContext);
+  if (mode === "sheet") {
+    return (
+      <FullscreenSheetDescription className={className ?? "text-sm text-muted-foreground"}>
+        {children}
+      </FullscreenSheetDescription>
+    );
+  }
+  return mode === "drawer" ? (
     <DrawerDescription className={className}>{children}</DrawerDescription>
   ) : (
     <DialogDescription className={className}>{children}</DialogDescription>

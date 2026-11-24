@@ -295,6 +295,16 @@ export default function NotificationPage() {
     };
   }, [loadPage, markRead]);
 
+  // The first load can finish before the signed-in user is known (offline, the user comes from the
+  // saved copy a moment later). If it failed, try again once we know whose saved list to show.
+  const failedRef = useRef(false);
+  useEffect(() => {
+    failedRef.current = !!error && !offlineCopy;
+  }, [error, offlineCopy]);
+  useEffect(() => {
+    if (userId && failedRef.current) loadPage(tabRef.current, false);
+  }, [userId, loadPage]);
+
   const handleTabChange = (value: string) => {
     if (!isNotificationTab(value) || value === tabRef.current) return;
 

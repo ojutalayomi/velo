@@ -26,8 +26,9 @@ jest.mock("@/app/providers/SocketProvider", () => ({
   useSocket: () => mockSocket,
 }));
 
+const mockUserId = { current: "u1" };
 jest.mock("@/app/providers/UserProvider", () => ({
-  useUser: () => ({ userdata: { _id: "u1" } }),
+  useUser: () => ({ userdata: { _id: mockUserId.current } }),
 }));
 
 const mockSaveFeed = jest.fn();
@@ -136,6 +137,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSocket.handlers.clear();
   global.fetch = fetchMock as unknown as typeof fetch;
+  mockUserId.current = "u1";
   mockSaveFeed.mockResolvedValue(true);
   mockLoadFeed.mockResolvedValue(null);
 });
@@ -252,5 +254,18 @@ describe("Notifications page", () => {
     fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
     render(<NotificationPage />);
     expect(await screen.findByText("Could not load notifications.")).toBeInTheDocument();
+  });
+
+  it("retries from the saved copy once the user is known", async () => {
+    mockUserId.current = "";
+    mockLoadFeed.mockImplementation(async (_key: string, uid: string) =>
+      uid ? { data: [group()], pagination: {}, savedAt: 1 } : null
+    );
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    const view = render(<NotificationPage />);
+    expect(await screen.findByText("Could not load notifications.")).toBeInTheDocument();
+    mockUserId.current = "u1";
+    view.rerender(<NotificationPage />);
+    expect(await screen.findByText("Alex Johnson and Sam Lee liked your post")).toBeInTheDocument();
   });
 });

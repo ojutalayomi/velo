@@ -15,15 +15,23 @@ interface ThrottleFunction {
 const SocketContext = createContext<Socket | null>(null);
 
 const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [status, setStatus] = useState<NetworkStatus>();
+  // True once the browser has been online at least once. It stays true when the connection drops:
+  // socket.io reconnects by itself, so the socket is only created, never torn down, by this.
+  const [hasBeenOnline, setHasBeenOnline] = useState(false);
   const { userdata, loading, error } = useUser();
   const dispatch = useAppDispatch();
   const [socket, setSocket] = useState<Socket | null>(null);
   const userId = userdata?._id;
 
-  useEffect(() => {
-    setStatus(networkMonitor.getNetworkStatus());
-  }, []);
+  // Follow the connection, not just its state at load: a page opened offline must get its
+  // socket once the network returns (without one, queued messages could never be sent).
+  useEffect(
+    () =>
+      networkMonitor.subscribe((status: NetworkStatus) => {
+        if (status.online) setHasBeenOnline(true);
+      }),
+    []
+  );
 
   // Load the saved privacy settings once the user is known (they are stored server-side).
   useEffect(() => {
@@ -38,7 +46,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   useEffect(() => {
     // Only initialize the socket if userdata is loaded
-    if (loading || !userId || !status?.online) return;
+    if (loading || !userId || !hasBeenOnline) return;
 
     fetch(process.env.NEXT_PUBLIC_SOCKET_URL || "");
     const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
@@ -131,7 +139,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       window.onbeforeunload = null;
       socketIo.disconnect(); // Ensure the socket is disconnected on cleanup
     };
-  }, [dispatch, loading, status?.online, userId]);
+  }, [dispatch, loading, hasBeenOnline, userId]);
 
   return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
 };

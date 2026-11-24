@@ -532,9 +532,9 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             label: "View",
             onClick: () => {
               if (data.chatType === "Group") {
-                window.location.href = `/chats/group/${data.chatId}`;
+                router.push(`/chats/group/${data.chatId}`);
               } else {
-                window.location.href = `/chats/${data.chatId}`;
+                router.push(`/chats/${data.chatId}`);
               }
             },
           },
@@ -600,7 +600,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
           aria-live="polite"
           className="pointer-events-none fixed inset-x-0 top-4 z-[999] flex justify-center px-4"
         >
-          <div className="shadow-sxs relative isolate flex w-full items-center justify-center overflow-hidden rounded-sm border border-primary/20 bg-brand px-4 py-2 tracking-tight">
+          <div className="shadow-sxs relative isolate flex gap-2 max-w-full items-center justify-center overflow-hidden rounded-sm border border-primary/20 bg-brand px-4 py-2 tracking-tight">
             <div
               aria-hidden="true"
               className="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"

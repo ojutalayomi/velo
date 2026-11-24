@@ -212,6 +212,97 @@ describe("page data (RSC) fetches", () => {
   });
 });
 
+describe("saving pages ahead of time", () => {
+  async function send(worker: Worker, data: unknown) {
+    const waits: Promise<unknown>[] = [];
+    (worker.listeners.message ?? []).forEach((l) => l({ data, waitUntil: (p: Promise<unknown>) => waits.push(Promise.resolve(p)) }));
+    await Promise.all(waits);
+  }
+  const dated = (body: string, date: Date) =>
+    new Response(body, { status: 200, headers: { "content-type": "text/html", date: date.toUTCString() } });
+
+  it("downloads and keeps the requested chat pages", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockImplementation(async () => html("<html>chat</html>"));
+
+    await send(worker, { type: "save-pages", urls: ["/chats/a", "/chats/a/settings", "/chats/group/g", "/chats/me"] });
+
+    expect(worker.store.names("velo-pages-v1").sort()).toEqual([
+      "https://app.test/chats/a",
+      "https://app.test/chats/a/settings",
+      "https://app.test/chats/group/g",
+      "https://app.test/chats/me",
+    ]);
+  });
+
+  it("serves a saved page offline, even though it was never opened", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockResolvedValueOnce(html("<html>saved ahead</html>"));
+    await send(worker, { type: "save-pages", urls: ["/chats/a"] });
+
+    worker.fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    const offline = await dispatchFetch(worker, navigate("/chats/a"));
+
+    expect(await offline.response!.text()).toBe("<html>saved ahead</html>");
+  });
+
+  it("only accepts chat page paths", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockImplementation(async () => html());
+
+    await send(worker, {
+      type: "save-pages",
+      urls: ["/api/chats", "/accounts/login", "https://evil.test/chats/a", "/chats/a/../../x", "/admin", 5],
+    });
+
+    expect(worker.fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("skips pages saved recently and refreshes old ones", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockResolvedValueOnce(dated("<html>one</html>", new Date()));
+    await send(worker, { type: "save-pages", urls: ["/chats/a"] });
+    worker.fetchMock.mockClear();
+
+    await send(worker, { type: "save-pages", urls: ["/chats/a"] });
+    expect(worker.fetchMock).not.toHaveBeenCalled();
+
+    const old = loadWorker();
+    old.fetchMock.mockResolvedValueOnce(dated("<html>old</html>", new Date(Date.now() - 24 * 3600 * 1000)));
+    await send(old, { type: "save-pages", urls: ["/chats/a"] });
+    old.fetchMock.mockClear();
+    old.fetchMock.mockResolvedValueOnce(html("<html>new</html>"));
+    await send(old, { type: "save-pages", urls: ["/chats/a"] });
+    expect(old.fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not keep a redirect (e.g. to login) or an error page", async () => {
+    const worker = loadWorker();
+    worker.fetchMock
+      .mockResolvedValueOnce(withFlag(html("<html>login</html>"), { redirected: true }))
+      .mockResolvedValueOnce(new Response("nope", { status: 500, headers: { "content-type": "text/html" } }));
+
+    await send(worker, { type: "save-pages", urls: ["/chats/a", "/chats/b"] });
+
+    expect(worker.store.names("velo-pages-v1")).toEqual([]);
+  });
+
+  it("stops quietly when the network is down", async () => {
+    const worker = loadWorker();
+    worker.fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await send(worker, { type: "save-pages", urls: ["/chats/a", "/chats/b"] });
+
+    expect(worker.fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does nothing without the ?shell=1 flag", async () => {
+    const worker = loadWorker("https://app.test/sw.js");
+    await send(worker, { type: "save-pages", urls: ["/chats/a"] });
+    expect(worker.fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("page navigations", () => {
   it("shows the live page and keeps a copy", async () => {
     const worker = loadWorker();
@@ -323,16 +414,16 @@ describe("page navigations", () => {
     ]);
   });
 
-  it("keeps only the 60 most recent pages", async () => {
+  it("keeps only the 200 most recent pages", async () => {
     const worker = loadWorker();
     worker.fetchMock.mockImplementation(async () => html());
 
-    for (let i = 0; i < 65; i += 1) await (await dispatchFetch(worker, navigate(`/chats/${i}`))).settle();
+    for (let i = 0; i < 205; i += 1) await (await dispatchFetch(worker, navigate(`/chats/${i}`))).settle();
 
     const kept = worker.store.names("velo-pages-v1");
-    expect(kept).toHaveLength(60);
+    expect(kept).toHaveLength(200);
     expect(kept).not.toContain("https://app.test/chats/0");
-    expect(kept).toContain("https://app.test/chats/64");
+    expect(kept).toContain("https://app.test/chats/204");
   });
 
   it("is not broken by a cache write failing", async () => {

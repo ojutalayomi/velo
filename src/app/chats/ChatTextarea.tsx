@@ -219,15 +219,14 @@ const ChatTextarea = ({
 
   useEffect(() => {
     const currParams = new URLSearchParams(searchParams?.toString() || "");
-    if (toggleDialog) {
-      currParams.set("toggleDialog", "true");
-      router.replace(`${pathname}?${currParams.toString()}`, { scroll: false });
-    } else {
-      currParams.delete("toggleDialog");
-      router.replace(`${pathname}${currParams.toString() ? "?" + currParams.toString() : ""}`, {
-        scroll: false,
-      });
-    }
+    if (toggleDialog) currParams.set("toggleDialog", "true");
+    else currParams.delete("toggleDialog");
+    const query = currParams.toString();
+    const target = `${pathname}${query ? "?" + query : ""}`;
+    // Already there (the case on every page load): navigating would make Next re-fetch this page
+    // from the server for nothing, which also breaks opening a saved page offline.
+    if (target === `${window.location.pathname}${window.location.search}`) return;
+    router.replace(target, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toggleDialog]);
 

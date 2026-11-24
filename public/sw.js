@@ -191,7 +191,7 @@ const PAGES_CACHE = "velo-pages-v1"; // HTML of visited pages + the offline fall
 const ASSETS_CACHE = "velo-assets-v1"; // images (avatars, icons) and fonts
 const SHELL_CACHE_PATTERN = /^velo-(static|pages|assets)-/;
 const CURRENT_CACHES = [STATIC_CACHE, PAGES_CACHE, ASSETS_CACHE];
-const MAX_ENTRIES = { [STATIC_CACHE]: 400, [PAGES_CACHE]: 60, [ASSETS_CACHE]: 200 };
+const MAX_ENTRIES = { [STATIC_CACHE]: 400, [PAGES_CACHE]: 200, [ASSETS_CACHE]: 200 };
 
 const OFFLINE_URL = "/offline";
 /** On a slow connection, show the saved copy of a page instead of waiting this long. */
@@ -339,6 +339,49 @@ async function handleRsc(event) {
     throw error;
   }
 }
+
+/** Pages the app may ask to have saved ahead of time (keep in sync with src/lib/offlinePages.ts). */
+const SAVE_PAGES_MESSAGE = "save-pages";
+const SAVABLE_PAGE = /^\/chats\/(me|group\/[\w-]+(\/settings)?|[\w-]+(\/settings)?)$/;
+const MAX_SAVED_PAGES_PER_REQUEST = 80;
+/** A page saved this recently is not downloaded again. */
+const SAVED_PAGE_FRESH_MS = 12 * 60 * 60 * 1000;
+const SAVE_PAGES_GAP_MS = 250;
+
+async function isFresh(cache, key) {
+  const copy = await cache.match(key, { ignoreVary: true });
+  const saved = copy && Date.parse(copy.headers.get("date") || "");
+  return !!saved && Date.now() - saved < SAVED_PAGE_FRESH_MS;
+}
+
+/** Download pages one at a time, quietly, and keep the good ones. Never throws. */
+async function savePages(paths) {
+  const cache = await caches.open(PAGES_CACHE);
+  for (const path of paths) {
+    const key = new URL(path, self.location.origin).href;
+    try {
+      if (await isFresh(cache, key)) continue;
+      const response = await fetch(key, {
+        credentials: "same-origin",
+        headers: { accept: "text/html" },
+      });
+      if (isCacheablePage(response)) await put(PAGES_CACHE, key, response);
+    } catch {
+      return; // offline or failing: stop, the next request tries again
+    }
+    await new Promise((resolve) => setTimeout(resolve, SAVE_PAGES_GAP_MS));
+  }
+}
+
+self.addEventListener("message", (event) => {
+  if (!SHELL_ENABLED) return;
+  const data = event.data;
+  if (!data || data.type !== SAVE_PAGES_MESSAGE || !Array.isArray(data.urls)) return;
+  const paths = data.urls
+    .filter((url) => typeof url === "string" && SAVABLE_PAGE.test(url))
+    .slice(0, MAX_SAVED_PAGES_PER_REQUEST);
+  if (paths.length) event.waitUntil(savePages(paths));
+});
 
 async function precacheOfflinePage() {
   try {

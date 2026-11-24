@@ -57,6 +57,7 @@ import {
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePosts } from "@/redux/postsSlice";
+import { pagesToSave, requestPageSave } from "@/lib/offlinePages";
 import { registerServiceWorker } from "@/lib/serviceWorker";
 import { startChatPersistence } from "@/redux/chatPersistence";
 import { addRoute } from "@/redux/routeSlice";
@@ -148,6 +149,23 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
     }
     fetchData();
   }, [dispatch, userdata._id]);
+
+  // Save the pages of the latest chats (and their settings) so they open offline without having
+  // been visited. Waits for the list to settle, and only asks again when the set of pages changes.
+  const chatsLoading = useSelector((state: RootState) => state.chat.loading);
+  const savedPagesKey = useRef("");
+  useEffect(() => {
+    if (!userdata._id || chatsLoading || !conversations.length) return;
+    const urls = pagesToSave(conversations);
+    const key = [...urls].sort().join("|");
+    if (key === savedPagesKey.current) return;
+    const timer = setTimeout(() => {
+      if (!navigator.onLine) return;
+      savedPagesKey.current = key;
+      void requestPageSave(urls);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [conversations, chatsLoading, userdata._id]);
 
   const gt = useCallback((chatid: string) => {
     return conversationsRef.current.find((obj) => obj.id === chatid);

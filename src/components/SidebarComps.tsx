@@ -149,7 +149,7 @@ export const SidebarItem = forwardRef<
             <div
               id="more"
               ref={ref}
-              className="sidebar ft rout dark:text-slate-200"
+              className={`sidebar ft rout dark:text-slate-200 ${ROW_SHELL}`}
               data-route={route}
               aria-label="More"
               {...props}
@@ -188,8 +188,8 @@ export const SidebarItem = forwardRef<
           {...props}
           className={cn(
             `sidebar ft dark:text-slate-200 rout ${
-              isActive ? "active backdrop-filter backdrop-blur-[5px]" : ""
-            }`,
+              isActive ? "active !border-r-0 bg-[#ff6257]/10 font-medium" : ""
+            } ${ROW_SHELL}`,
             props.className
           )}
           data-route={route}

@@ -138,6 +138,19 @@ const ChatTextarea = ({
   );
   const { showPicker, filteredParticipants, isFetching, mentions, selectMention, clearMentions } = useMentionPicker(chatId ?? null, newMessage, textAreaRef, specials, userdata._id);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // TextAreaBox only resizes on its own text state, which lags the parent value by a render.
+  // When the message is emptied (e.g. after sending), collapse the textarea back to its base height.
+  useEffect(() => {
+    if (newMessage !== "") return;
+    const raf = requestAnimationFrame(() => {
+      const ta = textAreaRef.current;
+      if (!ta) return;
+      ta.style.height = "auto";
+      ta.style.height = `${ta.scrollHeight}px`;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [newMessage]);
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);
   const [fileAccepts, setFileAccepts] = useState("");

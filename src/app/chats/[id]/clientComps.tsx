@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";
+import { queueMessage } from "@/lib/outbox";
 import { Attachment, ChatType, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { generateObjectId, timeFormatter, updateLiveTime } from "@/lib/utils";
@@ -283,6 +284,12 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
     let lastMessageId = "";
 
+    // Files are sent as raw bytes and need a connection; plain text waits in the outbox instead.
+    if (attachments.length && !override && !navigator.onLine) {
+      toast.error("You're offline", { description: "Files can only be sent when you're online." });
+      return;
+    }
+
     try {
       if (otherPerson.accountType === "bot") {
         setIsTextareaDisabled(true);
@@ -367,6 +374,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           },
         })
       );
+
+      // Save it before sending, so a dropped connection or a reload can't lose it. It leaves the
+      // outbox when the server's copy comes back (see handleChatMessage in the root component).
+      if (otherPerson.accountType !== "bot") await queueMessage(userdata._id, msg);
 
       // Emit the message via Socket.IO
       if (socket) {

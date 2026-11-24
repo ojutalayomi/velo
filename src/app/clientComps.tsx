@@ -57,6 +57,8 @@ import {
 import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePosts } from "@/redux/postsSlice";
+import { useOutbox } from "@/hooks/useOutbox";
+import { removeQueued } from "@/lib/outbox";
 import { pagesToSave, requestPageSave } from "@/lib/offlinePages";
 import { registerServiceWorker } from "@/lib/serviceWorker";
 import { startChatPersistence } from "@/redux/chatPersistence";
@@ -154,6 +156,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   // been visited. Waits for the list to settle, and only asks again when the set of pages changes.
   const chatsLoading = useSelector((state: RootState) => state.chat.loading);
   const savedPagesKey = useRef("");
+  useOutbox(userdata._id, socket, chatsLoading);
   useEffect(() => {
     if (!userdata._id || chatsLoading || !conversations.length) return;
     const urls = pagesToSave(conversations);
@@ -215,6 +218,8 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
   const handleChatMessage = useCallback(
     (msg: MessageAttributes) => {
       // console.log("msg", msg)
+      // The server has my own message: it no longer needs to wait in the outbox.
+      if (msg.sender?.id === userdata._id) void removeQueued(String(msg._id));
       dispatch(addMessage(msg));
       dispatch(
         updateMessage({

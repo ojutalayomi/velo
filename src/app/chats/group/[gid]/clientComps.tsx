@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
+import { queueMessage } from "@/lib/outbox";
 import { Attachment, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { timeFormatter } from "@/lib/utils";
 import {
@@ -236,6 +237,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (!override && newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
+    // Files are sent as raw bytes and need a connection; plain text waits in the outbox instead.
+    if (attachments.length && !override && !navigator.onLine) {
+      toast.error("You're offline", { description: "Files can only be sent when you're online." });
+      return;
+    }
     try {
       // console.log('send')
       const isRead = otherIds
@@ -318,6 +324,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           },
         })
       );
+
+      // Save it before sending, so a dropped connection or a reload can't lose it. It leaves the
+      // outbox when the server's copy comes back (see handleChatMessage in the root component).
+      await queueMessage(String(userdata._id), msg);
 
       if (socket) {
         try {

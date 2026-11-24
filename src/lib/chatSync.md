@@ -229,14 +229,40 @@ network. `userCache.ts` keeps the profile in `localStorage` (`userData`).
   or on the next load.
 - Logout clears it.
 
-## 7. Logout
+## 7. Sending while offline (outbox)
+
+Text messages written offline (or while the connection drops) are kept and sent
+automatically. Files still need a connection: sending one offline shows a message
+saying so.
+
+- `src/lib/outbox.ts` is its own IndexedDB database, `velo-outbox`, separate from
+  the chat cache (which is rewritten from the server and must never wipe unsent
+  messages).
+- A message is saved there **before** it is emitted, in the DM and group chat
+  pages. It is removed when the server's own copy comes back: the sender receives
+  their message through the same `newMessage` event as everyone else
+  (`handleChatMessage` in `src/app/clientComps.tsx`). So a closed tab, a reload or a
+  dropped connection never loses it. Bot chats are not queued.
+- The socket server ignores a message whose `_id` it already saved, which is what
+  makes resending safe.
+- `src/hooks/useOutbox.ts` (mounted in the root component):
+  - after the chats have loaded it shows waiting messages again as "sending" (they
+    are not in the server's data or the chat cache);
+  - it sends them when the socket connects, when the browser comes back online,
+    and every 15 s while any are left. A message is not resent within 10 s of the
+    last try;
+  - after 5 attempts a message is marked "failed" and dropped from the outbox.
+- Logout clears the outbox, so the next person to sign in on the browser cannot
+  send someone else's messages. Each queued row is also tied to its user id.
+
+## 8. Logout
 
 `logout/page.tsx` calls `resetChatPersistence()`, `clearChatCache()`,
 `clearMediaCache()`, `clearOfflineShell()` and `clearCachedUser()`, so the next
 person on a shared browser sees none of it. The cache is also checked against the
 user id on every load.
 
-## 8. Deploying
+## 9. Deploying
 
 1. Deploy the socket server first. Until it stamps `updatedAt`, deletes and
    reactions on existing messages do not appear in a delta. The 7-day cache limit
@@ -248,7 +274,7 @@ No migration is needed: old rows fall back to `timestamp`. To go offline, a devi
 must load the app once online on the new build; chat page data and media are saved
 as they are opened.
 
-## 9. Testing offline in DevTools
+## 10. Testing offline in DevTools
 
 - The service-worker panel's "Offline" box fails requests but the browser may still
   report `navigator.onLine` as true; the Network panel's "Offline" throttle also
@@ -262,7 +288,7 @@ as they are opened.
 ## Known limits
 
 - Only the 30 most recent chats are saved ahead of time. Older chats open offline only if they were visited online.
-- Sending a message offline is not supported yet (no outbox).
+- Only text messages can be sent offline; files, and the first message of a brand-new chat, need a connection. A queued message that the server rejects (for example, you were removed from the chat) is retried 5 times and then shown as failed.
 - The chat cache grows as deltas merge and is trimmed only by the 7-day full
   reload. The page caches are capped by entry count.
 - Browsers may evict stored data (Safari after about 7 days without a visit, or

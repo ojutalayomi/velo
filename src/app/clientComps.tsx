@@ -342,6 +342,33 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
         );
       }
     );
+    socket.on(
+      "chatDetailsUpdated",
+      (data: {
+        chatId: string;
+        name?: string;
+        description?: string;
+        displayPicture?: string;
+        adminIds?: string[];
+        onlyAdminsCanSend?: boolean;
+      }) => {
+        const { chatId, ...rest } = data;
+        dispatch(
+          updateConversation({
+            id: chatId,
+            updates: {
+              ...(rest.name ? { name: rest.name } : {}),
+              ...(rest.description !== undefined ? { description: rest.description } : {}),
+              ...(rest.displayPicture ? { displayPicture: rest.displayPicture } : {}),
+              ...(rest.adminIds ? { adminIds: rest.adminIds } : {}),
+              ...(typeof rest.onlyAdminsCanSend === "boolean"
+                ? { onlyAdminsCanSend: rest.onlyAdminsCanSend }
+                : {}),
+            },
+          })
+        );
+      }
+    );
     socket.on("messagesRead", (data: { readerId: string; messageIds: string[] }) => {
       dispatch(markMessagesRead({ messageIds: data.messageIds, readerId: data.readerId }));
       // The list shows a read tick on the latest message, so mark it when it was read.
@@ -559,6 +586,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("mentionNotification");
       socket.off("chatError");
       socket.off("chatParticipantsUpdated");
+      socket.off("chatDetailsUpdated");
       socket.off("chatRemoved");
       socket.off("messageDeleted");
       socket.off("messagesRead");

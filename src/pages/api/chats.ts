@@ -14,6 +14,7 @@ import {
   ChatParticipant,
   ChatType,
   MessageAttributes,
+  MessageSchema,
   NewChat,
   NewChat_,
   NewChatSettings,
@@ -21,7 +22,7 @@ import {
 import { parseSince } from "@/lib/chatSync";
 import { buildMessageFilter } from "@/lib/chatSyncServer";
 import { dmKeyFor } from "@/lib/dmKey";
-import { withSenders } from "@/lib/messageSender";
+import { mergeSender, storedSender, withSenders } from "@/lib/messageSender";
 import { canShowLastSeen } from "@/lib/userPrivacy";
 
 interface Payload {
@@ -657,6 +658,37 @@ export const chatRepository = {
       }
 
       await db.chats().updateOne({ _id: new ObjectId(id) }, { $set });
+
+      // Post a notice in the thread when the posting rule actually changed.
+      if (typeof $set.onlyAdminsCanSend === "boolean" && $set.onlyAdminsCanSend !== Boolean(chat.onlyAdminsCanSend)) {
+        try {
+          const actor = await db.users().findOne({ _id: new ObjectId(payload._id) });
+          const notice = {
+            _id: new ObjectId(),
+            chatId: id,
+            sender: storedSender({ id: payload._id }),
+            receiverId: id,
+            content: `${actor?.name || "An admin"} ${
+              $set.onlyAdminsCanSend ? "changed this group so only admins can send messages" : "allowed all members to send messages"
+            }`,
+            timestamp: new Date().toISOString(),
+            chatType: "Group",
+            messageType: "Announcement",
+            reactions: [],
+            attachments: [],
+            quotedMessageId: "",
+            status: "sent",
+          } as unknown as MessageSchema;
+          await db.chatMessages().insertOne(notice);
+          await emitViaSocketServer(payload._id, "chatMessage", {
+            ...notice,
+            sender: mergeSender({ id: payload._id }, actor),
+            _id: notice._id.toString(),
+          });
+        } catch (error) {
+          console.error("Failed to post the group-rule notice:", error);
+        }
+      }
 
       // Tell the other members so their screens (title, composer) update without a reload.
       try {

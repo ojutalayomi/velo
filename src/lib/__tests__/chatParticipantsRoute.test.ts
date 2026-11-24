@@ -87,7 +87,7 @@ const chatsCollection = {
 };
 const messagesCollection = { deleteMany: jest.fn() };
 const invitesCollection = { deleteMany: jest.fn() };
-const usersCollection = { find: jest.fn() };
+const usersCollection = { find: jest.fn(), findOne: jest.fn() };
 
 const makeRes = () => {
   const res: Record<string, jest.Mock> = {};
@@ -136,6 +136,7 @@ beforeEach(() => {
   mockDb.chatMessages.mockReturnValue(messagesCollection);
   mockDb.chatInvites.mockReturnValue(invitesCollection);
   mockDb.users.mockReturnValue(usersCollection);
+  usersCollection.findOne.mockResolvedValue({ _id: new ObjectId(), name: "Admin" });
   // A fresh object per call keeps the per-client index cache from leaking between tests.
   mockDb.getDb.mockImplementation(async () => ({ client: {}, databaseName: "test" }));
   chatsCollection.findOne.mockResolvedValue(groupChat);

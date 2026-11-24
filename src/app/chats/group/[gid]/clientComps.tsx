@@ -21,6 +21,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import { unreadAfterMessage } from "@/lib/chatUnread";
+import { blockFilesWhenOffline } from "@/lib/offlineFiles";
 import { queueMessage } from "@/lib/outbox";
 import { Attachment, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { timeFormatter } from "@/lib/utils";
@@ -238,11 +239,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     if (!override && newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
-    // Files are sent as raw bytes and need a connection; plain text waits in the outbox instead.
-    if (attachments.length && !override && !navigator.onLine) {
-      toast.error("You're offline", { description: "Files can only be sent when you're online." });
-      return;
-    }
+    // Files need a connection; plain text waits in the outbox instead.
+    if (!override && blockFilesWhenOffline(attachments.length)) return;
     try {
       // console.log('send')
       const msg = new ChatMessage({

@@ -50,6 +50,7 @@ describe("public-only caption queries", () => {
       const match = {
         $match: {
           Visibility: "everyone",
+          hidden: { $ne: true }, // posts an admin hid are never searchable
           Caption: {
             $regex: buildCaptionRegex(kind, "velo"),
             $options: "i",

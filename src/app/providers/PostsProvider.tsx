@@ -3,13 +3,17 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   ReactNode,
 } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useStore } from "react-redux";
 
+import type { PaginationMeta } from "@/lib/apiPagination";
+import { loadFeed, saveFeed } from "@/lib/feedCache";
 import { fetchFollowingPostsPage, fetchPostsPage, fetchStatusPage } from "@/lib/getStatus";
-import { NetworkStatus, networkMonitor } from "@/lib/network";
+import { networkMonitor } from "@/lib/network";
+import type { PostSchema } from "@/lib/types/type";
 import {
   appendFollowingFeedPage,
   initFollowingFeedPage,
@@ -41,8 +45,18 @@ type PostsCtx = {
 const PostsContext = createContext<PostsCtx | undefined>(undefined);
 
 const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [network, setNetwork] = useState<NetworkStatus>();
+  const [online, setOnline] = useState(false);
+  const onlineRef = useRef(false);
   const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
+  const userId = useSelector((s: RootState) => s.user.userdata._id);
+  const userIdRef = useRef(userId);
+  // The latest page from the server per feed, kept until a user id is known to save it under.
+  const fresh = useRef<{
+    forYou?: { data: PostSchema[]; pagination: PaginationMeta };
+    following?: { data: PostSchema[]; pagination: PaginationMeta };
+    status?: { data: string[]; pagination: PaginationMeta };
+  }>({});
   const [success, setSuccess] = useState<string[] | null>(null);
   const [reload, setReload] = useState<boolean>(false);
   const [followingReload, setFollowingReload] = useState<boolean>(false);
@@ -60,18 +74,78 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const followingFeedLoadingMore = useSelector((s: RootState) => s.followingFeed.feedLoadingMore);
   const followingFeedNextSkip = useSelector((s: RootState) => s.followingFeed.feedNextSkip);
 
+  // Follow the connection, not just its state at load: a page opened offline must load the feeds
+  // once the network returns.
+  useEffect(
+    () =>
+      networkMonitor.subscribe((status) => {
+        onlineRef.current = status.online;
+        setOnline(status.online);
+      }),
+    []
+  );
+
+  // Show the saved feeds at once (and offline), then let the fresh load below replace them.
   useEffect(() => {
-    setNetwork(networkMonitor.getNetworkStatus());
-  }, []);
+    if (!userId) return;
+    let cancelled = false;
+    void (async () => {
+      const [forYou, following, status] = await Promise.all([
+        loadFeed<PostSchema>("forYou", userId),
+        loadFeed<PostSchema>("following", userId),
+        loadFeed<string>("status", userId),
+      ]);
+      if (cancelled) return;
+      const state = store.getState();
+      if (forYou && state.posts.posts.length === 0) {
+        dispatch(initFeedPage({ posts: forYou.data, pagination: forYou.pagination }));
+        dispatch(setLoading(false));
+      }
+      if (following && state.followingFeed.posts.length === 0) {
+        dispatch(initFollowingFeedPage({ posts: following.data, pagination: following.pagination }));
+        dispatch(setFollowingLoading(false));
+      }
+      if (status) {
+        setSuccess((prev) => prev ?? status.data);
+        setAvatarNextSkip((prev) => prev || status.pagination.skip + status.pagination.limit);
+        setAvatarsHasMore((prev) => prev || status.pagination.hasMore);
+      }
+      // Offline with nothing saved: say so instead of loading forever.
+      if (!onlineRef.current) {
+        if (!forYou && state.posts.posts.length === 0) {
+          dispatch(setLoading(false));
+          dispatch(setError("You're offline"));
+        }
+        if (!following && state.followingFeed.posts.length === 0) {
+          dispatch(setFollowingLoading(false));
+          dispatch(setFollowingError("You're offline"));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, dispatch, store]);
+
+  // Save what the server sent as soon as it is known whose it is.
+  useEffect(() => {
+    userIdRef.current = userId;
+    if (!userId) return;
+    const { forYou, following, status } = fresh.current;
+    if (forYou) void saveFeed("forYou", userId, forYou.data, forYou.pagination);
+    if (following) void saveFeed("following", userId, following.data, following.pagination);
+    if (status) void saveFeed("status", userId, status.data, status.pagination);
+  }, [userId]);
 
   // For You feed initial load
   useEffect(() => {
-    if (!network?.online) return;
+    if (!online) return;
 
     let cancelled = false;
 
     const run = async () => {
-      dispatch(setLoading(true));
+      // Keep showing the saved feed while the fresh one loads.
+      if (store.getState().posts.posts.length === 0) dispatch(setLoading(true));
 
       try {
         const [statusPage, postsPage] = await Promise.all([fetchStatusPage(0), fetchPostsPage(0)]);
@@ -84,8 +158,16 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
         dispatch(initFeedPage({ posts: postsPage.data, pagination: postsPage.pagination }));
         dispatch(setError(null));
+
+        fresh.current.forYou = { data: postsPage.data, pagination: postsPage.pagination };
+        fresh.current.status = { data: statusPage.data, pagination: statusPage.pagination };
+        if (userIdRef.current) {
+          void saveFeed("forYou", userIdRef.current, postsPage.data, postsPage.pagination);
+          void saveFeed("status", userIdRef.current, statusPage.data, statusPage.pagination);
+        }
       } catch (error) {
-        if (!cancelled) {
+        // Keep the saved feed on screen if the refresh fails (a weak or dropped connection).
+        if (!cancelled && store.getState().posts.posts.length === 0) {
           dispatch(setError((error as Error).message));
         }
       } finally {
@@ -100,16 +182,16 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [reload, network, dispatch]);
+  }, [reload, online, dispatch, store]);
 
   // Following feed initial load
   useEffect(() => {
-    if (!network?.online) return;
+    if (!online) return;
 
     let cancelled = false;
 
     const run = async () => {
-      dispatch(setFollowingLoading(true));
+      if (store.getState().followingFeed.posts.length === 0) dispatch(setFollowingLoading(true));
 
       try {
         const postsPage = await fetchFollowingPostsPage(0);
@@ -118,8 +200,13 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           initFollowingFeedPage({ posts: postsPage.data, pagination: postsPage.pagination })
         );
         dispatch(setFollowingError(null));
+
+        fresh.current.following = { data: postsPage.data, pagination: postsPage.pagination };
+        if (userIdRef.current) {
+          void saveFeed("following", userIdRef.current, postsPage.data, postsPage.pagination);
+        }
       } catch (error) {
-        if (!cancelled) {
+        if (!cancelled && store.getState().followingFeed.posts.length === 0) {
           dispatch(setFollowingError((error as Error).message));
         }
       } finally {
@@ -134,10 +221,10 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [followingReload, network, dispatch]);
+  }, [followingReload, online, dispatch, store]);
 
   const loadMoreFeed = useCallback(async () => {
-    if (!feedHasMore || feedLoadingMore || !network?.online) return;
+    if (!feedHasMore || feedLoadingMore || !online) return;
     dispatch(setFeedLoadingMore(true));
     try {
       const postsPage = await fetchPostsPage(feedNextSkip);
@@ -146,10 +233,10 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       dispatch(setError((error as Error).message));
       dispatch(setFeedLoadingMore(false));
     }
-  }, [dispatch, feedHasMore, feedLoadingMore, feedNextSkip, network?.online]);
+  }, [dispatch, feedHasMore, feedLoadingMore, feedNextSkip, online]);
 
   const loadMoreFollowing = useCallback(async () => {
-    if (!followingFeedHasMore || followingFeedLoadingMore || !network?.online) return;
+    if (!followingFeedHasMore || followingFeedLoadingMore || !online) return;
     dispatch(setFollowingFeedLoadingMore(true));
     try {
       const postsPage = await fetchFollowingPostsPage(followingFeedNextSkip);
@@ -165,11 +252,11 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     followingFeedHasMore,
     followingFeedLoadingMore,
     followingFeedNextSkip,
-    network?.online,
+    online,
   ]);
 
   const loadMoreAvatars = useCallback(async () => {
-    if (!avatarsHasMore || avatarsLoadingMore || !network?.online) return;
+    if (!avatarsHasMore || avatarsLoadingMore || !online) return;
     setAvatarsLoadingMore(true);
     try {
       const page = await fetchStatusPage(avatarNextSkip);
@@ -179,7 +266,7 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     } finally {
       setAvatarsLoadingMore(false);
     }
-  }, [avatarNextSkip, avatarsHasMore, avatarsLoadingMore, network?.online]);
+  }, [avatarNextSkip, avatarsHasMore, avatarsLoadingMore, online]);
 
   return (
     <PostsContext.Provider

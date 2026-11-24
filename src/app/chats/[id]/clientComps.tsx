@@ -23,6 +23,7 @@ import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import { unreadAfterMessage } from "@/lib/chatUnread";
+import { blockFilesWhenOffline } from "@/lib/offlineFiles";
 import { queueMessage } from "@/lib/outbox";
 import { Attachment, ChatType, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
@@ -285,11 +286,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
     let lastMessageId = "";
 
-    // Files are sent as raw bytes and need a connection; plain text waits in the outbox instead.
-    if (attachments.length && !override && !navigator.onLine) {
-      toast.error("You're offline", { description: "Files can only be sent when you're online." });
-      return;
-    }
+    // Files need a connection; plain text waits in the outbox instead.
+    if (!override && blockFilesWhenOffline(attachments.length)) return;
 
     try {
       if (otherPerson.accountType === "bot") {

@@ -73,6 +73,7 @@ import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import type { MessageType } from "@/lib/types/type";
 import type { PollData } from "@/lib/polls";
+import { blockFilesWhenOffline } from "@/lib/offlineFiles";
 import { cn, FILE_VALIDATION_CONFIG, formatFileSize, validateFile } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
@@ -728,6 +729,8 @@ const UploadDialog = ({
   );
 
   const send = () => {
+    // Offline, keep the preview (and the picked files) open so nothing is hidden or lost.
+    if (blockFilesWhenOffline(attachments.length)) return;
     handleSendMessage(quote.message?._id);
     dispatch(setToggleDialog(false));
   };

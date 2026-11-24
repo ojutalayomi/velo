@@ -35,13 +35,15 @@ stale, wrong-user or broken, the app falls back to a normal online load.
 | `src/lib/outbox.ts`, `src/hooks/useOutbox.ts` | Messages written offline: queue, restore after reload, resend |
 | `src/app/providers/SocketProvider.tsx` | Creates the socket once the browser is online (also for a page opened offline) |
 | `src/lib/offlinePages.ts` | Which chat pages are saved ahead of time |
+| `src/lib/feedCache.ts`, `src/app/providers/PostsProvider.tsx` | Home feeds saved in IndexedDB, painted first, shown offline |
+| `src/lib/offlineFiles.ts` | The "files need a connection" check shared by the chat pages and the file preview |
 | `src/app/accounts/logout/page.tsx` | Clears everything on logout |
 
 Tests: `chatCache`, `chatPersistence`, `chatSync`, `chatSyncServer`,
 `chatsSinceRoute`, `fetchChatsShared`, `mediaCache`, `serviceWorkerShell`,
-`userCache`, `offlinePages`, `outbox` (all in `src/lib/__tests__/`),
+`userCache`, `offlinePages`, `outbox`, `feedCache`, `offlineFiles`, `chatUnread` (all in `src/lib/__tests__/`),
 `src/hooks/__tests__/useOutbox.test.tsx`, and the provider tests in
-`src/app/providers/__tests__/` (`UserProvider`, `SocketProvider`).
+`src/app/providers/__tests__/` (`UserProvider`, `SocketProvider`, `PostsProvider`).
 Run them with `NODE_ENV=test npm test`.
 
 ## 1. Chat data in IndexedDB
@@ -270,19 +272,42 @@ saying so.
 | Case | What happens |
 | --- | --- |
 | Text message in a DM or group | Queued, shown as "sending", sent on reconnect |
-| File attached, while offline | Blocked with "You're offline: Files can only be sent when you're online." Nothing is sent or queued; the caption stays as a draft, but the picked file is dropped and must be picked again |
+| File attached, while offline | Blocked with "You're offline: Files can only be sent when you're online." Nothing is sent or queued, and the file preview stays open with the picked files and caption, so nothing is hidden or lost (`src/lib/offlineFiles.ts`) |
 | First message of a brand-new chat | The chat has to be created on the server first, so it fails with "Failed to send message: Failed to fetch". The typed text stays in the box, nothing navigates, no chat is created |
 | Chat with a bot | Not queued (the reply comes from an HTTP call) |
 | Server rejects a queued message | Retried 5 times (about 90 s), then marked "failed" and removed from the outbox |
 
-## 8. Logout
+## 8. Home feeds
+
+The first page of each home feed (For You, Following, and the status avatars) is kept
+in IndexedDB `velo-feed-cache` (`src/lib/feedCache.ts`, store `feeds`, key `forYou` |
+`following` | `status`; each row holds the user id, the posts, the pagination and a
+save time). `PostsProvider` uses it:
+
+- once the user is known it paints the saved feeds at once, then loads the fresh ones
+  and replaces them; the fresh page is saved for the next load;
+- a saved feed stays on screen if the refresh fails (weak or dropped connection);
+- offline with a saved feed it shows that feed and makes no requests; offline with
+  nothing saved it says "You're offline" instead of loading forever;
+- like the sockets, it follows the connection: a page opened offline loads the fresh
+  feeds when the network returns, and a change in connection *quality* does not refetch;
+- rows belong to one user, and logout clears them.
+
+Only the first page is kept. Older pages (loaded by scrolling) are fetched online only.
+
+Post images go through `next/image`, so the service worker's image cache saves each one
+you view (up to 200 entries, `velo-assets-v1`) and they show offline. Videos stream and
+are not cached. The feeds are read-only offline: likes, bookmarks, comments and new posts
+need a connection.
+
+## 9. Logout
 
 `logout/page.tsx` calls `resetChatPersistence()`, `clearChatCache()`,
 `clearMediaCache()`, `clearOfflineShell()` and `clearCachedUser()`, so the next
 person on a shared browser sees none of it. The cache is also checked against the
 user id on every load.
 
-## 9. Deploying
+## 10. Deploying
 
 1. Deploy the socket server first. Until it stamps `updatedAt`, deletes and
    reactions on existing messages do not appear in a delta. The 7-day cache limit
@@ -294,7 +319,7 @@ No migration is needed: old rows fall back to `timestamp`. To go offline, a devi
 must load the app once online on the new build; chat page data and media are saved
 as they are opened.
 
-## 10. Testing offline in DevTools
+## 11. Testing offline in DevTools
 
 - The service-worker panel's "Offline" box fails requests but the browser may still
   report `navigator.onLine` as true; the Network panel's "Offline" throttle also
@@ -305,7 +330,7 @@ as they are opened.
   `velo-assets-v1`, `velo-chat-media-v1`), IndexedDB (`velo-chat-cache`, rows in
   `conversations`, `messages`, `settings`, `meta`), and Local Storage `userData`.
 
-## 11. Verified in a real browser
+## 12. Verified in a real browser
 
 Run with Puppeteer against the deployed site (offline set through the Network
 conditions, so `navigator.onLine` was false).
@@ -318,7 +343,7 @@ conditions, so `navigator.onLine` was false).
 | Page opened while the browser says "online" but API calls fail, with an old saved profile | Falls back to the saved profile; the chat list shows |
 | DM: 2 texts offline, reload offline, reconnect | Both shown as "sending", still queued after the reload, both sent after reconnecting (about 10 s), outbox empty, exactly 2 copies on the server |
 | Group: same | Same result, outbox empty within 5 s |
-| File attached offline | Blocked with the offline notice; nothing sent or queued |
+| File attached offline | Blocked with the offline notice; nothing sent or queued. (Before the fix, the preview closed and left the files staged out of sight; now it stays open) |
 | First message of a new chat, connection lost | Error toast, text kept, no chat created |
 | Queued message the server rejects | Attempts went 0 to 5, then the message left the outbox after about 90 s |
 
@@ -342,7 +367,6 @@ Tips for testing:
 
 - Only the 30 most recent chats are saved ahead of time. Older chats open offline only if they were visited online.
 - Only text messages can be sent offline; files, and the first message of a brand-new chat, need a connection (see the table in section 7). A queued message that the server rejects (for example, you were removed from the chat) is retried 5 times and then shown as failed.
-- A file picked while offline is dropped when the send is blocked, so it must be picked again once online.
 - The chat cache grows as deltas merge and is trimmed only by the 7-day full
   reload. The page caches are capped by entry count.
 - Browsers may evict stored data (Safari after about 7 days without a visit, or

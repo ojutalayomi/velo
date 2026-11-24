@@ -526,7 +526,7 @@ const ChatPage = () => {
           {load ? (
             <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
           ) : (
-            <div>
+            <div className="cursor-pointer" onClick={() => options[0].action()}>
               <div className="flex items-center text-left text-sm font-semibold">
                 <div className="truncate">{chatData.name}</div>
                 {chatData.verified && <Statuser className="ml-1 size-4" />}

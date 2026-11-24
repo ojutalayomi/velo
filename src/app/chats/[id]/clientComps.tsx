@@ -646,7 +646,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               {load && !otherPerson.name ? (
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
-                <div onClick={() => OnOpenSettings()}>
+                <div className="cursor-pointer" onClick={() => OnOpenSettings()}>
                   <div className="flex items-center text-left text-sm font-semibold">
                     <div className="truncate">{otherPerson?.name}</div>
                     {otherPerson?.verified && <Statuser className="ml-1 size-4" />}

@@ -533,8 +533,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               {load ? (
                 <Skeleton className="mb-1 h-4 w-24 rounded bg-gray-200" />
               ) : (
-                <>
-                  <div className="flex items-center text-left text-sm font-semibold" onClick={() => options[0].action()}>
+                <div className="cursor-pointer" onClick={() => options[0].action()}>
+                  <div className="flex items-center text-left text-sm font-semibold">
                     <div className="truncate">{group?.name}</div>
                     {group?.verified && <Statuser className="ml-1 size-4" />}
                   </div>
@@ -542,7 +542,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                     {filteredIsTypingList?.length > 0 && typingLabel(filteredIsTypingList)}
                     <b className="collapse">Group</b>
                   </p>
-                </>
+                </div>
               )}
             </div>
             <div className="flex items-center gap-4">
@@ -550,6 +550,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 <CallButton
                   roomId={gid}
                   chatType="Group"
+                  disabled={
+                    !canSendMessage({
+                      chatType: "Group",
+                      onlyAdminsCanSend: convo?.onlyAdminsCanSend,
+                      adminIds: convo?.adminIds,
+                      userId: String(userdata._id),
+                    })
+                  }
                   peer={{ name: convo?.name ?? "", avatar: convo?.displayPicture }}
                 />
               )}

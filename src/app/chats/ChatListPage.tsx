@@ -125,7 +125,7 @@ const ChatProfileDialog: React.FC<{
               <span className="break-words">{chat.name}</span>
               {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
             </DialogTitle>
-            <DialogDescription className="text-sm">{subtitle}</DialogDescription>
+            <DialogDescription className="break-all text-sm">{subtitle}</DialogDescription>
           </div>
           {isGroup && chat.description && (
             <p className="line-clamp-3 text-center text-sm text-gray-600 dark:text-gray-400">

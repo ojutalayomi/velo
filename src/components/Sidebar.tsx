@@ -94,7 +94,20 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
   useLayoutEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
-    const measure = () => setFitCount(Math.floor(nav.clientHeight / SIDEBAR_ITEM_PITCH));
+    const measure = () => {
+      // Use the real rendered row pitch so CSS changes can never desync the count.
+      const rows = nav.children;
+      let pitch = SIDEBAR_ITEM_PITCH;
+      if (rows.length >= 2) {
+        pitch = rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top;
+      } else if (rows.length === 1) {
+        const r = rows[0] as HTMLElement;
+        pitch =
+          r.getBoundingClientRect().height + parseFloat(getComputedStyle(r).marginBottom || "0");
+      }
+      if (!(pitch > 0)) pitch = SIDEBAR_ITEM_PITCH;
+      setFitCount(Math.floor(nav.clientHeight / pitch));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(nav);

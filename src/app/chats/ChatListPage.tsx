@@ -111,7 +111,7 @@ const ChatProfileDialog: React.FC<{
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] max-w-xs gap-0 overflow-hidden rounded-3xl border-none p-0 dark:bg-zinc-900">
-        <div className="flex flex-col items-center gap-3 bg-gradient-to-b from-brand/20 to-transparent px-6 pb-4 pt-10">
+        <div className="flex flex-col break-all items-center gap-3 bg-gradient-to-b from-brand/20 to-transparent px-6 pb-4 pt-10">
           <Avatar className="size-44 shadow-lg ring-4 ring-white dark:ring-zinc-900">
             <AvatarImage
               src={chat.displayPicture}

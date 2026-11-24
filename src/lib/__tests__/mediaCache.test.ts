@@ -59,7 +59,7 @@ describe("cacheMedia", () => {
   it("fetches with CORS and without credentials (never an opaque response)", async () => {
     await mod.cacheMedia("https://s3/x.webm", "audio");
 
-    expect(fetchMock).toHaveBeenCalledWith("https://s3/x.webm", { mode: "cors", credentials: "omit" });
+    expect(fetchMock).toHaveBeenCalledWith("https://s3/x.webm", { mode: "cors", credentials: "omit", cache: "reload" });
   });
 
   it("serves the saved copy without touching the network", async () => {

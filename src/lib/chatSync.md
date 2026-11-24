@@ -166,7 +166,7 @@ IndexedDB stores message records (file URL, name, size), not the files. Files li
 in the Cache API, cache `velo-chat-media-v1`, saved on **first view or play**
 (no prefetching).
 
-- Files are fetched explicitly with `mode: "cors"` and stored whole. They are not
+- Files are fetched explicitly with `mode: "cors"` and `cache: "reload"` (without `reload`, Chrome reuses the copy an `<img>` loaded without CORS, which has no CORS headers, and the fetch fails) and stored whole. They are not
   cached by a service-worker intercept: `<audio>`/`<video>` ask for byte ranges
   (206), which the Cache API refuses, and `<img>` loads are opaque and count about
   7 MB each against the quota.
@@ -309,7 +309,7 @@ list now accepts it). The page keeps the first page of each tab (All, Mentions, 
 `feeds` store of `velo-feed-cache` under `notifications:<tab>`. When a load fails it shows that
 copy with an "offline" note instead of an error, and it does not mark anything read until a real
 load succeeds (the mark-read retries on reconnect). Load more and push settings need a connection.
-Not yet verified in a real browser.
+Verified in a real browser (section 12).
 
 ### Profile, Trending and suggested people
 
@@ -367,8 +367,14 @@ conditions, so `navigator.onLine` was false).
 | File attached offline | Blocked with the offline notice; nothing sent or queued. (Before the fix, the preview closed and left the files staged out of sight; now it stays open) |
 | First message of a new chat, connection lost | Error toast, text kept, no chat created |
 | Queued message the server rejects | Attempts went 0 to 5, then the message left the outbox after about 90 s |
+| Notifications offline, first version | Error "Could not load notifications" although a copy was saved: the load ran before the offline sign-in restored the user id, so the saved copy was looked up with an empty id. Fixed by retrying once the user is known |
+| Notifications offline, after the fix (both offline modes) | Page opens, shows the saved list with "You're offline. Showing what was saved on this device."; unread badge stays at 12 (nothing marked read) |
+| Own profile `/<username>` offline, never visited (both modes) | Opens with posts, bio and counts; saved ahead of time |
+| Home feed, Trending, suggested people offline (both modes) | Feed shows; Trending shows "Couldn't refresh trends. Showing the previous list."; suggested people show the saved list |
+| Back online after the above | `/notifications` loads the live list and marks it read |
 
-Not tested live: the red "failed" marker on a rejected message (covered by unit
+Not tested live: other people's profiles offline (only ones opened before work), the Mentions and
+Verified notification tabs (same code as All), the red "failed" marker on a rejected message (covered by unit
 tests), sending files (not supported), a phone-width layout, and offline use of
 cached media inside the chats.
 
@@ -386,6 +392,7 @@ Tips for testing:
 
 ## Known limits
 
+- Notifications, Trending and suggested people show the last saved copy; load more, likes, follows and comments need a connection. Profiles other than your own work offline only after being opened once.
 - Only the 30 most recent chats are saved ahead of time. Older chats open offline only if they were visited online.
 - Only text messages can be sent offline; files, and the first message of a brand-new chat, need a connection (see the table in section 7). A queued message that the server rejects (for example, you were removed from the chat) is retried 5 times and then shown as failed.
 - The chat cache grows as deltas merge and is trimmed only by the 7-day full

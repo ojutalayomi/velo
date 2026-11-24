@@ -185,7 +185,10 @@ export function cacheMedia(url: string, kind: MediaKind): Promise<string | null>
 async function download(url: string, kind: MediaKind): Promise<string | null> {
   try {
     const cap = MEDIA_LIMITS.perFile[kind];
-    const response = await fetch(url, { mode: "cors", credentials: "omit" });
+    // `reload` skips the browser's HTTP cache: the same file was usually loaded just before by an
+    // <img>/<audio> tag without CORS, and Chrome would reuse that copy (it has no CORS headers),
+    // so the fetch would fail with "No Access-Control-Allow-Origin header".
+    const response = await fetch(url, { mode: "cors", credentials: "omit", cache: "reload" });
     // The Cache API can't store partial (206) or failed responses.
     if (response.status !== 200) return null;
     const declared = Number(response.headers.get("content-length"));

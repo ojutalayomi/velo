@@ -288,12 +288,14 @@ save time). `PostsProvider` uses it:
   and replaces them; the fresh page is saved for the next load;
 - a saved feed stays on screen if the refresh fails (weak or dropped connection);
 - offline with a saved feed it shows that feed and makes no requests; offline with
-  nothing saved it says "You're offline" instead of loading forever;
+  nothing saved it shows an "You're offline" state (with a Try again button) instead of
+  loading forever or claiming that nobody has posted. The same state appears when a feed
+  is empty because the server request failed;
 - like the sockets, it follows the connection: a page opened offline loads the fresh
   feeds when the network returns, and a change in connection *quality* does not refetch;
 - rows belong to one user, and logout clears them.
 
-Only the first page is kept. Older pages (loaded by scrolling) are fetched online only.
+Only the first page is kept. The call provider (`src/app/providers/WithCallProvider.tsx`) is always rendered, with an inert stand-in socket until the real one exists. It used to be added only once the socket appeared, which remounted the whole app and fetched the feeds twice on a cold load. Older pages (loaded by scrolling) are fetched online only.
 
 Post images go through `next/image`, so the service worker's image cache saves each one
 you view (up to 200 entries, `velo-assets-v1`) and they show offline. Videos stream and

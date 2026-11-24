@@ -1,5 +1,5 @@
 "use client";
-import { Loader2, RefreshCw, Users } from "lucide-react";
+import { Loader2, RefreshCw, Users, WifiOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -54,6 +54,28 @@ const SCROLL_KEY: Record<FeedTab, string> = {
 };
 
 const TAB_KEY = "homeActiveTab";
+
+/** Shown when a feed is empty because it could not be loaded (offline, or the server failed). */
+const FeedUnavailable = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <div className="flex h-3/4 w-full flex-col items-center justify-center gap-3 p-8 text-center">
+    <WifiOff className="text-gray-500 dark:text-slate-400" size={40} />
+    <h1 className="text-xl font-bold dark:text-slate-200">
+      {message === "You're offline" ? "You're offline" : "Couldn't load your feed"}
+    </h1>
+    <p className="text-gray-600 dark:text-slate-400">
+      {message === "You're offline"
+        ? "Connect to the internet to load your feed. Posts you've already seen will show here once they're saved."
+        : message}
+    </p>
+    <button
+      onClick={onRetry}
+      className="flex items-center gap-2 rounded-full bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand/90"
+    >
+      <RefreshCw size={18} />
+      <span>Try again</span>
+    </button>
+  </div>
+);
 
 const Homepage: React.FC = () => {
   const { userdata } = useUser();
@@ -228,6 +250,9 @@ const Homepage: React.FC = () => {
                 <div ref={feedSentinelRef} className="h-px w-full" aria-hidden />
                 {feedLoadingMore && <LoadingMoreIndicator />}
               </>
+            ) : error ? (
+              // Empty because the load failed (e.g. offline), not because nobody has posted.
+              <FeedUnavailable message={error} onRetry={() => setReload((r) => !r)} />
             ) : (
               <div className="flex h-3/4 w-full flex-col items-center justify-center p-8 text-center">
                 <div className="mb-6">
@@ -277,6 +302,8 @@ const Homepage: React.FC = () => {
                 <div ref={followingSentinelRef} className="h-px w-full" aria-hidden />
                 {followingLoadingMore && <LoadingMoreIndicator />}
               </>
+            ) : followingError ? (
+              <FeedUnavailable message={followingError} onRetry={() => setFollowingReload((r) => !r)} />
             ) : (
               <div className="flex h-3/4 w-full flex-col items-center justify-center p-8 text-center">
                 <div className="mb-6">

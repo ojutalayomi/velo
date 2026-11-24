@@ -183,7 +183,11 @@ export function updateLiveTime(
 
   if (days > 0) {
     const [date] = Time.split(",");
-    liveTime = date;
+    const parsed = new Date(Time);
+    // ISO strings have no comma, so `date` would be the raw timestamp; format those instead.
+    liveTime = /^\d{4}-\d{2}-\d{2}T/.test(Time) && !Number.isNaN(parsed.getTime())
+      ? parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : date;
   } else if (hours > 0) {
     liveTime = hours + (hours === 1 ? " hr" : " hrs");
   } else if (minutes > 0) {

@@ -543,11 +543,11 @@ const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, textOnly, m
       icon: Folder,
       text: "File",
       onClick: () => {
-        setFileAccepts(".pdf, .docx, .doc, .xls, .xlsx, .ppt, .pptx");
+        setFileAccepts(".txt, .pdf, .docx, .doc, .xls, .xlsx, .ppt, .pptx");
         if (input.current) {
           // The accept attribute must change before click(), so state alone is too late.
           // eslint-disable-next-line react-hooks/immutability
-          input.current.accept = ".pdf, .docx, .doc, .xls, .xlsx, .ppt, .pptx";
+          input.current.accept = ".txt, .pdf, .docx, .doc, .xls, .xlsx, .ppt, .pptx";
           input.current.click();
         }
       },

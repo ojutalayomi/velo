@@ -468,7 +468,7 @@ const ChatPage = () => {
         updateConversation({
           id: msg.chatId,
           updates: {
-            unread: 1,
+            unread: 0, // the first message is mine
             ...convoPreviewUpdate(msg),
             lastUpdated: msg.timestamp,
           },

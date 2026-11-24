@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";
+import { unreadAfterMessage } from "@/lib/chatUnread";
 import { queueMessage } from "@/lib/outbox";
 import { Attachment, ChatType, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
@@ -294,10 +295,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       if (otherPerson.accountType === "bot") {
         setIsTextareaDisabled(true);
       }
-      const isRead = friendId
-        ? { [userdata._id]: false, [friendId]: true }
-        : { [userdata._id]: true };
-
       // Prepare the message object
       const msg = new ChatMessage({
         _id: generateObjectId(),
@@ -368,7 +365,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         updateConversation({
           id: pid,
           updates: {
-            unread: isRead[userdata._id] ? convo.unread : (convo.unread ?? 0) + 1,
+            unread: unreadAfterMessage(convo.unread, msg, userdata._id),
             ...convoPreviewUpdate(msg),
             lastUpdated: msg.timestamp,
           },

@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { ChatMessage } from "@/lib/class/ChatMessage";
+import { unreadAfterMessage } from "@/lib/chatUnread";
 import { queueMessage } from "@/lib/outbox";
 import { Attachment, MessageAttributes, MessageType, msgStatus } from "@/lib/types/type";
 import { timeFormatter } from "@/lib/utils";
@@ -244,13 +245,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
     try {
       // console.log('send')
-      const isRead = otherIds
-        ? Object.fromEntries([
-            [String(userdata._id), false],
-            ...otherIds.map((id: string) => [id, true]),
-          ])
-        : { [String(userdata._id)]: true };
-
       const msg = new ChatMessage({
         _id: generateObjectId(),
         chatId: gid,
@@ -318,7 +312,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         updateConversation({
           id: msg.chatId,
           updates: {
-            unread: isRead[String(userdata._id)] ? convo.unread : (convo.unread ?? 0) + 1,
+            unread: unreadAfterMessage(convo.unread, msg, String(userdata._id)),
             ...convoPreviewUpdate(msg),
             lastUpdated: msg.timestamp,
           },

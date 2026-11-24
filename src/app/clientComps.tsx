@@ -58,6 +58,7 @@ import { updateFollowingFeedPosts } from "@/redux/followingFeedSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePosts } from "@/redux/postsSlice";
 import { useOutbox } from "@/hooks/useOutbox";
+import { unreadAfterMessage } from "@/lib/chatUnread";
 import { removeQueued } from "@/lib/outbox";
 import { pagesToSave, requestPageSave } from "@/lib/offlinePages";
 import { registerServiceWorker } from "@/lib/serviceWorker";
@@ -236,9 +237,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
           updateConversation({
             id: conversationId,
             updates: {
-              unread: msg.isRead?.[String(userdata._id)]
-                ? conversation.unread
-                : (conversation.unread ?? 0) + 1,
+              unread: unreadAfterMessage(conversation.unread, msg, userdata._id),
               ...convoPreviewUpdate(msg),
               lastUpdated: msg.timestamp,
             },

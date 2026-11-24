@@ -22,7 +22,7 @@ import {
 import { parseSince } from "@/lib/chatSync";
 import { buildMessageFilter } from "@/lib/chatSyncServer";
 import { dmKeyFor } from "@/lib/dmKey";
-import { mergeSender, storedSender, withSenders } from "@/lib/messageSender";
+import { storedSender, withSenders } from "@/lib/messageSender";
 import { canShowLastSeen } from "@/lib/userPrivacy";
 
 interface Payload {
@@ -680,11 +680,7 @@ export const chatRepository = {
             status: "sent",
           } as unknown as MessageSchema;
           await db.chatMessages().insertOne(notice);
-          await emitViaSocketServer(payload._id, "chatMessage", {
-            ...notice,
-            sender: mergeSender({ id: payload._id }, actor),
-            _id: notice._id.toString(),
-          });
+          await emitViaSocketServer(payload._id, "chat:announce", { messageId: notice._id.toString() });
         } catch (error) {
           console.error("Failed to post the group-rule notice:", error);
         }

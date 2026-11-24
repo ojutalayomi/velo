@@ -729,7 +729,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
             </p>
           </div>
         </div>
-        <div className="mt-4 flex-1">
+        <div className="mb-4 mt-4 flex-1">
           {loadingMoreMessages && (
             <div className="flex justify-center py-2">
               <Loader2 className="size-6 animate-spin text-gray-400" aria-label="Loading older" />

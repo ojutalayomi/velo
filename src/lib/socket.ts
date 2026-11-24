@@ -42,6 +42,7 @@ export type ServerEvent =
   | "addChat"
   | "chatMessage"
   | "chat:updated"
+  | "chat:announce"
   | "chat:participantsAdded"
   | "chat:participantsRemoved";
 

@@ -7,7 +7,7 @@ import {
   isChatMember,
   isDuplicateMemberError,
 } from "@/lib/chatMembership";
-import { mergeSender, storedSender } from "@/lib/messageSender";
+import { storedSender } from "@/lib/messageSender";
 import { MongoDBClient } from "@/lib/mongodb";
 import { emitViaSocketServer } from "@/lib/socket";
 import { ChatParticipant, MessageSchema, NewChatSettings } from "@/lib/types/type";
@@ -109,11 +109,7 @@ const addMembers = async (
     } as MessageSchema;
     try {
       await db.chatMessages().insertOne(announcement);
-      await emitViaSocketServer(callerId, "chatMessage", {
-        ...announcement,
-        sender: mergeSender({ id: callerId }, adder),
-        _id: announcement._id.toString(),
-      });
+      await emitViaSocketServer(callerId, "chat:announce", { messageId: announcement._id.toString() });
     } catch (error) {
       console.error("Failed to post the member-added notice:", error);
     }

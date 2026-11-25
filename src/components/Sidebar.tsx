@@ -95,17 +95,15 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
     const nav = navRef.current;
     if (!nav) return;
     const measure = () => {
-      // Use the real rendered row pitch so CSS changes can never desync the count.
-      const rows = nav.children;
+      // Measure the pitch from real nav links when two exist; otherwise use the known constant.
+      // (The "More" row has a different box, so it must never be used for measuring.)
+      const links = nav.querySelectorAll(":scope > a");
       let pitch = SIDEBAR_ITEM_PITCH;
-      if (rows.length >= 2) {
-        pitch = rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top;
-      } else if (rows.length === 1) {
-        const r = rows[0] as HTMLElement;
-        pitch =
-          r.getBoundingClientRect().height + parseFloat(getComputedStyle(r).marginBottom || "0");
+      if (links.length >= 2) {
+        const measured =
+          links[1].getBoundingClientRect().top - links[0].getBoundingClientRect().top;
+        if (measured > 0) pitch = measured;
       }
-      if (!(pitch > 0)) pitch = SIDEBAR_ITEM_PITCH;
       setFitCount(Math.floor(nav.clientHeight / pitch));
     };
     measure();

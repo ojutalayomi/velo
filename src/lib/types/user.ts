@@ -34,6 +34,8 @@ export interface User {
   email: string;
   firstname: string;
   followers?: number;
+  /** Posts and quote posts the user has made (not comments or plain reposts). */
+  postCount?: number;
   following?: number;
   isEmailConfirmed?: boolean;
   isFollowing?: boolean;

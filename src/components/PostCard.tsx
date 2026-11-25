@@ -54,6 +54,7 @@ import { togglePostBookmark, togglePostLike } from "@/lib/postSocialActions";
 import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
+import { emitPostRemoved, emitPostRestored } from "@/lib/postEvents";
 import { addPost, deletePost, updatePost } from "@/redux/postsSlice";
 import { RootState } from "@/redux/store";
 
@@ -326,6 +327,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
       // Undo the optimistic removal so the card comes back where it can.
       const { postData } = latestRef.current;
       dispatch(addPost(snapshot));
+      emitPostRestored(snapshot);
       if (postData.PostID && !isPostMatch(postData, snapshot.PostID)) {
         dispatch(addPost(postData));
       }
@@ -509,6 +511,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
               // The server excludes the actor from the broadcast, so remove the
               // card locally (rolled back by `delete_post_response` on failure).
               dispatch(deletePost(data.PostID));
+              emitPostRemoved({ postId: data.PostID, type: data.Type });
               if (postData.PostID && !isPostMatch(postData, data.PostID)) {
                 dispatch(deletePost(postData.PostID));
               }

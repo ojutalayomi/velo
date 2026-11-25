@@ -165,7 +165,7 @@ export const SidebarItem = forwardRef<
             align="end"
             aria-label="More"
             collisionPadding={8}
-            className="flex max-h-[var(--radix-popover-content-available-height)] w-56 flex-col overflow-y-auto rounded-xl bg-white p-2 shadow-lg dark:bg-neutral-950 dark:text-slate-200"
+            className="flex max-h-[var(--radix-popover-content-available-height)] w-56 flex-col overflow-y-auto rounded-xl bg-gray-50 p-2 shadow-lg dark:bg-zinc-900 dark:text-slate-200"
           >
             {overflowItems.map((overflow) => (
               <SidebarItem

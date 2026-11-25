@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // Adjust these import paths to match your project
 import { fetchCommentsPage } from "@/lib/getStatus";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 
 import { renderTextWithLinks } from "./RenderTextWithLinks";
 import { Statuser } from "./VerificationComponent";
@@ -31,7 +31,7 @@ function timeAgo(iso: string): string {
   return `${Math.floor(d / 365)}y`;
 }
 
-function CommentRow({ comment }: { comment: PostSchema }) {
+function CommentRow({ comment }: { comment: ClientPostSchema }) {
   return (
     <li className="flex gap-3 px-4 py-3">
       <div
@@ -61,7 +61,7 @@ export default function CommentsDrawer({
   footer,
 }: {
   /** The post whose comments to show. Pass null to keep the drawer closed. */
-  post: PostSchema | null;
+  post: ClientPostSchema | null;
   showCaption: boolean;
   onClose: () => void;
   onToggleFollow: () => void;
@@ -71,7 +71,7 @@ export default function CommentsDrawer({
   const { userdata } = useUser();
   const socket = useSocket();
   const [visible, setVisible] = useState(false);
-  const [comments, setComments] = useState<PostSchema[]>([]);
+  const [comments, setComments] = useState<ClientPostSchema[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -154,7 +154,7 @@ export default function CommentsDrawer({
   // Live comments for the open post (the server also echoes your own comment back)
   useEffect(() => {
     if (!socket || !postId) return;
-    const onNewComment = (data: { blog: PostSchema }) => {
+    const onNewComment = (data: { blog: ClientPostSchema }) => {
       if (data.blog.ParentId !== postId) return;
       setComments((prev) =>
         prev.some((c) => c.PostID === data.blog.PostID) ? prev : [data.blog, ...prev]

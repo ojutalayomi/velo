@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
+import { withAuthors } from "@/lib/postAuthors";
 import { Payload } from "@/lib/types/type";
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
@@ -85,15 +86,15 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 async function searchPostFromMultipleCollections(db: MongoDBClient, id: string) {
   // Fetch posts from the 'Posts' collection
   const post = await db.posts().findOne({ PostID: id, hidden: { $ne: true } });
-  if (post) return post;
+  if (post) return (await withAuthors(db, [post]))[0];
 
   // Fetch posts from the 'Posts_Comments' collection
   const comment = await db.postsComments().findOne({ PostID: id, hidden: { $ne: true } });
-  if (comment) return comment;
+  if (comment) return (await withAuthors(db, [comment]))[0];
 
   // Fetch posts from the 'Posts_Shares' collection
   const share = await db.postsShares().findOne({ PostID: id, hidden: { $ne: true } });
-  if (share) return share;
+  if (share) return (await withAuthors(db, [share]))[0];
 
   return null;
 }

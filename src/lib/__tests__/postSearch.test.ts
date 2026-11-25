@@ -65,7 +65,9 @@ describe("public-only caption queries", () => {
         { $skip: 10 },
         { $limit: 3 },
       ]);
-      expect(result).toEqual({ posts: posts.slice(0, 2), hasMore: true });
+      // Authors are filled in from the accounts afterwards (none exist in this fake), so only the page matters here.
+      expect(result.posts.map((post) => post.PostID)).toEqual(["public1", "public2"]);
+      expect(result.hasMore).toBe(true);
     }
   );
   it("does not query invalid tags or empty text", async () => {

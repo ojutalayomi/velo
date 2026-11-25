@@ -4,6 +4,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyToken } from "@/lib/auth";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { MongoDBClient, FollowersSchema } from "@/lib/mongodb";
+import { withAuthors } from "@/lib/postAuthors";
 import type { Payload, PostSchema } from "@/lib/types/type";
 
 import { addInteractionFlags } from "../../../lib/apiUtils";
@@ -80,7 +81,7 @@ async function fetchFollowingPostsPage(
 
   const batch = await cursor.toArray();
   const hasMore = batch.length > limit;
-  const posts = batch.slice(0, limit) as unknown as PostSchema[];
+  const posts = await withAuthors(db, batch.slice(0, limit) as unknown as PostSchema[]);
 
   return { posts, hasMore };
 }

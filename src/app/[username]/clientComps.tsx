@@ -13,7 +13,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { submitFollowUpdate } from "@/lib/followApi";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { RootState } from "@/redux/store";
 import { timeFormatter } from "@/templates/PostProps";
@@ -22,7 +22,7 @@ import ContentSection from "./ContentTabs";
 import ProfileMenu from "./ProfileMenu";
 import { useUser } from "../providers/UserProvider";
 
-function postDedupeKey(p: PostSchema) {
+function postDedupeKey(p: ClientPostSchema) {
   return String(p.PostID ?? p._id);
 }
 
@@ -32,7 +32,7 @@ export default function Profile({
   postsPagination: initialPagination,
 }: {
   profileData: UserData;
-  profilePostCards: PostSchema[];
+  profilePostCards: ClientPostSchema[];
   postsPagination: PaginationMeta;
 }) {
   const router = useRouter();
@@ -121,7 +121,7 @@ export default function Profile({
       (data: {
         excludeUserId: string;
         postId: string;
-        update: Partial<PostSchema>;
+        update: Partial<ClientPostSchema>;
         type: string;
       }) => {
         console.info(data);
@@ -130,7 +130,7 @@ export default function Profile({
         });
       }
     );
-    socket.on("newPost", (data: { excludeUser: string; blog: PostSchema }) => {
+    socket.on("newPost", (data: { excludeUser: string; blog: ClientPostSchema }) => {
       setPostCards((prev) => {
         return [...prev, data.blog];
       });
@@ -233,7 +233,7 @@ export default function Profile({
       );
       if (!res.ok) return;
       const body = (await res.json()) as {
-        data?: PostSchema[];
+        data?: ClientPostSchema[];
         pagination?: PaginationMeta;
       };
       const chunk = body.data ?? [];

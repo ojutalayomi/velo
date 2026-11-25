@@ -35,7 +35,7 @@ import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
-import { PostLocation, PostSchema } from "@/lib/types/type";
+import { PostLocation, ClientPostSchema } from "@/lib/types/type";
 import { FILE_VALIDATION_CONFIG, formatFileSize, generateObjectId, validateFile } from "@/lib/utils";
 import { updateLiveTime } from "@/templates/PostProps";
 import ThreadsSlide from "@/templates/ThreadSlides";
@@ -64,11 +64,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 interface PostMakerClientProps {
   children?: ReactNode;
   open: boolean;
-  type?: PostSchema["Type"];
-  post?: PostSchema;
+  type?: ClientPostSchema["Type"];
+  post?: ClientPostSchema;
   onOpenChange: Dispatch<SetStateAction<boolean>>;
   /** Called after a post/comment/quote is emitted, so hosts can update counts optimistically. */
-  onPosted?: (type: PostSchema["Type"]) => void;
+  onPosted?: (type: ClientPostSchema["Type"]) => void;
 }
 
 function PostMakerClient({
@@ -302,12 +302,12 @@ function PostMakerClient({
 
       if (type === "quote") {
         if (!post) return;
-        const quote: Partial<PostSchema> = {
-          Visibility: visibility as PostSchema["Visibility"],
+        const quote: Partial<ClientPostSchema> = {
+          Visibility: visibility as ClientPostSchema["Visibility"],
           Caption: text,
           Image: media,
           Code: "",
-          WhoCanComment: visibility as PostSchema["WhoCanComment"],
+          WhoCanComment: visibility as ClientPostSchema["WhoCanComment"],
           OriginalPostId: post.PostID,
         };
 
@@ -318,14 +318,14 @@ function PostMakerClient({
         });
       } else {
         if (!post && type === "comment") return;
-        const Post: PostSchema = {
+        const Post: ClientPostSchema = {
           _id: "",
           UserId: "",
           DisplayPicture: "",
           NameOfPoster: "",
           Verified: false,
           TimeOfPost: new Date().toISOString(),
-          Visibility: visibility as PostSchema["WhoCanComment"],
+          Visibility: visibility as ClientPostSchema["WhoCanComment"],
           Caption: text,
           Image: media,
           IsFollowing: false,
@@ -338,7 +338,7 @@ function PostMakerClient({
           Username: "",
           PostID: "",
           Code: "",
-          WhoCanComment: visibility as PostSchema["WhoCanComment"],
+          WhoCanComment: visibility as ClientPostSchema["WhoCanComment"],
           Shared: false,
           Type: type,
           ParentId: post ? post.PostID : "",
@@ -666,8 +666,8 @@ function MiniPostCard({
   post,
   type = "post",
 }: {
-  post: PostSchema;
-  type?: PostSchema["Type"];
+  post: ClientPostSchema;
+  type?: ClientPostSchema["Type"];
 }): ReactNode {
   const [time, setTime] = useState("");
 

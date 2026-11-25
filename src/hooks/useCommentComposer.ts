@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { useAppDispatch } from "@/redux/hooks";
 import { updatePost } from "@/redux/postsSlice";
 
@@ -13,9 +13,9 @@ import { updatePost } from "@/redux/postsSlice";
  * the author fields, so everything identity-related is left blank.
  */
 export function buildPostPayload(
-  type: PostSchema["Type"],
-  fields: Partial<PostSchema> & { parentId?: string }
-): PostSchema {
+  type: ClientPostSchema["Type"],
+  fields: Partial<ClientPostSchema> & { parentId?: string }
+): ClientPostSchema {
   const { parentId, ...rest } = fields;
   return {
     _id: "",
@@ -42,12 +42,12 @@ export function buildPostPayload(
     Type: type,
     ParentId: parentId ?? "",
     ...rest,
-  } as PostSchema;
+  } as ClientPostSchema;
 }
 
 export interface UseCommentComposerOptions {
   /** Called after the comment has been emitted. */
-  onSubmitted?: (comment: PostSchema) => void;
+  onSubmitted?: (comment: ClientPostSchema) => void;
   /** Bump the parent's NoOfComment in Redux right away. Defaults to true. */
   optimistic?: boolean;
   /** Optional controlled text, e.g. to share one draft between two inputs. */
@@ -60,7 +60,7 @@ export interface UseCommentComposerOptions {
  * optimistic comment-count bump. Layout is up to the caller (see CommentComposer).
  */
 export function useCommentComposer(
-  parent: PostSchema | null | undefined,
+  parent: ClientPostSchema | null | undefined,
   { onSubmitted, optimistic = true, text: controlledText, onTextChange }: UseCommentComposerOptions = {}
 ) {
   const socket = useSocket();

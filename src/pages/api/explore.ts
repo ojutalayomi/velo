@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { addInteractionFlags } from "@/lib/apiUtils";
+import { withAuthors } from "@/lib/postAuthors";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { IMAGE_URL_PATTERN } from "@/lib/mediaType";
@@ -102,7 +103,7 @@ async function fetchExplorePosts(
 
   const batch = await db.posts().aggregate(pipeline).toArray();
   const hasMore = batch.length > limit;
-  const posts = batch.slice(0, limit) as unknown as PostSchema[];
+  const posts = await withAuthors(db, batch.slice(0, limit) as unknown as PostSchema[]);
 
   return { posts, hasMore };
 }

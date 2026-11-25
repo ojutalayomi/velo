@@ -1,9 +1,9 @@
 import type { PaginationMeta } from "@/lib/apiPagination";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface FollowingFeedState {
-  posts: PostSchema[];
+  posts: ClientPostSchema[];
   loading: boolean;
   error: string | null;
   feedNextSkip: number;
@@ -20,7 +20,7 @@ const initialState: FollowingFeedState = {
   feedLoadingMore: false,
 };
 
-function postKey(p: PostSchema) {
+function postKey(p: ClientPostSchema) {
   return String(p.PostID ?? p._id);
 }
 
@@ -30,7 +30,7 @@ const followingFeedSlice = createSlice({
   reducers: {
     initFollowingFeedPage: (
       state,
-      action: PayloadAction<{ posts: PostSchema[]; pagination: PaginationMeta }>
+      action: PayloadAction<{ posts: ClientPostSchema[]; pagination: PaginationMeta }>
     ) => {
       state.posts = action.payload.posts;
       const p = action.payload.pagination;
@@ -40,7 +40,7 @@ const followingFeedSlice = createSlice({
     },
     appendFollowingFeedPage: (
       state,
-      action: PayloadAction<{ posts: PostSchema[]; pagination: PaginationMeta }>
+      action: PayloadAction<{ posts: ClientPostSchema[]; pagination: PaginationMeta }>
     ) => {
       const seen = new Set(state.posts.map(postKey));
       for (const post of action.payload.posts) {
@@ -66,11 +66,11 @@ const followingFeedSlice = createSlice({
     },
     updateFollowingFeedPosts: (
       state,
-      action: PayloadAction<{ key: keyof PostSchema; value: string; updates: Partial<PostSchema> }>
+      action: PayloadAction<{ key: keyof ClientPostSchema; value: string; updates: Partial<ClientPostSchema> }>
     ) => {
       const { key, value, updates } = action.payload;
       state.posts = state.posts.map((post) => {
-        if (post[key as keyof PostSchema] === value) {
+        if (post[key as keyof ClientPostSchema] === value) {
           return { ...post, ...updates };
         }
         return post;

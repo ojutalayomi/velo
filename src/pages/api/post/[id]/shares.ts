@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { addInteractionFlags } from "@/lib/apiUtils";
+import { withAuthors } from "@/lib/postAuthors";
 import { MAX_API_LIMIT, pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { SocialMediaUser, UserSchema } from "@/lib/class/User";
@@ -85,7 +86,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       .toArray();
 
     const hasMore = rawShares.length > pageLimit;
-    const posts = rawShares.slice(0, pageLimit) as PostSchema[];
+    const posts = await withAuthors(db, rawShares.slice(0, pageLimit) as PostSchema[]);
 
     if (shareType === "repost") {
       const userIds = posts.map((post) => post.UserId).filter((id) => ObjectId.isValid(id));

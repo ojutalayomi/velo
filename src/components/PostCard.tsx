@@ -51,7 +51,7 @@ import { Statuser } from "@/components/VerificationComponent";
 import { submitFollowUpdate } from "@/lib/followApi";
 import { getPost } from "@/lib/getStatus";
 import { togglePostBookmark, togglePostLike } from "@/lib/postSocialActions";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, deletePost, updatePost } from "@/redux/postsSlice";
@@ -84,15 +84,15 @@ type DeletePostEvent = {
 type UpdatePostEvent = {
   excludeUserId?: string;
   postId: string;
-  update: Partial<PostSchema>;
+  update: Partial<ClientPostSchema>;
   type?: string;
 };
 
-const isPostMatch = (post: Partial<PostSchema> | null | undefined, postId: string) =>
+const isPostMatch = (post: Partial<ClientPostSchema> | null | undefined, postId: string) =>
   post?._id === postId || post?.PostID === postId;
 
 /** Merge only fields the store actually knows about, preserving local-only state. */
-function mergeFreshPost(prev: PostSchema, fresh: PostSchema): PostSchema {
+function mergeFreshPost(prev: ClientPostSchema, fresh: ClientPostSchema): ClientPostSchema {
   let changed = false;
   const merged: Record<string, unknown> = { ...prev };
   for (const [key, value] of Object.entries(fresh)) {
@@ -101,7 +101,7 @@ function mergeFreshPost(prev: PostSchema, fresh: PostSchema): PostSchema {
       changed = true;
     }
   }
-  return changed ? (merged as unknown as PostSchema) : prev;
+  return changed ? (merged as unknown as ClientPostSchema) : prev;
 }
 
 const actionBase =
@@ -116,41 +116,41 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   const socket = useSocket();
   const { userdata } = useUser();
   const posts = useSelector((state: RootState) => state.posts.posts);
-  const [localOriginalPost, setOriginalPost] = useState<PostSchema | null>(null);
+  const [localOriginalPost, setOriginalPost] = useState<ClientPostSchema | null>(null);
   const [isPostMakerModalOpen, setPostMakerModalOpen] = useState(false);
   const [, setOptionsOpen] = useState(false);
   const [, setTick] = useState(0);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isCaptionCopied, setIsCaptionCopied] = useState(false);
   const router = useRouter();
-  const [localData, setData] = useState<PostSchema>({} as PostSchema);
+  const [localData, setData] = useState<ClientPostSchema>({} as ClientPostSchema);
   const [isResolvingPost, setIsResolvingPost] = useState(true);
   const [removedPostId, setRemovedPostId] = useState<string | null>(null);
   const [showFullCaption, setShowFullCaption] = useState(false);
-  const reactionSnapshotRef = useRef<PostSchema | null>(null);
-  const pendingDeleteRef = useRef<PostSchema | null>(null);
+  const reactionSnapshotRef = useRef<ClientPostSchema | null>(null);
+  const pendingDeleteRef = useRef<ClientPostSchema | null>(null);
 
   const containsPost = pathname?.includes("/posts") ?? false;
 
   // The store is authoritative for anything another card or view updated
   // (likes, comments, shares); merge it over the local snapshot on render.
   const storePost = localData.PostID
-    ? posts.find((post: PostSchema) => post.PostID === localData.PostID)
+    ? posts.find((post: ClientPostSchema) => post.PostID === localData.PostID)
     : undefined;
   // Recovery path: a repost whose target was not loaded yet resolves as soon
   // as that target shows up in the store, without refetching.
   const lateOriginalPost =
     !localData.PostID && postData.OriginalPostId
-      ? posts.find((post: PostSchema) => post.PostID === postData.OriginalPostId)
+      ? posts.find((post: ClientPostSchema) => post.PostID === postData.OriginalPostId)
       : undefined;
   const data = storePost
     ? mergeFreshPost(localData, storePost)
     : lateOriginalPost ?? localData;
   const storeOriginalPost = localOriginalPost?.PostID
-    ? posts.find((post: PostSchema) => post.PostID === localOriginalPost.PostID)
+    ? posts.find((post: ClientPostSchema) => post.PostID === localOriginalPost.PostID)
     : undefined;
   const lateNestedOriginalPost = lateOriginalPost?.OriginalPostId
-    ? posts.find((post: PostSchema) => post.PostID === lateOriginalPost.OriginalPostId)
+    ? posts.find((post: ClientPostSchema) => post.PostID === lateOriginalPost.OriginalPostId)
     : undefined;
   const originalPost =
     localOriginalPost && storeOriginalPost
@@ -183,7 +183,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
     (async () => {
       if (!postData?.PostID) {
         if (!cancelled) {
-          setData({} as PostSchema);
+          setData({} as ClientPostSchema);
           setIsResolvingPost(false);
         }
         return;
@@ -209,12 +209,12 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
 
       // Reposts carry no content of their own: resolve the post they point at,
       // falling back to the API when it is not in the loaded feed.
-      const cached = posts.find((post: PostSchema) => post.PostID === originalId);
+      const cached = posts.find((post: ClientPostSchema) => post.PostID === originalId);
       const resolved = cached ?? (await fetchPost(originalId));
       if (cancelled) return;
 
       if (!resolved) {
-        setData({} as PostSchema);
+        setData({} as ClientPostSchema);
         setOriginalPost(null);
         setIsResolvingPost(false);
         return;
@@ -227,7 +227,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         setData(resolved);
         if (resolved.OriginalPostId) {
           const nested =
-            posts.find((post: PostSchema) => post.PostID === resolved.OriginalPostId) ??
+            posts.find((post: ClientPostSchema) => post.PostID === resolved.OriginalPostId) ??
             (await fetchPost(resolved.OriginalPostId));
           if (cancelled) return;
           setOriginalPost(nested);
@@ -272,7 +272,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           dispatch(deletePost(postData.PostID));
         }
         setRemovedPostId(postData.PostID ?? event.postId);
-        setData({} as PostSchema);
+        setData({} as ClientPostSchema);
       }
     };
 
@@ -513,7 +513,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
                 dispatch(deletePost(postData.PostID));
               }
               setRemovedPostId(postData.PostID ?? data.PostID);
-              setData({} as PostSchema);
+              setData({} as ClientPostSchema);
             },
           },
         ]
@@ -821,7 +821,7 @@ function QuotedPostCard({
   time1,
 }: {
   handleActivePost: (route: string) => void;
-  originalPost: PostSchema;
+  originalPost: ClientPostSchema;
   time1: string;
 }) {
   return (

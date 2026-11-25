@@ -14,7 +14,7 @@ import {
   togglePostBookmark,
   togglePostLike,
 } from "@/lib/postSocialActions";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 import { useAppDispatch } from "@/redux/hooks";
 import { updatePost } from "@/redux/postsSlice";
 
@@ -81,17 +81,17 @@ function ReelSlide({
   onShareCommitted,
   hasAccount,
 }: {
-  post: PostSchema;
+  post: ClientPostSchema;
   isActive: boolean;
   muted: boolean;
   onToggleMute: () => void;
   onShowCaption: Dispatch<SetStateAction<boolean>>;
   currentUserId?: string;
-  onToggleLike: (post: PostSchema) => void;
-  onToggleBookmark: (post: PostSchema) => void;
-  onToggleFollow: (post: PostSchema) => void;
-  onOpenComments: (post: PostSchema) => void;
-  onShareCommitted: (postId: string, updates: Partial<PostSchema>) => void;
+  onToggleLike: (post: ClientPostSchema) => void;
+  onToggleBookmark: (post: ClientPostSchema) => void;
+  onToggleFollow: (post: ClientPostSchema) => void;
+  onOpenComments: (post: ClientPostSchema) => void;
+  onShareCommitted: (postId: string, updates: Partial<ClientPostSchema>) => void;
   hasAccount: boolean;
 }) {
   const { userdata } = useUser();
@@ -367,9 +367,9 @@ export default function ExploreReel() {
   const { userdata } = useUser();
   const start = searchParams?.get("start") ?? null;
 
-  const [posts, setPosts] = useState<PostSchema[]>([]);
+  const [posts, setPosts] = useState<ClientPostSchema[]>([]);
   const [showCaption, setShowCaption] = useState(false);
-  const [commentPost, setCommentPost] = useState<PostSchema | null>(null);
+  const [commentPost, setCommentPost] = useState<ClientPostSchema | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -381,7 +381,7 @@ export default function ExploreReel() {
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const patchPostInStateAndCache = useCallback((updated: PostSchema) => {
+  const patchPostInStateAndCache = useCallback((updated: ClientPostSchema) => {
     setPosts((prev) => {
       const nextList = prev.map((p) => (p.PostID === updated.PostID ? updated : p));
       const c = getExplorePostsCache();
@@ -393,7 +393,7 @@ export default function ExploreReel() {
   }, []);
 
   const patchPostFieldsInStateAndCache = useCallback(
-    (postId: string, updates: Partial<PostSchema>) => {
+    (postId: string, updates: Partial<ClientPostSchema>) => {
       setPosts((prev) => {
         const nextList = prev.map((p) => (p.PostID === postId ? { ...p, ...updates } : p));
         const c = getExplorePostsCache();
@@ -407,7 +407,7 @@ export default function ExploreReel() {
   );
 
   const onOpenComments = useCallback(
-    (post: PostSchema) => {
+    (post: ClientPostSchema) => {
       setShowCaption(false);
       setCommentPost(post);
     },
@@ -423,7 +423,7 @@ export default function ExploreReel() {
   }, [userdata._id, router]);
 
   const onToggleLike = useCallback(
-    (post: PostSchema) => {
+    (post: ClientPostSchema) => {
       if (!requireAuth()) return;
       const { next, emit } = togglePostLike(post);
       dispatch(
@@ -436,7 +436,7 @@ export default function ExploreReel() {
   );
 
   const onToggleBookmark = useCallback(
-    (post: PostSchema) => {
+    (post: ClientPostSchema) => {
       if (!requireAuth()) return;
       const { next, emit } = togglePostBookmark(post);
       dispatch(
@@ -452,7 +452,7 @@ export default function ExploreReel() {
   );
 
   const onToggleFollow = useCallback(
-    async (post: PostSchema) => {
+    async (post: ClientPostSchema) => {
       if (!requireAuth()) return;
       const follow = !post.IsFollowing;
       const previousState = post.IsFollowing;

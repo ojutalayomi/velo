@@ -1,5 +1,6 @@
 import type { MongoDBClient } from "@/lib/mongodb";
-import type { PostSchema } from "@/lib/types/type";
+import { withAuthors } from "@/lib/postAuthors";
+import type { ClientPostSchema, PostSchema } from "@/lib/types/type";
 
 /** Escape user input for safe use inside a MongoDB `$regex` pattern. */
 export function escapeRegex(s: string): string {
@@ -31,7 +32,7 @@ export async function fetchPostsByCaptionMatch(
     skip: number;
     limit: number;
   }
-): Promise<{ posts: PostSchema[]; hasMore: boolean }> {
+): Promise<{ posts: ClientPostSchema[]; hasMore: boolean }> {
   const pattern = buildCaptionRegex(opts.kind, opts.term);
   if (!pattern) {
     return { posts: [], hasMore: false };
@@ -59,7 +60,7 @@ export async function fetchPostsByCaptionMatch(
 
   const batch = await cursor.toArray();
   const hasMore = batch.length > opts.limit;
-  const posts = batch.slice(0, opts.limit) as unknown as PostSchema[];
+  const posts = await withAuthors(db, batch.slice(0, opts.limit) as unknown as PostSchema[]);
 
   return { posts, hasMore };
 }

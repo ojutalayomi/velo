@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { getPost } from "@/lib/getStatus";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
 const siteName = "Velo";
@@ -11,7 +11,7 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
-function formatEngagementMetrics(post: PostSchema): string {
+function formatEngagementMetrics(post: ClientPostSchema): string {
   const metrics: string[] = [];
 
   if (post.NoOfLikes > 0) {
@@ -30,7 +30,7 @@ function formatEngagementMetrics(post: PostSchema): string {
   return metrics.length > 0 ? ` • ${metrics.join(", ")}` : "";
 }
 
-function generatePostDescription(post: PostSchema): string {
+function generatePostDescription(post: ClientPostSchema): string {
   const maxLength = 160;
   const authorName = post.NameOfPoster || post.Username || "Someone";
   const engagementMetrics = formatEngagementMetrics(post);

@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { DEFAULT_POST_LIMIT } from "@/lib/apiPagination";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 import type { UserData } from "@/lib/types/user";
 
 export async function getUser(username: string): Promise<UserData> {
@@ -42,7 +42,7 @@ export async function getUser(username: string): Promise<UserData> {
 }
 
 export async function getProfilePostsFirstPage(username: string): Promise<{
-  posts: PostSchema[];
+  posts: ClientPostSchema[];
   pagination: PaginationMeta;
 }> {
   const empty: PaginationMeta = { skip: 0, limit: DEFAULT_POST_LIMIT, hasMore: false };
@@ -71,7 +71,7 @@ export async function getProfilePostsFirstPage(username: string): Promise<{
 
     const text = await res.text();
     let body: {
-      data?: PostSchema[];
+      data?: ClientPostSchema[];
       pagination?: PaginationMeta;
     };
 

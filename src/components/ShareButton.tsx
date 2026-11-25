@@ -6,7 +6,7 @@ import { ReactNode, useState } from "react";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { updatePost } from "@/redux/postsSlice";
@@ -38,9 +38,9 @@ export default function ShareButton({
   triggerClassName,
 }: {
   children: ReactNode;
-  post?: PostSchema;
+  post?: ClientPostSchema;
   /** Called after repost / undo repost Redux updates so hosts (e.g. Explore reel) can sync local lists. */
-  onShareCommitted?: (postId: string, updates: Partial<PostSchema>) => void;
+  onShareCommitted?: (postId: string, updates: Partial<ClientPostSchema>) => void;
   triggerClassName?: string;
 }) {
   const { userdata } = useUser();

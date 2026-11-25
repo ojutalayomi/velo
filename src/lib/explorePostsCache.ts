@@ -1,11 +1,11 @@
 import type { PaginationMeta } from "@/lib/apiPagination";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 
 /** How long explore grid + status strip reuse cached data without refetching (SPA navigation). */
 export const EXPLORE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export type ExploreCache = {
-  posts: PostSchema[];
+  posts: ClientPostSchema[];
   pagination: PaginationMeta;
   /** Start of TTL window; only reset on non-merge writes or clear */
   sessionStartedAt: number;
@@ -29,7 +29,7 @@ export function getExplorePostsCache(): ExploreCache | null {
  * @param merge When true, keeps the same `sessionStartedAt` and merges optional `statusUrls` if omitted.
  */
 export function setExplorePostsCache(
-  next: { posts: PostSchema[]; pagination: PaginationMeta; statusUrls?: string[] },
+  next: { posts: ClientPostSchema[]; pagination: PaginationMeta; statusUrls?: string[] },
   options?: { merge?: boolean }
 ): void {
   const prev = cache;

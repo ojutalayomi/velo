@@ -1,20 +1,20 @@
 import moment from "moment";
 
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 
 
 export interface Post {
-  post: PostSchema;
+  post: ClientPostSchema;
   message: string;
 }
 
 export interface Comments {
-  comments: PostSchema[];
+  comments: ClientPostSchema[];
   message: string;
 }
 
 export interface PostProps {
-  postData: PostSchema;
+  postData: ClientPostSchema;
 }
 
 export function formatNo(no: number) {

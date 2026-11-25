@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { fetchCommentsPage, getPost } from "@/lib/getStatus";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { RootState } from "@/redux/store";
 import { Comments, Post } from "@/templates/PostProps";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,7 +55,7 @@ const PostContent: React.FC = () => {
   const mainPostRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number | null>(null);
   const wheelAcc = useRef(0);
-  const [parentPost, setParentPost] = useState<PostSchema | null>(null);
+  const [parentPost, setParentPost] = useState<ClientPostSchema | null>(null);
   const [parentLoading, setParentLoading] = useState(false);
   const [parentError, setParentError] = useState<string | null>(null);
   const [pull, setPull] = useState(0);
@@ -68,7 +68,7 @@ const PostContent: React.FC = () => {
     setParentError(null);
     try {
       const res = await getPost(post.ParentId);
-      setParentPost(res.post as PostSchema);
+      setParentPost(res.post as ClientPostSchema);
     } catch (error) {
       setParentError((error as Error).message);
     } finally {
@@ -146,7 +146,7 @@ const PostContent: React.FC = () => {
 
   useEffect(() => {
     if (!postsLoading && params && params.id) {
-      const availablePost = posts.find((post) => post.PostID === params?.id) as PostSchema;
+      const availablePost = posts.find((post) => post.PostID === params?.id) as ClientPostSchema;
       if (availablePost) {
         // If the post is already available in the Redux store, set it to currentPost
         setPost(availablePost);
@@ -191,7 +191,7 @@ const PostContent: React.FC = () => {
     fetchData();
   }, [params?.id]);
 
-  const commentKey = useCallback((c: PostSchema) => String(c.PostID ?? c._id), []);
+  const commentKey = useCallback((c: ClientPostSchema) => String(c.PostID ?? c._id), []);
 
   const loadMoreComments = useCallback(async () => {
     if (!params?.id || !commentsPagination?.hasMore || commentsLoadingMore) return;
@@ -214,7 +214,7 @@ const PostContent: React.FC = () => {
   useEffect(() => {
     if (!socket || !post) return;
 
-    const onNewComment = (data: { excludeUser: string; blog: PostSchema }) => {
+    const onNewComment = (data: { excludeUser: string; blog: ClientPostSchema }) => {
       if (data.blog.ParentId !== post.PostID) return;
       setComments((prevComments) => {
         if (prevComments?.some((c) => c.PostID === data.blog.PostID)) return prevComments;
@@ -245,7 +245,7 @@ const PostContent: React.FC = () => {
     const onUpdatePost = (data: {
       excludeUserId: string;
       postId: string;
-      update: Partial<PostSchema>;
+      update: Partial<ClientPostSchema>;
       type: string;
     }) => {
       if (!data.postId) return;

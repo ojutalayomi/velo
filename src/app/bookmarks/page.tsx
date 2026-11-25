@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 
 const DEBOUNCE_MS = 320;
@@ -32,7 +32,7 @@ export default function BookmarksPage() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [items, setItems] = useState<PostSchema[]>([]);
+  const [items, setItems] = useState<ClientPostSchema[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +69,7 @@ export default function BookmarksPage() {
         return;
       }
       const body = (await res.json()) as {
-        data?: PostSchema[];
+        data?: ClientPostSchema[];
         pagination?: PaginationMeta;
       };
       const chunk = body.data ?? [];

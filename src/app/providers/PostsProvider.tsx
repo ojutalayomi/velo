@@ -13,7 +13,7 @@ import type { PaginationMeta } from "@/lib/apiPagination";
 import { loadFeed, saveFeed } from "@/lib/feedCache";
 import { fetchFollowingPostsPage, fetchPostsPage, fetchStatusPage } from "@/lib/getStatus";
 import { networkMonitor } from "@/lib/network";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 import {
   appendFollowingFeedPage,
   initFollowingFeedPage,
@@ -53,8 +53,8 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const userIdRef = useRef(userId);
   // The latest page from the server per feed, kept until a user id is known to save it under.
   const fresh = useRef<{
-    forYou?: { data: PostSchema[]; pagination: PaginationMeta };
-    following?: { data: PostSchema[]; pagination: PaginationMeta };
+    forYou?: { data: ClientPostSchema[]; pagination: PaginationMeta };
+    following?: { data: ClientPostSchema[]; pagination: PaginationMeta };
     status?: { data: string[]; pagination: PaginationMeta };
   }>({});
   const [success, setSuccess] = useState<string[] | null>(null);
@@ -91,8 +91,8 @@ const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     let cancelled = false;
     void (async () => {
       const [forYou, following, status] = await Promise.all([
-        loadFeed<PostSchema>("forYou", userId),
-        loadFeed<PostSchema>("following", userId),
+        loadFeed<ClientPostSchema>("forYou", userId),
+        loadFeed<ClientPostSchema>("following", userId),
         loadFeed<string>("status", userId),
       ]);
       if (cancelled) return;

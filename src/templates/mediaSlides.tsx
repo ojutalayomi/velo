@@ -11,7 +11,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 
 import VideoDiv from "./videoDiv";
@@ -20,7 +20,7 @@ const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "ogg", "mkv", "avi"]);
 
 type MediaSlidesProps = {
   className?: string;
-  postData: PostSchema;
+  postData: ClientPostSchema;
   isLink?: boolean;
 } & React.HTMLAttributes<HTMLDivElement>;
 

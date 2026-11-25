@@ -15,8 +15,10 @@ export async function GET(
       return NextResponse.json({ error: "Username is required" }, { status: 400 });
     }
 
-    const Users = db.posts();
-    const user = await Users.findOne({ Username: username });
+    const user = await db.users().findOne({ username }, { projection: { displayPicture: 1 } });
+    if (!user?.displayPicture) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     // const tokenCollection = client.db('mydb').collection('Tokens');
     // const cookieStore = cookies();
@@ -27,9 +29,9 @@ export async function GET(
     // }
 
     // Create a new response
-    const imageUrl = !user!.DisplayPicture.includes("https://")
-      ? "https://s3.amazonaws.com/profile-display-images/" + user!.DisplayPicture
-      : user!.DisplayPicture;
+    const imageUrl = !user.displayPicture.includes("https://")
+      ? "https://s3.amazonaws.com/profile-display-images/" + user.displayPicture
+      : user.displayPicture;
     // Fetch the image
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {

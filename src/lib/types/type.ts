@@ -357,7 +357,6 @@ export interface PostSchema_ {
     $numberInt: string;
   };
   Bookmarked: boolean;
-  Username: string;
   PostID: string;
   Code: string;
   WhoCanComment: string;
@@ -537,12 +536,14 @@ export interface Payload {
   _id: string;
   exp: number;
 }
+/**
+ * A post, comment or share as it is stored. Who wrote it is the `UserId` alone: the author's
+ * name, picture and badge change, so they are read from the account when a post is sent out
+ * (see `ClientPostSchema`).
+ */
 export interface PostSchema {
   _id: string;
   UserId: string;
-  DisplayPicture: string;
-  NameOfPoster: string;
-  Verified: boolean;
   TimeOfPost: string;
   Visibility: "everyone" | "friends" | "none";
   Caption: string;
@@ -565,6 +566,17 @@ export interface PostSchema {
   Poll?: PollData;
   Location?: PostLocation;
 }
+
+/** The author's profile as posts show it, read from their account. */
+export interface PostAuthor {
+  NameOfPoster: string;
+  Username: string;
+  DisplayPicture: string;
+  Verified: boolean;
+}
+
+/** A post as the client receives it: the stored post plus its author's current profile. */
+export type ClientPostSchema = PostSchema & PostAuthor;
 
 export interface PostLocation {
   name: string;

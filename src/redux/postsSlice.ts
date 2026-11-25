@@ -1,10 +1,10 @@
 import { Post } from "@/templates/PostProps";
 import type { PaginationMeta } from "@/lib/apiPagination";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface PostsState {
-  posts: PostSchema[];
+  posts: ClientPostSchema[];
   loading: boolean;
   error: string | null;
   postPreview: Post;
@@ -23,7 +23,7 @@ const initialState: PostsState = {
   feedLoadingMore: false,
 };
 
-function postKey(p: PostSchema) {
+function postKey(p: ClientPostSchema) {
   return String(p.PostID ?? p._id);
 }
 
@@ -31,12 +31,12 @@ const postsSlice = createSlice({
   name: "posts",
   initialState,
   reducers: {
-    setPosts: (state, action: PayloadAction<PostSchema[]>) => {
+    setPosts: (state, action: PayloadAction<ClientPostSchema[]>) => {
       state.posts = action.payload;
     },
     initFeedPage: (
       state,
-      action: PayloadAction<{ posts: PostSchema[]; pagination: PaginationMeta }>
+      action: PayloadAction<{ posts: ClientPostSchema[]; pagination: PaginationMeta }>
     ) => {
       state.posts = action.payload.posts;
       const p = action.payload.pagination;
@@ -46,7 +46,7 @@ const postsSlice = createSlice({
     },
     appendFeedPage: (
       state,
-      action: PayloadAction<{ posts: PostSchema[]; pagination: PaginationMeta }>
+      action: PayloadAction<{ posts: ClientPostSchema[]; pagination: PaginationMeta }>
     ) => {
       const seen = new Set(state.posts.map(postKey));
       for (const post of action.payload.posts) {
@@ -64,12 +64,12 @@ const postsSlice = createSlice({
     setFeedLoadingMore: (state, action: PayloadAction<boolean>) => {
       state.feedLoadingMore = action.payload;
     },
-    addPost: (state, action: PayloadAction<PostSchema>) => {
+    addPost: (state, action: PayloadAction<ClientPostSchema>) => {
       if (!state.posts.some((post) => post._id === action.payload._id)) {
         state.posts.unshift(action.payload);
       }
     },
-    updatePost: (state, action: PayloadAction<{ id: string; updates: Partial<PostSchema> }>) => {
+    updatePost: (state, action: PayloadAction<{ id: string; updates: Partial<ClientPostSchema> }>) => {
       const index = state.posts.findIndex((post) => post.PostID === action.payload.id);
       if (index !== -1) {
         state.posts[index] = { ...state.posts[index], ...action.payload.updates };
@@ -77,11 +77,11 @@ const postsSlice = createSlice({
     },
     updatePosts: (
       state,
-      action: PayloadAction<{ key: keyof PostSchema; value: string; updates: Partial<PostSchema> }>
+      action: PayloadAction<{ key: keyof ClientPostSchema; value: string; updates: Partial<ClientPostSchema> }>
     ) => {
       const { key, value, updates } = action.payload;
       state.posts = state.posts.map((post) => {
-        if (post[key as keyof PostSchema] === value) {
+        if (post[key as keyof ClientPostSchema] === value) {
           return { ...post, ...updates };
         }
         return post;

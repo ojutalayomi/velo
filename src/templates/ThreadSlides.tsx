@@ -13,7 +13,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 
 const IMAGE_EXTENSIONS = /\.(png|jpe?g|gif|webp|bmp|svg|tiff?|avif)([-_]\w+)?$/i;
@@ -22,7 +22,7 @@ const IMAGE_HOSTS =
 const HOSTNAME = "https://s3.amazonaws.com/post-s/";
 
 type ThreadsSlideProps = HTMLAttributes<HTMLDivElement> & {
-  postData: PostSchema;
+  postData: ClientPostSchema;
   isLink?: boolean;
   /** Fill the parent box (e.g. grid tiles) instead of using the media's own aspect ratio. */
   fill?: boolean;
@@ -200,7 +200,7 @@ function MediaFrame({
 }: {
   media: string;
   index: number;
-  postData: PostSchema;
+  postData: ClientPostSchema;
   isLink: boolean;
   hasDots: boolean;
   fill: boolean;

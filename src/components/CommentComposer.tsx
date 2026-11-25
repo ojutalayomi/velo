@@ -7,7 +7,7 @@ import { useCallback } from "react";
 
 import { useUser } from "@/app/providers/UserProvider";
 import { useCommentComposer, UseCommentComposerOptions } from "@/hooks/useCommentComposer";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 
 import { Button } from "./ui/button";
@@ -15,7 +15,7 @@ import { EmojiPicker } from "./ui/emoji-picker";
 
 export interface CommentComposerProps extends UseCommentComposerOptions {
   /** The post being replied to. */
-  parent: PostSchema | null | undefined;
+  parent: ClientPostSchema | null | undefined;
   /**
    * "card": textarea with a Reply button underneath (sidebars, detail panes).
    * "bar": avatar + pill input with emoji/send icons (pinned footers, drawers).

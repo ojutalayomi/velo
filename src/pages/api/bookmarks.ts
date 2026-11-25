@@ -4,6 +4,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyToken } from "@/lib/auth";
 import { pagingMeta } from "@/lib/apiPagination";
 import { addInteractionFlags } from "@/lib/apiUtils";
+import { withAuthors } from "@/lib/postAuthors";
 import { ensurePostBookmarkIndexes } from "@/lib/bookmarkIndexes";
 import { sanitizeMongoTextSearch } from "@/lib/bookmarkSearch";
 import { MongoDBClient } from "@/lib/mongodb";
@@ -114,7 +115,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     const hasMore = rows.length > limit;
     const pageRows = rows.slice(0, limit);
-    const pagePosts = pageRows.map((r) => r.post as PostSchema);
+    const pagePosts = await withAuthors(db, pageRows.map((r) => r.post as PostSchema));
 
     const nextCursor =
       hasMore && pageRows.length > 0 ? String(pageRows[pageRows.length - 1]._id) : null;

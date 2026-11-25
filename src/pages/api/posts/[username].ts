@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { addInteractionFlags } from "@/lib/apiUtils";
+import { withAuthors } from "@/lib/postAuthors";
 import { pagingMeta, DEFAULT_POST_LIMIT, MAX_API_LIMIT, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
@@ -41,13 +42,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const userIdStr = user._id.toString();
-    const usernameStr = user.username as string;
     const fetchLimit = pageLimit + 1;
 
     const pipeline = [
       {
         $match: {
-          $or: [{ UserId: userIdStr }, { Username: usernameStr }],
+          UserId: userIdStr,
         },
       },
       {
@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const batch = await db.posts().aggregate(pipeline).toArray();
     const hasMore = batch.length > pageLimit;
-    const combinedPosts = batch.slice(0, pageLimit) as unknown as PostSchema[];
+    const combinedPosts = await withAuthors(db, batch.slice(0, pageLimit) as unknown as PostSchema[]);
 
     await addInteractionFlags(db, combinedPosts, payload?._id as string);
 

@@ -1,7 +1,7 @@
 import { Comments, Post } from "../templates/PostProps";
 import type { PaginationMeta } from "./apiPagination";
 import { DEFAULT_COMMENT_LIMIT, DEFAULT_POST_LIMIT, DEFAULT_STATUS_LIMIT } from "./apiPagination";
-import { PostSchema } from "./types/type";
+import { ClientPostSchema } from "./types/type";
 
 const url1: string = "/api/status";
 const url2: string = "/api/posts";
@@ -40,13 +40,13 @@ export async function fetchStatusPage(
 export async function fetchPostsPage(
   skip = 0,
   limit = DEFAULT_POST_LIMIT
-): Promise<{ data: PostSchema[]; pagination: PaginationMeta }> {
+): Promise<{ data: ClientPostSchema[]; pagination: PaginationMeta }> {
   const response = await fetch(`${url2}?limit=${limit}&skip=${skip}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
   const body = (await parseJsonResponse(response)) as {
-    data?: PostSchema[];
+    data?: ClientPostSchema[];
     pagination?: PaginationMeta;
   };
   const data = Array.isArray(body?.data) ? body.data : [];
@@ -57,13 +57,13 @@ export async function fetchPostsPage(
 export async function fetchFollowingPostsPage(
   skip = 0,
   limit = DEFAULT_POST_LIMIT
-): Promise<{ data: PostSchema[]; pagination: PaginationMeta }> {
+): Promise<{ data: ClientPostSchema[]; pagination: PaginationMeta }> {
   const response = await fetch(`/api/posts/following?limit=${limit}&skip=${skip}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
   const body = (await parseJsonResponse(response)) as {
-    data?: PostSchema[];
+    data?: ClientPostSchema[];
     pagination?: PaginationMeta;
   };
   const data = Array.isArray(body?.data) ? body.data : [];
@@ -77,13 +77,13 @@ export async function fetchExplorePosts(
   skip = 0,
   limit = DEFAULT_POST_LIMIT,
   filter: ExploreFilterId = "all"
-): Promise<{ data: PostSchema[]; pagination: PaginationMeta }> {
+): Promise<{ data: ClientPostSchema[]; pagination: PaginationMeta }> {
   const response = await fetch(`/api/explore?limit=${limit}&skip=${skip}&filter=${filter}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
   const body = (await parseJsonResponse(response)) as {
-    data?: PostSchema[];
+    data?: ClientPostSchema[];
     pagination?: PaginationMeta;
   };
   const data = Array.isArray(body?.data) ? body.data : [];
@@ -133,9 +133,9 @@ export async function fetchCommentsPage(
     headers: { "Content-Type": "application/json" },
   });
   const body = (await parseJsonResponse(response)) as {
-    data?: { comments?: PostSchema[]; message?: string; messge?: string };
+    data?: { comments?: ClientPostSchema[]; message?: string; messge?: string };
     pagination?: PaginationMeta;
-    comments?: PostSchema[];
+    comments?: ClientPostSchema[];
   };
   const inner = body.data ?? {};
   const comments = inner.comments ?? body.comments ?? [];

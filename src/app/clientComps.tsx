@@ -37,7 +37,7 @@ import {
   msgStatus,
   NewChat_,
   Reaction,
-  PostSchema,
+  ClientPostSchema,
 } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { Time } from "@/lib/utils";
@@ -447,7 +447,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
         });
       }
     );
-    socket.on("newPost", (data: { excludeUser: string; blog: PostSchema }) => {
+    socket.on("newPost", (data: { excludeUser: string; blog: ClientPostSchema }) => {
       dispatch(addPost(data.blog));
       if (data.excludeUser !== userdata._id) {
         setDisplayAnnouncement({

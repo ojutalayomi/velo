@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { addPost, updatePost } from "@/redux/postsSlice";
@@ -47,7 +47,7 @@ const PostPreview: React.FC = () => {
   const dispatch = useAppDispatch();
   const socket = useSocket();
   const { posts, loading } = useSelector((state: RootState) => state.posts);
-  const post = posts.find((post) => post.PostID === id) as PostSchema;
+  const post = posts.find((post) => post.PostID === id) as ClientPostSchema;
   const [toFetch, setToFetch] = useState<boolean>(true);
   const indexInt = parseInt(index || "0");
   const router = useRouter();
@@ -56,7 +56,7 @@ const PostPreview: React.FC = () => {
   const [reload, setReload] = useState<boolean>(false);
   const [postLoading, setPostLoading] = useState<boolean>(true);
   const [postError, setPostError] = useState<string | null>(null);
-  const [currentPost, setCurrentPost] = useState<PostSchema | null>(null);
+  const [currentPost, setCurrentPost] = useState<ClientPostSchema | null>(null);
   // Single source of truth for the reply text, shared by the mobile and sidebar inputs.
   const [replyText, setReplyText] = useState("");
   const [replyPostId, setReplyPostId] = useState(id);
@@ -214,7 +214,7 @@ const PostPreview: React.FC = () => {
     const onUpdatePost = (data: {
       excludeUserId: string;
       postId: string;
-      update: Partial<PostSchema>;
+      update: Partial<ClientPostSchema>;
       type: string;
     }) => {
       if (!data.postId) return;
@@ -332,7 +332,7 @@ const RightSideBar = ({
   ...props
 }: {
   className?: string;
-  currentPost: PostSchema | null;
+  currentPost: ClientPostSchema | null;
   id: string;
   replyText: string;
   onReplyTextChange: (value: string) => void;
@@ -372,7 +372,7 @@ const RightSideBar = ({
     }
   }, [id]);
 
-  const commentKeyInner = useCallback((c: PostSchema) => String(c.PostID ?? c._id), []);
+  const commentKeyInner = useCallback((c: ClientPostSchema) => String(c.PostID ?? c._id), []);
 
   const loadMoreCommentsSidebar = useCallback(async () => {
     if (!id || !commentsPagination?.hasMore || commentsLoadingMore) return;
@@ -401,7 +401,7 @@ const RightSideBar = ({
   useEffect(() => {
     if (!socket || !hasCurrentPost) return;
 
-    const onNewComment = (data: { excludeUser: string; blog: PostSchema }) => {
+    const onNewComment = (data: { excludeUser: string; blog: ClientPostSchema }) => {
       if (data.blog.ParentId !== id) return;
       setComments((prev) => {
         if (prev?.some((c) => c.PostID === data.blog.PostID)) return prev;
@@ -417,7 +417,7 @@ const RightSideBar = ({
     const onUpdatePost = (data: {
       excludeUserId: string;
       postId: string;
-      update: Partial<PostSchema>;
+      update: Partial<ClientPostSchema>;
       type: string;
     }) => {
       if (!data.postId) return;

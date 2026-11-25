@@ -1,4 +1,4 @@
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 
 /** Payload for `socket.emit("reactToPost", …)` — matches `PostCard` / socket server contract. */
 export type ReactToPostEmit = {
@@ -8,7 +8,7 @@ export type ReactToPostEmit = {
   postId: string;
 };
 
-export function togglePostLike(post: PostSchema): { next: PostSchema; emit: ReactToPostEmit } {
+export function togglePostLike(post: ClientPostSchema): { next: ClientPostSchema; emit: ReactToPostEmit } {
   if (post.Liked) {
     return {
       next: { ...post, NoOfLikes: Math.max(0, post.NoOfLikes - 1), Liked: false },
@@ -21,7 +21,7 @@ export function togglePostLike(post: PostSchema): { next: PostSchema; emit: Reac
   };
 }
 
-export function togglePostBookmark(post: PostSchema): { next: PostSchema; emit: ReactToPostEmit } {
+export function togglePostBookmark(post: ClientPostSchema): { next: ClientPostSchema; emit: ReactToPostEmit } {
   if (post.Bookmarked) {
     return {
       next: { ...post, NoOfBookmarks: Math.max(0, post.NoOfBookmarks - 1), Bookmarked: false },
@@ -34,18 +34,18 @@ export function togglePostBookmark(post: PostSchema): { next: PostSchema; emit: 
   };
 }
 
-export function postPermalinkPath(post: Pick<PostSchema, "Username" | "PostID">): string {
+export function postPermalinkPath(post: Pick<ClientPostSchema, "Username" | "PostID">): string {
   return `/${encodeURIComponent(post.Username)}/posts/${encodeURIComponent(post.PostID)}`;
 }
 
-export function postPublicUrl(post: Pick<PostSchema, "Username" | "PostID">): string {
+export function postPublicUrl(post: Pick<ClientPostSchema, "Username" | "PostID">): string {
   if (typeof window === "undefined") return "";
   return `${window.location.origin}${postPermalinkPath(post)}`;
 }
 
 /** Native share sheet, or copy link — for guests / when Share menu is unavailable. */
 export async function sharePostLink(
-  post: Pick<PostSchema, "Username" | "PostID" | "Caption">
+  post: Pick<ClientPostSchema, "Username" | "PostID" | "Caption">
 ): Promise<void> {
   const url = postPublicUrl(post);
   if (!url) return;

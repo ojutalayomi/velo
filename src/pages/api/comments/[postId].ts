@@ -1,4 +1,5 @@
 import { addInteractionFlags } from "@/lib/apiUtils";
+import { withAuthors } from "@/lib/postAuthors";
 import { pagingMeta, DEFAULT_COMMENT_LIMIT, MAX_API_LIMIT, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
@@ -42,14 +43,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       .toArray();
 
     const hasMore = docs.length > pageLimit;
-    const comments = docs.slice(0, pageLimit);
-
-    await Promise.all(
-      comments.map(async (comment) => {
-        const usr = await collection.findOne({ username: comment.Username });
-        comment.DisplayPicture = usr?.displayPicture || "";
-      })
-    );
+    const comments = await withAuthors(db, docs.slice(0, pageLimit));
 
     const user =
       payload?._id != null ? await collection.findOne({ _id: new ObjectId(payload._id) }) : null;

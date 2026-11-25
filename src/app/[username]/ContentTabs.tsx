@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PostSchema } from "@/lib/types/type";
+import { ClientPostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { RootState } from "@/redux/store";
 import ThreadsSlide from "@/templates/ThreadSlides";
@@ -38,7 +38,7 @@ export default function ContentSection({
   postsLoadingMore,
 }: {
   profileData: UserData;
-  posts: PostSchema[];
+  posts: ClientPostSchema[];
   postsHasMore?: boolean;
   onLoadMorePosts?: () => void | Promise<void>;
   postsLoadingMore?: boolean;

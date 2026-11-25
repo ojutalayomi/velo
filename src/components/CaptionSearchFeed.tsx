@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import { DEFAULT_POST_LIMIT } from "@/lib/apiPagination";
 import type { PaginationMeta } from "@/lib/apiPagination";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 
 export type CaptionSearchFeedProps =
@@ -40,7 +40,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
   const router = useRouter();
   const navigate = useNavigateWithHistory();
 
-  const [items, setItems] = useState<PostSchema[]>([]);
+  const [items, setItems] = useState<ClientPostSchema[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -65,7 +65,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
     props.variant === "hashtag" ? `#${props.tag.trim()}` : props.queryFromUrl.trim() || "Search";
 
   const parseAndApply = useCallback(
-    (body: { data?: PostSchema[]; pagination?: PaginationMeta }, append: boolean) => {
+    (body: { data?: ClientPostSchema[]; pagination?: PaginationMeta }, append: boolean) => {
       const chunk = body.data ?? [];
       const page = body.pagination ?? null;
       setPagination(page);
@@ -120,7 +120,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
           return;
         }
         const body = (await res.json()) as {
-          data?: PostSchema[];
+          data?: ClientPostSchema[];
           pagination?: PaginationMeta;
         };
         
@@ -164,7 +164,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
         return;
       }
       const body = (await res.json()) as {
-        data?: PostSchema[];
+        data?: ClientPostSchema[];
         pagination?: PaginationMeta;
       };
       parseAndApply(body, true);

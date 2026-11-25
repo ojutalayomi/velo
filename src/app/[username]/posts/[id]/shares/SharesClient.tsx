@@ -15,13 +15,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { submitFollowUpdate } from "@/lib/followApi";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 import type { UserData } from "@/lib/types/user";
 
 type ShareTab = "reposts" | "quotes";
 
 type SharesResponse = {
-  data?: Array<PostSchema | UserData>;
+  data?: Array<ClientPostSchema | UserData>;
   pagination?: PaginationMeta;
   message?: string;
 };
@@ -35,7 +35,7 @@ function initials(user: UserData) {
   return `${first}${last}`.toUpperCase();
 }
 
-function isPost(item: PostSchema | UserData): item is PostSchema {
+function isPost(item: ClientPostSchema | UserData): item is ClientPostSchema {
   return "PostID" in item;
 }
 
@@ -52,7 +52,7 @@ export default function SharesClient({
   const { userdata } = useUser();
   const viewerId = userdata?._id ? String(userdata._id) : "";
   const [activeTab, setActiveTab] = useState<ShareTab>(initialTab);
-  const [items, setItems] = useState<Array<PostSchema | UserData>>([]);
+  const [items, setItems] = useState<Array<ClientPostSchema | UserData>>([]);
   const [pagination, setPagination] = useState<PaginationMeta>(emptyPagination);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -307,7 +307,7 @@ export default function SharesClient({
               </div>
             ) : (
               items
-                .filter((item): item is PostSchema => isPost(item))
+                .filter((item): item is ClientPostSchema => isPost(item))
                 .map((post) => <PostCard key={post.PostID || post._id} postData={post} />)
             )}
             {pagination.hasMore ? (

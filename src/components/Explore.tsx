@@ -15,7 +15,7 @@ import {
 import { submitFollowUpdate } from "@/lib/followApi";
 import { fetchExplorePeople, fetchExplorePosts, type ExplorePerson } from "@/lib/getStatus";
 import { isImageUrl } from "@/lib/mediaType";
-import type { PostSchema } from "@/lib/types/type";
+import type { ClientPostSchema } from "@/lib/types/type";
 import { getServerTrendsState, getTrendsState, refreshTrends, subscribeTrends } from "@/lib/trendsClient";
 
 import { ExploreSearchPanel } from "@/components/ExploreSearchPanel";
@@ -56,7 +56,7 @@ function SectionTitle({ icon, children }: { icon: React.ReactNode; children: Rea
   );
 }
 
-function Stats({ post }: { post: PostSchema }) {
+function Stats({ post }: { post: ClientPostSchema }) {
   return (
     <span className="flex items-center gap-3 text-xs font-semibold text-white">
       <span className="flex items-center gap-1">
@@ -126,7 +126,7 @@ function PersonCard({
 }
 
 // ─── hot rail card (tall, with author) ────────────────────────────────────────
-function HotCard({ post, onClick }: { post: PostSchema; onClick: (id: string) => void }) {
+function HotCard({ post, onClick }: { post: ClientPostSchema; onClick: (id: string) => void }) {
   const first = post.Image[0];
   return (
     <button
@@ -159,7 +159,7 @@ function ExploreCell({
   featured,
   onClick,
 }: {
-  post: PostSchema;
+  post: ClientPostSchema;
   featured: boolean;
   onClick: (postId: string) => void;
 }) {
@@ -191,7 +191,7 @@ function ExploreCell({
 // ─── main component ───────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
 const HOT_CACHE_TTL_MS = 5 * 60 * 1000;
-let hotCache: { posts: PostSchema[]; at: number } | null = null;
+let hotCache: { posts: ClientPostSchema[]; at: number } | null = null;
 let peopleCache: { people: ExplorePerson[]; at: number } | null = null;
 
 const Explore = () => {
@@ -201,14 +201,14 @@ const Explore = () => {
   const router = useRouter();
 
   const [filter, setFilter] = useState<Filter>("all");
-  const [posts, setPosts] = useState<PostSchema[]>([]);
+  const [posts, setPosts] = useState<ClientPostSchema[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [nextSkip, setNextSkip] = useState(PAGE_SIZE);
 
-  const [hotPosts, setHotPosts] = useState<PostSchema[]>(() => hotCache?.posts ?? []);
+  const [hotPosts, setHotPosts] = useState<ClientPostSchema[]>(() => hotCache?.posts ?? []);
   const [people, setPeople] = useState<ExplorePerson[]>(() => peopleCache?.people ?? []);
   const [followingBusy, setFollowingBusy] = useState("");
 
@@ -222,7 +222,7 @@ const Explore = () => {
   const feedGenRef = useRef(0);
 
   const applyPage = useCallback(
-    (data: PostSchema[], pagination: PaginationMeta, activeFilter: Filter) => {
+    (data: ClientPostSchema[], pagination: PaginationMeta, activeFilter: Filter) => {
       setPosts(data);
       setNextSkip(pagination.skip + pagination.limit);
       setHasMore(pagination.hasMore);

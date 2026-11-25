@@ -390,6 +390,32 @@ Tips for testing:
 - The attachment type filter rejects some files (for example `.txt`) before the
   offline check runs; use an image.
 
+## Fields added with status replies, pins and view once
+
+A new message field has to be added in six places or it silently disappears: both `Message`
+types, both `ChatMessage` classes (constructor and `toMessageAttributes`), and the socket
+handler (`chatSocketHandler.ts`). The stored copy keeps unknown fields, so persistence needs
+no change.
+
+| Field | Lives on | How it reaches every cache layer |
+| --- | --- | --- |
+| `statusReply` | message | Built by the server from the status itself (never trusted from the client). Travels like any message field, so IndexedDB and the `since` sync carry it. |
+| `pinnedMessages` | chat (`ConvoType`) | The chat payload is always sent in full, so no `since` bump is needed. Live changes arrive as `pinnedMessagesUpdated` (queued offline like other chat events) and replace the whole list. Deleting a message removes it from the pins on the server. |
+| `viewOnce`, `viewOnceOpenedBy`, `viewOnceGone` | message | Flags only. Opens bump the message's `updatedAt`, so a device that was offline gets the new state from the next `since` sync. |
+
+### View once is never cached
+
+A view once message has `attachments: []` in every payload, in `GET /api/chats`, in the Redis
+offline queue and in pushes. Its file link exists only in the answer to the `openViewOnce`
+socket event, one time per person. So there is nothing for IndexedDB, the Cache API or the
+service worker to save, and none of them may be given the link either: the viewer uses a
+plain `<img>`, `<video>` or `<audio>` element and does not call `mediaCache`.
+
+The server stores who opened it (`viewOnceOpens`, a map of user id to time) and
+`viewOnceDeleteAfter`. The file is deleted by `sweepViewOnce` (every minute) after the last
+recipient opened it plus a grace period longer than any link, or 24 hours after sending.
+`GET /api/chats` strips both server-only fields and sends `viewOnceOpenedBy` as a list of ids.
+
 ## Known limits
 
 - Notifications, Trending and suggested people show the last saved copy; load more, likes, follows and comments need a connection. Profiles other than your own work offline only after being opened once.

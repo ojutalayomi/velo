@@ -322,6 +322,12 @@ export interface Message {
   forwarded?: boolean;
   /** Set on a reply to someone's status; built by the server from the status itself. */
   statusReply?: StatusReplyPreview;
+  /** A photo, video or voice note that each recipient can open once. Its file is never in the message. */
+  viewOnce?: boolean;
+  /** Ids of the people who have opened it. */
+  viewOnceOpenedBy?: string[];
+  /** The file has been deleted (everyone opened it, or 24 hours passed). */
+  viewOnceGone?: boolean;
 }
 
 export interface MessageAttributes extends Message {

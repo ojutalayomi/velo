@@ -37,6 +37,9 @@ export class ChatMessage implements MessageAttributes {
   public mentions: Mention[];
   public forwarded?: boolean;
   public statusReply?: StatusReplyPreview;
+  public viewOnce?: boolean;
+  public viewOnceOpenedBy?: string[];
+  public viewOnceGone?: boolean;
 
   // constructor to force use of factory methods
   constructor(data: MessageAttributes) {
@@ -57,6 +60,11 @@ export class ChatMessage implements MessageAttributes {
     this.mentions = data.mentions ?? [];
     if (data.forwarded) this.forwarded = true;
     if (data.statusReply) this.statusReply = data.statusReply;
+    if (data.viewOnce) {
+      this.viewOnce = true;
+      this.viewOnceOpenedBy = data.viewOnceOpenedBy ?? [];
+      if (data.viewOnceGone) this.viewOnceGone = true;
+    }
   }
 
   public toMessageAttributes(): MessageAttributes {
@@ -77,6 +85,13 @@ export class ChatMessage implements MessageAttributes {
       mentions: this.mentions,
       ...(this.forwarded ? { forwarded: true } : {}),
       ...(this.statusReply ? { statusReply: this.statusReply } : {}),
+      ...(this.viewOnce
+        ? {
+            viewOnce: true,
+            viewOnceOpenedBy: this.viewOnceOpenedBy ?? [],
+            ...(this.viewOnceGone ? { viewOnceGone: true } : {}),
+          }
+        : {}),
     };
   }
 

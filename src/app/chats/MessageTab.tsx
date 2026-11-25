@@ -72,6 +72,7 @@ import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 import { useSwipeToReply } from "@/hooks/useSwipeToReply";
 import { canForward, canQuote } from "@/lib/messageActions";
 
+import { ViewOnceBubble } from "@/components/chat/ViewOnce";
 import { MediaCollage } from "./FilesView";
 import { ReactionsInfo } from "./ReactionsInfo";
 
@@ -428,7 +429,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
           >
             {/* The bubble that normally carries the sender's name is hidden for attachment-only
                 messages, so the name goes above the attachment instead. */}
-            {message.attachments.length > 0 &&
+            {(message.attachments.length > 0 || message.viewOnce) &&
               message.content.length === 0 &&
               senderId !== userdata._id &&
               message.chatType === "Group" &&
@@ -438,7 +439,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                   {verified && <Statuser className="size-3.5" />}
                 </div>
               )}
-            {message.attachments.length ? (
+            {message.viewOnce ? (
+              <ViewOnceBubble
+                message={message}
+                userId={userdata._id}
+                senderId={senderId}
+                time={time}
+                statusIcon={senderId === userdata._id ? renderStatusIcon(message.status) : undefined}
+              />
+            ) : message.attachments.length ? (
               <MediaCollage
                 voiceNote={message.messageType === "VoiceNote"}
                 media={message.attachments as (Attachment & { uploadedAt: string })[]}

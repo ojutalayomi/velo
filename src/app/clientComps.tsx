@@ -383,6 +383,17 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
         );
       }
     );
+    socket.on(
+      "viewOnceUpdated",
+      (data: { messageId: string; viewOnceOpenedBy: string[]; viewOnceGone: boolean }) => {
+        dispatch(
+          updateMessage({
+            id: data.messageId,
+            updates: { viewOnceOpenedBy: data.viewOnceOpenedBy, viewOnceGone: data.viewOnceGone },
+          })
+        );
+      }
+    );
     socket.on("messagesRead", (data: { readerId: string; messageIds: string[] }) => {
       dispatch(markMessagesRead({ messageIds: data.messageIds, readerId: data.readerId }));
       // The list shows a read tick on the latest message, so mark it when it was read.
@@ -602,6 +613,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("chatParticipantsUpdated");
       socket.off("chatDetailsUpdated");
       socket.off("pinnedMessagesUpdated");
+      socket.off("viewOnceUpdated");
       socket.off("chatRemoved");
       socket.off("messageDeleted");
       socket.off("messagesRead");

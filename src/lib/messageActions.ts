@@ -20,6 +20,7 @@ type Candidate = {
   content?: string;
   status?: string;
   attachments?: unknown[];
+  viewOnce?: boolean;
 };
 
 const isDeleted = (message: Candidate) => (message.content ?? "").endsWith(DELETED_MARKER);
@@ -33,6 +34,7 @@ export function forwardBlockReason(message: Candidate): string | null {
         ? "Announcements can't be forwarded"
         : "Polls can't be forwarded";
   }
+  if (message.viewOnce) return "View once messages can't be forwarded";
   if (isDeleted(message)) return "Deleted messages can't be forwarded";
   // Not on the server yet, so there is nothing for it to forward.
   if (message.status === "sending" || message.status === "failed") return "Wait until the message is sent";
@@ -43,5 +45,5 @@ export const canForward = (message: Candidate) => forwardBlockReason(message) ==
 
 /** Announcements and deleted messages have nothing worth quoting. */
 export function canQuote(message: Candidate): boolean {
-  return message.messageType !== "Announcement" && !isDeleted(message);
+  return message.messageType !== "Announcement" && !isDeleted(message) && !message.viewOnce;
 }

@@ -162,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
             alt="logo"
           />
         </div>
-        <div ref={navRef} className="min-h-0 flex-1 overflow-hidden whitespace-nowrap">
+        <div ref={navRef} className={`min-h-0 flex-1 overflow-hidden ${isCollapsed ? 'space-y-2' : 'space-y-4'} whitespace-nowrap`}>
           {visibleItems.map((item) => (
             <SidebarItem
               key={item.route}

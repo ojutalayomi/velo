@@ -8,6 +8,7 @@ import {
   Reaction,
 } from "../types/type";
 import { deriveMessageType } from "../messageType";
+import type { StatusReplyPreview } from "../types/status";
 
 /**
  * Represents a simplified chat message object in the application's database.
@@ -35,6 +36,7 @@ export class ChatMessage implements MessageAttributes {
   public status: msgStatus;
   public mentions: Mention[];
   public forwarded?: boolean;
+  public statusReply?: StatusReplyPreview;
 
   // constructor to force use of factory methods
   constructor(data: MessageAttributes) {
@@ -54,6 +56,7 @@ export class ChatMessage implements MessageAttributes {
     this.chatType = data.chatType;
     this.mentions = data.mentions ?? [];
     if (data.forwarded) this.forwarded = true;
+    if (data.statusReply) this.statusReply = data.statusReply;
   }
 
   public toMessageAttributes(): MessageAttributes {
@@ -73,6 +76,7 @@ export class ChatMessage implements MessageAttributes {
       chatType: this.chatType,
       mentions: this.mentions,
       ...(this.forwarded ? { forwarded: true } : {}),
+      ...(this.statusReply ? { statusReply: this.statusReply } : {}),
     };
   }
 

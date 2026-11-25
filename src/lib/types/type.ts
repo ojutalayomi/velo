@@ -1,4 +1,5 @@
 import type { PollData } from "@/lib/polls";
+import type { StatusReplyPreview } from "@/lib/types/status";
 import { ObjectId } from "mongodb";
 
 export interface User {
@@ -316,6 +317,8 @@ export interface Message {
   mentions?: Mention[];
   /** Set by the server on copies created by forwarding. */
   forwarded?: boolean;
+  /** Set on a reply to someone's status; built by the server from the status itself. */
+  statusReply?: StatusReplyPreview;
 }
 
 export interface MessageAttributes extends Message {

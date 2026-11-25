@@ -96,6 +96,9 @@ export interface StatusBatchInput {
 
 export const MAX_STATUS_AUDIO_SECONDS = 5 * 60;
 
+/** The longest reply to a status. */
+export const MAX_STATUS_REPLY_LENGTH = 1000;
+
 // Files for a status live in our own buckets: the status bucket, and the chat one (forwarding).
 const STATUS_FILE_HOST = /^(post-s|files-for-chat)\.s3([.-][a-z0-9-]+)*\.amazonaws\.com$/;
 

@@ -2,13 +2,16 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { StatusViewer } from "@/components/status/StatusViewer";
-import { fetchStatusViewers, markStatusViewed, setStatusLiked } from "@/lib/statusApi";
+import { fetchStatusViewers, markStatusViewed, replyToStatus, setStatusLiked } from "@/lib/statusApi";
+import { toast } from "sonner";
 import type { StatusClient, StatusGroup } from "@/lib/types/status";
 
 const mockDispatch = jest.fn();
+const mockPush = jest.fn();
 let mockUserId = "me";
 
 jest.mock("sonner", () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
+jest.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock("@/redux/hooks", () => ({ useAppDispatch: () => mockDispatch }));
 jest.mock("@/app/providers/UserProvider", () => ({
   useUser: () => ({ userdata: { _id: mockUserId } }),
@@ -18,6 +21,7 @@ jest.mock("@/lib/statusApi", () => ({
   deleteStatus: jest.fn(),
   markStatusViewed: jest.fn().mockResolvedValue(undefined),
   setStatusLiked: jest.fn(),
+  replyToStatus: jest.fn(),
   fetchStatusViewers: jest.fn(),
 }));
 
@@ -221,6 +225,73 @@ describe("StatusViewer: moving and pausing", () => {
       act(() => {
         sheet.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
       });
+      act(() => {
+        jest.advanceTimersByTime(7000);
+      });
+      expect(screen.getByText("Second")).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
+describe("StatusViewer: replying", () => {
+  beforeEach(() => {
+    (replyToStatus as jest.Mock).mockResolvedValue({ chatId: "chat-1", messageId: "m1" });
+  });
+
+  it("has a reply box on someone else's status", () => {
+    setup([group(status())]);
+    expect(screen.getByLabelText("Reply to Ada Lovelace")).toBeInTheDocument();
+  });
+
+  it("has no reply box on your own status", () => {
+    mockUserId = "owner";
+    setup([group(status())]);
+    expect(screen.queryByLabelText("Reply to Ada Lovelace")).toBeNull();
+  });
+
+  it("sends the reply, clears the box and offers to open the chat", async () => {
+    setup([group(status())]);
+    const box = screen.getByLabelText("Reply to Ada Lovelace");
+    await userEvent.type(box, "  Love this  ");
+    await userEvent.click(screen.getByRole("button", { name: "Send reply" }));
+    expect(replyToStatus).toHaveBeenCalledWith("s1", "Love this");
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(box).toHaveValue("");
+    const options = (toast.success as jest.Mock).mock.calls[0][1];
+    options.action.onClick();
+    expect(mockPush).toHaveBeenCalledWith("/chats/chat-1");
+  });
+
+  it("sends on Enter, and shows the server's reason when it fails", async () => {
+    (replyToStatus as jest.Mock).mockRejectedValue(new Error("You can't reply to this status"));
+    setup([group(status())]);
+    await userEvent.type(screen.getByLabelText("Reply to Ada Lovelace"), "hello{Enter}");
+    expect(replyToStatus).toHaveBeenCalledWith("s1", "hello");
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("You can't reply to this status"));
+  });
+
+  it("sends a quick emoji while the box is focused", async () => {
+    setup([group(status())]);
+    expect(screen.queryByRole("group", { name: "Quick reactions" })).toBeNull();
+    await userEvent.click(screen.getByLabelText("Reply to Ada Lovelace"));
+    await userEvent.click(screen.getByRole("button", { name: "🔥" }));
+    expect(replyToStatus).toHaveBeenCalledWith("s1", "🔥");
+  });
+
+  it("keeps the status still while you type, and arrow keys move the cursor, not the status", async () => {
+    jest.useFakeTimers();
+    try {
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      setup([group(status({ _id: "a", text: "First" }), status({ _id: "b", text: "Second" }))]);
+      await user.click(screen.getByLabelText("Reply to Ada Lovelace"));
+      await user.keyboard("{ArrowRight}");
+      act(() => {
+        jest.advanceTimersByTime(20000);
+      });
+      expect(screen.getByText("First")).toBeInTheDocument();
+      await user.tab(); // leaves the box: playing again
       act(() => {
         jest.advanceTimersByTime(7000);
       });

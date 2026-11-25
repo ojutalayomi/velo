@@ -1,9 +1,21 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { ChevronLeft, ChevronRight, Eye, Heart, Mic, Trash2, Volume2, VolumeX, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Heart,
+  Mic,
+  Send,
+  Trash2,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import moment from "moment";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -30,6 +42,7 @@ import {
   deleteStatus,
   fetchStatusViewers,
   markStatusViewed,
+  replyToStatus,
   setStatusLiked,
 } from "@/lib/statusApi";
 import { statusBackground } from "@/lib/statusBackgrounds";
@@ -38,6 +51,9 @@ import { cn } from "@/lib/utils";
 import { formatClock } from "@/lib/voiceNote";
 import { useAppDispatch } from "@/redux/hooks";
 import { markViewedLocal, removeStatus, setStatusLikes } from "@/redux/statusSlice";
+
+/** One tap on these sends the emoji as a reply. */
+const QUICK_REPLIES = ["❤️", "😂", "😮", "😢", "👏", "🔥"];
 
 /** How long a photo or text status stays up (video and voice run for their own length). */
 export const STATUS_DURATION_MS = 6000;
@@ -60,7 +76,11 @@ export function renderCaption(caption: string, mentions: StatusClient["mentions"
     const username = part.startsWith("@") ? part.slice(1) : "";
     if (username && known.has(username.toLowerCase())) {
       return (
-        <Link key={index} href={`/${username}`} className="font-semibold text-brand hover:underline">
+        <Link
+          key={index}
+          href={`/${username}`}
+          className="font-semibold text-brand hover:underline"
+        >
           {part}
         </Link>
       );
@@ -84,6 +104,7 @@ export const StatusViewer = ({
   onViewed?: (statusId: string) => void;
 }) => {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { userdata } = useUser();
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [statusIndex, setStatusIndex] = useState(Math.max(0, initialStatusIndex));
@@ -92,6 +113,9 @@ export const StatusViewer = ({
   const [viewersOpen, setViewersOpen] = useState(false);
   const [muted, setMuted] = useState(false);
   const [needsTap, setNeedsTap] = useState(false);
+  const [reply, setReply] = useState("");
+  const [replyFocused, setReplyFocused] = useState(false);
+  const [sendingReply, setSendingReply] = useState(false);
   // Likes tapped here show at once, even for callers (Explore) that keep their own copy of the list.
   const [likes, setLikes] = useState<Record<string, { liked: boolean; likeCount: number }>>({});
   const mediaRef = useRef<HTMLMediaElement | null>(null);
@@ -100,9 +124,11 @@ export const StatusViewer = ({
 
   const group = groups[groupIndex];
   const rawStatus = group?.statuses[statusIndex];
-  const status = rawStatus && likes[rawStatus._id] ? { ...rawStatus, ...likes[rawStatus._id] } : rawStatus;
+  const status =
+    rawStatus && likes[rawStatus._id] ? { ...rawStatus, ...likes[rawStatus._id] } : rawStatus;
   const isOwner = status?.userId === userdata._id;
-  const paused = holding || viewersOpen;
+  // Typing a reply holds the status still, too.
+  const paused = holding || viewersOpen || replyFocused;
 
   const goNext = useCallback(() => {
     if (!group) return;
@@ -205,6 +231,9 @@ export const StatusViewer = ({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (viewersOpen) return;
+      // Arrow keys belong to the reply box while you type in it.
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
       if (event.key === "ArrowRight") goNext();
       else if (event.key === "ArrowLeft") goPrevious();
     };
@@ -239,6 +268,25 @@ export const StatusViewer = ({
     } catch (error) {
       apply(previous);
       toast.error((error as Error).message || "Could not update your like");
+    }
+  };
+
+  const sendReply = async (content: string) => {
+    const text = content.trim();
+    if (!text || sendingReply) return;
+    setSendingReply(true);
+    try {
+      const { chatId } = await replyToStatus(status._id, text);
+      setReply("");
+      setReplyFocused(false);
+      (document.activeElement as HTMLElement | null)?.blur();
+      toast.success("Reply sent", {
+        action: { label: "View", onClick: () => router.push(`/chats/${chatId}`) },
+      });
+    } catch (error) {
+      toast.error((error as Error).message || "Could not send your reply");
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -379,25 +427,80 @@ export const StatusViewer = ({
                   className="flex h-11 items-center gap-2 px-2 text-sm font-medium text-white/90"
                   aria-label={`${status.likeCount} ${status.likeCount === 1 ? "like" : "likes"}`}
                 >
-                  <Heart className={cn("size-5", status.likeCount > 0 && "fill-red-500 text-red-500")} />
+                  <Heart
+                    className={cn("size-5", status.likeCount > 0 && "fill-red-500 text-red-500")}
+                  />
                   {status.likeCount}
                 </span>
               </>
             ) : (
-              <>
-                <span />
-                <button
-                  type="button"
-                  onClick={toggleLike}
-                  aria-pressed={status.liked}
-                  aria-label={status.liked ? "Unlike status" : "Like status"}
-                  className="flex size-11 items-center justify-center rounded-full bg-white/10 backdrop-blur transition-transform hover:bg-white/20 active:scale-90"
-                >
-                  <Heart
-                    className={cn("size-6 transition-colors", status.liked && "fill-red-500 text-red-500")}
+              <form
+                className="flex w-full flex-col gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void sendReply(reply);
+                }}
+              >
+                {replyFocused && (
+                  <div
+                    className="flex justify-between gap-1"
+                    role="group"
+                    aria-label="Quick reactions"
+                  >
+                    {QUICK_REPLIES.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        // Pressing one must not blur the box first, or the row would vanish before the tap.
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => void sendReply(emoji)}
+                        disabled={sendingReply}
+                        className="flex size-11 items-center justify-center rounded-full bg-white/10 text-2xl backdrop-blur transition-transform hover:bg-white/20 active:scale-90"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <input
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                    onFocus={() => setReplyFocused(true)}
+                    onBlur={() => setReplyFocused(false)}
+                    maxLength={1000}
+                    enterKeyHint="send"
+                    aria-label={`Reply to ${group.user.name}`}
+                    placeholder={`Reply to ${group.user.name.split(" ")[0]}…`}
+                    className="h-11 min-w-0 flex-1 rounded-full border border-white/30 bg-black/30 px-4 text-sm text-white outline-none backdrop-blur placeholder:text-white/60 focus:border-white/70"
                   />
-                </button>
-              </>
+                  {reply.trim() && (
+                    <button
+                      type="submit"
+                      disabled={sendingReply}
+                      aria-label="Send reply"
+                      onMouseDown={(event) => event.preventDefault()}
+                      className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-transform active:scale-90 disabled:opacity-60"
+                    >
+                      <Send className="size-5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={toggleLike}
+                    aria-pressed={status.liked}
+                    aria-label={status.liked ? "Unlike status" : "Like status"}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/10 backdrop-blur transition-transform hover:bg-white/20 active:scale-90"
+                  >
+                    <Heart
+                      className={cn(
+                        "size-6 transition-colors",
+                        status.liked && "fill-red-500 text-red-500"
+                      )}
+                    />
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         </div>
@@ -608,7 +711,10 @@ export const StatusViewersSheet = ({
                     </p>
                   </div>
                   {viewer.liked && (
-                    <Heart className="size-5 shrink-0 fill-red-500 text-red-500" aria-label="Liked" />
+                    <Heart
+                      className="size-5 shrink-0 fill-red-500 text-red-500"
+                      aria-label="Liked"
+                    />
                   )}
                 </li>
               ))}

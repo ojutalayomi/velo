@@ -120,3 +120,18 @@ export interface StatusCreateInput extends StatusCreateItem {
   caption?: string;
 }
 
+
+/** What a reply to a status shows above it in the chat: a snapshot of the status. */
+export interface StatusReplyPreview {
+  statusId: string;
+  ownerId: string;
+  mediaType: StatusMediaType;
+  /** A photo or video's file, for the thumbnail. */
+  thumbUrl?: string;
+  /** The words of a text status. */
+  text?: string;
+  background?: string;
+  caption?: string;
+  /** When the status itself disappears. */
+  expiresAt: string;
+}

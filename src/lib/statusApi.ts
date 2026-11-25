@@ -78,3 +78,18 @@ export async function fetchStatusViewers(statusId: string): Promise<StatusViewer
   )) as { data?: StatusViewerDetail[] };
   return Array.isArray(body.data) ? body.data : [];
 }
+
+/** Reply to a status; the reply lands in your DM with its owner. */
+export async function replyToStatus(
+  statusId: string,
+  content: string
+): Promise<{ chatId: string; messageId: string }> {
+  const body = (await parseStatusResponse(
+    await fetch(`/api/statuses/${statusId}/reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    })
+  )) as { data: { chatId: string; messageId: string } };
+  return body.data;
+}

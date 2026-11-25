@@ -45,6 +45,7 @@ import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSl
 import { CallCard } from "@/components/CallCard";
 import { PollCard } from "@/components/PollCard";
 import { ContactCard } from "@/components/chat/ContactCard";
+import { StatusReplyCard } from "@/components/chat/StatusReplyCard";
 import { LinkMessage } from "@/components/chat/LinkMessage";
 import { GifMessage } from "@/components/chat/GifMessage";
 import { LocationCard } from "@/components/chat/LocationCard";
@@ -442,6 +443,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                 <div className="mb-0.5 flex items-center gap-1 text-[11px] italic text-gray-500 dark:text-gray-400">
                   <Forward className="size-3" /> Forwarded
                 </div>
+              )}
+
+              {/* The status this replies to */}
+              {message.statusReply && (
+                <StatusReplyCard
+                  reply={message.statusReply}
+                  myId={userdata._id}
+                  own={senderId === userdata._id}
+                />
               )}
 
               {/* Quote and Link Preview */}

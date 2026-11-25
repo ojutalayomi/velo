@@ -2,19 +2,22 @@
 import { ArrowLeft, Cake, Check, Link, Plus, Pin, Loader2 } from "lucide-react";
 import NextLink from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MediaViewer } from "@/components/chat/MediaViewer";
 import { Button } from "@/components/ui/button";
 import { Statuser } from "@/components/VerificationComponent";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";
 import { submitFollowUpdate } from "@/lib/followApi";
-import { ClientPostSchema } from "@/lib/types/type";
+import { countsAsPost, onPostRemoved, onPostRestored } from "@/lib/postEvents";
+import { Attachment, ClientPostSchema } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
+import { cn } from "@/lib/utils";
 import { RootState } from "@/redux/store";
 import { timeFormatter } from "@/templates/PostProps";
 
@@ -45,6 +48,15 @@ export default function Profile({
   const [postCards, setPostCards] = useState(profilePostCards);
   const [postsPagination, setPostsPagination] = useState(initialPagination);
   const [postsLoadingMore, setPostsLoadingMore] = useState(false);
+  // The server's total, kept in step as posts are added and removed while the page is open.
+  const [postTotal, setPostTotal] = useState(pd.postCount);
+  const postCardsRef = useRef(postCards);
+  useEffect(() => {
+    postCardsRef.current = postCards;
+  }, [postCards]);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [showTitle, setShowTitle] = useState(false);
+  const nameRef = useRef<HTMLDivElement>(null);
 
   const openMessage = useCallback(() => {
     const otherId = String(profileData._id);
@@ -62,6 +74,50 @@ export default function Profile({
   }, [conversations, profileData._id, router]);
 
   const viewedProfileKey = `${pd._id}:${pd.username ?? ""}`;
+
+  // Take a post off this profile and lower the total if it was one the total counts. `type` is
+  // used when the post isn't in the loaded list, which is the only way to know what it was.
+  const removeCard = useCallback((postId: string, type?: string) => {
+    const card = postCardsRef.current.find((p) => p.PostID === postId);
+    const kind = card?.Type ?? type;
+    if (card) setPostCards((prev) => prev.filter((p) => p.PostID !== postId));
+    if (countsAsPost(kind) && (card || type)) {
+      setPostTotal((n) => (n === undefined ? n : Math.max(0, n - 1)));
+    }
+  }, []);
+  const onDeleted = useCallback(
+    (data: { postId: string; type?: string }) => removeCard(data.postId, data.type),
+    [removeCard]
+  );
+
+  // Deleting your own post (the server doesn't echo it back to you) and a delete that failed.
+  useEffect(() => {
+    const offRemoved = onPostRemoved(({ postId, type }) => removeCard(postId, type));
+    const offRestored = onPostRestored((post) => {
+      if (String(post.UserId) !== String(pd._id)) return;
+      if (postCardsRef.current.some((p) => postDedupeKey(p) === postDedupeKey(post))) return;
+      setPostCards((prev) =>
+        [...prev, post].sort((a, b) => +new Date(b.TimeOfPost) - +new Date(a.TimeOfPost))
+      );
+      if (countsAsPost(post.Type)) setPostTotal((n) => (n === undefined ? n : n + 1));
+    });
+    return () => {
+      offRemoved();
+      offRestored();
+    };
+  }, [pd._id, removeCard]);
+
+  // The top bar shows the name and post count once the name in the profile has scrolled away.
+  useEffect(() => {
+    const el = nameRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowTitle(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [profileData._id]);
 
   useEffect(() => {
     if (!socket) return;
@@ -111,11 +167,7 @@ export default function Profile({
     };
 
     socket.on("followNotification", handleFollowNotification);
-    socket.on("deletePost", (data: { excludeUser: string; postId: string; type: string }) => {
-      setPostCards((prev) => {
-        return prev.filter((p) => p.PostID !== data.postId);
-      });
-    });
+    socket.on("deletePost", onDeleted);
     socket.on(
       "updatePost",
       (data: {
@@ -130,16 +182,21 @@ export default function Profile({
         });
       }
     );
-    socket.on("newPost", (data: { excludeUser: string; blog: ClientPostSchema }) => {
-      setPostCards((prev) => {
-        return [...prev, data.blog];
-      });
-    });
+    const onNew = (data: { excludeUser: string; blog: ClientPostSchema }) => {
+      // Only this profile's own items belong in its list (the event goes to everyone).
+      if (String(data.blog?.UserId) !== String(pd._id)) return;
+      if (postCardsRef.current.some((p) => postDedupeKey(p) === postDedupeKey(data.blog))) return;
+      setPostCards((prev) => [data.blog, ...prev]);
+      if (countsAsPost(data.blog.Type)) setPostTotal((n) => (n === undefined ? n : n + 1));
+    };
+    socket.on("newPost", onNew);
 
     return () => {
       socket.off("followNotification", handleFollowNotification);
+      socket.off("deletePost", onDeleted);
+      socket.off("newPost", onNew);
     };
-  }, [socket, userdata._id, viewedProfileKey]);
+  }, [socket, userdata._id, viewedProfileKey, pd._id, onDeleted]);
 
   if (!profileData || !profileData._id) {
     notFound();
@@ -249,29 +306,75 @@ export default function Profile({
     }
   }, [profileData.username, postsLoadingMore, postsPagination]);
 
-  const postCount = postCards.filter((post) => post.Type === "post").length;
+  // The server's total; the loaded cards can only raise it (a post made just now).
+  const loadedPosts = postCards.filter((post) => countsAsPost(post.Type)).length;
+  const postCount = Math.max(postTotal ?? 0, loadedPosts);
+
+  // Profile photo and cover, in one viewer you can swipe between.
+  const photos: (Attachment & { label: string })[] = [
+    { label: "Profile photo", url: profileData.displayPicture, name: `${profileData.username}-profile` },
+    { label: "Cover photo", url: profileData.coverPhoto, name: `${profileData.username}-cover` },
+  ]
+    .filter((p) => !!p.url)
+    .map((p) => ({ ...p, key: p.url as string, type: "image/jpeg" }));
+  const openPhoto = (url?: string) => {
+    const i = photos.findIndex((p) => p.url === url);
+    if (i >= 0) setViewerIndex(i);
+  };
 
   return (
     <div className="h-screen max-h-screen w-full overflow-auto dark:bg-black">
+      {/* Over the cover at first (the content slides under it); a solid bar with the name and
+          post count once the name in the profile has scrolled away. */}
       <div
-        className={`sticky top-0 z-10 flex w-full items-center gap-4 px-3 py-2 backdrop-blur-lg`}
+        className={cn(
+          "sticky top-0 z-20 -mb-14 flex h-14 w-full items-center gap-3 px-3 transition-colors duration-200",
+          showTitle && "border-b bg-white/80 backdrop-blur-lg dark:border-zinc-800 dark:bg-black/70"
+        )}
       >
-        <ArrowLeft
+        <button
+          type="button"
+          aria-label="Back"
           onClick={() => navigate()}
-          className="size-8 cursor-pointer p-1 text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-100 dark:hover:text-gray-200"
-        />
-        <div>
-          <p className="flex items-center gap-1">
-            {profileData.firstname && profileData.lastname
-              ? profileData.firstname + " " + profileData.lastname
-              : "Velo"}{" "}
-            {profileData.verified && <Statuser className="size-4" />}
+          className={cn(
+            "flex size-9 items-center justify-center rounded-full transition-colors",
+            showTitle
+              ? "text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-zinc-800"
+              : "bg-black/45 text-white backdrop-blur hover:bg-black/60"
+          )}
+        >
+          <ArrowLeft className="size-5" />
+        </button>
+        <div
+          aria-hidden={!showTitle}
+          className={cn(
+            "min-w-0 transition-opacity duration-200",
+            showTitle ? "opacity-100" : "pointer-events-none opacity-0"
+          )}
+        >
+          <p className="flex items-center gap-1 font-semibold">
+            <span className="truncate">
+              {profileData.firstname && profileData.lastname
+                ? profileData.firstname + " " + profileData.lastname
+                : "Velo"}
+            </span>
+            {profileData.verified && <Statuser className="size-4 shrink-0" />}
           </p>
-          <p className="text-sm text-gray-600">{postCards.length} posts</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            {postCount} post{postCount === 1 ? "" : "s"}
+          </p>
         </div>
       </div>
       {/* Cover Photo */}
       <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-800">
+        {profileData.coverPhoto && (
+          <button
+            type="button"
+            aria-label="View cover photo"
+            onClick={() => openPhoto(profileData.coverPhoto)}
+            className="absolute inset-0 z-0 block size-full cursor-zoom-in"
+          />
+        )}
         {profileData.coverPhoto && (
           <Avatar className="size-full rounded-none object-cover">
             <AvatarImage
@@ -290,7 +393,13 @@ export default function Profile({
       <div className="relative mx-auto px-4">
         {/* Profile Picture */}
         <div className="absolute -top-16 left-4 size-32">
-          <div className="size-full overflow-hidden rounded-full border-4 border-white dark:border-black">
+          <button
+            type="button"
+            aria-label="View profile photo"
+            disabled={!profileData.displayPicture}
+            onClick={() => openPhoto(profileData.displayPicture)}
+            className="block size-full overflow-hidden rounded-full border-4 border-white enabled:cursor-zoom-in dark:border-black"
+          >
             <Avatar className="size-full">
               <AvatarImage className="size-full" src={profileData.displayPicture} />
               <AvatarFallback className="size-full">
@@ -299,7 +408,7 @@ export default function Profile({
                   : ""}
               </AvatarFallback>
             </Avatar>
-          </div>
+          </button>
         </div>
 
         <div className="absolute -top-4 right-4 flex items-center gap-2">
@@ -345,7 +454,7 @@ export default function Profile({
         {/* Profile Info */}
         <div className="pb-2 pt-16">
           <div className="mb-2 flex items-start justify-between">
-            <div>
+            <div ref={nameRef}>
               <div className="flex items-center gap-1">
                 <h1 className="text-xl font-bold dark:text-white">{profileData.name}</h1>
                 {profileData.verified && <Statuser className="size-4" />}
@@ -414,6 +523,14 @@ export default function Profile({
         onLoadMorePosts={loadMoreProfilePosts}
         postsLoadingMore={postsLoadingMore}
       />
+      {photos.length > 0 && (
+        <MediaViewer
+          files={photos}
+          open={viewerIndex !== null}
+          index={viewerIndex ?? 0}
+          onOpenChange={(open) => !open && setViewerIndex(null)}
+        />
+      )}
     </div>
   );
 }

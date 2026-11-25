@@ -51,7 +51,17 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         }
       }
 
-      return res.status(200).json(user);
+      // The number of posts the user has made: their own posts and quote posts, but not
+      // comments or plain reposts, and not ones an admin hid. Counted here so the profile
+      // doesn't have to guess it from however many posts happen to be loaded.
+      const authorId = user._id.toString();
+      const [ownPosts, quotePosts] = await Promise.all([
+        db.posts().countDocuments({ UserId: authorId, Type: "post", hidden: { $ne: true } }),
+        db.postsShares().countDocuments({ UserId: authorId, Type: "quote", hidden: { $ne: true } }),
+      ]);
+      const postCount = ownPosts + quotePosts;
+
+      return res.status(200).json({ ...user, postCount });
     } catch (error) {
       console.error("Error:", error);
       return res.status(500).json({ message: "Internal Server Error" });

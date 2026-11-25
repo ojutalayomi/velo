@@ -540,7 +540,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {filteredIsTypingList?.length > 0 && typingLabel(filteredIsTypingList)}
-                    <b className="collapse">Group</b>
+                    <b className="">Group</b>
                   </p>
                 </div>
               )}

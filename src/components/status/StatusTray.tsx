@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/responsive-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { createStatus, deleteStatus, markStatusViewed } from "@/lib/statusApi";
-import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
+import { BUCKETNAME, S3UploadBody, s3ObjectUrl } from "@/lib/types/s3";
 import type { StatusClient, StatusGroup } from "@/lib/types/status";
 import { useAppDispatch } from "@/redux/hooks";
 import { markViewedLocal, removeStatus, upsertStatusGroup } from "@/redux/statusSlice";
@@ -252,7 +252,7 @@ const StatusComposer = ({
     const upload = await fetch(url, { method: "POST", body: formData });
     if (!upload.ok) throw new Error(`Failed to upload ${file.name}`);
     return {
-      mediaUrl: url + fields.key,
+      mediaUrl: s3ObjectUrl(url, fields.key),
       mediaKey: fields.key as string,
       mediaType: file.type.startsWith("video/") ? ("video" as const) : ("image" as const),
     };

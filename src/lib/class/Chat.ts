@@ -53,6 +53,7 @@ export class Chat {
             : this.chat.name.group,
       adminIds: this.chat.adminIds,
       onlyAdminsCanSend: this.chat.onlyAdminsCanSend ?? false,
+      pinnedMessages: this.chat.pinnedMessages ?? [],
       lastMessage: this.chat.lastMessageId
         ? (last && previewFor(last)) || "🚫 Message not found"
         : "📝 Be the first to send a message",

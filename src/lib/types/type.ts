@@ -1,4 +1,5 @@
 import type { PollData } from "@/lib/polls";
+import type { PinnedMessage } from "@/lib/pinRules";
 import type { StatusReplyPreview } from "@/lib/types/status";
 import { ObjectId } from "mongodb";
 
@@ -92,6 +93,8 @@ export interface ChatData {
   isPrivate: boolean;
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
+  /** Messages pinned for everyone in the chat, newest first. */
+  pinnedMessages?: PinnedMessage[];
   timestamp: string;
   /** DMs only: the other person hides their last seen time. */
   lastSeenHidden?: boolean;
@@ -426,6 +429,8 @@ export interface ConvoType {
   adminIds: string[];
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
+  /** Messages pinned for everyone in the chat, newest first. */
+  pinnedMessages?: PinnedMessage[];
   lastMessage: string;
   /** The latest message, so the list can show who sent it and whether it was read. */
   lastMessageId?: string;

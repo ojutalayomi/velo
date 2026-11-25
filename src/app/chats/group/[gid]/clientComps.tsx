@@ -1,4 +1,5 @@
 "use client";
+import { PinnedBar } from "@/components/chat/PinnedBar";
 import { getMarkdownPreference } from "@/hooks/useMarkdownPreference";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -669,6 +670,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           </button>
         </div>
       )}
+
+      <PinnedBar chatId={gid} />
 
       <div
         ref={messageBoxRef}

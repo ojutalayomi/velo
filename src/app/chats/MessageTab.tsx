@@ -14,7 +14,11 @@ import {
   SmilePlus,
   Ban,
   Plus,
+  Pin,
+  PinOff,
 } from "lucide-react";
+import { toast } from "sonner";
+import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
 import React, { TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -110,6 +114,9 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   const adminIds = useSelector(
     (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.adminIds
   );
+  const pins = useSelector(
+    (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.pinnedMessages
+  );
   const deletion = messageDeletion({
     senderId: message?.sender?.id,
     userId: userdata._id,
@@ -199,6 +206,31 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
     enabled: quotable && selectedMessages.length === 0,
     onTrigger: quoteMessage,
   });
+  const isPinned = Boolean(pins?.some((p) => p.messageId === String(message._id)));
+  const pinAllowed =
+    Boolean(socket) &&
+    !message.content.endsWith(DELETED_MARKER) &&
+    canPinMessages({ chatType: message.chatType, adminIds, userId: userdata._id });
+  const togglePin = () => {
+    openOptions(false);
+    setOpen(false);
+    const blocked = pinBlockReason({
+      isPinned,
+      pinCount: pins?.length ?? 0,
+      deleted: message.content.endsWith(DELETED_MARKER),
+    });
+    if (blocked) {
+      toast.error(blocked);
+      return;
+    }
+    socket?.emit(
+      isPinned ? "unpinMessage" : "pinMessage",
+      { chatId: message.chatId, messageId: String(message._id) },
+      (res?: { ok: boolean; error?: string }) => {
+        if (res && !res.ok) toast.error(res.error || "Couldn't update pins");
+      }
+    );
+  };
   const optionss: Option[] = [
     ...(quotable ? [{ icon: TextQuote, text: "Quote", onClick: quoteMessage }] : []),
     {
@@ -240,6 +272,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                 dispatch(deleteMessage(message._id as string));
               }
             },
+          },
+        ]
+      : []),
+    ...(pinAllowed
+      ? [
+          {
+            icon: isPinned ? PinOff : Pin,
+            text: isPinned ? "Unpin" : "Pin",
+            onClick: togglePin,
           },
         ]
       : []),

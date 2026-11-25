@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/responsive-dialog";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
-import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
+import { BUCKETNAME, S3UploadBody, s3ObjectUrl } from "@/lib/types/s3";
 import { ChatUpdate } from "@/lib/types/type";
 
 const chatSystem = new ChatSystem(new ChatRepository());
@@ -51,7 +51,7 @@ const uploadPicture = async (file: File): Promise<string> => {
 
   const uploaded = await fetch(url, { method: "POST", body: formData });
   if (!uploaded.ok) throw new Error("Failed to upload image");
-  return url + fields.key;
+  return s3ObjectUrl(url, fields.key);
 };
 
 const fieldClass =

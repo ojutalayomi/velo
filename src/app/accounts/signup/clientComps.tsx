@@ -10,7 +10,7 @@ import First from "@/components/pg/first";
 import Second from "@/components/pg/second";
 import SubmitForm from "@/components/pg/submitButton";
 import Third from "@/components/pg/third";
-import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
+import { BUCKETNAME, S3UploadBody, s3ObjectUrl } from "@/lib/types/s3";
 import { useAppDispatch } from "@/redux/hooks";
 import { setLoading, setError1, setSuccess, updateFormData } from "@/redux/signupSlice";
 import { RootState } from "@/redux/store";
@@ -66,7 +66,7 @@ const Comps: React.FC = () => {
         if (!uploadResponse.ok) {
           throw new Error("Failed to upload image");
         } else {
-          dispatch(updateFormData({ file: null, displayPicture: url + fields.key }));
+          dispatch(updateFormData({ file: null, displayPicture: s3ObjectUrl(url, fields.key) }));
         }
       }
 

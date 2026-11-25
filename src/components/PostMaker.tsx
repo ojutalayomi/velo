@@ -34,7 +34,7 @@ import { useUser } from "@/app/providers/UserProvider";
 import { renderTextWithLinks } from "@/components/RenderTextWithLinks";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
-import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
+import { BUCKETNAME, S3UploadBody, s3ObjectUrl } from "@/lib/types/s3";
 import { PostLocation, ClientPostSchema } from "@/lib/types/type";
 import { FILE_VALIDATION_CONFIG, formatFileSize, generateObjectId, validateFile } from "@/lib/utils";
 import { updateLiveTime } from "@/templates/PostProps";
@@ -295,7 +295,7 @@ function PostMakerClient({
             if (!uploadResponse.ok) {
               throw new Error("Failed to upload image");
             }
-            return url + fields.key;
+            return s3ObjectUrl(url, fields.key);
           })
         );
       }

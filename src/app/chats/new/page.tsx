@@ -20,7 +20,7 @@ import { Chat } from "@/lib/class/Chat";
 import { ChatMessage } from "@/lib/class/ChatMessage";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
-import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
+import { BUCKETNAME, S3UploadBody, s3ObjectUrl } from "@/lib/types/s3";
 import { Attachment, ChatType, MessageType, msgStatus } from "@/lib/types/type";
 import { UserData } from "@/lib/types/user";
 import { timeFormatter as timeFormatterUtils } from "@/lib/utils";
@@ -293,7 +293,7 @@ const ChatPage = () => {
           throw new Error("Failed to upload image");
         }
 
-        displayPictureUrl = url + fields.key;
+        displayPictureUrl = s3ObjectUrl(url, fields.key);
       }
 
       if (attachments.length) {

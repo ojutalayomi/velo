@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
-import { BUCKETNAME, S3UploadBody } from "@/lib/types/s3";
+import { BUCKETNAME, S3UploadBody, s3ObjectUrl } from "@/lib/types/s3";
 import { RootState } from "@/redux/store";
 import { updateUserData } from "@/redux/userSlice";
 
@@ -100,7 +100,7 @@ export default function EditProfile() {
       const uploadRes = await fetch(url, { method: "POST", body });
       if (!uploadRes.ok) throw new Error("Upload failed");
 
-      return url + fields.key;
+      return s3ObjectUrl(url, fields.key);
     } catch (error) {
       console.error(error);
       return null;

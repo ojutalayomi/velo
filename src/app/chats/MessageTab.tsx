@@ -13,6 +13,7 @@ import {
   CircleX,
   SmilePlus,
   Ban,
+  Plus,
 } from "lucide-react";
 import React, { TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -37,8 +38,9 @@ import {
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Statuser } from "@/components/VerificationComponent";
-import { Attachment, MessageAttributes, Reaction } from "@/lib/types/type";
-import { updateLiveTime } from "@/lib/utils";
+import { Attachment, MessageAttributes } from "@/lib/types/type";
+import { groupReactions, visibleReactions } from "@/lib/reactions";
+import { cn, updateLiveTime } from "@/lib/utils";
 import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSlice";
 import { CallCard } from "@/components/CallCard";
 import { PollCard } from "@/components/PollCard";
@@ -598,50 +600,50 @@ const ReactionSection = ({
     false
   );
 
-  const reactionArray: Reaction[] = [];
-
   if (message.reactions.length === 0) return null;
+
+  const { shown, hidden } = visibleReactions(groupReactions(message.reactions, userdata._id));
+  const fromMe = senderId === userdata._id;
 
   return (
     <div
-      className="z-10 -mt-3 flex flex-wrap items-center gap-1 rounded-full border bg-white px-1 py-0.5 dark:border-gray-200 dark:bg-zinc-800"
-      onClick={() => setReactionInfoDisplay(true)}
+      className={`relative z-10 -mt-2.5 flex flex-wrap items-center gap-1 px-1 ${fromMe ? "justify-end" : "justify-start"}`}
     >
-      {message.reactions.reduce((acc: React.ReactNode[], reaction, index) => {
-        if (
-          !reactionArray.find((r) => r.reaction === reaction.reaction) &&
-          reactionArray.length <= 5
-        ) {
-          reactionArray.push(reaction);
-          const reactionCount = message.reactions.filter(
-            (r) => r.reaction === reaction.reaction
-          ).length;
-          acc.push(
-            <span
-              key={index}
-              title={message.reactions
-                .filter((r) => r.reaction === reaction.reaction)
-                .map((r) =>
-                  r.userId === userdata._id ? "You" : (resolveUser(r.userId)?.name ?? "Someone")
-                )
-                .join(", ")}
-              className="cursor-pointer text-xs"
-            >
-              {reaction.reaction}
-              {reactionCount > 1 && <sub className="ml-0.5 text-xs">{reactionCount}</sub>}
-            </span>
-          );
-        }
-        return acc;
-      }, [])}
-      {reactionArray.length > 5 && (
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs ${
-            senderId === userdata._id ? "bg-white/10" : "bg-gray-200 dark:bg-zinc-700"
-          }`}
+      {shown.map((group) => {
+        const names = group.userIds.map((id) =>
+          id === userdata._id ? "You" : (resolveUser(id)?.name ?? "Someone")
+        );
+        return (
+          <button
+            key={group.emoji}
+            type="button"
+            title={names.join(", ")}
+            aria-label={`${group.emoji} ${group.count} ${group.count === 1 ? "reaction" : "reactions"}${group.mine ? ", including yours" : ""}`}
+            onClick={() => setReactionInfoDisplay(true)}
+            className={cn(
+              "inline-flex h-6 items-center gap-1 rounded-full border px-1.5 text-sm leading-none shadow-sm transition-transform active:scale-95",
+              group.mine
+                ? "border-brand/60 bg-brand/10 text-brand dark:bg-brand/20"
+                : "border-gray-200 bg-white text-gray-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-200"
+            )}
+          >
+            <span className="text-[15px]">{group.emoji}</span>
+            {group.count > 1 && (
+              <span className="text-[11px] font-semibold tabular-nums">{group.count}</span>
+            )}
+          </button>
+        );
+      })}
+      {hidden > 0 && (
+        <button
+          type="button"
+          aria-label={`${hidden} more ${hidden === 1 ? "reaction" : "reactions"}`}
+          onClick={() => setReactionInfoDisplay(true)}
+          className="inline-flex h-6 items-center gap-0.5 rounded-full border border-gray-200 bg-white px-1.5 text-[11px] font-semibold text-gray-600 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-300"
         >
-          +{reactionArray.length - 5}
-        </span>
+          <Plus size={11} strokeWidth={3} />
+          {hidden}
+        </button>
       )}
     </div>
   );

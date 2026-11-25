@@ -1,4 +1,6 @@
 import type { PollData } from "@/lib/polls";
+import type { PinnedMessage } from "@/lib/pinRules";
+import type { StatusReplyPreview } from "@/lib/types/status";
 import { ObjectId } from "mongodb";
 
 export interface User {
@@ -91,6 +93,8 @@ export interface ChatData {
   isPrivate: boolean;
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
+  /** Messages pinned for everyone in the chat, newest first. */
+  pinnedMessages?: PinnedMessage[];
   timestamp: string;
   /** DMs only: the other person hides their last seen time. */
   lastSeenHidden?: boolean;
@@ -316,6 +320,14 @@ export interface Message {
   mentions?: Mention[];
   /** Set by the server on copies created by forwarding. */
   forwarded?: boolean;
+  /** Set on a reply to someone's status; built by the server from the status itself. */
+  statusReply?: StatusReplyPreview;
+  /** A photo, video or voice note that each recipient can open once. Its file is never in the message. */
+  viewOnce?: boolean;
+  /** Ids of the people who have opened it. */
+  viewOnceOpenedBy?: string[];
+  /** The file has been deleted (everyone opened it, or 24 hours passed). */
+  viewOnceGone?: boolean;
 }
 
 export interface MessageAttributes extends Message {
@@ -423,6 +435,8 @@ export interface ConvoType {
   adminIds: string[];
   /** Announcement mode: only admins may post. */
   onlyAdminsCanSend?: boolean;
+  /** Messages pinned for everyone in the chat, newest first. */
+  pinnedMessages?: PinnedMessage[];
   lastMessage: string;
   /** The latest message, so the list can show who sent it and whether it was read. */
   lastMessageId?: string;
@@ -646,7 +660,7 @@ export interface AnnouncementSchema {
 
 export type NotificationType = "like" | "comment" | "follow" | "mention";
 
-export type NotificationTarget = "post" | "comment" | "chat_message" | "user";
+export type NotificationTarget = "post" | "comment" | "chat_message" | "user" | "status";
 
 export type NotificationTab = "all" | "mentions" | "verified";
 

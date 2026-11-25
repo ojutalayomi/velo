@@ -69,6 +69,7 @@ import { setMarkdownPreference, useMarkdownPreference } from "@/hooks/useMarkdow
 import { ExpressionPicker } from "@/components/chat/ExpressionPicker";
 import { ContactPicker } from "@/components/chat/ContactPicker";
 import { LocationPicker } from "@/components/LocationPicker";
+import { ViewOnceToggle } from "@/components/chat/ViewOnceToggle";
 import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import type { MessageType } from "@/lib/types/type";
@@ -99,7 +100,8 @@ interface ChatTextareaProps {
   handleSendMessage: (
     messageId: string,
     mentions?: { userId: string; username: string }[],
-    override?: { content: string; messageType: MessageType }
+    override?: { content: string; messageType: MessageType },
+    options?: SendOptions
   ) => void;
   handleTyping?: (hasText?: boolean) => void;
   closeQuote: () => void;
@@ -169,17 +171,20 @@ const ChatTextarea = ({
   );
   const markdown = useMarkdownPreference();
   const voice = useVoiceRecorder();
+  const [voiceViewOnce, setVoiceViewOnce] = useState(false);
   const sendVoiceNote = useCallback(async () => {
     const file = await voice.stop();
     if (!file) return;
     pendingVoiceRef.current.file = file;
+    pendingVoiceRef.current.viewOnce = voiceViewOnce;
     setFiles([file]);
-  }, [voice, setFiles]);
+  }, [voice, setFiles, voiceViewOnce]);
   // Recordings are capped; reaching the cap sends what was recorded.
   useEffect(() => {
     if (voice.recording && voice.seconds >= MAX_VOICE_SECONDS) void sendVoiceNote();
   }, [voice.recording, voice.seconds, sendVoiceNote]);
   const startVoiceNote = useCallback(async () => {
+    setVoiceViewOnce(false);
     const error = await voice.start();
     if (error) toast.error(error, { duration: 8000 });
   }, [voice]);
@@ -196,8 +201,8 @@ const ChatTextarea = ({
   );
 
   const handleSendWithMentions = useCallback(
-    (messageId: string) => {
-      handleSendMessage(messageId, mentions);
+    (messageId: string, options?: SendOptions) => {
+      handleSendMessage(messageId, mentions, undefined, options);
       clearMentions();
     },
     [handleSendMessage, mentions, clearMentions]
@@ -212,7 +217,7 @@ const ChatTextarea = ({
   }, []);
 
   // A recorded voice note is sent straight away, so it must not open the preview dialog.
-  const pendingVoiceRef = useRef<{ file: File | null }>({ file: null });
+  const pendingVoiceRef = useRef<{ file: File | null; viewOnce: boolean }>({ file: null, viewOnce: false });
 
   useEffect(() => {
     if (pendingVoiceRef.current.file) return;
@@ -227,7 +232,9 @@ const ChatTextarea = ({
       // Clearing a ref in an effect is intended; the compiler lint cannot tell it from a hook argument.
       // eslint-disable-next-line react-hooks/immutability
       pendingVoiceRef.current.file = null;
-      handleSendWithMentions(quote.message?._id);
+      handleSendWithMentions(quote.message?._id, { viewOnce: pendingVoiceRef.current.viewOnce });
+      // eslint-disable-next-line react-hooks/immutability
+      pendingVoiceRef.current.viewOnce = false;
     }
   }, [attachments, handleSendWithMentions, quote.message?._id]);
 
@@ -384,7 +391,14 @@ const ChatTextarea = ({
         )}
 
         {(voice.recording || voice.processing) && (
-          <VoiceRecorderBar voice={voice} onSend={() => void sendVoiceNote()} />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <VoiceRecorderBar voice={voice} onSend={() => void sendVoiceNote()} />
+            </div>
+            {voice.recording && (
+              <ViewOnceToggle on={voiceViewOnce} onChange={setVoiceViewOnce} className="border-brand/60 text-brand" />
+            )}
+          </div>
         )}
         {markdown && !voice.recording && !voice.processing && (
           <button
@@ -670,6 +684,9 @@ const Pop = ({ input, setFileAccepts, onPoll, onLocation, onContact, textOnly, m
   );
 };
 
+/** Per-send choices that aren't part of the message text. */
+export type SendOptions = { viewOnce?: boolean };
+
 interface UploadDialogProps {
   quote: QuoteProp;
   inputRef: RefObject<HTMLInputElement | null>;
@@ -677,11 +694,7 @@ interface UploadDialogProps {
   newMessage: string;
   setNewMessage: Dispatch<SetStateAction<string>>;
   handleTyping?: (hasText?: boolean) => void;
-  handleSendMessage: (
-    messageId: string,
-    mentions?: { userId: string; username: string }[],
-    override?: { content: string; messageType: MessageType }
-  ) => void;
+  handleSendMessage: (messageId: string, options?: SendOptions) => void;
   setFileAccepts: Dispatch<SetStateAction<string>>;
 }
 
@@ -728,10 +741,14 @@ const UploadDialog = ({
     [attachments, setFiles]
   );
 
+  const [viewOnce, setViewOnce] = useState(false);
+  // Only a single photo or video can be view once; adding more files turns it off.
+  const canViewOnce = attachments.length === 1 && (isImageFile(attachments[0]) || isVideoFile(attachments[0]));
   const send = () => {
     // Offline, keep the preview (and the picked files) open so nothing is hidden or lost.
     if (blockFilesWhenOffline(attachments.length)) return;
-    handleSendMessage(quote.message?._id);
+    handleSendMessage(quote.message?._id, { viewOnce: canViewOnce && viewOnce });
+    setViewOnce(false);
     dispatch(setToggleDialog(false));
   };
 
@@ -910,6 +927,7 @@ const UploadDialog = ({
                 <Smile size={20} className="flex-1 text-brand" />
               </EmojiPicker>
             </div>
+            {canViewOnce && <ViewOnceToggle on={viewOnce} onChange={setViewOnce} />}
             <Button
               aria-label="Send"
               disabled={!canSend}

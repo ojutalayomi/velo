@@ -30,6 +30,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     await Promise.all([
       db.statuses().deleteOne({ _id: new ObjectId(id), userId }),
       db.statusViewers().deleteMany({ statusId: id }),
+      db.statusLikes().deleteMany({ statusId: id }),
     ]);
 
     const targetUserIds = Array.from(new Set([userId, ...(await getFollowerUserIds(db, userId))]));

@@ -6,6 +6,7 @@ import { useSelector, useStore } from "react-redux";
 
 import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { deletedPreview, SENDER_DELETED_CONTENT } from "@/lib/messageDeletion";
+import type { PinnedMessage } from "@/lib/pinRules";
 import { toast } from "sonner";
 
 import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
@@ -194,6 +195,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
             : data.chat.name.group,
         adminIds: data.chat.adminIds,
         onlyAdminsCanSend: data.chat.onlyAdminsCanSend ?? false,
+        pinnedMessages: data.chat.pinnedMessages ?? [],
         displayPicture: otherParticipant?.displayPicture || "",
         description: data.chat.groupDescription || "",
         verified: data.chat.verified || false,
@@ -369,6 +371,25 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
                 ? { onlyAdminsCanSend: rest.onlyAdminsCanSend }
                 : {}),
             },
+          })
+        );
+      }
+    );
+    socket.on(
+      "pinnedMessagesUpdated",
+      (data: { chatId: string; pinnedMessages: PinnedMessage[] }) => {
+        dispatch(
+          updateConversation({ id: data.chatId, updates: { pinnedMessages: data.pinnedMessages } })
+        );
+      }
+    );
+    socket.on(
+      "viewOnceUpdated",
+      (data: { messageId: string; viewOnceOpenedBy: string[]; viewOnceGone: boolean }) => {
+        dispatch(
+          updateMessage({
+            id: data.messageId,
+            updates: { viewOnceOpenedBy: data.viewOnceOpenedBy, viewOnceGone: data.viewOnceGone },
           })
         );
       }
@@ -591,6 +612,8 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
       socket.off("chatError");
       socket.off("chatParticipantsUpdated");
       socket.off("chatDetailsUpdated");
+      socket.off("pinnedMessagesUpdated");
+      socket.off("viewOnceUpdated");
       socket.off("chatRemoved");
       socket.off("messageDeleted");
       socket.off("messagesRead");

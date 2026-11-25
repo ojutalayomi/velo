@@ -35,6 +35,7 @@ export function notificationAction(
 ): string {
   switch (group.type) {
     case "like":
+      if (group.targetType === "status") return "liked your status";
       return group.targetType === "comment" ? "liked your comment" : "liked your post";
     case "comment":
       return group.targetType === "comment"

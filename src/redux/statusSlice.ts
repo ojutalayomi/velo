@@ -87,10 +87,14 @@ const statusSlice = createSlice({
           ...group,
           statuses: group.statuses.map((status) => {
             if (status._id !== statusId) return status;
-            const viewers = status.viewers.some((v) => v.userId === viewer.userId)
-              ? status.viewers
-              : [...status.viewers, viewer];
-            return { ...status, viewed: true, viewers };
+            const already = status.viewed || status.viewers.some((v) => v.userId === viewer.userId);
+            const viewers = already ? status.viewers : [...status.viewers, viewer];
+            return {
+              ...status,
+              viewed: true,
+              viewers,
+              viewCount: already ? status.viewCount : (status.viewCount ?? 0) + 1,
+            };
           }),
         })
       );
@@ -105,8 +109,27 @@ const statusSlice = createSlice({
         statuses: group.statuses.map((status) => {
           if (status._id !== statusId) return status;
           if (status.viewers.some((v) => v.userId === viewer.userId)) return status;
-          return { ...status, viewers: [...status.viewers, viewer] };
+          return {
+            ...status,
+            viewers: [...status.viewers, viewer],
+            viewCount: Math.max(status.viewCount ?? 0, status.viewers.length) + 1,
+          };
         }),
+      }));
+    },
+    /** A like changed: `liked` is only applied for the signed-in user's own heart. */
+    setStatusLikes: (
+      state,
+      action: PayloadAction<{ statusId: string; likeCount: number; liked?: boolean }>
+    ) => {
+      const { statusId, likeCount, liked } = action.payload;
+      state.groups = state.groups.map((group) => ({
+        ...group,
+        statuses: group.statuses.map((status) =>
+          status._id !== statusId
+            ? status
+            : { ...status, likeCount, ...(liked === undefined ? {} : { liked }) }
+        ),
       }));
     },
   },
@@ -120,6 +143,7 @@ export const {
   removeStatus,
   markViewedLocal,
   addViewerToOwnedStatus,
+  setStatusLikes,
 } = statusSlice.actions;
 
 export default statusSlice.reducer;

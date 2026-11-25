@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-unused-vars */
 "use client";
+import type { SendOptions } from "@/app/chats/ChatTextarea";
+import { PinnedBar } from "@/components/chat/PinnedBar";
 import { getMarkdownPreference } from "@/hooks/useMarkdownPreference";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -279,7 +281,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const handleSendMessage = async (
     id: string,
     mentions?: { userId: string; username: string }[],
-    override?: { content: string; messageType: MessageType }
+    override?: { content: string; messageType: MessageType },
+    options?: SendOptions
   ) => {
     if (!override && newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
@@ -315,6 +318,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         quotedMessageId: id,
         status: "sending" as msgStatus,
         mentions: mentions ?? [],
+        ...(options?.viewOnce && !override ? { viewOnce: true } : {}),
       });
       lastMessageId = msg._id;
 
@@ -350,13 +354,16 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       // Dispatch actions to update the state
       const msgCopy = msg.copy();
       msgCopy.mentions = mentions ?? [];
-      msgCopy.attachments = msgCopy.attachments.map((m, index) => {
-        const objectURL = URL.createObjectURL(attachments[index]);
-        return {
-          url: objectURL,
-          ...m,
-        };
-      });
+      // A view once file never shows on the sender's own screen either.
+      msgCopy.attachments = msg.viewOnce
+        ? []
+        : msgCopy.attachments.map((m, index) => {
+            const objectURL = URL.createObjectURL(attachments[index]);
+            return {
+              url: objectURL,
+              ...m,
+            };
+          });
 
       dispatch(addMessage(msgCopy));
       dispatch(
@@ -765,6 +772,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           </div>
         )}
       </div>
+
+      <PinnedBar chatId={pid} />
 
       <div
         ref={messageBoxRef}

@@ -1,5 +1,5 @@
 "use client";
-import { Check, Loader2 } from "lucide-react";
+import { Check, CircleDashed, Loader2 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { statusForwardBlockReason } from "@/lib/statusForward";
 import { RootState } from "@/redux/store";
 import {
   ResponsiveDialog,
@@ -19,6 +20,9 @@ import {
 /** Mirrors the limits the socket server enforces. */
 export const MAX_FORWARD_CHATS = 5;
 export const MAX_FORWARD_MESSAGES = 20;
+
+/** Stand-in row for the user's own status; it is never sent to the socket as a chat id. */
+const STATUS_TARGET = "__my_status__";
 
 type ForwardAck = {
   ok: boolean;
@@ -40,6 +44,22 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const messages = useSelector((state: RootState) => state.chat.messages);
+
+  // A message can be added to status one at a time, and only the kinds a status can show.
+  const canShareToStatus = useMemo(() => {
+    if (messageIds.length !== 1) return false;
+    const m = messages?.find((x) => String(x._id) === messageIds[0]);
+    if (!m) return false;
+    return (
+      statusForwardBlockReason({
+        messageType: m.messageType,
+        content: m.content,
+        attachmentCount: m.attachments?.length ?? 0,
+        viewOnce: Boolean((m as { viewOnce?: boolean }).viewOnce),
+      }) === null
+    );
+  }, [messages, messageIds]);
 
   const chats = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -54,41 +74,75 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
   const toggle = (id: string) =>
     setSelected((current) => {
       if (current.includes(id)) return current.filter((x) => x !== id);
-      if (current.length >= MAX_FORWARD_CHATS) {
+      if (id !== STATUS_TARGET && current.filter((x) => x !== STATUS_TARGET).length >= MAX_FORWARD_CHATS) {
         toast.error(`You can forward to up to ${MAX_FORWARD_CHATS} chats at once`);
         return current;
       }
       return [...current, id];
     });
 
-  const send = () => {
-    if (!socket || sending || selected.length === 0) return;
+  const send = async () => {
+    if (sending || selected.length === 0) return;
+    const chatIds = selected.filter((id) => id !== STATUS_TARGET);
+    const toStatus = selected.includes(STATUS_TARGET);
+    if (chatIds.length > 0 && !socket) return;
     setSending(true);
-    socket.timeout(30_000).emit(
-      "forwardMessages",
-      { messageIds, chatIds: selected },
-      (timedOut: Error | null, result?: ForwardAck) => {
-        setSending(false);
-        if (timedOut || !result) {
-          toast.error("Forwarding is taking too long. Check the chats before trying again.");
-          return;
-        }
-        const failed = result.results?.filter((r) => !r.ok) ?? [];
-        if (!result.ok) {
-          toast.error(result.error ?? failed[0]?.error ?? "Could not forward messages");
-          return;
-        }
-        if (failed.length > 0) {
-          toast.warning(`Forwarded, but ${failed.length} chat(s) failed`, {
-            description: failed[0]?.error,
+
+    const statusDone = toStatus
+      ? fetch("/api/statuses/forward", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messageId: messageIds[0] }),
+        })
+          .then(async (res) => (res.ok ? null : ((await res.json().catch(() => ({}))).message as string) || "Couldn't add to status"))
+          .catch(() => "Couldn't add to status")
+      : Promise.resolve(null);
+
+    type ChatOutcome = { sent: boolean; error?: string };
+    const chatsDone: Promise<ChatOutcome> =
+      chatIds.length === 0
+        ? Promise.resolve({ sent: false })
+        : new Promise((resolve) => {
+            socket!.timeout(30_000).emit(
+              "forwardMessages",
+              { messageIds, chatIds },
+              (timedOut: Error | null, result?: ForwardAck) => {
+                if (timedOut || !result) {
+                  resolve({ sent: false, error: "Forwarding is taking too long. Check the chats before trying again." });
+                  return;
+                }
+                const failed = result.results?.filter((r) => !r.ok) ?? [];
+                if (!result.ok) {
+                  resolve({ sent: false, error: result.error ?? failed[0]?.error ?? "Could not forward messages" });
+                  return;
+                }
+                if (failed.length > 0) {
+                  toast.warning(`Forwarded, but ${failed.length} chat(s) failed`, { description: failed[0]?.error });
+                }
+                resolve({ sent: true });
+              }
+            );
           });
-        } else {
-          toast.success(messageIds.length === 1 ? "Message forwarded" : "Messages forwarded");
-        }
-        onForwarded();
-        onOpenChange(false);
-      }
+
+    const [statusError, chats] = await Promise.all([statusDone, chatsDone]);
+    setSending(false);
+    if (chats.error) toast.error(chats.error);
+    if (statusError) toast.error(statusError);
+
+    const sentStatus = toStatus && !statusError;
+    // Stay open when nothing went through, so the user can retry.
+    if (!chats.sent && !sentStatus) return;
+    toast.success(
+      chats.sent && sentStatus
+        ? "Forwarded and added to your status"
+        : sentStatus
+          ? "Added to your status"
+          : messageIds.length === 1
+            ? "Message forwarded"
+            : "Messages forwarded"
     );
+    onForwarded();
+    onOpenChange(false);
   };
 
   return (
@@ -97,7 +151,7 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
         <ResponsiveDialogTitle>Forward to</ResponsiveDialogTitle>
         <ResponsiveDialogDescription>
           {messageIds.length} {messageIds.length === 1 ? "message" : "messages"} selected. Choose up
-          to {MAX_FORWARD_CHATS} chats.
+          to {MAX_FORWARD_CHATS} chats{canShareToStatus ? ", or add it to your status" : ""}.
         </ResponsiveDialogDescription>
       </ResponsiveDialogHeader>
 
@@ -110,6 +164,26 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
       />
 
       <ul className="max-h-72 space-y-1 overflow-y-auto">
+        {canShareToStatus && (
+          <li>
+            <button
+              type="button"
+              onClick={() => toggle(STATUS_TARGET)}
+              aria-pressed={selected.includes(STATUS_TARGET)}
+              className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-gray-100 dark:hover:bg-neutral-800"
+            >
+              <span className="flex size-9 items-center justify-center rounded-full bg-brand/10 text-brand">
+                <CircleDashed className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">My status</span>
+              <span
+                className={`flex size-5 items-center justify-center rounded-full border ${selected.includes(STATUS_TARGET) ? "border-brand bg-brand text-white" : "border-gray-300"}`}
+              >
+                {selected.includes(STATUS_TARGET) && <Check className="size-3.5" />}
+              </span>
+            </button>
+          </li>
+        )}
         {chats.map((chat) => {
           const checked = selected.includes(chat.id);
           return (
@@ -151,7 +225,7 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
         <button
           type="button"
           onClick={send}
-          disabled={sending || selected.length === 0 || !socket}
+          disabled={sending || selected.length === 0 || (!socket && selected.some((id) => id !== STATUS_TARGET))}
           className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending && <Loader2 className="size-4 animate-spin" />}

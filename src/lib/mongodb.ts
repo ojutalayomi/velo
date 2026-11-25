@@ -3,7 +3,7 @@ import { IResult } from "ua-parser-js";
 
 import { UserSchema } from "./class/User";
 import type { PollVoteSchema } from "./types/poll";
-import { StatusSchema, StatusViewerSchema } from "./types/status";
+import { StatusLikeSchema, StatusSchema, StatusViewerSchema } from "./types/status";
 import {
   AnnouncementSchema,
   AttachmentSchema,
@@ -327,6 +327,10 @@ export class MongoDBClient {
 
   statusViewers() {
     return this.db.collection<StatusViewerSchema>("Status_Viewers");
+  }
+
+  statusLikes() {
+    return this.db.collection<StatusLikeSchema>("Status_Likes");
   }
 }
 

@@ -1,3 +1,4 @@
+import { viewOnceLabel } from "@/lib/viewOnce";
 import { callPreview, parseCallRecord } from "@/lib/callRecord";
 import { parseContactContent, parseLocationContent } from "@/lib/chatShare";
 import { ATTACHMENT_LABELS } from "@/lib/messageType";
@@ -87,7 +88,8 @@ export function lastMessagePreview(content: string | undefined) {
 }
 
 /** Readable one-line text for a message (previews, quotes, copy), hiding poll JSON. */
-export function messageText(message: { messageType?: string; content?: string }) {
+export function messageText(message: { messageType?: string; content?: string; viewOnce?: boolean }) {
+  if (message.viewOnce) return viewOnceLabel(message.messageType);
   if (message.messageType === "Poll") {
     const poll = parsePollContent(message.content);
     if (poll) return pollPreview(poll);

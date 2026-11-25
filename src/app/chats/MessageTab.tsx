@@ -14,7 +14,11 @@ import {
   SmilePlus,
   Ban,
   Plus,
+  Pin,
+  PinOff,
 } from "lucide-react";
+import { toast } from "sonner";
+import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
 import React, { TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -45,6 +49,7 @@ import { deleteMessage, updateMessage, updateConversation } from "@/redux/chatSl
 import { CallCard } from "@/components/CallCard";
 import { PollCard } from "@/components/PollCard";
 import { ContactCard } from "@/components/chat/ContactCard";
+import { StatusReplyCard } from "@/components/chat/StatusReplyCard";
 import { LinkMessage } from "@/components/chat/LinkMessage";
 import { GifMessage } from "@/components/chat/GifMessage";
 import { LocationCard } from "@/components/chat/LocationCard";
@@ -67,6 +72,7 @@ import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
 import { useSwipeToReply } from "@/hooks/useSwipeToReply";
 import { canForward, canQuote } from "@/lib/messageActions";
 
+import { ViewOnceBubble } from "@/components/chat/ViewOnce";
 import { MediaCollage } from "./FilesView";
 import { ReactionsInfo } from "./ReactionsInfo";
 
@@ -108,6 +114,9 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const adminIds = useSelector(
     (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.adminIds
+  );
+  const pins = useSelector(
+    (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.pinnedMessages
   );
   const deletion = messageDeletion({
     senderId: message?.sender?.id,
@@ -198,6 +207,31 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
     enabled: quotable && selectedMessages.length === 0,
     onTrigger: quoteMessage,
   });
+  const isPinned = Boolean(pins?.some((p) => p.messageId === String(message._id)));
+  const pinAllowed =
+    Boolean(socket) &&
+    !message.content.endsWith(DELETED_MARKER) &&
+    canPinMessages({ chatType: message.chatType, adminIds, userId: userdata._id });
+  const togglePin = () => {
+    openOptions(false);
+    setOpen(false);
+    const blocked = pinBlockReason({
+      isPinned,
+      pinCount: pins?.length ?? 0,
+      deleted: message.content.endsWith(DELETED_MARKER),
+    });
+    if (blocked) {
+      toast.error(blocked);
+      return;
+    }
+    socket?.emit(
+      isPinned ? "unpinMessage" : "pinMessage",
+      { chatId: message.chatId, messageId: String(message._id) },
+      (res?: { ok: boolean; error?: string }) => {
+        if (res && !res.ok) toast.error(res.error || "Couldn't update pins");
+      }
+    );
+  };
   const optionss: Option[] = [
     ...(quotable ? [{ icon: TextQuote, text: "Quote", onClick: quoteMessage }] : []),
     {
@@ -239,6 +273,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                 dispatch(deleteMessage(message._id as string));
               }
             },
+          },
+        ]
+      : []),
+    ...(pinAllowed
+      ? [
+          {
+            icon: isPinned ? PinOff : Pin,
+            text: isPinned ? "Unpin" : "Pin",
+            onClick: togglePin,
           },
         ]
       : []),
@@ -386,7 +429,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
           >
             {/* The bubble that normally carries the sender's name is hidden for attachment-only
                 messages, so the name goes above the attachment instead. */}
-            {message.attachments.length > 0 &&
+            {(message.attachments.length > 0 || message.viewOnce) &&
               message.content.length === 0 &&
               senderId !== userdata._id &&
               message.chatType === "Group" &&
@@ -396,7 +439,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                   {verified && <Statuser className="size-3.5" />}
                 </div>
               )}
-            {message.attachments.length ? (
+            {message.viewOnce ? (
+              <ViewOnceBubble
+                message={message}
+                userId={userdata._id}
+                senderId={senderId}
+                time={time}
+                statusIcon={senderId === userdata._id ? renderStatusIcon(message.status) : undefined}
+              />
+            ) : message.attachments.length ? (
               <MediaCollage
                 voiceNote={message.messageType === "VoiceNote"}
                 media={message.attachments as (Attachment & { uploadedAt: string })[]}
@@ -442,6 +493,15 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                 <div className="mb-0.5 flex items-center gap-1 text-[11px] italic text-gray-500 dark:text-gray-400">
                   <Forward className="size-3" /> Forwarded
                 </div>
+              )}
+
+              {/* The status this replies to */}
+              {message.statusReply && (
+                <StatusReplyCard
+                  reply={message.statusReply}
+                  myId={userdata._id}
+                  own={senderId === userdata._id}
+                />
               )}
 
               {/* Quote and Link Preview */}

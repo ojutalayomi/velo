@@ -29,6 +29,7 @@ interface PreviewSource {
   messageType?: string;
   content?: string;
   attachments?: unknown[];
+  viewOnce?: boolean;
 }
 
 /** What the chat list shows for a message (without the sender's name). */
@@ -36,6 +37,7 @@ export function previewFor(message: PreviewSource): string {
   const content = message.content ?? "";
   if (content.endsWith(DELETED_MARKER)) return deletedPreview(content);
 
+  if (message.viewOnce) return messageText(message);
   const hasContent = content.trim() !== "";
   const attachments = message.attachments ?? [];
 
@@ -63,6 +65,7 @@ export function convoPreviewUpdate(message: {
   messageType?: string;
   content?: string;
   attachments?: unknown[];
+  viewOnce?: boolean;
   sender?: { id?: string; name?: string };
 }): Partial<ConvoType> {
   return {

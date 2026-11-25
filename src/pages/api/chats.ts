@@ -253,14 +253,26 @@ export const chatRepository = {
         );
       });
 
-      const newMessages = messages.map((message) => ({
-        ...message,
-        _id: message._id.toString(),
-        isRead: message.isRead || {},
-        attachments: attachments.filter((attachment) =>
-          message.attachments.includes(attachment.key)
-        ),
-      })) as MessageAttributes[];
+      const newMessages = messages.map((message) => {
+        const { viewOnceOpens, viewOnceDeleteAfter, ...rest } = message as typeof message & {
+          viewOnceOpens?: Record<string, string>;
+          viewOnceDeleteAfter?: string;
+        };
+        void viewOnceDeleteAfter;
+        return {
+          ...rest,
+          _id: message._id.toString(),
+          isRead: message.isRead || {},
+          // A view once file is only ever given out by the socket server, one open at a time.
+          ...(rest.viewOnce
+            ? { attachments: [], viewOnceOpenedBy: Object.keys(viewOnceOpens ?? {}) }
+            : {
+                attachments: attachments.filter((attachment) =>
+                  message.attachments.includes(attachment.key)
+                ),
+              }),
+        };
+      }) as MessageAttributes[];
 
       const newChatsPromises = chats.map(async (chat) => {
         try {

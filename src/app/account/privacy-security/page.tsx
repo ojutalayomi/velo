@@ -225,9 +225,7 @@ const PrivacySecurityPage = () => {
         </SettingsGroup>
 
         {/* Passkeys */}
-        <div className="[&>div]:rounded-2xl [&>div]:border [&>div]:bg-white [&>div]:shadow-none [&>div]:dark:border-zinc-800 [&>div]:dark:bg-zinc-900">
-          <PasskeyManager />
-        </div>
+        <PasskeyManager />
 
         <SettingsGroup
           title="Signed-in devices"

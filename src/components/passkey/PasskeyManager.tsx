@@ -1,18 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { KeyRound, Trash2, Loader2, Smartphone, Monitor } from "lucide-react";
+import { Cloud, KeyRound, Laptop, Loader2, Plus, Smartphone, Trash2 } from "lucide-react";
 import moment from "moment";
+import { useEffect, useState } from "react";
 
-import { deletePasskey, listPasskeys } from "@/lib/passkey-client";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +15,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { deletePasskey, listPasskeys } from "@/lib/passkey-client";
+import { cn } from "@/lib/utils";
+
 import { PasskeyRegister } from "./PasskeyRegister";
 
 interface Passkey {
@@ -36,120 +31,111 @@ interface Passkey {
   credentialDeviceType?: string;
 }
 
+const PHONE = /iphone|ipad|android|pixel|galaxy|samsung|tecno|infinix|itel|oppo|vivo|xiaomi|redmi|huawei|phone|tablet/i;
+const COMPUTER = /mac|windows|laptop|desktop|pc|linux|chromebook/i;
+
+/** Phone, computer, or a plain key when we can't tell (e.g. a security key). */
+export function passkeyKind(passkey: Pick<Passkey, "name" | "transports">) {
+  if (PHONE.test(passkey.name)) return "phone";
+  if (COMPUTER.test(passkey.name)) return "computer";
+  const transports = passkey.transports ?? [];
+  if (transports.includes("hybrid")) return "phone";
+  if (transports.some((t) => t === "usb" || t === "nfc" || t === "ble")) return "key";
+  return "computer";
+}
+
+const ICONS = { phone: Smartphone, computer: Laptop, key: KeyRound };
+
 export function PasskeyManager() {
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const loadPasskeys = async () => {
-    setIsLoading(true);
-    const result = await listPasskeys();
-    if (result.success && result.passkeys) {
-      setPasskeys(result.passkeys);
-    }
-    setIsLoading(false);
-  };
+  const [reloads, setReloads] = useState(0);
 
   useEffect(() => {
-    loadPasskeys();
-  }, []);
+    let cancelled = false;
+    listPasskeys().then((result) => {
+      if (cancelled) return;
+      if (result.success && result.passkeys) setPasskeys(result.passkeys);
+      setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reloads]);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     const result = await deletePasskey(id);
-    if (result.success) {
-      setPasskeys(passkeys.filter((p) => p.id !== id));
-    }
+    if (result.success) setPasskeys((list) => list.filter((p) => p.id !== id));
     setDeletingId(null);
   };
 
-  const getDeviceIcon = (passkey: Passkey) => {
-    const transports = passkey.transports || [];
-    if (transports.includes("internal") || passkey.credentialDeviceType === "singleDevice") {
-      return <Monitor className="h-5 w-5" />;
-    }
-    return <Smartphone className="h-5 w-5" />;
-  };
-
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5" />
-              Passkeys
-            </CardTitle>
-            <CardDescription>
-              Manage your passkeys for secure, passwordless sign-in
-            </CardDescription>
-          </div>
-          <PasskeyRegister
-            onSuccess={() => loadPasskeys()}
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
+    <section>
+      <h2 className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        Passkeys
+      </h2>
+      <p className="mb-2 px-1 text-sm text-gray-500 dark:text-gray-400">
+        Sign in with your face, fingerprint or device PIN instead of a password.
+      </p>
+      <div className="divide-y overflow-hidden rounded-2xl border bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : passkeys.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <KeyRound className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No passkeys yet</p>
-            <p className="text-sm mt-1">
-              Add a passkey to enable faster, more secure sign-in
-            </p>
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            <Skeleton className="size-9 shrink-0 rounded-xl" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-3 w-48 rounded" />
+            </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            {passkeys.map((passkey) => (
-              <div
-                key={passkey.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-muted-foreground">
-                    {getDeviceIcon(passkey)}
+          passkeys.map((passkey) => {
+            const Icon = ICONS[passkeyKind(passkey)];
+            return (
+              <div key={passkey.id} className="flex items-center gap-3 px-4 py-3.5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-gray-300">
+                  <Icon size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-medium">{passkey.name}</p>
+                    {passkey.credentialBackedUp && (
+                      <span
+                        title="Backed up to your account's cloud, so it works on a new device"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-500/10 px-1.5 py-0.5 text-[11px] font-medium text-green-600 dark:text-green-400"
+                      >
+                        <Cloud size={11} />
+                        Backed up
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <p className="font-medium">{passkey.name}</p>
-                    <div className="text-sm text-muted-foreground space-y-0.5">
-                      <p>
-                        Created {moment(passkey.createdAt).fromNow()}
-                      </p>
-                      <p>
-                        Last used {moment(passkey.lastUsedAt).fromNow()}
-                      </p>
-                      {passkey.credentialBackedUp && (
-                        <p className="text-xs text-green-600 dark:text-green-400">
-                          ✓ Backed up
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Added {moment(passkey.createdAt).fromNow()} · used{" "}
+                    {moment(passkey.lastUsedAt).fromNow()}
+                  </p>
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
+                      type="button"
+                      aria-label={`Delete passkey ${passkey.name}`}
                       disabled={deletingId === passkey.id}
+                      className="flex size-10 shrink-0 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                     >
                       {deletingId === passkey.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 size={18} className="animate-spin" />
                       ) : (
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 size={18} />
                       )}
-                    </Button>
+                    </button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Passkey</AlertDialogTitle>
+                      <AlertDialogTitle>Delete this passkey?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete "{passkey.name}"? This
-                        action cannot be undone.
+                        &quot;{passkey.name}&quot; will no longer sign you in. You can add it again
+                        later.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -164,10 +150,34 @@ export function PasskeyManager() {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
-            ))}
-          </div>
+            );
+          })
         )}
-      </CardContent>
-    </Card>
+
+        {!isLoading && passkeys.length === 0 && (
+          <p className="px-4 py-3.5 text-sm text-gray-500 dark:text-gray-400">
+            No passkeys yet. Add one to sign in faster and more safely.
+          </p>
+        )}
+
+        <PasskeyRegister
+          onSuccess={() => setReloads((n) => n + 1)}
+          trigger={
+            <button
+              type="button"
+              className={cn(
+                "flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors",
+                "hover:bg-gray-50 dark:hover:bg-zinc-800/60"
+              )}
+            >
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                <Plus size={20} />
+              </div>
+              <span className="font-medium text-brand">Add a passkey</span>
+            </button>
+          }
+        />
+      </div>
+    </section>
   );
 }

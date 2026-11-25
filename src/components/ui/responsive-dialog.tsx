@@ -60,6 +60,7 @@ export function ResponsiveDialog({
     </ModeContext.Provider>
   );
 }
+ResponsiveDialog.displayName = "ResponsiveDialog";
 
 export function ResponsiveDialogContent({
   className,
@@ -105,12 +106,14 @@ export function ResponsiveDialogContent({
     </DialogContent>
   );
 }
+ResponsiveDialogContent.displayName = "ResponsiveDialogContent";
 
 export function ResponsiveDialogHeader({ children }: { children: React.ReactNode }) {
   const mode = React.useContext(ModeContext);
   if (mode === "sheet") return <div className="flex flex-col gap-1.5">{children}</div>;
   return mode === "drawer" ? <DrawerHeader className="px-0">{children}</DrawerHeader> : <DialogHeader>{children}</DialogHeader>;
 }
+ResponsiveDialogHeader.displayName = "ResponsiveDialogHeader";
 
 export function ResponsiveDialogFooter({ children }: { children: React.ReactNode }) {
   const mode = React.useContext(ModeContext);
@@ -120,12 +123,14 @@ export function ResponsiveDialogFooter({ children }: { children: React.ReactNode
     <div className="flex flex-col-reverse gap-2">{children}</div>
   );
 }
+ResponsiveDialogFooter.displayName = "ResponsiveDialogFooter";
 
 export function ResponsiveDialogTitle({ children }: { children: React.ReactNode }) {
   const mode = React.useContext(ModeContext);
   if (mode === "sheet") return <FullscreenSheetTitle className="text-lg font-semibold">{children}</FullscreenSheetTitle>;
   return mode === "drawer" ? <DrawerTitle>{children}</DrawerTitle> : <DialogTitle>{children}</DialogTitle>;
 }
+ResponsiveDialogTitle.displayName = "ResponsiveDialogTitle";
 
 export function ResponsiveDialogDescription({
   className,
@@ -148,3 +153,4 @@ export function ResponsiveDialogDescription({
     <DialogDescription className={className}>{children}</DialogDescription>
   );
 }
+ResponsiveDialogDescription.displayName = "ResponsiveDialogDescription";

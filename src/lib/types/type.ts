@@ -646,7 +646,7 @@ export interface AnnouncementSchema {
 
 export type NotificationType = "like" | "comment" | "follow" | "mention";
 
-export type NotificationTarget = "post" | "comment" | "chat_message" | "user";
+export type NotificationTarget = "post" | "comment" | "chat_message" | "user" | "status";
 
 export type NotificationTab = "all" | "mentions" | "verified";
 

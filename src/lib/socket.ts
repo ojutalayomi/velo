@@ -39,6 +39,7 @@ export type ServerEvent =
   | "status:create"
   | "status:delete"
   | "status:view"
+  | "status:like"
   | "addChat"
   | "chatMessage"
   | "chat:updated"

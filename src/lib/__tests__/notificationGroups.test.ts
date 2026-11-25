@@ -65,6 +65,7 @@ function event(overrides: Record<string, unknown> = {}) {
 describe("notification text", () => {
   it("describes each action and target", () => {
     expect(notificationAction({ type: "like", targetType: "post" })).toBe("liked your post");
+    expect(notificationAction({ type: "like", targetType: "status" })).toBe("liked your status");
     expect(notificationAction({ type: "like", targetType: "comment" })).toBe(
       "liked your comment"
     );

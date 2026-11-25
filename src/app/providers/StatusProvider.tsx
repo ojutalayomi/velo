@@ -11,6 +11,7 @@ import {
   removeStatus,
   setStatusError,
   setStatusGroups,
+  setStatusLikes,
   setStatusLoading,
   upsertStatusGroup,
 } from "@/redux/statusSlice";
@@ -74,7 +75,25 @@ const StatusProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       else dispatch(addViewerToOwnedStatus({ statusId: data.statusId, viewer }));
     };
 
+    const handleLiked = (data: {
+      statusId: string;
+      ownerId: string;
+      userId: string;
+      liked: boolean;
+      likeCount: number;
+    }) => {
+      // The owner's count always moves; the heart only changes for the person who tapped it.
+      dispatch(
+        setStatusLikes({
+          statusId: data.statusId,
+          likeCount: data.likeCount,
+          ...(data.userId === userdata?._id ? { liked: data.liked } : {}),
+        })
+      );
+    };
+
     socket.on("statusCreated", handleCreated);
+    socket.on("statusLiked", handleLiked);
     socket.on("statusDeleted", handleDeleted);
     socket.on("statusViewed", handleViewed);
 
@@ -82,6 +101,7 @@ const StatusProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       socket.off("statusCreated", handleCreated);
       socket.off("statusDeleted", handleDeleted);
       socket.off("statusViewed", handleViewed);
+      socket.off("statusLiked", handleLiked);
     };
   }, [dispatch, socket, userdata?._id]);
 

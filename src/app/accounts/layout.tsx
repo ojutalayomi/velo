@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "@/styles/accounts.css";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { Suspense } from "react";
 
 import { WhatsApp, X } from "@/components/icons";
+
+import AccountsGate from "./AccountsGate";
 
 export const metadata: Metadata = {
   title: "Accounts",
@@ -24,7 +26,7 @@ const FEATURES = [
 
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className="flex min-h-screen w-full font-sans">
+    <div className="flex min-h-dvh w-full font-sans">
       {/* ── Left panel (desktop only) ── */}
       <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-slate-50 p-10 sm:flex lg:w-[35%] dark:border-white/6 dark:bg-zinc-950">
         {/* Ambient brand glow */}
@@ -87,8 +89,10 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
       </aside>
 
       {/* ── Right panel ── */}
-      <main className="flex flex-1 flex-col items-center justify-center bg-background p-6 dark:bg-zinc-900/30">
-        {children}
+      <main className="flex flex-1 flex-col items-center bg-background px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] sm:justify-center sm:p-6 dark:bg-zinc-900/30">
+        <Suspense fallback={null}>
+          <AccountsGate>{children}</AccountsGate>
+        </Suspense>
       </main>
     </div>
   );

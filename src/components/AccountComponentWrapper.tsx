@@ -13,34 +13,35 @@ const Wrapper = ({
   body: ReactNode;
 }) => {
   return (
-    <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border/50 bg-white shadow-2xl dark:border-white/8 dark:bg-zinc-900">
+    <div className="relative flex w-full max-w-md flex-col overflow-hidden sm:rounded-2xl sm:border sm:border-border/50 sm:bg-white sm:shadow-2xl dark:sm:border-white/8 dark:sm:bg-zinc-900">
       {/* Brand accent strip */}
-      <div className="h-1 w-full bg-linear-to-r from-brand/40 via-brand to-brand/40" />
+      <div className="hidden h-1 w-full bg-linear-to-r from-brand/40 via-brand to-brand/40 sm:block" />
 
-      <div className="flex flex-col gap-6 px-7 py-8">
+      <div className="flex flex-col gap-6 sm:px-7 sm:py-8">
         {/* Logo — always visible so mobile users see branding */}
-        <div className="flex sm:hidden items-center justify-center gap-0.5">
+        <div className="flex items-center justify-center gap-0.5 pb-2 sm:hidden">
           <Image
             src="/velo11.png"
-            className="-mr-3 size-10 drop-shadow-xs"
+            className="-mr-3 size-12 drop-shadow-xs"
             height={100}
             width={70}
             alt="Velo logo"
           />
-          <span className="text-[2rem] font-bold leading-none tracking-tight">elo</span>
+          <span className="text-4xl font-bold leading-none tracking-tight">elo</span>
         </div>
 
         {/* Slot: page-level heading / subtitle / nav link */}
-        {header && <div className="flex flex-col gap-1.5">{header}</div>}
+        {header && <div className="flex flex-col gap-1.5 max-sm:text-center">{header}</div>}
 
-        <div className="flex flex-col gap-4">
+        {/* On phones: 16px text (stops iOS zooming into the field) and 48px touch targets. */}
+        <div className="flex flex-col gap-4 max-sm:[&_button]:h-12 max-sm:[&_input]:h-12 max-sm:[&_input]:text-base">
           {/* OAuth */}
           {auth ? (
             <>
               <Button
                 variant="outline"
                 onClick={() => signIn("google")}
-                className="h-11 w-full gap-3 border-border/70 text-sm font-medium
+                className="h-11 w-full gap-3 border-border/70 max-sm:h-12 text-sm font-medium
                            transition-all duration-200
                            hover:border-brand/50 hover:bg-brand/5 hover:text-foreground
                            dark:hover:bg-brand/10"

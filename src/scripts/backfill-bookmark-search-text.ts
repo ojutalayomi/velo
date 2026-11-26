@@ -28,7 +28,7 @@ async function main() {
 
   for await (const b of cursor) {
     const postId = String(b.postId);
-    let post =
+    const post =
       ((await db.posts().findOne({ PostID: postId })) as PostSchema | null) ||
       ((await db.postsShares().findOne({ PostID: postId })) as PostSchema | null) ||
       ((await db.postsComments().findOne({ PostID: postId })) as PostSchema | null);

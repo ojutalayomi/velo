@@ -13,9 +13,10 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadEnvFile } from "node:process";
 
-import { ObjectId } from "mongodb";
+import { type Filter, ObjectId } from "mongodb";
 
 import { extractHashtags, TREND_MIN_AUTHORS, TREND_WINDOW_HOURS } from "../lib/trends";
+import type { PostAuthorFields } from "../lib/postAuthor";
 import type { PostSchema } from "../lib/types/type";
 
 const ISO_TIME =
@@ -90,7 +91,7 @@ function buildPatch(post: PostSchema): Patch | null {
 async function seedDemoTrends(db: InstanceType<typeof import("../lib/mongodb").MongoDBClient>) {
   const users = await db
     .users()
-    .find({}, { projection: { username: 1, name: 1, displayPicture: 1, verified: 1 } })
+    .find({}, { projection: { _id: 1 } })
     .limit(TREND_MIN_AUTHORS)
     .toArray();
 
@@ -113,12 +114,11 @@ async function seedDemoTrends(db: InstanceType<typeof import("../lib/mongodb").M
     const existing = await posts.findOne({ PostID: postId });
     if (existing) continue;
 
-    await posts.insertOne({
+    // Posts store only who wrote them (UserId); the author's profile is read from the account, so
+    // the copied author fields are not written (see src/lib/postAuthor.ts).
+    const doc: Omit<PostSchema, keyof PostAuthorFields> = {
       _id: new ObjectId().toString(),
       UserId: userId,
-      DisplayPicture: user.displayPicture || "",
-      NameOfPoster: user.name || user.username || "User",
-      Verified: Boolean(user.verified),
       TimeOfPost: new Date(now - i * 60_000).toISOString(),
       Visibility: "everyone",
       Caption: `Trending backfill seed ${tags}`,
@@ -130,14 +130,15 @@ async function seedDemoTrends(db: InstanceType<typeof import("../lib/mongodb").M
       NoOfShares: 0,
       NoOfBookmarks: 0,
       Bookmarked: false,
-      Username: user.username || "",
       PostID: postId,
       Code: "",
       WhoCanComment: "everyone",
       Shared: false,
       Type: "post",
       ParentId: "",
-    });
+    };
+    // PostSchema still types the author fields as required, so the collection needs the cast.
+    await posts.insertOne(doc as unknown as PostSchema);
     created++;
   }
 
@@ -166,7 +167,9 @@ async function main() {
   let updated = 0;
   let scanned = 0;
 
-  const cursor = posts.find({
+  // Matches documents that are missing (or have empty/invalid) trend fields, which the strict
+  // PostSchema typing cannot express (null, "", $not/$type), so it is built as a plain filter.
+  const needsBackfill: Filter<Record<string, unknown>> = {
     $or: [
       { Type: { $exists: false } },
       { Type: null },
@@ -180,16 +183,17 @@ async function main() {
         $and: [{ TimeOfPost: { $type: "string" } }, { TimeOfPost: { $not: ISO_TIME } }],
       },
     ],
-  });
+  };
+  const cursor = posts.find(needsBackfill as unknown as Filter<PostSchema>);
 
   for await (const post of cursor) {
     scanned++;
     const patch = buildPatch(post as PostSchema);
     if (!patch) continue;
-    await posts.updateOne(
-      { _id: post._id instanceof ObjectId ? post._id : new ObjectId(String(post._id)) },
-      { $set: patch }
-    );
+    // Stored _ids are ObjectIds even though PostSchema types _id as string.
+    const rawId: unknown = post._id;
+    const _id = rawId instanceof ObjectId ? rawId : new ObjectId(String(rawId));
+    await posts.updateOne({ _id } as unknown as Filter<PostSchema>, { $set: patch });
     updated++;
   }
 

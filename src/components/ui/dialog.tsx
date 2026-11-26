@@ -28,15 +28,16 @@ DialogOverlay.displayName = "DialogOverlay";
 
 const DialogContent = React.forwardRef<
   HTMLDivElement,
-  DialogPrimitive.Popup.Props & { closeBtn?: boolean }
->(({ className, children, closeBtn = true, ...props }, ref) => (
+  DialogPrimitive.Popup.Props & { closeBtn?: boolean; layerClassName?: string }
+>(({ className, layerClassName, children, closeBtn = true, ...props }, ref) => (
   <DialogPortal>
-    <DialogOverlay />
+    <DialogOverlay className={layerClassName} />
     <DialogPrimitive.Popup
       ref={ref}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg outline-hidden duration-200 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-closed:slide-out-to-left-1/2 data-closed:slide-out-to-top-[48%] data-open:slide-in-from-left-1/2 data-open:slide-in-from-top-[48%] sm:rounded-lg",
-        className
+        className,
+        layerClassName
       )}
       {...props}
     >

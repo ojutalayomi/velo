@@ -1,6 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import { toast } from "@/lib/toast";
+
 import ForwardDialog from "@/components/ForwardDialog";
 
 const mockEmit = jest.fn();
@@ -12,6 +14,8 @@ jest.mock("@/app/providers/SocketProvider", () => ({
   useSocket: () => ({ timeout: () => ({ emit: mockEmit }) }),
 }));
 jest.mock("@/app/providers/UserProvider", () => ({ useUser: () => ({ userdata: { _id: "me" } }) }));
+
+beforeEach(() => jest.clearAllMocks());
 
 beforeAll(() => {
   window.matchMedia = ((q: string) =>
@@ -71,5 +75,21 @@ describe("ForwardDialog my status row", () => {
     await userEvent.click(screen.getByRole("button", { name: /^Forward/ }));
     await waitFor(() => expect(onForwarded).toHaveBeenCalled());
     expect(mockEmit).toHaveBeenCalledWith("forwardMessages", { messageIds: ["m1"], chatIds: ["c1"] }, expect.any(Function));
+  });
+
+  it("shows one warning, not also a success, when some chats fail", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) }) as unknown as typeof fetch;
+    mockEmit.mockImplementation((_e, _p, cb) =>
+      cb(null, { ok: true, results: [{ chatId: "c1", ok: false, error: "Only admins can send messages in this chat" }] })
+    );
+    const onForwarded = setup("Text");
+    await userEvent.click(screen.getByRole("button", { name: /My status/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Ada/ }));
+    await userEvent.click(screen.getByRole("button", { name: /^Forward/ }));
+    await waitFor(() => expect(onForwarded).toHaveBeenCalled());
+    expect(toast.warning).toHaveBeenCalledWith("Added to your status, but 1 chat failed", {
+      description: "Only admins can send messages in this chat",
+    });
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });

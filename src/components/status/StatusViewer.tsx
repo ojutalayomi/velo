@@ -19,7 +19,10 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/lib/toast";
 
+import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
+import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
+import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +46,7 @@ import {
   fetchStatusViewers,
   markStatusViewed,
   replyToStatus,
+  replyToStatusWithVoice,
   setStatusLiked,
 } from "@/lib/statusApi";
 import { statusBackground } from "@/lib/statusBackgrounds";
@@ -116,6 +120,8 @@ export const StatusViewer = ({
   const [reply, setReply] = useState("");
   const [replyFocused, setReplyFocused] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
+  const voice = useVoiceRecorder();
+  const socket = useSocket();
   // Likes tapped here show at once, even for callers (Explore) that keep their own copy of the list.
   const [likes, setLikes] = useState<Record<string, { liked: boolean; likeCount: number }>>({});
   const mediaRef = useRef<HTMLMediaElement | null>(null);
@@ -128,7 +134,7 @@ export const StatusViewer = ({
     rawStatus && likes[rawStatus._id] ? { ...rawStatus, ...likes[rawStatus._id] } : rawStatus;
   const isOwner = status?.userId === userdata._id;
   // Typing a reply holds the status still, too.
-  const paused = holding || viewersOpen || replyFocused;
+  const paused = holding || viewersOpen || replyFocused || voice.recording || voice.processing;
 
   const goNext = useCallback(() => {
     if (!group) return;
@@ -241,6 +247,43 @@ export const StatusViewer = ({
     return () => window.removeEventListener("keydown", onKey);
   }, [goNext, goPrevious, viewersOpen]);
 
+  const sendVoiceReply = async () => {
+    const file = await voice.stop();
+    if (!file || !status || sendingReply) return;
+    setSendingReply(true);
+    try {
+      const { chatId } = await replyToStatusWithVoice({
+        socket,
+        statusId: status._id,
+        file,
+        sender: {
+          id: userdata._id,
+          name: userdata.name ?? "",
+          username: userdata.username ?? "",
+          displayPicture: userdata.displayPicture ?? "",
+          verified: Boolean(userdata.verified),
+        },
+      });
+      toast.success("Voice reply sent", {
+        action: { label: "View", onClick: () => router.push(`/chats/${chatId}`) },
+      });
+    } catch (error) {
+      toast.error((error as Error).message || "Could not send your reply");
+    } finally {
+      setSendingReply(false);
+    }
+  };
+  // A recording is capped; reaching the cap sends what was recorded.
+  useEffect(() => {
+    if (voice.recording && voice.seconds >= MAX_VOICE_SECONDS)
+      void Promise.resolve().then(sendVoiceReply);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.recording, voice.seconds]);
+  const startVoiceReply = async () => {
+    const error = await voice.start();
+    if (error) toast.error(error);
+  };
+
   if (!group || !status) return null;
 
   const handleDelete = async () => {
@@ -289,6 +332,7 @@ export const StatusViewer = ({
       setSendingReply(false);
     }
   };
+
 
   const startHold = (event: React.PointerEvent) => {
     if (event.button !== 0 || (event.target as HTMLElement).closest("[data-no-hold]")) return;
@@ -433,6 +477,10 @@ export const StatusViewer = ({
                   {status.likeCount}
                 </span>
               </>
+            ) : voice.recording || voice.processing ? (
+              <div data-no-hold className="w-full rounded-2xl bg-white text-black">
+                <VoiceRecorderBar voice={voice} onSend={() => void sendVoiceReply()} />
+              </div>
             ) : (
               <form
                 className="flex w-full flex-col gap-2"
@@ -474,6 +522,18 @@ export const StatusViewer = ({
                     placeholder={`Reply to ${group.user.name.split(" ")[0]}…`}
                     className="h-11 min-w-0 flex-1 rounded-full border border-white/30 bg-black/30 px-4 text-sm text-white outline-hidden backdrop-blur-sm placeholder:text-white/60 focus:border-white/70"
                   />
+                  {!reply.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => void startVoiceReply()}
+                      disabled={sendingReply}
+                      aria-label="Record a voice reply"
+                      onMouseDown={(event) => event.preventDefault()}
+                      className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-transform hover:bg-white/20 active:scale-90 disabled:opacity-60"
+                    >
+                      <Mic className="size-5" />
+                    </button>
+                  )}
                   {reply.trim() && (
                     <button
                       type="submit"
@@ -665,7 +725,7 @@ export const StatusViewersSheet = ({
   const failed = answered && loaded.rows === null;
 
   return (
-    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange} elevated>
       <ResponsiveDialogContent className="max-w-md">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>

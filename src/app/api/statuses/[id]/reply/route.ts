@@ -1,15 +1,9 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 
-import { findOrCreateDm } from "@/lib/dmServer";
-import { MongoDBClient } from "@/lib/mongodb";
 import { emitSequenceViaSocketServer } from "@/lib/socket";
-import {
-  canSeeStatusOf,
-  findLiveStatus,
-  getAuthenticatedUserId,
-  MAX_STATUS_REPLY_LENGTH,
-} from "@/lib/statusServer";
+import { prepareStatusReply } from "@/lib/statusReplyServer";
+import { getAuthenticatedUserId, MAX_STATUS_REPLY_LENGTH } from "@/lib/statusServer";
 
 /**
  * Reply to someone's status. The reply is an ordinary message in your DM with them (made if you
@@ -35,24 +29,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       );
     }
 
-    const db = await new MongoDBClient().init();
-    const status = await findLiveStatus(db, id);
-    if (!status)
-      return NextResponse.json({ message: "This status is no longer available" }, { status: 404 });
-    if (status.userId === userId) {
-      return NextResponse.json({ message: "You can't reply to your own status" }, { status: 400 });
-    }
-    if (!(await canSeeStatusOf(db, userId, status.userId))) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
-    const blocked = await db
-      .blockedUsers()
-      .findOne({ blockerId: status.userId, blockedId: userId });
-    if (blocked)
-      return NextResponse.json({ message: "You can't reply to this status" }, { status: 403 });
-
-    const dm = await findOrCreateDm(db, userId, status.userId);
-    if (!dm) return NextResponse.json({ message: "Could not open the chat" }, { status: 500 });
+    const prepared = await prepareStatusReply(userId, id);
+    if (prepared.error) return prepared.error;
+    const { db, status, dm } = prepared;
 
     const me = await db
       .users()

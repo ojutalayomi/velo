@@ -26,11 +26,16 @@ const DrawerOverlay = React.forwardRef<HTMLDivElement, DrawerPrimitive.Backdrop.
 );
 DrawerOverlay.displayName = "DrawerOverlay";
 
-const DrawerContent = React.forwardRef<HTMLDivElement, DrawerPrimitive.Popup.Props>(
-  ({ className, children, ...props }, ref) => (
+const DrawerContent = React.forwardRef<
+  HTMLDivElement,
+  DrawerPrimitive.Popup.Props & { layerClassName?: string }
+>(
+  ({ className, layerClassName, children, ...props }, ref) => (
     <DrawerPortal>
-      <DrawerOverlay />
-      <DrawerPrimitive.Viewport className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center">
+      <DrawerOverlay className={layerClassName} />
+      <DrawerPrimitive.Viewport
+        className={cn("pointer-events-none fixed inset-0 z-50 flex items-end justify-center", layerClassName)}
+      >
         <DrawerPrimitive.Popup
           ref={ref}
           className={cn(

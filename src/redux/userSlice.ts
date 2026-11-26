@@ -35,6 +35,10 @@ const userSlice = createSlice({
     setUserData: (state, action: PayloadAction<UserData>) => {
       state.userdata = action.payload;
     },
+    /** Back to the signed-out state, e.g. after logging out. */
+    clearUserData: (state) => {
+      state.userdata = userdata;
+    },
     updateUserData: (state, action: PayloadAction<UserData>) => {
       state.userdata = { ...state.userdata, ...action.payload };
     },
@@ -44,7 +48,7 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUserData, updateUserData, updateSettings } = userSlice.actions;
+export const { setUserData, clearUserData, updateUserData, updateSettings } = userSlice.actions;
 export default userSlice.reducer;
 export interface UserDataPartial extends Partial<UserData> {
   displayPicture: string;

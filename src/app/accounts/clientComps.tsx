@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function AccountsLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   useEffect(() => {
     const event = new KeyboardEvent("keydown", {
@@ -10,7 +10,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       ctrlKey: true,
     });
 
-    pathname?.includes("accounts") && document.dispatchEvent(event);
+    if (pathname?.includes("accounts"))  document.dispatchEvent(event);
   }, [pathname]);
   return <>{children}</>;
 }

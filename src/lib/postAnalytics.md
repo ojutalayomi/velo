@@ -6,6 +6,8 @@ Analytics is telemetry only. This repair does not implement trends, change feeds
 
 `Post_Analytics` retains all existing documents. New writes have `schemaVersion: 2`; reporting must explicitly filter on that version and must not mix legacy mount views, window scroll depth, or wall-clock page time with qualified exposure. No historical backfill or deletion is performed.
 
+Legacy (pre-v2) documents can be removed once they are no longer wanted: `npm run report:post-analytics -- --purge-legacy` is a dry run, `--yes` deletes (and a remote database additionally needs `--i-have-a-backup`). `npm run report:post-analytics` with no flags reports how much usable v2 data exists and whether it could support a dwell-time ranking signal.
+
 ## Client semantics
 
 - One random, memory-only UUID session per mounted post exposure. Post ID or current-user changes reset it. No localStorage, sessionStorage, analytics cookie, fingerprint, or persistent anonymous identifier.
@@ -49,7 +51,7 @@ Indexes initialize lazily before accepting writes:
 2. Unique `(schemaVersion, sessionId, postId, eventKey)`, partial to version 2: regenerated event IDs cannot duplicate a view, milestone or final summary within a session.
 3. A TTL index on `Post_Analytics_RateLimits.expiresAt`; its built-in unique `_id` protects atomic rate buckets.
 
-Mongo permissions must permit index creation. Index/rate storage failures fail closed with 503. Old documents do not participate in new unique indexes and remain untouched. If v2 documents were written by a previous experimental deployment, resolve any conflicting v2 keys before creating these indexes; do not delete historical v1 data.
+Mongo permissions must permit index creation. Index/rate storage failures fail closed with 503. Old documents do not participate in new unique indexes and remain untouched unless purged with the script above. If v2 documents were written by a previous experimental deployment, resolve any conflicting v2 keys before creating these indexes; delete legacy data only deliberately, with the purge script.
 
 Rate limiting allows 120 valid requests per server-authenticated user or anonymous network per minute, across app instances and client session rotations. Retries also consume quota. Anonymous network identity is a server-secret HMAC that rotates daily and is stored only in short-lived rate buckets (expires roughly 1–2 minutes later; actual deletion depends on Mongo's TTL monitor). Set `POST_ANALYTICS_SECRET` or the existing `JWT_SECRET`; without either, ingestion returns 503. Only Vercel deployments (`VERCEL=1`) trust `x-forwarded-for`; otherwise the socket address is used. Other proxy/serverless deployments may group anonymous traffic under a shared proxy address and undercount; coordinate a trusted proxy adapter if needed. Anonymous session UUIDs alone are deliberately not rate keys. Shared networks can hit the quota. Fixed windows permit boundary bursts; this is a bounded abuse guard, not comprehensive bot prevention.
 

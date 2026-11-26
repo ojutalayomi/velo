@@ -31,6 +31,7 @@
     "backfill:bookmarks": "npx --yes tsx --env-file=.env.local src/scripts/backfill-bookmark-search-text.ts",
     "cleanup:message-senders": "npx --yes tsx --env-file=.env.local scripts/trim-message-senders.ts",
     "cleanup:post-authors": "npx --yes tsx --env-file=.env.local scripts/trim-post-authors.ts",
+    "seed:feed-demo": "npx --yes tsx scripts/seed-feed-demo-posts.ts",
     "backfill:post-counts": "npx --yes tsx --env-file=.env.local scripts/update-post-counts.ts",
     "backfill:trends": "npx --yes tsx --env-file=.env.local src/scripts/backfill-post-trends.ts",
     "migration": "node ./playground/play.js"

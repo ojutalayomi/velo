@@ -4,6 +4,7 @@ import { addInteractionFlags } from "@/lib/apiUtils";
 import { withAuthors } from "@/lib/postAuthors";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
+import { buildRankingStages } from "@/lib/feedRanking";
 import { IMAGE_URL_PATTERN } from "@/lib/mediaType";
 import { MongoDBClient } from "@/lib/mongodb";
 import type { Payload, PostSchema } from "@/lib/types/type";
@@ -46,8 +47,6 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
 type ExploreFilter = "all" | "photos" | "videos" | "popular" | "hot";
 const FILTERS = new Set<ExploreFilter>(["all", "photos", "videos", "popular", "hot"]);
-/** "hot" = most engaged posts from the last week, backfilled with older top posts when quiet. */
-const HOT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 function parseFilter(value: string | string[] | undefined): ExploreFilter | null {
   if (value === undefined || value === "") return "all";
@@ -71,34 +70,16 @@ async function fetchExplorePosts(
     match["Image.0"] = { $exists: true, $not: new RegExp(IMAGE_URL_PATTERN, "i") };
   }
 
-  const ranked = filter === "popular" || filter === "hot";
-  const hotCutoff = new Date(Date.now() - HOT_WINDOW_MS).toISOString();
   const pipeline: Record<string, unknown>[] = [
     { $unionWith: { coll: "Posts_Shares", pipeline: [] } },
     { $match: match },
   ];
-  if (ranked) {
-    pipeline.push(
-      {
-        $addFields: {
-          // Posts from the hot window always outrank older ones, so older posts only
-          // backfill when fewer than `limit` recent posts exist. TimeOfPost is an ISO
-          // string, so lexicographic comparison is chronological.
-          _exploreRecent:
-            filter === "hot"
-              ? { $cond: [{ $gte: ["$TimeOfPost", hotCutoff] }, 1, 0] }
-              : 0,
-          _exploreScore: {
-            $add: [{ $ifNull: ["$NoOfLikes", 0] }, { $multiply: [{ $ifNull: ["$NoOfComment", 0] }, 2] }],
-          },
-        },
-      },
-      { $sort: { _exploreRecent: -1, _exploreScore: -1, TimeOfPost: -1, _id: -1 } },
-      { $project: { _exploreScore: 0, _exploreRecent: 0 } }
-    );
-  } else {
-    pipeline.push({ $sort: { TimeOfPost: -1 } });
-  }
+  // popular = all-time engagement; hot = engagement with time decay (trending now).
+  pipeline.push(
+    ...(filter === "popular" || filter === "hot"
+      ? buildRankingStages(filter)
+      : [{ $sort: { TimeOfPost: -1 } }])
+  );
   pipeline.push({ $skip: skip }, { $limit: fetchLimit });
 
   const batch = await db.posts().aggregate(pipeline).toArray();

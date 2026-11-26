@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
+import { buildRankingStages } from "@/lib/feedRanking";
 import { MongoDBClient, FollowersSchema } from "@/lib/mongodb";
 import { withAuthors } from "@/lib/postAuthors";
 import type { Payload, PostSchema } from "@/lib/types/type";
@@ -41,7 +42,13 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     const followedIds = followedDocs.map((d: FollowersSchema) => d.followedId);
 
-    const { posts, hasMore } = await fetchFollowingPostsPage(db, followedIds, skip, pageLimit);
+    const { posts, hasMore } = await fetchFollowingPostsPage(
+      db,
+      followedIds,
+      skip,
+      pageLimit,
+      req.query.sort !== "latest"
+    );
 
     const user = await db.users().findOne({ _id: new ObjectId(payload._id) });
     if (user) {
@@ -62,7 +69,8 @@ async function fetchFollowingPostsPage(
   db: MongoDBClient,
   followedIds: string[],
   skip: number,
-  limit: number
+  limit: number,
+  ranked: boolean
 ) {
   const fetchLimit = limit + 1;
 
@@ -74,7 +82,7 @@ async function fetchFollowingPostsPage(
       },
     },
     { $match: { UserId: { $in: followedIds }, hidden: { $ne: true } } },
-    { $sort: { TimeOfPost: -1 } },
+    ...(ranked ? buildRankingStages("following") : [{ $sort: { TimeOfPost: -1 } }]),
     { $skip: skip },
     { $limit: fetchLimit },
   ]);

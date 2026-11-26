@@ -18,7 +18,7 @@ const indexPromises = new WeakMap<MongoClient, Map<string, Promise<void>>>();
 /**
  * Pre-existing duplicate rows make this fail. Writes stay duplicate-safe without the
  * index, so a rejection is reported rather than propagated; run
- * scripts/add-chat-participants-index.ts to dedupe and build it.
+ * src/scripts/migrations/add-chat-participants-index.ts to dedupe and build it.
  */
 export async function ensureChatParticipantIndexes(wrapper: MongoDBClient): Promise<void> {
   const db: Db = await wrapper.getDb();
@@ -36,7 +36,7 @@ export async function ensureChatParticipantIndexes(wrapper: MongoDBClient): Prom
     .catch((error: unknown) => {
       databases.delete(db.databaseName);
       console.error(
-        "Could not create the unique Chat_Participants index; run scripts/add-chat-participants-index.ts:",
+        "Could not create the unique Chat_Participants index; run src/scripts/migrations/add-chat-participants-index.ts:",
         error
       );
     });
@@ -64,7 +64,7 @@ const dmIndexPromises = new WeakMap<MongoClient, Map<string, Promise<void>>>();
  * Unique index on `dmKey` so two DMs can never exist for the same pair. Only documents that
  * have a `dmKey` are covered, so DMs created before it existed (and any duplicates among them)
  * neither block the build nor are protected; creation still finds them through the roster
- * lookup. scripts/dedupe-dm-chats.ts merges those duplicates and backfills their `dmKey`.
+ * lookup. src/scripts/dedupe-dm-chats.ts merges those duplicates and backfills their `dmKey`.
  */
 export async function ensureChatDmIndex(wrapper: MongoDBClient): Promise<void> {
   const db: Db = await wrapper.getDb();
@@ -85,7 +85,7 @@ export async function ensureChatDmIndex(wrapper: MongoDBClient): Promise<void> {
     .catch((error: unknown) => {
       databases.delete(db.databaseName);
       console.error(
-        "Could not create the unique DM pair index; run scripts/dedupe-dm-chats.ts:",
+        "Could not create the unique DM pair index; run src/scripts/dedupe-dm-chats.ts:",
         error
       );
     });

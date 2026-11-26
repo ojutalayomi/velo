@@ -447,7 +447,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                 own={senderId === userdata._id}
               />
             )}
-            {message.viewOnce ? (
+            {message.viewOnce && !message.content.endsWith(DELETED_MARKER) ? (
               <ViewOnceBubble
                 message={message}
                 userId={userdata._id}

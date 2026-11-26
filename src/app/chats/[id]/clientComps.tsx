@@ -17,7 +17,7 @@ import { CallButton } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
 import { toast } from "@/lib/toast";
@@ -679,13 +679,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                 />
               )}
               <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <EllipsisVertical className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger render={
+                    <EllipsisVertical className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
+                  }
+                />
                 <DropdownMenuContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
-                  <ul className="py-1">
+                  <DropdownMenuGroup className="py-1">
                     {options.map((option) => (
-                      <li
+                      <DropdownMenuItem
                         key={option.id}
                         className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700"
                         onClick={(e) => {
@@ -712,9 +713,9 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                         }}
                       >
                         {option.name}
-                      </li>
+                      </DropdownMenuItem>
                     ))}
-                  </ul>
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

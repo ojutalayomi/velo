@@ -1,12 +1,9 @@
-import { promises as fs } from "fs";
-import path from "path";
-
 import bcrypt from "bcrypt";
-import handlebars from "handlebars";
 import type { NextApiRequest, NextApiResponse } from "next";
 import nodemailer from "nodemailer";
 
 import { SocialMediaUser } from "@/lib/class/User";
+import { generateEmailHtml } from "@/lib/email";
 import { MongoDBClient } from "@/lib/mongodb";
 import { timeFormatter } from "@/templates/PostProps";
 
@@ -20,13 +17,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-
-// Read the HTML email template file
-const filepath = path.join(process.cwd(), "public/emails.hbs");
-const emailTemplateSource = await fs.readFile(filepath, "utf8");
-
-// Create a Handlebars template
-const template = handlebars.compile(emailTemplateSource);
 
 export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -91,7 +81,7 @@ const sendSignInEmail = async (
     from: '"Noow App" noreply@ayocodex.site', // sender address
     to: email, // list of receivers
     subject: "Sign-in Successful", // Subject line
-    html: template({
+    html: generateEmailHtml({
       subject: "Sign-in Successful",
       heading: "You have successfully signed in to Velo App!",
       message: `I hope you enjoy your time on our app. You signed in at ${time}.`,

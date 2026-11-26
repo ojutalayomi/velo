@@ -1,7 +1,7 @@
 "use client";
 import { Copy, Link as LinkIcon, Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Switch } from "@/components/ui";
 import {

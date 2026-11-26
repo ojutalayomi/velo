@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 
-jest.mock("sonner", () => ({ toast: { info: jest.fn(), error: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { info: jest.fn(), error: jest.fn() } }));
 
 beforeAll(() => {
   class Observer {

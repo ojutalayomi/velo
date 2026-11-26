@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";

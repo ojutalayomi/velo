@@ -17,7 +17,7 @@ import {
   Pin,
   PinOff,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
 import React, { TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";

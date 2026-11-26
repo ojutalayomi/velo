@@ -3,7 +3,7 @@
 
 import { ImagePlus, Loader2, Mic, Plus, Send, Type, X } from "lucide-react";
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { Button } from "@/components/ui/button";

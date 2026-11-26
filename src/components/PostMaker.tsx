@@ -27,7 +27,7 @@ import {
   ReactNode,
   Suspense,
 } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";

@@ -18,7 +18,7 @@ import {
 import { useRouter, useParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import AddGroupMembersDialog from "@/components/AddGroupMembersDialog";

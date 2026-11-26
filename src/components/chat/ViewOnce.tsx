@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/fullscreen-sheet";
 import { requestViewOnce, viewOnceKind, viewOnceState } from "@/lib/viewOnce";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Cross2Icon } from "@radix-ui/react-icons";
 
 interface Props {

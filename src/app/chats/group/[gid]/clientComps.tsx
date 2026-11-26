@@ -8,7 +8,7 @@ import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-re
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";

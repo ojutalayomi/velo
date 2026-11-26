@@ -7,7 +7,7 @@ import { useSelector, useStore } from "react-redux";
 import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { deletedPreview, SENDER_DELETED_CONTENT } from "@/lib/messageDeletion";
 import type { PinnedMessage } from "@/lib/pinRules";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import "@ojutalayomi/react-textarea-enhanced/dist/index.css";
 

@@ -111,7 +111,7 @@ ResponsiveDialogContent.displayName = "ResponsiveDialogContent";
 export function ResponsiveDialogHeader({ children }: { children: React.ReactNode }) {
   const mode = React.useContext(ModeContext);
   if (mode === "sheet") return <div className="flex flex-col gap-1.5">{children}</div>;
-  return mode === "drawer" ? <DrawerHeader className="px-0">{children}</DrawerHeader> : <DialogHeader>{children}</DialogHeader>;
+  return mode === "drawer" ? <DrawerHeader className="px-0">{children}</DrawerHeader> : <DialogHeader className="max-w-md">{children}</DialogHeader>;
 }
 ResponsiveDialogHeader.displayName = "ResponsiveDialogHeader";
 

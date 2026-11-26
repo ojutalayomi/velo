@@ -1,7 +1,7 @@
 import { Ellipsis } from "lucide-react";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useMediaQuery } from "usehooks-ts";
 
 import {

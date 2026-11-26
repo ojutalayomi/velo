@@ -5,7 +5,7 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 import { Forward, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import {
   ADMIN_DELETED_CONTENT,

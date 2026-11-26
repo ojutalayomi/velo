@@ -1,7 +1,7 @@
 "use client";
 import { Camera, Loader2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {

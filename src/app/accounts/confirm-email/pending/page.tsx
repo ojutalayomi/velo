@@ -3,7 +3,7 @@ import { Loader, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 

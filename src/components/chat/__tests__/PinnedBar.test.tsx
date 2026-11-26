@@ -6,7 +6,7 @@ import { PinnedBar } from "@/components/chat/PinnedBar";
 const mockEmit = jest.fn();
 let mockState: unknown;
 
-jest.mock("sonner", () => ({ toast: { error: jest.fn(), info: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn(), info: jest.fn() } }));
 jest.mock("react-redux", () => ({ useSelector: (fn: (s: unknown) => unknown) => fn(mockState) }));
 jest.mock("@/app/providers/SocketProvider", () => ({ useSocket: () => ({ emit: mockEmit }) }));
 jest.mock("@/app/providers/UserProvider", () => ({ useUser: () => ({ userdata: { _id: "me" } }) }));

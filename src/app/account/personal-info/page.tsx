@@ -2,7 +2,7 @@
 import { Loader2, Lock, UserPen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useUser } from "@/app/providers/UserProvider";
 import { LocationPicker } from "@/components/LocationPicker";

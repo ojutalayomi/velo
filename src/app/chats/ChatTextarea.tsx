@@ -33,7 +33,7 @@ import {
   useState,
 } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import CropMediaInterface from "@/components/CropMediaInterface";
 import { DocCard } from "@/components/DocCard";

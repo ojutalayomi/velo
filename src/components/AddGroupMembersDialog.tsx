@@ -1,7 +1,7 @@
 "use client";
 import { Loader2, X } from "lucide-react";
 import React, { useCallback, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

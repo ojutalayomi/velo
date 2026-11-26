@@ -3,7 +3,7 @@ import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { LocationPicker } from "@/components/LocationPicker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

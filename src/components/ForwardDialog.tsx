@@ -2,7 +2,7 @@
 import { Check, CircleDashed, Loader2 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";

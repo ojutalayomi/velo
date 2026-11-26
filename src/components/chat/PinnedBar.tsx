@@ -3,7 +3,7 @@
 import { Pin, PinOff, List } from "lucide-react";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import {
@@ -98,7 +98,7 @@ export function PinnedBar({ chatId }: { chatId: string }) {
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Pinned messages</ResponsiveDialogTitle>
           </ResponsiveDialogHeader>
-          <ul className="flex flex-col gap-1 pb-4">
+          <ul className="flex flex-col gap-1 max-w-md pb-4">
             {pins.map((p) => (
               <li key={p.messageId} className="flex items-center gap-2">
                 <button

@@ -18,7 +18,7 @@ const mockVoice = {
   cancel: jest.fn(),
 };
 
-jest.mock("sonner", () => ({ toast: { error: jest.fn(), success: jest.fn(), warning: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn(), success: jest.fn(), warning: jest.fn() } }));
 jest.mock("@/redux/hooks", () => ({ useAppDispatch: () => mockDispatch }));
 jest.mock("@/hooks/useVoiceRecorder", () => ({
   MAX_VOICE_SECONDS: 300,

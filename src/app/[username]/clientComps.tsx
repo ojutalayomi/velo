@@ -4,7 +4,7 @@ import NextLink from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

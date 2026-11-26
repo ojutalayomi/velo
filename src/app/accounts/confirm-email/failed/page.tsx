@@ -5,7 +5,7 @@ import { generateCode } from "./action";
 import { Input } from "@/components/ui/input";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export default function FailedPage() {
   return (

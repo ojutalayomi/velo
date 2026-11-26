@@ -1,8 +1,8 @@
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { blockFilesWhenOffline } from "@/lib/offlineFiles";
 
-jest.mock("sonner", () => ({ toast: { error: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn() } }));
 
 const setOnline = (online: boolean) =>
   Object.defineProperty(navigator, "onLine", { value: online, configurable: true });

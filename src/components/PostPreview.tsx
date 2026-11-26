@@ -2,7 +2,7 @@ import { ArrowLeft, Share, Heart, MessageCircle, Repeat2, RefreshCw, Search, Boo
 import { useRouter, useParams } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import SwiperCore from "swiper";
 
 import { useSocket } from "@/app/providers/SocketProvider";

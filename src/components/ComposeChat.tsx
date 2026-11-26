@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { useUser } from "@/app/providers/UserProvider";
 import ImageContent, { UserProfileLazyLoader } from "@/components/imageContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
 import type { PaginationMeta } from "@/lib/apiPagination";

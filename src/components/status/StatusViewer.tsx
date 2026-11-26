@@ -478,7 +478,7 @@ export const StatusViewer = ({
                 </span>
               </>
             ) : voice.recording || voice.processing ? (
-              <div data-no-hold className="w-full rounded-2xl bg-white text-black">
+              <div data-no-hold className="w-full rounded-2xl bg-background text-foreground shadow-lg">
                 <VoiceRecorderBar voice={voice} onSend={() => void sendVoiceReply()} />
               </div>
             ) : (

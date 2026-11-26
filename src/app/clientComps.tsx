@@ -652,7 +652,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
           id="announcement"
           role="status"
           aria-live="polite"
-          className="pointer-events-none fixed inset-x-0 top-4 z-[999] flex justify-center px-4"
+          className="pointer-events-none fixed inset-x-0 top-4 z-999 flex justify-center px-4"
         >
           <div className="shadow-sxs relative isolate flex gap-2 max-w-full items-center justify-center overflow-hidden rounded-sm border border-primary/20 bg-brand px-4 py-2 tracking-tight">
             <div
@@ -664,7 +664,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
                   clipPath:
                     'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
                 }}
-                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+                className="aspect-577/310 w-xl bg-linear-to-r from-primary to-primary/60 opacity-30"
               />
             </div>
 
@@ -677,7 +677,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
                   clipPath:
                     'polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)',
                 }}
-                className="aspect-[577/310] w-[36rem] bg-gradient-to-r from-primary to-primary/60 opacity-30"
+                className="aspect-577/310 w-xl bg-linear-to-r from-primary to-primary/60 opacity-30"
               />
             </div>
 
@@ -708,7 +708,7 @@ const RootClientComponents = ({ children }: ClientComponentsProps) => {
         </div>
       )}
       {/* {loading && (
-        <div className="pointer-events-none fixed inset-x-0 z-[999] flex size-full justify-center backdrop-blur-xl">
+        <div className="pointer-events-none fixed inset-x-0 z-999 flex size-full justify-center backdrop-blur-xl">
           <MetallicPaint text="Velo" edgeBend={0.9}
             density={2.5}
             softness={1}

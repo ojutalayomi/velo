@@ -57,7 +57,7 @@ describe("MediaViewer", () => {
     const onOpenChange = jest.fn();
     render(<MediaViewer files={files} open index={0} onOpenChange={onOpenChange} />);
     await userEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenChange).toHaveBeenCalledWith(false, expect.anything());
   });
 
   it("hides the bars when the picture is tapped", async () => {

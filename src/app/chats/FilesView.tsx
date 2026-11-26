@@ -67,7 +67,7 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
       <MediaDialogComponent files={media} mediaDialog={mediaDialog} toggleMediaDialog={toggleMediaDialog} />
 
       {isAudio ? (
-        <div className="flex flex-col gap-1 rounded-xl bg-white px-3 py-1 shadow-sm dark:bg-zinc-800 dark:text-white">
+        <div className="flex flex-col gap-1 rounded-xl bg-white px-3 py-1 shadow-xs dark:bg-zinc-800 dark:text-white">
           {media.map((m) => (
             <VoiceNotePlayer key={m.name} url={m.url || ""} name={m.name} />
           ))}
@@ -107,7 +107,7 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
                     <img src={src} alt={m.name} onLoad={save} className="size-full object-cover" />
                   )}
                 </CachedMedia>
-                <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-sm">
+                <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-xs">
                   {updateLiveTime("chat-time", m.uploadedAt)}
                 </span>
               </button>
@@ -125,7 +125,7 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
                   <img src={src} alt={media[3].name} onLoad={save} className="size-full object-cover" />
                 )}
               </CachedMedia>
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-semibold text-white backdrop-blur-sm">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-semibold text-white backdrop-blur-xs">
                 +{excess}
               </div>
             </button>
@@ -140,7 +140,7 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
             return (
               <div
                 key={m.name}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700/70"
+                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-xs transition hover:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700/70"
               >
                 <div
                   className={cn(

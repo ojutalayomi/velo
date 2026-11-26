@@ -421,7 +421,11 @@ function PostMakerClient({
                 <Skeleton className="size-full object-cover" />
               )}
             </div>
-            <Select onValueChange={setVisibility} defaultValue="everyone" value={visibility}>
+            <Select
+              onValueChange={(v) => v && setVisibility(v)}
+              value={visibility}
+              items={{ everyone: "Everyone", none: "None", friends: "Friends" }}
+            >
               <SelectTrigger className="h-8 max-w-[120px] rounded-2xl">
                 <SelectValue placeholder="Everyone" />
               </SelectTrigger>
@@ -455,8 +459,8 @@ function PostMakerClient({
             spellCheck
             placeholder="What's on your mind?"
             fontFamily="myCustomFont, myCustomFont Fallback"
-            className="mt-2 w-full flex-grow resize-none border-none bg-transparent px-4 py-2 text-sm !text-black focus:border-b focus:border-brand focus:outline-none dark:!text-white dark:!caret-white"
-            textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
+            className="mt-2 w-full grow resize-none border-none bg-transparent px-4 py-2 text-sm text-black! focus:border-b focus:border-brand focus:outline-hidden dark:text-white! dark:caret-white!"
+            textareaClassName="caret-black! dark:caret-white! placeholder:text-black! dark:placeholder:text-slate-200!"
           />
 
           {/* Fullscreen Image Modal */}
@@ -683,7 +687,7 @@ function MiniPostCard({
   return (
     <div className="rounded-xl border border-gray-500 p-4">
       <div className="flex items-start space-x-3">
-        <div className="size-10 flex-shrink-0 overflow-hidden rounded-full">
+        <div className="size-10 shrink-0 overflow-hidden rounded-full">
           <img src={post.DisplayPicture} alt={post.Username} className="size-full object-cover" />
         </div>
         <div className={`flex-1 ${type !== "comment" ? "grid" : ""} grid-cols-2 gap-2`}>

@@ -22,7 +22,7 @@ export const Switch: React.FC<SwitchProps> = ({ id, checked, onChange }) => {
         id={id}
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="absolute right-4 block size-6 cursor-pointer appearance-none rounded-full border-4 bg-white outline-none duration-200 ease-in checked:right-0 checked:bg-brand focus:outline-none"
+        className="absolute right-4 block size-6 cursor-pointer appearance-none rounded-full border-4 bg-white outline-hidden duration-200 ease-in checked:right-0 checked:bg-brand focus:outline-hidden"
       />
       <label
         htmlFor={id}

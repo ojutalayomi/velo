@@ -469,12 +469,6 @@ nav #nav .notification {
   padding: 10px 20px;
 }
 
-* {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-}
-
 body {
   background: #fff;
   font-family: "Roboto", sans-serif;
@@ -774,4 +768,4 @@ body #root #bottombar #content .bottombar .bottombar-icon img {
 body #root #bottombar #content .bottombar .bottombar-icon svg {
   height: 22px;
   width: 22px;
-}/*# sourceMappingURL=style.css.map */
+}

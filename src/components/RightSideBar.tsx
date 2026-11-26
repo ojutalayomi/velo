@@ -70,7 +70,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   return (
     <div
       className={cn(
-        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") ? "!hidden" : ""} max-h-screen overflow-auto border-l min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
+        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") ? "hidden!" : ""} max-h-screen overflow-auto border-l min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
         className
       )}
       {...props}
@@ -87,7 +87,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
         </div>
 
         {/* Suggestions Section */}
-        <div className="relative z-0 mx-4 max-h-[70%] overflow-auto rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-800">
+        <div className="relative z-0 mx-4 max-h-[70%] overflow-auto rounded-xl bg-white p-4 shadow-xs dark:bg-zinc-800">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Suggested for you</h2>
             <a href="#" className="text-sm text-brand transition-colors hover:text-brand/80">
@@ -111,7 +111,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
                         src={suggestion.displayPicture}
                         className="rounded-full object-cover"
                       />
-                      <AvatarFallback className="outline">{suggestion.username?.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="outline-solid">{suggestion.username?.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     {onlineUsers.includes(suggestion?._id.toString()) && (
                       <div className="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-white bg-green-500 dark:border-zinc-800" />

@@ -36,7 +36,7 @@ const Root: React.FC<RootProps> = ({ activeRoute, setActiveRoute, setMoreStatus 
     <>
       <div
         id="pre-home"
-        className={`tablets:w-3/5 !flex-[1_1_20%] ${activeRoute === "home" || activeRoute === "" ? "" : "h-hide"}`}
+        className={`tablets:w-3/5 flex-[1_1_20%]! ${activeRoute === "home" || activeRoute === "" ? "" : "h-hide"}`}
         onClick={() => handleClickMore("close")}
       >
         <Home />

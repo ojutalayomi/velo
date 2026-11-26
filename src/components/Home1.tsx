@@ -205,7 +205,7 @@ const Homepage: React.FC = () => {
 
   return (
     <div onScroll={handleScroll} ref={homeRef} id="home" className="dark:text-slate-200">
-      <header className="sticky top-0 z-[1] w-full bg-gray-50 shadow-md dark:bg-zinc-900">
+      <header className="sticky top-0 z-1 w-full bg-gray-50 shadow-md dark:bg-zinc-900">
         <div
           onClick={() => userdata.name.includes("Ayomide") && setLoad(!load)}
           className="flex w-full justify-center py-3"

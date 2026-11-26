@@ -51,8 +51,8 @@ function FailedPageClient() {
         <BadgeX size={60} className="text-red-600" />
         <h1>We are sorry your email couldn&apos;t be confirmed. Please try again.</h1>
         {message && (
-          <div className="cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 shadow-inner shadow-gray-300 dark:shadow-zinc-700 transition-colors rounded-lg flex flex-1 break-words text-sm dark:text-slate-200 overflow-hidden">
-            <div className="w-1 h-12 bg-brand rounded-full flex-shrink-0"></div>
+          <div className="cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 shadow-inner shadow-gray-300 dark:shadow-zinc-700 transition-colors rounded-lg flex flex-1 wrap-break-word text-sm dark:text-slate-200 overflow-hidden">
+            <div className="w-1 h-12 bg-brand rounded-full shrink-0"></div>
             <div className="line-clamp-2 mx-4 my-auto break-all">{message}</div>
           </div>
         )}
@@ -66,7 +66,7 @@ function FailedPageClient() {
         <Button
           disabled={loading || !email}
           onClick={handleClick}
-          className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-lg hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+          className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-lg hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-brand"
         >
           {loading ? (
             <>

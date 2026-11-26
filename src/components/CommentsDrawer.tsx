@@ -45,7 +45,7 @@ function CommentRow({ comment }: { comment: ClientPostSchema }) {
           </span>
           <span>{timeAgo(comment.TimeOfPost)}</span>
         </p>
-        <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-gray-900 dark:text-gray-100">
+        <p className="mt-0.5 whitespace-pre-wrap wrap-break-word text-sm text-gray-900 dark:text-gray-100">
           {comment.Caption}
         </p>
       </div>

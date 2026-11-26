@@ -123,7 +123,7 @@ const DirectChatMenu = () => {
   return (
     <>
       <div
-        className={`sticky top-0 flex w-full items-center justify-between gap-4 bg-white px-3 py-2 sm:!bg-transparent dark:bg-zinc-900`}
+        className={`sticky top-0 flex w-full items-center justify-between gap-4 bg-white px-3 py-2 sm:bg-transparent! dark:bg-zinc-900`}
       >
         <ArrowLeft
           onClick={() => {
@@ -132,7 +132,7 @@ const DirectChatMenu = () => {
           }}
           className="icon-arrow-left max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
         />
-        <div className="flex flex-grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
+        <div className="flex grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -367,7 +367,7 @@ const GroupChatMenu = () => {
   return (
     <>
       <div
-        className={`sticky top-0 z-10 flex w-full items-center justify-between gap-4 bg-white px-3 py-2 sm:!bg-transparent sm:backdrop-blur-sm dark:bg-zinc-900`}
+        className={`sticky top-0 z-10 flex w-full items-center justify-between gap-4 bg-white px-3 py-2 sm:bg-transparent! sm:backdrop-blur-xs dark:bg-zinc-900`}
       >
         <ArrowLeft
           onClick={() => {
@@ -413,7 +413,7 @@ const GroupChatMenu = () => {
             className="hidden"
           />
         </div>
-        <div className="flex flex-grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
+        <div className="flex grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -437,7 +437,7 @@ const GroupChatMenu = () => {
             placeholder="Search for people..."
           />
         </div>
-        <div className="mt-2 flex flex-grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
+        <div className="mt-2 flex grow items-center gap-3 rounded-full px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <Users size={18} className="text-gray-500 dark:text-gray-400" />
           <input
             className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
@@ -447,7 +447,7 @@ const GroupChatMenu = () => {
             onChange={(e) => setGroupName(e.target.value)}
           />
         </div>
-        <div className="mt-2 flex flex-grow items-center gap-3 rounded-lg px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
+        <div className="mt-2 flex grow items-center gap-3 rounded-lg px-3 py-1 shadow-bar dark:shadow-bar-dark dark:shadow-slate-200">
           <textarea
             className="w-full border-0 bg-transparent outline-0 dark:text-slate-200"
             placeholder="Enter group description..."
@@ -468,7 +468,7 @@ const GroupChatMenu = () => {
               {selectedUsers.map((user) => (
                 <div
                   key={String(user._id)}
-                  className="flex items-center gap-2 rounded-full bg-gray-100 px-2 py-1 shadow dark:bg-zinc-900"
+                  className="flex items-center gap-2 rounded-full bg-gray-100 px-2 py-1 shadow-sm dark:bg-zinc-900"
                 >
                   <Avatar>
                     <AvatarFallback className="shadow-inner">
@@ -541,7 +541,7 @@ const NewChatMenuClient = () => {
   return (
     <Dialog open={pathname?.includes("chats/compose")} onOpenChange={() => {}}>
       <DialogContent
-        className="block h-screen w-screen overflow-auto p-0 sm:grid sm:!h-min sm:!max-h-[90vh] sm:w-full sm:!max-w-lg sm:p-4"
+        className="block h-screen w-screen overflow-auto p-0 sm:grid sm:h-min! sm:max-h-[90vh]! sm:w-full sm:max-w-lg! sm:p-4"
         closeBtn={false}
       >
         {type === "direct" ? <DirectChatMenu /> : <GroupChatMenu />}

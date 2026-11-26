@@ -106,7 +106,7 @@ function mergeFreshPost(prev: ClientPostSchema, fresh: ClientPostSchema): Client
 }
 
 const actionBase =
-  "group flex select-none items-center gap-1 rounded-full text-muted-foreground outline-none duration-150 ease-out-expo motion-reduce:transition-colors motion-safe:transition-[color,transform] motion-safe:active:scale-[0.94]";
+  "group flex select-none items-center gap-1 rounded-full text-muted-foreground outline-hidden duration-150 ease-out-expo motion-reduce:transition-colors motion-safe:transition-[color,transform] motion-safe:active:scale-[0.94]";
 const actionIconWrap =
   "-m-1.5 grid place-items-center rounded-full p-1.5 transition-colors duration-150 ease-out-expo";
 const actionCount = "min-w-4 text-xs tabular-nums";
@@ -616,7 +616,7 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           onClick={() => handleActivePost(`/${data.Username}/posts/${data.PostID}`)}
         >
           {data.Caption ? (
-            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
+            <p className="whitespace-pre-wrap wrap-break-word text-[15px] leading-relaxed">
               {isCaptionTruncated ? (
                 <>
                   {renderTextWithLinks(data.Caption.substring(0, 250))}
@@ -831,7 +831,7 @@ function QuotedPostCard({
     <div
       role="link"
       tabIndex={0}
-      className="mt-3 max-w-md cursor-pointer rounded-2xl border border-border/70 p-3 transition-colors duration-150 ease-out-expo hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:p-4"
+      className="mt-3 max-w-md cursor-pointer rounded-2xl border border-border/70 p-3 transition-colors duration-150 ease-out-expo hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50 sm:p-4"
       onClick={() => handleActivePost(`/${originalPost.Username}/posts/${originalPost.PostID}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -854,7 +854,7 @@ function QuotedPostCard({
             </span>
           </div>
           {originalPost?.Caption ? (
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed">
+            <p className="mt-1 whitespace-pre-wrap wrap-break-word text-sm leading-relaxed">
               {originalPost.Caption.length > 250
                 ? renderTextWithLinks(originalPost.Caption.substring(0, 250)) + "..."
                 : renderTextWithLinks(originalPost.Caption)}

@@ -448,7 +448,7 @@ function Editor({
                   onPointerCancel={onTextUp}
                   className={cn(
                     "absolute -translate-x-1/2 -translate-y-1/2 cursor-move touch-none whitespace-pre px-1 leading-none",
-                    selectedId === item.id && "outline outline-2 outline-dashed outline-white/90"
+                    selectedId === item.id && "outline-solid outline-2 outline-dashed outline-white/90"
                   )}
                   style={{
                     left: `${item.x * 100}%`,
@@ -576,7 +576,7 @@ function Editor({
                   maxLength={120}
                   onChange={(event) => selected && updateText(selected.id, { text: event.target.value })}
                   placeholder={selected ? "Type your text" : "Add text, then drag it into place"}
-                  className="h-10 min-w-0 flex-1 rounded-full bg-zinc-800 px-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
+                  className="h-10 min-w-0 flex-1 rounded-full bg-zinc-800 px-4 text-sm text-white placeholder:text-white/40 focus:outline-hidden focus:ring-2 focus:ring-brand disabled:opacity-60"
                 />
                 <button
                   type="button"

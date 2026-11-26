@@ -88,7 +88,7 @@ export const sidebarItems = [
 export const SIDEBAR_ITEM_PITCH = 38;
 const ROW = "relative mb-0.5 flex h-9 cursor-pointer items-center gap-3";
 const ROW_SHELL =
-  "mx-2 rounded-xl !px-[11px] !py-0 transition-colors hover:bg-slate-200/70 dark:hover:bg-zinc-800";
+  "mx-2 rounded-xl px-[11px]! py-0! transition-colors hover:bg-slate-200/70 dark:hover:bg-zinc-800";
 
 const CountBadge = ({ count, isCollapsed }: { count: number; isCollapsed: boolean }) => (
   <span
@@ -165,7 +165,7 @@ export const SidebarItem = forwardRef<
             align="end"
             aria-label="More"
             collisionPadding={8}
-            className="flex max-h-[var(--radix-popover-content-available-height)] w-56 flex-col overflow-y-auto rounded-xl bg-gray-50 p-2 shadow-lg dark:bg-zinc-900 dark:text-slate-200"
+            className="flex max-h-(--available-height) w-56 flex-col overflow-y-auto rounded-xl bg-gray-50 p-2 shadow-lg dark:bg-zinc-900 dark:text-slate-200"
           >
             {overflowItems.map((overflow) => (
               <SidebarItem
@@ -174,7 +174,7 @@ export const SidebarItem = forwardRef<
                 activeRoute={activeRoute}
                 handleClick={handleClick}
                 userdata={userdata}
-                className="!mx-0 hover:text-brand"
+                className="mx-0! hover:text-brand"
               />
             ))}
           </PopoverContent>
@@ -188,7 +188,7 @@ export const SidebarItem = forwardRef<
           {...props}
           className={cn(
             `sidebar ft dark:text-slate-200 rout ${
-              isActive ? "active !border-r-0 bg-[#ff6257]/10 font-medium" : ""
+              isActive ? "active border-r-0! bg-[#ff6257]/10 font-medium" : ""
             } ${ROW_SHELL}`,
             props.className
           )}
@@ -353,7 +353,7 @@ const UserComponentLoading = ({
   refetchUser: () => void;
 }) => {
   return (
-    <div className="user !mx-0 !my-[.5em] w-full !justify-center !px-2 !py-1 hover:bg-slate-200 md:items-center md:!justify-between dark:hover:bg-neutral-900">
+    <div className="user mx-0! my-[.5em]! w-full justify-center! px-2! py-1! hover:bg-slate-200 md:items-center md:justify-between! dark:hover:bg-neutral-900">
       <div className="img">
         {loading ? (
           <div className={`flex h-[90%] w-full items-center justify-center`}>
@@ -365,7 +365,7 @@ const UserComponentLoading = ({
       </div>
 
       <div
-        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "md:!flex"}`}
+        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "md:flex!"}`}
       >
         <div className="flex max-w-full dark:text-slate-200">
           <div className="mb-1 h-4 w-14 animate-pulse rounded bg-[#9E9E9E]" />
@@ -376,7 +376,7 @@ const UserComponentLoading = ({
 
       <Ellipsis
         size={25}
-        className={`cursor-pointer ${isCollapsed ? "hidden" : "!block"} dark:text-gray-400`}
+        className={`cursor-pointer ${isCollapsed ? "hidden" : "block!"} dark:text-gray-400`}
       />
     </div>
   );
@@ -391,7 +391,7 @@ const UserComponent = ({
 }) => {
   return (
     <div
-      className={`${isCollapsed ? "!shadow-none" : ""} user !mx-0 !my-[.5em] w-full !px-2 !py-1 hover:bg-slate-200 dark:hover:bg-neutral-900 ${isCollapsed ? "!justify-center" : "!items-center !justify-between"}`}
+      className={`${isCollapsed ? "shadow-none!" : ""} user mx-0! my-[.5em]! w-full px-2! py-1! hover:bg-slate-200 dark:hover:bg-neutral-900 ${isCollapsed ? "justify-center!" : "items-center! justify-between!"}`}
     >
       <div className="img size-10 max-h-10 max-w-10">
         <Image
@@ -407,7 +407,7 @@ const UserComponent = ({
       </div>
 
       <div
-        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "!flex"}`}
+        className={`names hidden min-w-0 max-w-[60%] flex-1 flex-col items-start text-left ${isCollapsed ? "hidden" : "flex!"}`}
       >
         <div className="flex max-w-full dark:text-slate-200">
           <p className="truncate">{userdata.name}</p>
@@ -418,7 +418,7 @@ const UserComponent = ({
 
       <Ellipsis
         size={25}
-        className={`cursor-pointer ${isCollapsed ? "hidden" : "!block"} dark:text-gray-400`}
+        className={`cursor-pointer ${isCollapsed ? "hidden" : "block!"} dark:text-gray-400`}
       />
     </div>
   );

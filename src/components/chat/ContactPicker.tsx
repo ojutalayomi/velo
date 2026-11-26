@@ -73,7 +73,7 @@ export function ContactPicker({
             className="pl-8"
           />
         </div>
-        <ul className="max-h-72 overflow-y-auto" data-vaul-no-drag>
+        <ul className="max-h-72 overflow-y-auto">
           {loading && (
             <li className="flex justify-center p-4">
               <Loader2 className="size-5 animate-spin text-gray-400" />

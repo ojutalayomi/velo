@@ -71,7 +71,7 @@ export default function AnnouncementBanner() {
   return (
     <div
       role="status"
-      className="fixed left-1/2 top-2 z-[60] flex w-[min(40rem,calc(100vw-1rem))] -translate-x-1/2 items-start gap-3 rounded-lg border border-primary/20 bg-brand px-4 py-2 text-sm text-foreground shadow-lg"
+      className="fixed left-1/2 top-2 z-60 flex w-[min(40rem,calc(100vw-1rem))] -translate-x-1/2 items-start gap-3 rounded-lg border border-primary/20 bg-brand px-4 py-2 text-sm text-foreground shadow-lg"
     >
       <Megaphone className="mt-0.5 size-4 shrink-0" />
       <p className="min-w-0 flex-1">

@@ -32,7 +32,7 @@ export function ContactCard({ contact }: { contact: SharedContact }) {
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
             <span className="truncate">{contact.name}</span>
-            {contact.verified && <Statuser className="size-4 flex-shrink-0" />}
+            {contact.verified && <Statuser className="size-4 shrink-0" />}
           </p>
           {contact.username && <p className="truncate text-xs text-gray-500">@{contact.username}</p>}
         </div>

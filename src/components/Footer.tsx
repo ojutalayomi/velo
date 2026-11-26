@@ -6,7 +6,7 @@ export const Footer = () => {
   const year = new Date().getFullYear();
 
   return (
-    <div className="!my-8 mx-4 space-y-2 text-xs text-gray-400">
+    <div className="my-8! mx-4 space-y-2 text-xs text-gray-400">
       <div className="flex flex-wrap gap-x-2">
         <Link href="/about" className="hover:underline">
           About

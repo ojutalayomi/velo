@@ -31,7 +31,7 @@ export const EmojiPicker = React.forwardRef<
     <Picker
       onEmojiClick={(emojiObject) => onChange(emojiObject.emoji)}
       width="100%"
-      className="!bg-transparent !mt-0 border-none"
+      className="bg-transparent! mt-0! border-none"
       theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
       skinTonesDisabled
       searchDisabled

@@ -151,7 +151,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = "" }) => {
       onMouseLeave={() => setIsHovering(false)}
     >
       {link ? (
-        <Link href={link} className="z-[1] w-full">
+        <Link href={link} className="z-1 w-full">
           {VideoElement}
         </Link>
       ) : (
@@ -161,7 +161,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = "" }) => {
       {/* Centered play/pause button */}
       <button
         onClick={togglePlay}
-        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform z-[2]
+        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform z-2
           rounded-full bg-black/50 p-4 transition-opacity duration-200
           ${isHovering || !isPlaying ? "opacity-100" : "opacity-0"}`}
       >
@@ -174,7 +174,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = "" }) => {
 
       {/* Controls overlay */}
       <div
-        className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 z-[2]
+        className={`absolute bottom-0 inset-x-0 bg-linear-to-t from-black/80 via-black/40 to-transparent p-4 z-2
         transition-opacity duration-200 flex flex-col gap-3 ${isHovering ? "opacity-100" : "opacity-0"}`}
       >
         {/* Progress bar container with padding to make clicking easier */}
@@ -225,7 +225,7 @@ const VideoDiv: React.FC<VideoProps> = ({ media, link = "" }) => {
               step="0.05"
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
-              className="hidden lg:block w-20 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-white transition-all outline-none"
+              className="hidden lg:block w-20 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-white transition-all outline-hidden"
             />
           </div>
         </div>

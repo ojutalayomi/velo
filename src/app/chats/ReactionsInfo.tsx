@@ -16,7 +16,7 @@ import { useAppDispatch } from "@/redux/hooks";
 import EmojiPicker from "@/components/ui/emoji-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SmilePlus } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function ReactionsInfo({
   message,

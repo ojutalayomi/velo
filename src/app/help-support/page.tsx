@@ -77,7 +77,7 @@ const HelpSupportPage = () => {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <a
             href="tel:+1234567890"
-            className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center"
+            className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow flex flex-col items-center text-center"
           >
             <Phone className="w-8 h-8 text-green-500 mb-2" />
             <h3 className="font-medium text-gray-900 dark:text-white">Phone Support</h3>
@@ -87,7 +87,7 @@ const HelpSupportPage = () => {
 
           <a
             href="mailto:support@example.com"
-            className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center"
+            className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow flex flex-col items-center text-center"
           >
             <Mail className="w-8 h-8 text-blue-500 mb-2" />
             <h3 className="font-medium text-gray-900 dark:text-white">Email Support</h3>
@@ -99,7 +99,7 @@ const HelpSupportPage = () => {
 
           <a
             href="#live-chat"
-            className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center"
+            className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow flex flex-col items-center text-center"
           >
             <MessageCircle className="w-8 h-8 text-purple-500 mb-2" />
             <h3 className="font-medium text-gray-900 dark:text-white">Live Chat</h3>
@@ -109,7 +109,7 @@ const HelpSupportPage = () => {
         </section>
 
         {/* FAQs Section */}
-        <section className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm">
+        <section className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-xs">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-500" />
             Frequently Asked Questions
@@ -141,7 +141,7 @@ const HelpSupportPage = () => {
         </section>
 
         {/* Support Ticket Form */}
-        <section className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm">
+        <section className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-xs">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Submit a Support Ticket
           </h2>
@@ -153,7 +153,7 @@ const HelpSupportPage = () => {
               </label>
               <input
                 type="text"
-                className="block w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
                 placeholder="What do you need help with?"
               />
             </div>
@@ -164,7 +164,7 @@ const HelpSupportPage = () => {
               </label>
               <textarea
                 rows={4}
-                className="block w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white"
                 placeholder="Please describe your issue in detail..."
               />
             </div>
@@ -173,7 +173,7 @@ const HelpSupportPage = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Priority
               </label>
-              <select className="block w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white">
+              <select className="block w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md shadow-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-700 dark:text-white">
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
@@ -183,7 +183,7 @@ const HelpSupportPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md shadow-sm transition-colors duration-200"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md shadow-xs transition-colors duration-200"
             >
               Submit Ticket
             </button>
@@ -191,7 +191,7 @@ const HelpSupportPage = () => {
         </section>
 
         {/* Additional Resources */}
-        <section className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm">
+        <section className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-xs">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Additional Resources
           </h2>

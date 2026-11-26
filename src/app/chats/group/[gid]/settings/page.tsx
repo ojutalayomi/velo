@@ -228,7 +228,7 @@ const ChatSettingsPage: React.FC = () => {
 
   return (
     <SettingsShell title="Group settings" onBack={() => navigate()}>
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-800">
+      <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-xs dark:border-neutral-800 dark:bg-neutral-800">
         <div className="relative mx-auto mb-3 size-fit">
           <Avatar className="size-24 border-2 border-white shadow-md dark:border-neutral-900">
             <AvatarFallback className="text-xl">
@@ -249,7 +249,7 @@ const ChatSettingsPage: React.FC = () => {
           )}
         </div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">{convo.name}</h2>
-        <p className="mx-auto mt-1 max-w-sm whitespace-pre-line break-words text-sm text-gray-500 dark:text-gray-400">
+        <p className="mx-auto mt-1 max-w-sm whitespace-pre-line wrap-break-word text-sm text-gray-500 dark:text-gray-400">
           {convo.description || <span className="italic">No description</span>}
         </p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">

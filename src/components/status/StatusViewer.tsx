@@ -302,13 +302,13 @@ export const StatusViewer = ({
   return (
     <FullscreenSheet open onOpenChange={(open) => !open && onClose()}>
       <FullscreenSheetContent
-        className="z-[80] items-center justify-center bg-black"
+        className="z-80 items-center justify-center bg-black"
         aria-describedby={undefined}
         onPointerDown={startHold}
         onPointerUp={endHold}
         onPointerCancel={endHold}
         onPointerLeave={endHold}
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        initialFocus={false}
       >
         <FullscreenSheetTitle className="sr-only">
           {isOwner ? "Your status" : `Status from ${group.user.name}`}
@@ -319,7 +319,7 @@ export const StatusViewer = ({
 
         <div
           data-no-hold
-          className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/60 to-transparent p-4 pt-[max(1rem,env(safe-area-inset-top))]"
+          className="absolute inset-x-0 top-0 z-20 bg-linear-to-b from-black/60 to-transparent p-4 pt-[max(1rem,env(safe-area-inset-top))]"
         >
           <div className="mb-3 flex gap-1">
             {group.statuses.map((item, index) => (
@@ -404,7 +404,7 @@ export const StatusViewer = ({
 
         <div
           data-no-hold
-          className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-10"
+          className="absolute inset-x-0 bottom-0 z-20 bg-linear-to-t from-black/80 via-black/40 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-10"
         >
           {status.caption && (
             <p className="mx-auto mb-3 max-h-40 max-w-xl overflow-y-auto whitespace-pre-wrap text-center text-sm">
@@ -417,7 +417,7 @@ export const StatusViewer = ({
                 <button
                   type="button"
                   onClick={() => setViewersOpen(true)}
-                  className="flex h-11 items-center gap-2 rounded-full bg-white/10 px-4 text-sm font-medium backdrop-blur hover:bg-white/20"
+                  className="flex h-11 items-center gap-2 rounded-full bg-white/10 px-4 text-sm font-medium backdrop-blur-sm hover:bg-white/20"
                   aria-label={`${status.viewCount} ${status.viewCount === 1 ? "view" : "views"}. See who viewed`}
                 >
                   <Eye className="size-5" />
@@ -455,7 +455,7 @@ export const StatusViewer = ({
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => void sendReply(emoji)}
                         disabled={sendingReply}
-                        className="flex size-11 items-center justify-center rounded-full bg-white/10 text-2xl backdrop-blur transition-transform hover:bg-white/20 active:scale-90"
+                        className="flex size-11 items-center justify-center rounded-full bg-white/10 text-2xl backdrop-blur-sm transition-transform hover:bg-white/20 active:scale-90"
                       >
                         {emoji}
                       </button>
@@ -472,7 +472,7 @@ export const StatusViewer = ({
                     enterKeyHint="send"
                     aria-label={`Reply to ${group.user.name}`}
                     placeholder={`Reply to ${group.user.name.split(" ")[0]}…`}
-                    className="h-11 min-w-0 flex-1 rounded-full border border-white/30 bg-black/30 px-4 text-sm text-white outline-none backdrop-blur placeholder:text-white/60 focus:border-white/70"
+                    className="h-11 min-w-0 flex-1 rounded-full border border-white/30 bg-black/30 px-4 text-sm text-white outline-hidden backdrop-blur-sm placeholder:text-white/60 focus:border-white/70"
                   />
                   {reply.trim() && (
                     <button
@@ -490,7 +490,7 @@ export const StatusViewer = ({
                     onClick={toggleLike}
                     aria-pressed={status.liked}
                     aria-label={status.liked ? "Unlike status" : "Like status"}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/10 backdrop-blur transition-transform hover:bg-white/20 active:scale-90"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-transform hover:bg-white/20 active:scale-90"
                   >
                     <Heart
                       className={cn(
@@ -559,7 +559,7 @@ const StatusMedia = ({
       >
         <p
           className={cn(
-            "max-h-full w-full max-w-xl overflow-y-auto break-words text-center font-bold",
+            "max-h-full w-full max-w-xl overflow-y-auto wrap-break-word text-center font-bold",
             "dark" in bg && bg.dark ? "text-zinc-900" : "text-white",
             text.length > 220 ? "text-xl" : text.length > 90 ? "text-3xl" : "text-4xl"
           )}
@@ -573,7 +573,7 @@ const StatusMedia = ({
 
   if (status.mediaType === "audio") {
     return (
-      <div className="flex size-full flex-col items-center justify-center gap-6 bg-gradient-to-b from-zinc-900 to-zinc-950 px-8">
+      <div className="flex size-full flex-col items-center justify-center gap-6 bg-linear-to-b from-zinc-900 to-zinc-950 px-8">
         <div className="relative">
           <span className="absolute inset-0 animate-ping rounded-full bg-brand/30 [animation-duration:2.4s]" />
           <Avatar className="size-32 border-4 border-brand/60">
@@ -627,7 +627,7 @@ const PlayTap = ({ onClick }: { onClick: () => void }) => (
     type="button"
     data-no-hold
     onClick={onClick}
-    className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/60 px-6 py-3 text-base font-semibold backdrop-blur"
+    className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/60 px-6 py-3 text-base font-semibold backdrop-blur-sm"
   >
     Tap to play
   </button>

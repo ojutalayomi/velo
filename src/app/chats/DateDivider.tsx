@@ -28,8 +28,8 @@ export const DateGroup = ({
   children: ReactNode;
 }) => (
   <section data-date={getDayKey(timestamp)}>
-    <div className="pointer-events-none sticky top-2 z-[1] my-3 flex justify-center">
-      <span className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-1 text-xs font-medium text-gray-600 shadow-sm backdrop-blur-md dark:border-zinc-700/70 dark:bg-zinc-800/80 dark:text-gray-300">
+    <div className="pointer-events-none sticky top-2 z-1 my-3 flex justify-center">
+      <span className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-1 text-xs font-medium text-gray-600 shadow-xs backdrop-blur-md dark:border-zinc-700/70 dark:bg-zinc-800/80 dark:text-gray-300">
         {formatDayLabel(timestamp)}
       </span>
     </div>

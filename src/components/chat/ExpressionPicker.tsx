@@ -70,7 +70,7 @@ export function ExpressionPicker({
               className={cn(
                 "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors",
                 active === t.id
-                  ? "bg-white shadow-sm dark:bg-zinc-700 dark:text-white"
+                  ? "bg-white shadow-xs dark:bg-zinc-700 dark:text-white"
                   : "text-gray-600 dark:text-gray-400"
               )}
             >
@@ -79,13 +79,13 @@ export function ExpressionPicker({
           ))}
         </div>
       )}
-      <div className="min-h-0 flex-1" data-vaul-no-drag>
+      <div className="min-h-0 flex-1">
         {active === "emoji" ? (
           <Picker
             onEmojiClick={(emojiObject) => onEmoji(emojiObject.emoji)}
             width="100%"
             height="100%"
-            className="!bg-transparent !mt-0 border-none"
+            className="bg-transparent! mt-0! border-none"
             theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
             skinTonesDisabled
             searchDisabled

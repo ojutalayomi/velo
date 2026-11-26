@@ -37,7 +37,7 @@ export function AudioFileCard({
   };
 
   return (
-    <div className="flex min-w-[240px] max-w-[320px] flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+    <div className="flex min-w-[240px] max-w-[320px] flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-xs dark:border-neutral-700 dark:bg-neutral-800">
       <div className="flex items-center gap-3">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-300">
           <Music size={22} />
@@ -82,7 +82,7 @@ export function AudioFileCard({
           }}
           className="h-1 min-w-0 flex-1 cursor-pointer accent-brand"
         />
-        <span className="w-[4.5rem] shrink-0 text-right text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+        <span className="w-18 shrink-0 text-right text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
           {formatClock(time)} / {formatClock(duration)}
         </span>
         <PlaybackSpeedButton />

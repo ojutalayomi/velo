@@ -89,7 +89,7 @@ const ForgotPassword: React.FC = () => {
             {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
           <Button
-            className="h-10 w-full bg-brand font-semibold text-white shadow-sm hover:bg-brand/90 active:scale-[0.98] transition-all"
+            className="h-10 w-full bg-brand font-semibold text-white shadow-xs hover:bg-brand/90 active:scale-[0.98] transition-all"
             disabled={loading}
           >
             {loading ? (

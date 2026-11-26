@@ -25,7 +25,7 @@ export default function SuccessPage() {
         <h1>Your account has been successfully created. You can proceed to the homepage.</h1>
         <Button
           onClick={handleClick}
-          className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-white hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+          className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-white hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-brand"
         >
           <span>Go home</span>
           <Home size={20} />

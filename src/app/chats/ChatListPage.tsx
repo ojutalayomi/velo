@@ -111,7 +111,7 @@ const ChatProfileDialog: React.FC<{
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] max-w-xs gap-0 overflow-hidden rounded-3xl border-none p-0 dark:bg-zinc-900">
-        <div className="flex flex-col break-all items-center gap-3 bg-gradient-to-b from-brand/20 to-transparent px-6 pb-4 pt-10">
+        <div className="flex flex-col break-all items-center gap-3 bg-linear-to-b from-brand/20 to-transparent px-6 pb-4 pt-10">
           <Avatar className="size-44 shadow-lg ring-4 ring-white dark:ring-zinc-900">
             <AvatarImage
               src={chat.displayPicture}
@@ -122,8 +122,8 @@ const ChatProfileDialog: React.FC<{
           </Avatar>
           <div className="flex flex-col items-center gap-0.5 text-center">
             <DialogTitle className="flex items-center gap-1 text-xl">
-              <span className="break-words">{chat.name}</span>
-              {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
+              <span className="wrap-break-word">{chat.name}</span>
+              {chat.verified && <Statuser className="size-4 shrink-0" />}
             </DialogTitle>
             <DialogDescription className="text-sm">{subtitle}</DialogDescription>
           </div>
@@ -143,7 +143,7 @@ const ChatProfileDialog: React.FC<{
               title={disabled && call ? "You are already in a call" : undefined}
               className="group flex flex-col items-center gap-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300"
             >
-              <span className="flex size-12 items-center justify-center rounded-full bg-brand text-white shadow-sm transition-transform group-hover:scale-105 group-active:scale-95">
+              <span className="flex size-12 items-center justify-center rounded-full bg-brand text-white shadow-xs transition-transform group-hover:scale-105 group-active:scale-95">
                 <Icon className="size-5" />
               </span>
               {label}
@@ -296,7 +296,7 @@ const Card: React.FC<Props> = ({ chat }) => {
       >
         <div
           className={cn(
-            "group relative flex cursor-pointer items-center gap-3 overflow-visible border-b border-gray-100 px-3 py-2.5 transition-colors duration-150 hover:bg-slate-100 dark:border-zinc-800 dark:text-white hover:dark:bg-zinc-800",
+            "group relative flex cursor-pointer items-center gap-3 overflow-visible border-b border-gray-100 px-3 py-2.5 transition-colors duration-150 hover:bg-slate-100 dark:border-zinc-800 dark:text-white dark:hover:bg-zinc-800",
             chat.pinned && "bg-gray-50 dark:bg-zinc-900/70"
           )}
           onContextMenu={handleContextMenu}
@@ -394,11 +394,11 @@ const Card: React.FC<Props> = ({ chat }) => {
                 <h2 className={cn("truncate", chat.unread > 0 ? "font-bold" : "font-semibold")}>
                   {chat.name + (chat.type === "Personal" ? " (You)" : "")}
                 </h2>
-                {chat.verified && <Statuser className="size-4 flex-shrink-0" />}
+                {chat.verified && <Statuser className="size-4 shrink-0" />}
               </div>
               <span
                 className={cn(
-                  "flex-shrink-0 text-nowrap text-xs group-hover:hidden",
+                  "shrink-0 text-nowrap text-xs group-hover:hidden",
                   chat.unread > 0 ? "font-medium text-brand" : "text-gray-500"
                 )}
               >
@@ -418,16 +418,16 @@ const Card: React.FC<Props> = ({ chat }) => {
                   <span className="truncate italic text-brand">{typingLabel(filteredIsTypingList)}</span>
                 ) : draft ? (
                   <>
-                    <span className="flex-shrink-0 text-red-500">Draft:</span>
+                    <span className="shrink-0 text-red-500">Draft:</span>
                     <span className="truncate">{draft}</span>
                   </>
                 ) : (
                   <>
                     {showTick &&
                       (chat.lastRead ? (
-                        <CheckCheck className="size-4 flex-shrink-0 text-sky-500" aria-label="Read" />
+                        <CheckCheck className="size-4 shrink-0 text-sky-500" aria-label="Read" />
                       ) : (
-                        <Check className="size-4 flex-shrink-0 text-gray-500" aria-label="Sent" />
+                        <Check className="size-4 shrink-0 text-gray-500" aria-label="Sent" />
                       ))}
                     <span className="truncate">
                       {senderPrefix}
@@ -436,7 +436,7 @@ const Card: React.FC<Props> = ({ chat }) => {
                   </>
                 )}
               </p>
-              <div className="flex flex-shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 {chat.unread > 0 && (
                   <div className="flex min-w-5 items-center justify-center rounded-full bg-brand px-1.5 py-0.5 text-xs font-bold leading-none text-white">
                     {chat.unread}
@@ -485,7 +485,7 @@ const ChatListPage: React.FC<FilteredChatsProps> = ({
   className1 = "mb-10",
 }) => {
   return (
-    <div className={`h-full flex-grow ${className}`}>
+    <div className={`h-full grow ${className}`}>
       <div className={`flex flex-col ${className1} tablets1:mb-0`}>
         {filteredChats()
           .sort((a, b) => {

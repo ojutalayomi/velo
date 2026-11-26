@@ -190,7 +190,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
 
   return (
     <div className="h-screen overflow-auto text-zinc-900 dark:text-zinc-50">
-      <header className="sticky top-0 z-[1] border-b border-zinc-200/80 backdrop-blur-md dark:border-zinc-800">
+      <header className="sticky top-0 z-1 border-b border-zinc-200/80 backdrop-blur-md dark:border-zinc-800">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <button
             type="button"
@@ -218,7 +218,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search captions…"
               className={cn(
-                "h-11 rounded-full border-zinc-200 bg-white pl-10 pr-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900",
+                "h-11 rounded-full border-zinc-200 bg-white pl-10 pr-4 shadow-xs dark:border-zinc-700 dark:bg-zinc-900",
                 "placeholder:text-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-400/30 dark:focus-visible:ring-zinc-500/30"
               )}
               aria-label="Search posts"
@@ -267,7 +267,7 @@ export function CaptionSearchFeed(props: CaptionSearchFeedProps) {
           <ul className="flex flex-col">
             {items.map((post) => (
               <li key={post.PostID ?? post._id}>
-                <div className="overflow-hidden border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="overflow-hidden border border-zinc-200/90 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                   <PostCard postData={post} />
                 </div>
               </li>

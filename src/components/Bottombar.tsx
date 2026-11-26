@@ -136,9 +136,9 @@ const Root: React.FC<BottombarProps> = ({
         <SquarePen size={24} />
       </button>
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 border-t bg-white/95 backdrop-blur transition-transform duration-200 tablets:hidden dark:bg-zinc-900/95 ${hideBar ? "translate-y-full" : ""} ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
+        className={`fixed inset-x-0 bottom-0 z-50 border-t bg-white/95 backdrop-blur-sm transition-transform duration-200 tablets:hidden dark:bg-zinc-900/95 ${hideBar ? "translate-y-full" : ""} ${(routes.includes(activeRoute) || pathname?.includes("/accounts")) && "hidden"}`}
       >
-        <div className="flex w-full items-center justify-evenly py-[10px] !shadow-none">
+        <div className="flex w-full items-center justify-evenly py-[10px] shadow-none!">
           {[
             { route: "home", Icon: House, filled: true },
             { route: "explore", Icon: Compass, filled: false },

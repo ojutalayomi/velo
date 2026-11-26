@@ -95,7 +95,7 @@ export function StatusReplyCard({
         onClick={() => setOpen(true)}
         aria-label={live ? `${title}. Open status` : `${title}. This status has expired`}
         className={cn(
-          "mb-1.5 flex w-full min-w-[12rem] items-center gap-2 overflow-hidden rounded-lg border-l-4 border-brand p-1.5 text-left",
+          "mb-1.5 flex w-full min-w-48 items-center gap-2 overflow-hidden rounded-lg border-l-4 border-brand p-1.5 text-left",
           own ? "bg-black/10 dark:bg-white/10" : "bg-gray-100 dark:bg-zinc-700/60",
           live ? "cursor-pointer hover:opacity-90" : "cursor-default opacity-80"
         )}
@@ -103,7 +103,7 @@ export function StatusReplyCard({
         {thumb}
         <span className="min-w-0 flex-1">
           <span className="block text-xs font-semibold text-brand">{title}</span>
-          <span className="line-clamp-2 break-words text-xs opacity-80">
+          <span className="line-clamp-2 wrap-break-word text-xs opacity-80">
             {statusReplySummary(reply)}
           </span>
           {!live && <span className="block text-[11px] italic opacity-70">Status expired</span>}

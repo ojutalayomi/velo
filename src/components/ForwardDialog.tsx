@@ -160,7 +160,7 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search chats"
         autoComplete="off"
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand dark:border-neutral-600 dark:bg-neutral-800"
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-hidden focus:border-brand focus:ring-1 focus:ring-brand dark:border-neutral-600 dark:bg-neutral-800"
       />
 
       <ul className="max-h-72 space-y-1 overflow-y-auto">

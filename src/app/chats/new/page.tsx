@@ -11,7 +11,7 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
@@ -542,11 +542,11 @@ const ChatPage = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
               <EllipsisVertical className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
-            </PopoverTrigger>
-            <PopoverContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
               <ul className="py-1">
                 {options.map((option) => (
                   <li
@@ -561,14 +561,14 @@ const ChatPage = () => {
                   </li>
                 ))}
               </ul>
-            </PopoverContent>
-          </Popover>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       <div
         ref={messageBoxRef}
-        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-sm"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-xs"
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
           {load ? (
@@ -625,7 +625,7 @@ const ChatPage = () => {
               {load || chatData.description === undefined ? (
                 <Skeleton className="mx-auto block h-4 w-36" />
               ) : (
-                <p className="max-w-full break-words text-sm text-gray-600 dark:text-gray-400">
+                <p className="max-w-full wrap-break-word text-sm text-gray-600 dark:text-gray-400">
                   {chatData.description}
                 </p>
               )}

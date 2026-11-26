@@ -457,7 +457,7 @@ const RightSideBar = ({
             <Input
               type="text"
               placeholder="Search people"
-              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
+              className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm shadow-xs focus:ring-2 focus:ring-brand/20 dark:bg-zinc-800"
             />
           </div>
         </div> */}

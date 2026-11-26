@@ -185,7 +185,7 @@ export const DocCard: React.FC<DocCardProps> = ({ file, className }) => {
           {/* Icon Container */}
           <div className="group relative">
             <div
-              className="flex size-24 transform items-center justify-center rounded-2xl bg-gradient-to-b from-white to-gray-50 shadow-xl backdrop-blur-lg 
+              className="flex size-24 transform items-center justify-center rounded-2xl bg-linear-to-b from-white to-gray-50 shadow-xl backdrop-blur-lg 
                           transition-all duration-300 ease-in-out group-hover:rotate-3 group-hover:scale-110"
             >
               <FileIcon className={cn("w-12 h-12", getIconColor)} />

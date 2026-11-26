@@ -132,12 +132,12 @@ function HotCard({ post, onClick }: { post: ClientPostSchema; onClick: (id: stri
     <button
       onClick={() => onClick(post.PostID ?? post._id)}
       aria-label={`Open post by ${post.NameOfPoster}`}
-      className="group relative aspect-[3/4] w-36 shrink-0 snap-start overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800 tablets:w-44"
+      className="group relative aspect-3/4 w-36 shrink-0 snap-start overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800 tablets:w-44"
     >
       <Media src={first} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-transparent" />
       {!isImageUrl(first) && (
-        <Play className="absolute right-2 top-2 text-white drop-shadow" size={18} fill="white" />
+        <Play className="absolute right-2 top-2 text-white drop-shadow-sm" size={18} fill="white" />
       )}
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-2.5 text-left">
         <div className="flex items-center gap-1.5">
@@ -169,7 +169,7 @@ function ExploreCell({
 
   return (
     <button
-      className={`group relative w-full overflow-hidden rounded-lg bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:bg-zinc-800 ${
+      className={`group relative w-full overflow-hidden rounded-lg bg-zinc-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand dark:bg-zinc-800 ${
         featured ? "col-span-2 row-span-2 aspect-square" : "aspect-square"
       }`}
       onClick={() => onClick(post.PostID ?? post._id)}
@@ -181,7 +181,7 @@ function ExploreCell({
         {isImage && hasMultiple && <Layers className="text-white" size={18} />}
       </span>
       {/* hover / focus stats */}
-      <span className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
+      <span className="absolute inset-0 flex items-end bg-linear-to-t from-black/70 to-transparent p-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
         <Stats post={post} />
       </span>
     </button>
@@ -401,22 +401,22 @@ const Explore = () => {
     >
       {/* Header */}
       <header className="sticky top-0 bg-white dark:bg-neutral-900 dark:border-black-200 p-2 border-gray-300 z-10">
-        <div className="max-w-screen-sm mx-auto flex gap-2 items-center">
-          <div className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow hover:bg-accent" onClick={() => router.push("/home")} aria-label="Back to home">
+        <div className="max-w-(--breakpoint-sm) mx-auto flex gap-2 items-center">
+          <div className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow-sm hover:bg-accent" onClick={() => router.push("/home")} aria-label="Back to home">
             <ArrowLeft size={18}/>
           </div>
           <ExploreSearchPanel variant="explore" className="flex-1" />
           <button
             type="button"
             onClick={() => hardReloadExplore()}
-            className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow hover:bg-accent"
+            className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow-sm hover:bg-accent"
             aria-label="Refresh explore"
           >
             <RefreshCw size={18} />
           </button>
           <Link
             href="/trending"
-            className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow hover:bg-accent"
+            className="cursor-pointer flex items-center gap-2 rounded-full p-2 shadow-sm hover:bg-accent"
             aria-label="Trending"
           >
             <TrendingUp size={18} />
@@ -424,7 +424,7 @@ const Explore = () => {
         </div>
       </header>
 
-      <main className="max-w-screen-sm mx-auto p-1 pb-4">
+      <main className="max-w-(--breakpoint-sm) mx-auto p-1 pb-4">
         <ExploreStatusRail />
 
         {/* Trending topics rail */}
@@ -494,7 +494,7 @@ const Explore = () => {
         <div
           role="tablist"
           aria-label="Explore filter"
-          className="no-scrollbar sticky top-[52px] z-[5] -mx-1 mb-2 flex gap-2 overflow-x-auto bg-white px-2 py-2 dark:bg-neutral-950"
+          className="no-scrollbar sticky top-[52px] z-5 -mx-1 mb-2 flex gap-2 overflow-x-auto bg-white px-2 py-2 dark:bg-neutral-950"
         >
           {FILTERS.map((f) => (
             <button

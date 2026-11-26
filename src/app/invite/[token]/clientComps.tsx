@@ -75,7 +75,7 @@ const InviteJoin = ({ token }: { token: string }) => {
 
   return (
     <div className="flex size-full items-center justify-center overflow-y-auto bg-gray-50 p-4 dark:bg-neutral-900">
-      <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-sm dark:bg-neutral-800">
+      <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-xs dark:bg-neutral-800">
         {userLoading || (!preview && !loadError) ? (
           <div className="flex justify-center py-10">
             <Loader2 className="size-6 animate-spin text-gray-400" />

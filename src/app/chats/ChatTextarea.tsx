@@ -297,7 +297,7 @@ const ChatTextarea = ({
   // Memoize className to prevent re-renders
   const textAreaClassName = useMemo(
     () =>
-      `max-h-[160px] ${expanded ? "!min-h-[80vh]" : "!min-h-5"} flex-1 resize-none rounded-2xl border-none bg-gray-100 px-4 py-2 text-sm !text-black focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:bg-zinc-800 dark:!text-slate-200 dark:!caret-white dark:focus:ring-offset-zinc-900`,
+      `max-h-[160px] ${expanded ? "min-h-[80vh]!" : "min-h-5!"} flex-1 resize-none rounded-2xl border-none bg-gray-100 px-4 py-2 text-sm text-black! focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-white dark:bg-zinc-800 dark:text-slate-200! dark:caret-white! dark:focus:ring-offset-zinc-900`,
     [expanded]
   );
 
@@ -343,9 +343,9 @@ const ChatTextarea = ({
               <div className="flex min-w-0 items-stretch space-x-2">
                 <div
                   onClick={handleQuoteClick}
-                  className="flex w-screen flex-1 cursor-pointer gap-2 overflow-hidden break-words rounded-lg text-sm shadow-inner shadow-gray-300 transition-colors hover:bg-gray-200 dark:text-slate-200 dark:shadow-zinc-700 dark:hover:bg-zinc-700"
+                  className="flex w-screen flex-1 cursor-pointer gap-2 overflow-hidden wrap-break-word rounded-lg text-sm shadow-inner shadow-gray-300 transition-colors hover:bg-gray-200 dark:text-slate-200 dark:shadow-zinc-700 dark:hover:bg-zinc-700"
                 >
-                  <div className="h-12 w-1 flex-shrink-0 rounded-full bg-brand" />
+                  <div className="h-12 w-1 shrink-0 rounded-full bg-brand" />
                   <div className="my-auto line-clamp-2 break-all">{quote.message?.content}</div>
                 </div>
               </div>
@@ -354,7 +354,7 @@ const ChatTextarea = ({
                   e.stopPropagation();
                   closeQuote();
                 }}
-                className="flex-shrink-0 rounded-full p-1 transition-colors hover:bg-gray-300 dark:hover:bg-zinc-600"
+                className="shrink-0 rounded-full p-1 transition-colors hover:bg-gray-300 dark:hover:bg-zinc-600"
               >
                 <X size={16} className="text-brand" />
               </button>
@@ -490,7 +490,7 @@ const ChatTextarea = ({
               onKeyDown={handleKeyDown}
               fontFamily="myCustomFont, myCustomFont Fallback"
               className={textAreaClassName}
-              textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
+              textareaClassName="caret-black! dark:caret-white! placeholder:text-black! dark:placeholder:text-slate-200!"
             />
             <>
               {newMessage.length > 100 && (
@@ -530,7 +530,7 @@ const ChatTextarea = ({
             <Button
               aria-label="Record a voice note"
               onClick={() => void startVoiceNote()}
-              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
+              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent p-2! px-1 text-white transition-colors dark:hover:bg-neutral-800"
             >
               <Mic size={30} className="text-brand" />
             </Button>
@@ -538,7 +538,7 @@ const ChatTextarea = ({
             <Button
               disabled={newMessage.length === 0 && attachments.length === 0}
               onClick={handleSendClick}
-              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent !p-2 px-1 text-white transition-colors dark:hover:bg-neutral-800"
+              className="mb-1.5 h-auto cursor-pointer rounded-full bg-transparent p-2! px-1 text-white transition-colors dark:hover:bg-neutral-800"
             >
               <Send size={30} className="text-brand" />
             </Button>
@@ -844,7 +844,7 @@ const UploadDialog = ({
                 aria-label="Previous file"
                 disabled={safeIndex === 0}
                 onClick={() => step(-1)}
-                className="absolute left-3 top-1/2 hidden -translate-y-1/2 bg-black/50 backdrop-blur-sm sm:flex"
+                className="absolute left-3 top-1/2 hidden -translate-y-1/2 bg-black/50 backdrop-blur-xs sm:flex"
               >
                 <ChevronLeft size={24} />
               </SheetIconButton>
@@ -852,7 +852,7 @@ const UploadDialog = ({
                 aria-label="Next file"
                 disabled={safeIndex === attachments.length - 1}
                 onClick={() => step(1)}
-                className="absolute right-3 top-1/2 hidden -translate-y-1/2 bg-black/50 backdrop-blur-sm sm:flex"
+                className="absolute right-3 top-1/2 hidden -translate-y-1/2 bg-black/50 backdrop-blur-xs sm:flex"
               >
                 <ChevronRight size={24} />
               </SheetIconButton>
@@ -917,8 +917,8 @@ const UploadDialog = ({
                     if (canSend) send();
                   }
                 }}
-                className="flex-1 resize-none rounded-2xl border-none bg-zinc-800 px-4 py-2 pr-11 text-sm !text-slate-100 focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-zinc-900"
-                textareaClassName="!caret-white placeholder:!text-slate-400"
+                className="flex-1 resize-none rounded-2xl border-none bg-zinc-800 px-4 py-2 pr-11 text-sm text-slate-100! focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-zinc-900"
+                textareaClassName="caret-white! placeholder:text-slate-400!"
               />
               <EmojiPicker
                 triggerClassName="absolute inset-y-0 right-0 flex items-center p-3 hover:text-brand/80 rounded-full"

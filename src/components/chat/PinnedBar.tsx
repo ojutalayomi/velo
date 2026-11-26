@@ -63,7 +63,7 @@ export function PinnedBar({ chatId }: { chatId: string }) {
   return (
     <>
       <div
-        className="flex items-center gap-2 border-b bg-white/80 px-3 py-1.5 backdrop-blur dark:bg-zinc-900/80"
+        className="flex items-center gap-2 border-b bg-white/80 px-3 py-1.5 backdrop-blur-sm dark:bg-zinc-900/80"
         data-testid="pinned-bar"
       >
         <button

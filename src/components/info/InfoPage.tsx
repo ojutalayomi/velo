@@ -32,7 +32,7 @@ interface InfoPageProps {
 export function InfoPage({ eyebrow, title, intro, current, children, icon }: InfoPageProps) {
   return (
     <main className="h-dvh w-full overflow-y-auto bg-gray-50 text-foreground dark:bg-zinc-950">
-      <header className="relative overflow-hidden border-b border-border/60 bg-white dark:border-white/[0.06] dark:bg-zinc-900">
+      <header className="relative overflow-hidden border-b border-border/60 bg-white dark:border-white/6 dark:bg-zinc-900">
         <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-brand/15 blur-3xl" />
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.05] dark:opacity-[0.03]"
@@ -68,7 +68,7 @@ export function InfoPage({ eyebrow, title, intro, current, children, icon }: Inf
 
       <nav
         aria-label="More about Velo"
-        className="mx-auto max-w-3xl border-t border-border/60 px-5 pb-16 pt-6 sm:px-8 dark:border-white/[0.06]"
+        className="mx-auto max-w-3xl border-t border-border/60 px-5 pb-16 pt-6 sm:px-8 dark:border-white/6"
       >
         <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {INFO_LINKS.map((l) => (
@@ -124,7 +124,7 @@ export function Card({ children, className }: { children: React.ReactNode; class
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border/60 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-zinc-900",
+        "rounded-2xl border border-border/60 bg-white p-5 shadow-xs dark:border-white/8 dark:bg-zinc-900",
         className
       )}
     >
@@ -190,7 +190,7 @@ export function CtaLink({
       className={cn(
         "inline-flex h-10 items-center gap-1.5 rounded-full px-5 text-sm font-semibold transition-all",
         variant === "primary"
-          ? "bg-brand text-white shadow-sm hover:brightness-110"
+          ? "bg-brand text-white shadow-xs hover:brightness-110"
           : "border border-border bg-transparent hover:border-brand/50 hover:bg-brand/5"
       )}
     >

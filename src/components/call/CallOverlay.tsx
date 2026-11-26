@@ -233,7 +233,7 @@ export default function CallOverlay() {
         role="alertdialog"
         aria-modal="true"
         aria-label={`Incoming ${kindLabel} from ${call.peer.name}`}
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
       >
         <div className="flex w-full max-w-sm flex-col items-center gap-8 rounded-3xl bg-zinc-900 px-6 py-10 text-white shadow-2xl ring-1 ring-white/10">
           <PeerAvatar name={call.peer.name} src={call.peer.avatar} ring />
@@ -264,7 +264,7 @@ export default function CallOverlay() {
         {remoteAudio}
         <div
           role="status"
-          className="fixed inset-x-0 bottom-24 z-[100] mx-auto flex w-fit items-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm text-white shadow-xl ring-1 ring-white/10"
+          className="fixed inset-x-0 bottom-24 z-100 mx-auto flex w-fit items-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm text-white shadow-xl ring-1 ring-white/10"
         >
           <PhoneOff size={16} className="text-red-400" />
           {endReasonLabel(state.endReason, call.direction)}
@@ -277,7 +277,7 @@ export default function CallOverlay() {
     return (
       <>
         {remoteAudio}
-        <div className="fixed bottom-20 right-3 z-[100] flex items-center gap-3 rounded-full bg-zinc-900 py-2 pl-2 pr-3 text-white shadow-xl ring-1 ring-white/10">
+        <div className="fixed bottom-20 right-3 z-100 flex items-center gap-3 rounded-full bg-zinc-900 py-2 pl-2 pr-3 text-white shadow-xl ring-1 ring-white/10">
           <button
             type="button"
             onClick={() => setMinimized(false)}
@@ -324,7 +324,7 @@ export default function CallOverlay() {
       role="dialog"
       aria-modal="true"
       aria-label={`${call.peer.name} ${kindLabel}`}
-      className="fixed inset-0 z-[100] flex flex-col bg-zinc-950 text-white"
+      className="fixed inset-0 z-100 flex flex-col bg-zinc-950 text-white"
     >
       {remoteAudio}
       {showRemoteVideo && (
@@ -335,7 +335,7 @@ export default function CallOverlay() {
           className="absolute inset-0 size-full object-cover"
         />
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70" />
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/60 via-transparent to-black/70" />
 
       {/* Header */}
       <div className="relative flex items-center justify-between px-4 pt-[max(1rem,env(safe-area-inset-top))]">

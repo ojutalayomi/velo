@@ -17,7 +17,7 @@ const ChatPage: React.FC = () => {
         </p>
         <button
           onClick={() => router.push("/chats/compose")}
-          className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-full hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+          className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-full hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-brand"
         >
           <span>New message</span>
           <Send size={20} />

@@ -340,7 +340,7 @@ export default function Profile({
             "flex size-9 items-center justify-center rounded-full transition-colors",
             showTitle
               ? "text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-zinc-800"
-              : "bg-black/45 text-white backdrop-blur hover:bg-black/60"
+              : "bg-black/45 text-white backdrop-blur-sm hover:bg-black/60"
           )}
         >
           <ArrowLeft className="size-5" />
@@ -467,7 +467,7 @@ export default function Profile({
           {profileData.bio && <p className="text-gray-800 dark:text-gray-200">{profileData.bio}</p>}
           <div className="flex flex-wrap gap-4">
             {profileData.location && (
-              <span className="!ml-0 flex items-center gap-1 text-gray-600 dark:text-gray-400">
+              <span className="ml-0! flex items-center gap-1 text-gray-600 dark:text-gray-400">
                 <Pin className="size-4" /> {profileData.location}
               </span>
             )}

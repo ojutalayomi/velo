@@ -90,7 +90,7 @@ function NotificationRow({ group }: { group: NotificationGroup }) {
   return (
     <Link
       href={group.url}
-      className={`mb-3 flex cursor-pointer items-start gap-3 rounded-lg border-l-2 bg-white p-4 shadow-md hover:bg-slate-200 dark:bg-zinc-900 dark:shadow-2xl hover:dark:bg-zinc-700 ${
+      className={`mb-3 flex cursor-pointer items-start gap-3 rounded-lg border-l-2 bg-white p-4 shadow-md hover:bg-slate-200 dark:bg-zinc-900 dark:shadow-2xl dark:hover:bg-zinc-700 ${
         group.unread ? "border-brand" : "border-transparent"
       }`}
     >

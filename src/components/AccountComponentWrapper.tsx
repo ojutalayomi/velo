@@ -13,16 +13,16 @@ const Wrapper = ({
   body: ReactNode;
 }) => {
   return (
-    <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border/50 bg-white shadow-2xl dark:border-white/[0.08] dark:bg-zinc-900">
+    <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border/50 bg-white shadow-2xl dark:border-white/8 dark:bg-zinc-900">
       {/* Brand accent strip */}
-      <div className="h-1 w-full bg-gradient-to-r from-brand/40 via-brand to-brand/40" />
+      <div className="h-1 w-full bg-linear-to-r from-brand/40 via-brand to-brand/40" />
 
       <div className="flex flex-col gap-6 px-7 py-8">
         {/* Logo — always visible so mobile users see branding */}
         <div className="flex sm:hidden items-center justify-center gap-0.5">
           <Image
             src="/velo11.png"
-            className="-mr-3 size-10 drop-shadow-sm"
+            className="-mr-3 size-10 drop-shadow-xs"
             height={100}
             width={70}
             alt="Velo logo"

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export function SettingsHeader({ title, backTo }: { title: string; backTo: string }) {
   const router = useRouter();
   return (
-    <header className="sticky top-0 z-10 border-b backdrop-blur dark:border-zinc-800">
+    <header className="sticky top-0 z-10 border-b backdrop-blur-sm dark:border-zinc-800">
       <div className="mx-auto flex max-w-2xl items-center gap-3 px-3 py-2">
         <button
           type="button"
@@ -72,13 +72,13 @@ export function Switch({
       disabled={disabled}
       onClick={onChange}
       className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:cursor-not-allowed disabled:opacity-50",
+        "relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand/50 disabled:cursor-not-allowed disabled:opacity-50",
         checked ? "bg-brand" : "bg-gray-300 dark:bg-zinc-700"
       )}
     >
       <span
         className={cn(
-          "absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow transition-transform",
+          "absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform",
           checked && "translate-x-5"
         )}
       />

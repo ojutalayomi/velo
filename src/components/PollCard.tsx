@@ -86,7 +86,7 @@ export function PollCard({
       <div className="flex items-start gap-2">
         <BarChart3 size={18} className="mt-0.5 shrink-0 text-brand" />
         <div>
-          <p className="break-words font-semibold">{poll.question}</p>
+          <p className="wrap-break-word font-semibold">{poll.question}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {closed ? "Final results" : poll.multiple ? "Select one or more" : "Select one"}
           </p>
@@ -117,7 +117,7 @@ export function PollCard({
                 <span className="relative flex items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-1.5">
                     {selected && <Check size={14} className="shrink-0 text-brand" />}
-                    <span className="break-words">{option}</span>
+                    <span className="wrap-break-word">{option}</span>
                   </span>
                   <span className="shrink-0 text-xs tabular-nums text-gray-500 dark:text-gray-400">
                     {count} · {percent}%

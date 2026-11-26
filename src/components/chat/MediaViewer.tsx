@@ -89,7 +89,7 @@ export function MediaViewer({ files, open, index, onOpenChange }: MediaViewerPro
         {/* Top bar floats over the picture so it can use the whole screen. */}
         <header
           className={cn(
-            "absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-gradient-to-b from-black/80 to-transparent px-2 pb-6 pt-[max(0.5rem,env(safe-area-inset-top))] transition-opacity duration-200",
+            "absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-linear-to-b from-black/80 to-transparent px-2 pb-6 pt-[max(0.5rem,env(safe-area-inset-top))] transition-opacity duration-200",
             !showBars && "pointer-events-none opacity-0"
           )}
         >
@@ -175,7 +175,7 @@ export function MediaViewer({ files, open, index, onOpenChange }: MediaViewerPro
               onClick={() => api?.scrollPrev()}
               disabled={current === 0}
               className={cn(
-                "absolute left-3 top-1/2 z-10 hidden -translate-y-1/2 bg-black/50 backdrop-blur-sm transition-opacity sm:flex",
+                "absolute left-3 top-1/2 z-10 hidden -translate-y-1/2 bg-black/50 backdrop-blur-xs transition-opacity sm:flex",
                 !showBars && "pointer-events-none opacity-0"
               )}
             >
@@ -186,7 +186,7 @@ export function MediaViewer({ files, open, index, onOpenChange }: MediaViewerPro
               onClick={() => api?.scrollNext()}
               disabled={current === count - 1}
               className={cn(
-                "absolute right-3 top-1/2 z-10 hidden -translate-y-1/2 bg-black/50 backdrop-blur-sm transition-opacity sm:flex",
+                "absolute right-3 top-1/2 z-10 hidden -translate-y-1/2 bg-black/50 backdrop-blur-xs transition-opacity sm:flex",
                 !showBars && "pointer-events-none opacity-0"
               )}
             >
@@ -199,7 +199,7 @@ export function MediaViewer({ files, open, index, onOpenChange }: MediaViewerPro
         {hasMany && (
           <footer
             className={cn(
-              "absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-black/80 to-transparent px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8 transition-opacity duration-200 sm:block",
+              "absolute inset-x-0 bottom-0 z-10 hidden bg-linear-to-t from-black/80 to-transparent px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8 transition-opacity duration-200 sm:block",
               !showBars && "pointer-events-none opacity-0"
             )}
           >

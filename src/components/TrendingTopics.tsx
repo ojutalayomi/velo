@@ -108,7 +108,7 @@ export default function TrendingTopics({ variant = "sidebar" }: { variant?: "sid
   if (isPage) {
     return (
       <section aria-labelledby={headingId} className="space-y-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand to-brand/60 p-5 text-white shadow-sm">
+        <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-brand to-brand/60 p-5 text-white shadow-xs">
           <TrendingUp
             aria-hidden
             size={120}
@@ -146,7 +146,7 @@ export default function TrendingTopics({ variant = "sidebar" }: { variant?: "sid
                 <li key={trend.tag}>
                   <Link
                     href={`/hashtag/${encodeURIComponent(trend.tag)}`}
-                    className="group flex min-w-0 items-center gap-4 rounded-2xl bg-white p-4 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline focus-visible:outline-brand dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                    className="group flex min-w-0 items-center gap-4 rounded-2xl bg-white p-4 shadow-xs transition-colors hover:bg-zinc-50 focus-visible:outline-solid focus-visible:outline-brand dark:bg-zinc-900 dark:hover:bg-zinc-800"
                   >
                     <span
                       className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
@@ -195,7 +195,7 @@ export default function TrendingTopics({ variant = "sidebar" }: { variant?: "sid
   return (
     <section
       aria-labelledby={headingId}
-      className="rounded-xl bg-white p-4 shadow-sm dark:bg-zinc-800"
+      className="rounded-xl bg-white p-4 shadow-xs dark:bg-zinc-800"
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 id={headingId} className="text-lg font-semibold">
@@ -215,7 +215,7 @@ export default function TrendingTopics({ variant = "sidebar" }: { variant?: "sid
             <li key={trend.tag}>
               <Link
                 href={`/hashtag/${encodeURIComponent(trend.tag)}`}
-                className="block min-w-0 rounded-lg px-2 py-3 transition-colors hover:bg-gray-50 focus-visible:outline focus-visible:outline-brand dark:hover:bg-zinc-700"
+                className="block min-w-0 rounded-lg px-2 py-3 transition-colors hover:bg-gray-50 focus-visible:outline-solid focus-visible:outline-brand dark:hover:bg-zinc-700"
               >
                 <p className="text-xs text-gray-500 dark:text-gray-400">{index + 1} · Trending</p>
                 <p className="truncate text-sm font-semibold">#{trend.tag}</p>

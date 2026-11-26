@@ -35,7 +35,7 @@ export default function PressPage() {
       </Section>
 
       <Section title="Quick facts">
-        <dl className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/60 bg-white dark:divide-white/[0.06] dark:border-white/[0.08] dark:bg-zinc-900">
+        <dl className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/60 bg-white dark:divide-white/6 dark:border-white/8 dark:bg-zinc-900">
           {FACTS.map(([k, v]) => (
             <div key={k} className="grid gap-1 px-5 py-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
               <dt className="text-sm text-muted-foreground">{k}</dt>

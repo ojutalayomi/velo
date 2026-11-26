@@ -37,7 +37,7 @@ const ImageContent: React.FC<Props> = ({
   if (!userdata._id) return <UserProfileLazyLoader dpOnly={dpOnly} />;
   return (
     <div
-      className="flex cursor-pointer items-center justify-between rounded-full px-2 py-1 transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 hover:dark:bg-zinc-700"
+      className="flex cursor-pointer items-center justify-between rounded-full px-2 py-1 transition-colors duration-150 hover:bg-slate-200 tablets1:duration-300 dark:hover:bg-zinc-700"
       onClick={() => onClick(userdata._id)}
     >
       <div className="flex items-center gap-2">

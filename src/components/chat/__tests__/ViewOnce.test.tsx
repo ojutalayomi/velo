@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { ViewOnceBubble } from "@/components/chat/ViewOnce";
 
 const mockEmit = jest.fn();
-jest.mock("sonner", () => ({ toast: { error: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn() } }));
 jest.mock("@/app/providers/SocketProvider", () => ({
   useSocket: () => ({ timeout: () => ({ emit: mockEmit }) }),
 }));

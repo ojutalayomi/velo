@@ -42,7 +42,7 @@ const NavBar: React.FC<{ route: string }> = ({ route }) => {
           </div>
           <div className="nav-center">
             {route === "explore" ? (
-              <div className="searchbar !py-1 dark:!bg-neutral-950 dark:!shadow-lg dark:shadow-white">
+              <div className="searchbar py-1! dark:bg-neutral-950! dark:shadow-lg! dark:shadow-white">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="18"

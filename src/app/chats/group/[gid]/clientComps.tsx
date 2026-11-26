@@ -8,7 +8,7 @@ import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-re
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -17,7 +17,7 @@ import DeleteChatDialog from "@/components/DeleteChatDialog";
 import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
@@ -568,11 +568,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   peer={{ name: convo?.name ?? "", avatar: convo?.displayPicture }}
                 />
               )}
-              <Popover>
-                <PopoverTrigger>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
                   <EllipsisVertical className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
-                </PopoverTrigger>
-                <PopoverContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
                   <ul className="py-1">
                     {options.map((option) => (
                       <li
@@ -605,8 +605,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                       </li>
                     ))}
                   </ul>
-                </PopoverContent>
-              </Popover>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </>
         ) : (
@@ -690,7 +690,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       <div
         ref={messageBoxRef}
         onScroll={handleScroll}
-        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-sm"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-xs"
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
           {load ? (
@@ -737,7 +737,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               )}
             </p>
             {/* <p className="text-xs text-gray-500 dark:text-gray-400">{load || !group?.username ? <span className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1" /> : '@'+group.username }</p> */}
-            <p className="break-words text-xs text-gray-500 dark:text-gray-400">
+            <p className="wrap-break-word text-xs text-gray-500 dark:text-gray-400">
               {load || !group?.description ? (
                 <span className="mb-1 h-4 w-36 animate-pulse rounded bg-gray-200" />
               ) : (

@@ -157,7 +157,7 @@ const Login: React.FC = () => {
             </Link>
           </div>
           <Button
-            className="h-10 w-full bg-brand font-semibold text-white shadow-sm transition-all hover:bg-brand/90 active:scale-[0.98]"
+            className="h-10 w-full bg-brand font-semibold text-white shadow-xs transition-all hover:bg-brand/90 active:scale-[0.98]"
             disabled={loading}
           >
             {loading ? (

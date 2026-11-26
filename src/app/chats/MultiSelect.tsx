@@ -5,7 +5,7 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 import { Forward, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import {
   ADMIN_DELETED_CONTENT,
@@ -121,7 +121,7 @@ export const MultiSelect = () => {
   ];
 
   return (
-    <div className="flex w-full items-center gap-2 border-t bg-white/90 px-3 py-2 backdrop-blur dark:border-neutral-800 dark:bg-zinc-900/90">
+    <div className="flex w-full items-center gap-2 border-t bg-white/90 px-3 py-2 backdrop-blur-sm dark:border-neutral-800 dark:bg-zinc-900/90">
       <button
         type="button"
         aria-label="Cancel selection"

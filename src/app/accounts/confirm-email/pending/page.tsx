@@ -3,7 +3,7 @@ import { Loader, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 
@@ -53,7 +53,7 @@ function PendingPageClient() {
         <Button
           onClick={resend}
           disabled={loading || cooldown > 0 || !email}
-          className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-white hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+          className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-white hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-brand"
         >
           {loading ? <Loader className="animate-spin" size={20} /> : null}
           <span>{cooldown > 0 ? `Resend in ${cooldown}s` : "Resend confirmation email"}</span>

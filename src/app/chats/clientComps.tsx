@@ -115,7 +115,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
         </div>
         {/* Search */}
         <div className="dark:text-slate-200 flex gap-2 items-center justify-between w-full py-2 px-3 relative">
-          <div className="dark:shadow-slate-200 flex flex-grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark">
+          <div className="dark:shadow-slate-200 flex grow gap-3 items-center px-3 py-1 rounded-full shadow-bar dark:shadow-bar-dark">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="18"
@@ -185,11 +185,11 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
           slidesPerView={1}
           spaceBetween={10}
           modules={[Pagination, Navigation]}
-          className="dark:text-slate-200 !flex flex-col flex-grow w-full"
+          className="dark:text-slate-200 flex! flex-col grow w-full"
           id="vufqnuju"
         >
           <SwiperSlide
-            className="flex flex-col flex-grow self-stretch justify-center"
+            className="flex flex-col grow self-stretch justify-center"
             style={{ height: "auto" }}
           >
             {!ayo ||
@@ -206,7 +206,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
                 <div className="mt-6">
                   <button
                     type="button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-xs text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
                     onClick={() => router.push("/chats/compose")}
                   >
                     Start Chat
@@ -218,7 +218,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
             )}
           </SwiperSlide>
           <SwiperSlide
-            className="flex flex-col flex-grow self-stretch justify-center"
+            className="flex flex-col grow self-stretch justify-center"
             style={{ height: "auto" }}
           >
             {!ayo ||
@@ -233,7 +233,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
                 <div className="mt-6">
                   <button
                     type="button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-xs text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
                     onClick={() => router.push("/chats/compose")}
                   >
                     New Chat
@@ -245,7 +245,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
             )}
           </SwiperSlide>
           <SwiperSlide
-            className="flex flex-col flex-grow self-stretch justify-center"
+            className="flex flex-col grow self-stretch justify-center"
             style={{ height: "auto" }}
           >
             {!ayo ||
@@ -262,7 +262,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
                 <div className="mt-6">
                   <button
                     type="button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-xs text-sm font-medium rounded-md text-white bg-brand hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-tomatom"
                     onClick={() => router.push("/chats/compose?type=group")}
                   >
                     New Group
@@ -274,7 +274,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
             )}
           </SwiperSlide>
           <SwiperSlide
-            className="flex flex-col flex-grow
+            className="flex flex-col grow
            self-stretch justify-center"
             style={{ height: "auto" }}
           >
@@ -297,7 +297,7 @@ export default function App({ children }: Readonly<{ children: React.ReactNode }
         </Swiper>
         {/*  */}
         <div
-          className={`${createPage ? "absolute z-[1]" : "hidden z-[1]"} bg-gray-100 dark:bg-zinc-900 overflow-auto h-full w-full top-0`}
+          className={`${createPage ? "absolute z-1" : "hidden z-1"} bg-gray-100 dark:bg-zinc-900 overflow-auto h-full w-full top-0`}
         >
           {/* add a new page here if needed */}
         </div>

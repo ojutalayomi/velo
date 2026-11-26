@@ -17,7 +17,7 @@ import {
   Pin,
   PinOff,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
 import React, { TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -467,7 +467,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
 
             {/* Message Bubble */}
             <div
-              className={`relative ${message.content.length > 0 ? "flex" : "hidden"} min-w-[4.5rem] max-w-full flex-col overflow-hidden rounded-lg px-2.5 pb-1 pt-1.5 ${
+              className={`relative ${message.content.length > 0 ? "flex" : "hidden"} min-w-18 max-w-full flex-col overflow-hidden rounded-lg px-2.5 pb-1 pt-1.5 ${
                 message.messageType === "Sticker"
                   ? "bg-transparent text-gray-900 dark:text-white"
                   : `shadow ${
@@ -566,7 +566,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                         </div>
                       ) : (
                         <p
-                          className={`whitespace-pre-wrap break-words text-[15px] leading-snug ${message.content.endsWith(DELETED_MARKER) ? "flex items-center" : ""}`}
+                          className={`whitespace-pre-wrap wrap-break-word text-[15px] leading-snug ${message.content.endsWith(DELETED_MARKER) ? "flex items-center" : ""}`}
                           style={{ fontFamily: "inherit" }}
                         >
                           {message.content.endsWith(DELETED_MARKER) && <Ban className="size-4 mr-1" />}
@@ -681,7 +681,7 @@ const ReactionSection = ({
             aria-label={`${group.emoji} ${group.count} ${group.count === 1 ? "reaction" : "reactions"}${group.mine ? ", including yours" : ""}`}
             onClick={() => setReactionInfoDisplay(true)}
             className={cn(
-              "inline-flex h-6 items-center gap-1 rounded-full border px-1.5 text-sm leading-none shadow-sm transition-transform active:scale-95",
+              "inline-flex h-6 items-center gap-1 rounded-full border px-1.5 text-sm leading-none shadow-xs transition-transform active:scale-95",
               group.mine
                 ? "border-brand/60 bg-brand/10 text-brand dark:bg-brand/20"
                 : "border-gray-200 bg-white text-gray-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-200"
@@ -699,7 +699,7 @@ const ReactionSection = ({
           type="button"
           aria-label={`${hidden} more ${hidden === 1 ? "reaction" : "reactions"}`}
           onClick={() => setReactionInfoDisplay(true)}
-          className="inline-flex h-6 items-center gap-0.5 rounded-full border border-gray-200 bg-white px-1.5 text-[11px] font-semibold text-gray-600 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-300"
+          className="inline-flex h-6 items-center gap-0.5 rounded-full border border-gray-200 bg-white px-1.5 text-[11px] font-semibold text-gray-600 shadow-xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-300"
         >
           <Plus size={11} strokeWidth={3} />
           {hidden}

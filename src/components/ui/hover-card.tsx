@@ -1,29 +1,39 @@
 "use client";
 
 import * as React from "react";
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card";
 
+import { withAsChild } from "@/components/ui/as-child";
 import { cn } from "@/lib/utils";
 
-const HoverCard = HoverCardPrimitive.Root;
+const HoverCard = PreviewCardPrimitive.Root;
+const HoverCardTrigger = withAsChild(PreviewCardPrimitive.Trigger, "HoverCardTrigger");
 
-const HoverCardTrigger = HoverCardPrimitive.Trigger;
+type HoverCardContentProps = PreviewCardPrimitive.Popup.Props &
+  Pick<PreviewCardPrimitive.Positioner.Props, "side" | "sideOffset" | "align" | "alignOffset">;
 
-const HoverCardContent = React.forwardRef<
-  React.ComponentRef<typeof HoverCardPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof HoverCardPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <HoverCardPrimitive.Content
-    ref={ref}
-    align={align}
-    sideOffset={sideOffset}
-    className={cn(
-      "z-50 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-      className
-    )}
-    {...props}
-  />
-));
-HoverCardContent.displayName = HoverCardPrimitive.Content.displayName;
+const HoverCardContent = React.forwardRef<HTMLDivElement, HoverCardContentProps>(
+  ({ className, align = "center", sideOffset = 4, side, alignOffset, ...props }, ref) => (
+    <PreviewCardPrimitive.Portal>
+      <PreviewCardPrimitive.Positioner
+        align={align}
+        side={side}
+        sideOffset={sideOffset}
+        alignOffset={alignOffset}
+        className="z-50"
+      >
+        <PreviewCardPrimitive.Popup
+          ref={ref}
+          className={cn(
+            "w-64 origin-(--transform-origin) rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden transition-[opacity,transform] duration-150 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0",
+            className
+          )}
+          {...props}
+        />
+      </PreviewCardPrimitive.Positioner>
+    </PreviewCardPrimitive.Portal>
+  )
+);
+HoverCardContent.displayName = "HoverCardContent";
 
 export { HoverCard, HoverCardTrigger, HoverCardContent };

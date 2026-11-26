@@ -134,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setLoad, activeRoute, setActiveRoute 
   return (
     <div
       id="sidebar"
-      className={`${pathname?.includes("/accounts") ? "!hidden" : ""} relative hidden w-16 shrink-0 tablets:block`}
+      className={`${pathname?.includes("/accounts") ? "hidden!" : ""} relative hidden w-16 shrink-0 tablets:block`}
       ref={ref}
       onPointerDown={(e) => {
         lastPointer.current = e.pointerType;

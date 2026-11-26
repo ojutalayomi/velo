@@ -31,7 +31,7 @@ export function LocationCard({ location }: { location: SharedLocation }) {
               top: `calc(50% - ${tile.fy * 512}px)`,
             }}
           />
-          <MapPin className="absolute left-1/2 top-1/2 size-7 -translate-x-1/2 -translate-y-full fill-red-500 text-white drop-shadow" />
+          <MapPin className="absolute left-1/2 top-1/2 size-7 -translate-x-1/2 -translate-y-full fill-red-500 text-white drop-shadow-sm" />
           <span className="absolute bottom-0 right-0 bg-white/80 px-1 text-[9px] text-gray-600">© OpenStreetMap</span>
         </div>
       ) : (

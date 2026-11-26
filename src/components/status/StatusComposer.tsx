@@ -3,7 +3,7 @@
 
 import { ImagePlus, Loader2, Mic, Plus, Send, Type, X } from "lucide-react";
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { Button } from "@/components/ui/button";
@@ -265,7 +265,7 @@ export const StatusComposer = ({
               className={cn(
                 "flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium transition-colors",
                 tab === id
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -361,7 +361,7 @@ export const StatusComposer = ({
                 aria-label="Status text"
                 placeholder="Type a status"
                 className={cn(
-                  "size-full resize-none bg-transparent text-center font-bold outline-none placeholder:opacity-60",
+                  "size-full resize-none bg-transparent text-center font-bold outline-hidden placeholder:opacity-60",
                   "dark" in bg && bg.dark
                     ? "text-zinc-900 placeholder:text-zinc-900"
                     : "text-white placeholder:text-white",

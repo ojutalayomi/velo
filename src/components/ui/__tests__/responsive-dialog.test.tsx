@@ -60,7 +60,7 @@ describe("ResponsiveDialog", () => {
     expect(screen.getByText("Forward to")).toBeInTheDocument();
     expect(screen.getByLabelText("Search")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenChange).toHaveBeenCalledWith(false, expect.anything());
   });
 
   it("is a bottom drawer on phones by default", () => {

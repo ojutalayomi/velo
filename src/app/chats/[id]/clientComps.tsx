@@ -17,10 +17,10 @@ import { CallButton } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Statuser } from "@/components/VerificationComponent";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
 import { axiosApi } from "@/lib/api";
 import { ChatMessage } from "@/lib/class/ChatMessage";
@@ -678,11 +678,11 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                   peer={{ name: convo?.name ?? "", avatar: convo?.displayPicture }}
                 />
               )}
-              <Popover>
-                <PopoverTrigger>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
                   <EllipsisVertical className="max-h-[21px] cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
-                </PopoverTrigger>
-                <PopoverContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="z-10 mr-2 mt-2 max-w-52 rounded-md bg-white p-0 shadow-lg dark:bg-zinc-800">
                   <ul className="py-1">
                     {options.map((option) => (
                       <li
@@ -715,8 +715,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
                       </li>
                     ))}
                   </ul>
-                </PopoverContent>
-              </Popover>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </>
         ) : (
@@ -777,7 +777,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
       <div
         ref={messageBoxRef}
-        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-sm"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-xs"
         onScroll={handleScroll}
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">

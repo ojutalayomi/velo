@@ -109,7 +109,7 @@ const Third: React.FC = () => {
             {/* Hover overlay when image is loaded */}
             {preview && (
               <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                <Camera className="size-6 text-white drop-shadow" />
+                <Camera className="size-6 text-white drop-shadow-sm" />
               </div>
             )}
           </label>
@@ -174,7 +174,7 @@ const Third: React.FC = () => {
           Previous
         </Button>
         <Button
-          className="h-10 w-1/2 bg-brand font-semibold text-white shadow-sm
+          className="h-10 w-1/2 bg-brand font-semibold text-white shadow-xs
                      transition-all hover:bg-brand/90 active:scale-[0.98]
                      disabled:cursor-not-allowed"
           disabled={!formData.password || error || loading}

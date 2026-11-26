@@ -89,7 +89,7 @@ export default function DraggableVideoCard({
   }, []);
 
   const baseClassName =
-    "mobile:absolute tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0 mobile:m-3 mobile:z-[1] mobile:h-[30dvh] mobile:aspect-[9/16] cursor-move";
+    "mobile:absolute tablets1:relative bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden border-0 mobile:m-3 mobile:z-1 mobile:h-[30dvh] mobile:aspect-9/16 cursor-move";
 
   return (
     <Card

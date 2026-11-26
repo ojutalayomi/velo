@@ -3,7 +3,7 @@ import React, { ReactNode } from "react";
 import { Provider } from "react-redux";
 
 import NotificationLiveSync from "@/components/NotificationLiveSync";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toast";
 import { store } from "@/redux/store";
 
 

@@ -106,7 +106,7 @@ const ChatSettingsPage: React.FC = () => {
   return (
     <SettingsShell title="Chat settings" onBack={() => navigate()}>
       {convo && (
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-800">
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-xs dark:border-neutral-800 dark:bg-neutral-800">
           <div className="relative mx-auto mb-3 size-fit">
             <Avatar className="size-24 border-2 border-white shadow-md dark:border-neutral-900">
               <AvatarFallback className="text-xl">
@@ -250,7 +250,7 @@ const ChatSettingsPage: React.FC = () => {
                 onClick={() => handleSettingsChange("theme", option)}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
                   chatSettings.theme === option
-                    ? "bg-white text-gray-900 shadow-sm dark:bg-neutral-700 dark:text-white"
+                    ? "bg-white text-gray-900 shadow-xs dark:bg-neutral-700 dark:text-white"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 }`}
               >

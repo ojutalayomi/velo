@@ -70,7 +70,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
-          <TooltipProvider delayDuration={200}>
+          <TooltipProvider delay={200}>
             <SpeedInsights />
             <ClientComponents>{children}</ClientComponents>
             {modal}

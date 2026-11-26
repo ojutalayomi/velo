@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/fullscreen-sheet";
 import { requestViewOnce, viewOnceKind, viewOnceState } from "@/lib/viewOnce";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Cross2Icon } from "@radix-ui/react-icons";
 
 interface Props {
@@ -104,7 +104,7 @@ export function ViewOnceBubble({ message, userId, senderId, time, statusIcon }: 
         onClick={() => void openIt()}
         aria-label={state === "ready" ? `View once ${kind}. Tap to open` : text.title}
         className={cn(
-          "flex min-w-[11rem] items-center gap-3 rounded-lg px-3 py-2.5 text-left shadow",
+          "flex min-w-44 items-center gap-3 rounded-lg px-3 py-2.5 text-left shadow-sm",
           mine ? "bg-brand/15 dark:bg-brand/25" : "bg-white dark:bg-zinc-800",
           canOpen ? "cursor-pointer hover:brightness-95" : "cursor-default opacity-80"
         )}
@@ -148,16 +148,16 @@ export function ViewOnceViewer({
   return (
     <FullscreenSheet open onOpenChange={(o) => !o && onClose()}>
       <FullscreenSheetContent
-        className="z-[80] items-center justify-center bg-black"
+        className="z-80 items-center justify-center bg-black"
         aria-describedby={undefined}
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        initialFocus={false}
       >
         <FullscreenSheetTitle className="sr-only">View once {viewOnceKind(messageType)}</FullscreenSheetTitle>
         <FullscreenSheetDescription className="sr-only">
           This can only be opened once. It disappears when you close it.
         </FullscreenSheetDescription>
 
-        <div className="absolute inset-x-0 top-0 z-20 flex items-center gap-2 bg-gradient-to-b from-black/60 to-transparent px-2 pb-6 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="absolute inset-x-0 top-0 z-20 flex items-center gap-2 bg-linear-to-b from-black/60 to-transparent px-2 pb-6 pt-[max(0.5rem,env(safe-area-inset-top))]">
           <FullscreenSheetClose asChild>
             <SheetIconButton aria-label="Close">
               <Cross2Icon className="size-5" />

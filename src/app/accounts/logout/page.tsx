@@ -79,7 +79,7 @@ export default function Logout() {
           {message === "Failed to log out" && (
             <button
               onClick={handleClick}
-              className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-white hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+              className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-white hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-brand"
             >
               <span>Log in</span>
               <LogIn size={20} />

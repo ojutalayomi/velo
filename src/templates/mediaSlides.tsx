@@ -95,14 +95,14 @@ const MediaSlides: React.FC<MediaSlidesProps> = ({
 
         {hasMultiple && (
           <>
-            <CarouselPrevious className="left-2 hidden border-0 bg-black/50 text-white shadow-md backdrop-blur-sm hover:bg-black/70 hover:text-white md:flex md:left-4" />
-            <CarouselNext className="right-2 hidden border-0 bg-black/50 text-white shadow-md backdrop-blur-sm hover:bg-black/70 hover:text-white md:flex md:right-4" />
+            <CarouselPrevious className="left-2 hidden border-0 bg-black/50 text-white shadow-md backdrop-blur-xs hover:bg-black/70 hover:text-white md:flex md:left-4" />
+            <CarouselNext className="right-2 hidden border-0 bg-black/50 text-white shadow-md backdrop-blur-xs hover:bg-black/70 hover:text-white md:flex md:right-4" />
           </>
         )}
       </Carousel>
 
       {hasMultiple && (
-        <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-sm">
+        <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-xs">
           {current} / {count}
         </div>
       )}

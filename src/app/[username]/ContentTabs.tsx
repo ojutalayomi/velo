@@ -132,7 +132,7 @@ export default function ContentSection({
                     return (
                       <TabsContent
                         value={tab.id}
-                        className={`${tab.id === "media" && filteredPosts.length > 0 ? "!grid grid-cols-3 gap-1 lg:grid-cols-4" : ""} mt-0 data-[state=active]:block`}
+                        className={`${tab.id === "media" && filteredPosts.length > 0 ? "grid! grid-cols-3 gap-1 lg:grid-cols-4" : ""} mt-0 data-[state=active]:block`}
                       >
                         {filteredPosts.length === 0 && (
                           <EmptyStateCard

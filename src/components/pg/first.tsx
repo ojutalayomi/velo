@@ -81,7 +81,7 @@ const First: React.FC = () => {
       </div>
       <Button
         type="button"
-        className="w-full bg-brand text-white p-2 rounded-lg shadow font-semibold"
+        className="w-full bg-brand text-white p-2 rounded-lg shadow-sm font-semibold"
         onClick={onNext}
         disabled={!formData.firstname || !formData.lastname}
       >

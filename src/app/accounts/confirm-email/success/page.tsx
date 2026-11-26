@@ -24,7 +24,7 @@ export default function SuccessPage() {
         <h1>Your email has been successfully confirmed. You can proceed to the homepage.</h1>
         <Button
           onClick={handleClick}
-          className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-lg hover:bg-tomatom focus:outline-none focus:ring-2 focus:ring-brand"
+          className="bg-brand flex items-center justify-center gap-2 text-white px-4 py-3 rounded-lg hover:bg-tomatom focus:outline-hidden focus:ring-2 focus:ring-brand"
         >
           <span>Go home</span>
           <Home size={20} />

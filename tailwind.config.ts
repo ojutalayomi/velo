@@ -73,27 +73,15 @@ const config: Config = {
       fill: {
         tom: "#e2e8f0",
       },
-      height: {
-        auto: "auto",
-      },
       maxHeight: {
         "77": "77dvh",
         "78": "78dvh",
-      },
-      margin: {
-        auto: "auto",
-      },
-      padding: {
-        auto: "auto",
       },
       stroke: {
         tom: "#e2e8f0",
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.23, 1, 0.32, 1)",
-      },
-      width: {
-        auto: "auto",
       },
       borderRadius: {
         lg: "var(--radius)",

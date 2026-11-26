@@ -214,7 +214,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
       id={listId}
       role="listbox"
       className={cn(
-        "absolute left-0 right-0 top-full dark:bg-zinc-900 dark:text-slate-200 z-[9999] mt-1 max-h-[min(70vh,420px)] overflow-auto rounded-2xl border bg-gray-50 py-2 text-zinc-100 shadow-xl",
+        "absolute left-0 right-0 top-full dark:bg-zinc-900 dark:text-slate-200 z-9999 mt-1 max-h-[min(70vh,420px)] overflow-auto rounded-2xl border bg-gray-50 py-2 text-zinc-100 shadow-xl",
         "ring-1 ring-black/20"
       )}
     >
@@ -377,7 +377,7 @@ export function ExploreSearchPanel({ variant, className }: ExploreSearchPanelPro
               }
             }}
             className={cn(
-              "w-full rounded-full focus-visible:ring-none border-2 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition-colors",
+              "w-full rounded-full focus-visible:ring-none border-2 bg-white py-2.5 pl-10 pr-4 text-sm shadow-xs outline-hidden transition-colors",
               "dark:bg-zinc-800 dark:text-z  inc-100 dark:placeholder:text-zinc-500",
               "placeholder:text-gray-400",
               inputRing

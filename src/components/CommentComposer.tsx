@@ -71,7 +71,7 @@ export default function CommentComposer({
           )}
         >
           <TextAreaBox
-            className="max-h-28 min-h-[34px] flex-1 resize-none border bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-none placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400"
+            className="max-h-28 min-h-[34px] flex-1 resize-none border bg-gray-100 py-2 pl-3 pr-[70px] text-sm outline-hidden placeholder:text-gray-500 dark:bg-zinc-900 dark:placeholder:text-gray-400"
             value={text}
             onChange={setText}
             onKeyDown={handleKeyDown}
@@ -80,7 +80,7 @@ export default function CommentComposer({
             maxHeight={160}
             placeholder={placeholder ?? "Write a comment..."}
             fontFamily="myCustomFont, myCustomFont Fallback"
-            textareaClassName="!caret-black dark:!caret-white placeholder:!text-black dark:placeholder:!text-slate-200"
+            textareaClassName="caret-black! dark:caret-white! placeholder:text-black! dark:placeholder:text-slate-200!"
           />
           <div
             className={cn(
@@ -123,7 +123,7 @@ export default function CommentComposer({
         onKeyDown={handleKeyDown}
         placeholder={placeholder ?? "Send your reply"}
         highlightColor="#ff6257"
-        className="max-h-[100px] w-full flex-grow resize-none border-none bg-transparent p-2 text-sm focus:border-b focus:border-brand focus:outline-none dark:text-white"
+        className="max-h-[100px] w-full grow resize-none border-none bg-transparent p-2 text-sm focus:border-b focus:border-brand focus:outline-hidden dark:text-white"
       />
       <Button
         onClick={() => submit()}

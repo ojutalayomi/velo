@@ -420,7 +420,7 @@ function SelectComponent() {
     { label: "Liked", value: "Most liked" }
   ]
   return (
-    <Select value={items[0].value}>
+    <Select value={items[0].value} items={items.map((i) => ({ value: i.value, label: i.label }))}>
       <SelectTrigger className="w-full max-w-48 rounded-full">
         <SelectValue />
       </SelectTrigger>

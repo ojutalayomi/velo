@@ -26,7 +26,7 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
   return (
     <div className="flex min-h-screen w-full font-sans">
       {/* ── Left panel (desktop only) ── */}
-      <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-slate-50 p-10 sm:flex lg:w-[35%] dark:border-white/[0.06] dark:bg-zinc-950">
+      <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-slate-50 p-10 sm:flex lg:w-[35%] dark:border-white/6 dark:bg-zinc-950">
         {/* Ambient brand glow */}
         <div className="pointer-events-none absolute -left-24 -top-24 size-96 rounded-full bg-brand/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -right-16 size-72 rounded-full bg-brand/10 blur-3xl" />

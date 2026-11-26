@@ -11,7 +11,7 @@ import {
   useState,
 } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { networkMonitor, NetworkStatus } from "@/lib/network";
 import { readCachedUser, writeCachedUser } from "@/lib/userCache";

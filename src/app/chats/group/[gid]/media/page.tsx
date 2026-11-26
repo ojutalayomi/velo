@@ -58,7 +58,7 @@ const groupByDate = <T extends { message: MessageAttributes }>(
 
 const DateChip: React.FC<{ date: string }> = ({ date }) => (
   <div className="sticky top-0 z-10 my-2 text-center">
-    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 shadow-sm dark:bg-neutral-800 dark:text-gray-400">
+    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 shadow-xs dark:bg-neutral-800 dark:text-gray-400">
       {date}
     </span>
   </div>

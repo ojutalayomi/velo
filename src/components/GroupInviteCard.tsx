@@ -1,7 +1,7 @@
 "use client";
 import { Copy, Link as LinkIcon, Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Switch } from "@/components/ui";
 import {
@@ -136,7 +136,7 @@ const GroupInviteCard = ({ chatId }: { chatId: string }) => {
       <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
         Invite link
       </h2>
-      <div className="divide-y overflow-hidden rounded-xl bg-white shadow-sm dark:divide-neutral-700 dark:bg-neutral-800">
+      <div className="divide-y overflow-hidden rounded-xl bg-white shadow-xs dark:divide-neutral-700 dark:bg-neutral-800">
         <div className="flex items-center justify-between gap-4 p-4">
           <div className="flex min-w-0 items-center gap-4">
             <div className="rounded-lg bg-gray-100 p-2 dark:bg-neutral-900">

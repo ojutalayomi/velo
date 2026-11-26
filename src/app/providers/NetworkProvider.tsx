@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { networkMonitor, NetworkStatus, NetworkQuality } from "@/lib/network";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 type NetworkContextType = {
   status: NetworkStatus | undefined;

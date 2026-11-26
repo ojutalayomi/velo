@@ -60,7 +60,7 @@ export function PostDraftsDialog({
                   onClick={() => onOpen(draft)}
                   className="min-w-0 flex-1 rounded-md p-1 text-left hover:bg-gray-100 dark:hover:bg-zinc-800"
                 >
-                  <span className="line-clamp-2 break-words text-sm">{draftPreview(draft)}</span>
+                  <span className="line-clamp-2 wrap-break-word text-sm">{draftPreview(draft)}</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     {draft.id === activeId ? "Editing · " : ""}
                     {when(draft.updatedAt)}

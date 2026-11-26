@@ -44,7 +44,7 @@ const FullScreenMedia: React.FC = () => {
 
   return (
     <div
-      className={`fixed top-0 left-0 h-screen w-screen z-[100] bg-black/80 text-white flex flex-col justify-center items-center
+      className={`fixed top-0 left-0 h-screen w-screen z-100 bg-black/80 text-white flex flex-col justify-center items-center
       `}
     >
       <ChevronLeft

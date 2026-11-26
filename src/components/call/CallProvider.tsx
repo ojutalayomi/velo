@@ -2,7 +2,7 @@
 
 import { ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import {
   acquireLocalMedia,

@@ -12,7 +12,7 @@ jest.mock("next/navigation", () => ({
   notFound: jest.fn(),
 }));
 jest.mock("react-redux", () => ({ useSelector: () => ({ conversations: [] }) }));
-jest.mock("sonner", () => ({ toast: Object.assign(jest.fn(), { error: jest.fn() }) }));
+jest.mock("@/lib/toast", () => ({ toast: Object.assign(jest.fn(), { error: jest.fn() }) }));
 jest.mock("@/app/providers/SocketProvider", () => ({ useSocket: () => null }));
 jest.mock("@/app/providers/UserProvider", () => ({ useUser: () => ({ userdata: { _id: "me" } }) }));
 jest.mock("@/hooks/useNavigateWithHistory", () => ({ useNavigateWithHistory: () => jest.fn() }));

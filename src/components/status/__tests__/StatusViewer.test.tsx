@@ -3,14 +3,14 @@ import userEvent from "@testing-library/user-event";
 
 import { StatusViewer } from "@/components/status/StatusViewer";
 import { fetchStatusViewers, markStatusViewed, replyToStatus, setStatusLiked } from "@/lib/statusApi";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { StatusClient, StatusGroup } from "@/lib/types/status";
 
 const mockDispatch = jest.fn();
 const mockPush = jest.fn();
 let mockUserId = "me";
 
-jest.mock("sonner", () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock("@/redux/hooks", () => ({ useAppDispatch: () => mockDispatch }));
 jest.mock("@/app/providers/UserProvider", () => ({

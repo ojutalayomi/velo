@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * Files are sent as raw bytes over the socket, so they need a connection (plain text can wait in

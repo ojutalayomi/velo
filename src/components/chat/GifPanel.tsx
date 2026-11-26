@@ -93,7 +93,7 @@ export function GifPanel({
             className="pl-8"
           />
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto" data-vaul-no-drag>
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {!current ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="size-6 animate-spin text-gray-400" />

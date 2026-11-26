@@ -4,7 +4,7 @@ import { ArrowLeft, Check, Loader2, Plus, SlidersHorizontal } from "lucide-react
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useUser } from "@/app/providers/UserProvider";
 import PostCard from "@/components/PostCard";

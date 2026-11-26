@@ -6,7 +6,7 @@ import ForwardDialog from "@/components/ForwardDialog";
 const mockEmit = jest.fn();
 let mockState: unknown;
 
-jest.mock("sonner", () => ({ toast: { error: jest.fn(), success: jest.fn(), warning: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn(), success: jest.fn(), warning: jest.fn() } }));
 jest.mock("react-redux", () => ({ useSelector: (fn: (s: unknown) => unknown) => fn(mockState) }));
 jest.mock("@/app/providers/SocketProvider", () => ({
   useSocket: () => ({ timeout: () => ({ emit: mockEmit }) }),

@@ -19,7 +19,7 @@ export const SettingsShell: React.FC<{
   children?: React.ReactNode;
 }> = ({ title, onBack, children }) => (
   <div className="absolute z-10 flex size-full max-h-screen min-h-screen flex-1 flex-col overflow-hidden bg-gray-50 tablets1:w-1/2 dark:bg-neutral-900">
-    <header className="flex shrink-0 items-center gap-2 border-b bg-white/80 px-3 py-2.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80">
+    <header className="flex shrink-0 items-center gap-2 border-b bg-white/80 px-3 py-2.5 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/80">
       <button
         type="button"
         onClick={onBack}
@@ -50,7 +50,7 @@ export const SettingsSection: React.FC<{
         {action}
       </div>
     )}
-    <div className="divide-y overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:divide-neutral-700 dark:border-neutral-800 dark:bg-neutral-800">
+    <div className="divide-y overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xs dark:divide-neutral-700 dark:border-neutral-800 dark:bg-neutral-800">
       {children}
     </div>
   </section>

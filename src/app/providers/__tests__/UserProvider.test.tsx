@@ -24,7 +24,7 @@ jest.mock("@/lib/network", () => ({
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("@/app/providers/SocketProvider", () => ({ useSocket: () => null }));
 jest.mock("@/redux/chatSlice", () => ({ fetchChats: jest.fn() }));
-jest.mock("sonner", () => ({ toast: { error: jest.fn() } }));
+jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn() } }));
 
 const fetchMock = jest.fn();
 

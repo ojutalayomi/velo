@@ -2,7 +2,7 @@
 import { ArrowLeft, Bookmark, Heart, MessageCircle, Share2, Volume2, VolumeX } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -250,7 +250,7 @@ function ReelSlide({
       {/* mute toggle */}
       <button
         onClick={onToggleMute}
-        className={`absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white backdrop-blur-sm ${activeMediaType === "image" ? "hidden" : ""}`}
+        className={`absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white backdrop-blur-xs ${activeMediaType === "image" ? "hidden" : ""}`}
         aria-label={muted ? "Unmute" : "Mute"}
       >
         {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -598,7 +598,7 @@ export default function ExploreReel() {
       {/* fixed chrome — outside the scroll container so it never scrolls away */}
       <button
         onClick={() => router.back()}
-        className="fixed top-4 z-50 ml-2 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm"
+        className="fixed top-4 z-50 ml-2 rounded-full bg-black/50 p-2 text-white backdrop-blur-xs"
         aria-label="Go back"
       >
         <ArrowLeft size={22} />

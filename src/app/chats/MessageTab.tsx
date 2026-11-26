@@ -439,6 +439,14 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
                   {verified && <Statuser className="size-3.5" />}
                 </div>
               )}
+            {/* A voice reply has no text, so its bubble is hidden: the status card sits above the audio. */}
+            {message.statusReply && message.content.length === 0 && (
+              <StatusReplyCard
+                reply={message.statusReply}
+                myId={userdata._id}
+                own={senderId === userdata._id}
+              />
+            )}
             {message.viewOnce ? (
               <ViewOnceBubble
                 message={message}
@@ -496,7 +504,7 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
               )}
 
               {/* The status this replies to */}
-              {message.statusReply && (
+              {message.statusReply && message.content.length > 0 && (
                 <StatusReplyCard
                   reply={message.statusReply}
                   myId={userdata._id}

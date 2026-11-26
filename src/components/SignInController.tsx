@@ -15,10 +15,15 @@ export default async function SignInComponent(formData: FormData): Promise<UserD
     body: JSON.stringify(formData),
   });
   if (!response.ok) {
-    const errorText = await response.text();
-    // Try to parse the response to see if it contains a custom error message
-    const errorJson = JSON.parse(errorText);
-    throw new Error(errorJson.error || "Network response was not ok");
+    // The body is not always JSON (a gateway error page, for example), so never let parsing throw.
+    const errorJson: { error?: string; message?: string } | null = await response.json().catch(() => null);
+    throw new Error(
+      errorJson?.error ||
+        errorJson?.message ||
+        (response.status >= 500
+          ? "The server had a problem. Please try again in a moment."
+          : "Couldn't sign you in. Please try again.")
+    );
   }
   return response.json();
 }

@@ -57,16 +57,16 @@ const Login: React.FC = () => {
     // console.log(value)
   };
 
-  const handleValidation = () => {
+  const handleValidation = (values: FormData) => {
     let valid = true;
     const newErrors: FormData = { ...initialFormData };
 
-    if (!formData.UsernameOrEmail) {
+    if (!values.UsernameOrEmail.trim()) {
       newErrors.UsernameOrEmail = "Username or Email is required";
       valid = false;
     }
 
-    if (!formData.password) {
+    if (!values.password) {
       newErrors.password = "Password is required";
       valid = false;
     }
@@ -78,17 +78,28 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!handleValidation) return;
+    if (loading) return;
+    // Read the fields from the form itself: a password manager or browser autofill can fill them
+    // without React's onChange firing, which would leave the state empty.
+    const fields = new window.FormData(e.currentTarget as HTMLFormElement);
+    const values: FormData = {
+      UsernameOrEmail: String(fields.get("UsernameOrEmail") ?? formData.UsernameOrEmail),
+      password: String(fields.get("password") ?? formData.password),
+    };
+    if (!handleValidation(values)) {
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const msg = await SignInComponent(formData);
+      const msg = await SignInComponent(values);
       dispatch(setUserData(msg));
       setLoginSuccess(true);
       dispatch(setSuccess(true));
       router.push(backTo || "/home")
     } catch (error: any) {
-      setError(error.message);
+      setError(error?.message || "Couldn't sign you in. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -109,7 +120,7 @@ const Login: React.FC = () => {
         </div>
       }
       body={
-        <form className="space-y-3" onSubmit={handleSubmit}>
+        <form className="space-y-3" onSubmit={handleSubmit} noValidate>
           <div className="flex flex-col gap-1.5">
             {/*<label className="text-sm font-medium">Username or Email</label>*/}
             <Input
@@ -146,7 +157,6 @@ const Login: React.FC = () => {
               />
             </div>
             {errors.password && <div className="warning">{errors.password}</div>}
-            {error && <div className="warning">{error}</div>}
           </div>
           <div className="flex justify-end">
             <Link
@@ -156,7 +166,13 @@ const Login: React.FC = () => {
               Forgot password?
             </Link>
           </div>
+          {error && (
+            <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              {error}
+            </div>
+          )}
           <Button
+            type="submit"
             className="h-10 w-full bg-brand font-semibold text-white shadow-xs transition-all hover:bg-brand/90 active:scale-[0.98]"
             disabled={loading}
           >

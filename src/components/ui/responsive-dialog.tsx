@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import * as React from "react";
 import { useMediaQuery } from "usehooks-ts";
@@ -33,7 +34,7 @@ export const MOBILE_QUERY = "(max-width: 640px)";
 
 type Mode = "dialog" | "drawer" | "sheet";
 const ModeContext = React.createContext<Mode>("dialog");
-
+const ElevatedContext = React.createContext(false);
 /**
  * A dialog on larger screens. On phones it becomes a bottom drawer, or, for content that needs the
  * whole screen (a photo preview with a caption, say), a full-screen sheet: `mobile="fullscreen"`.
@@ -42,22 +43,27 @@ export function ResponsiveDialog({
   open,
   onOpenChange,
   mobile = "drawer",
+  elevated = false,
   children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mobile?: "drawer" | "fullscreen";
+  /** Opens above full-screen viewers (z-80), for a dialog launched from inside one. */
+  elevated?: boolean;
   children: React.ReactNode;
 }) {
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const mode: Mode = !isMobile ? "dialog" : mobile === "fullscreen" ? "sheet" : "drawer";
   const Root = mode === "dialog" ? Dialog : mode === "sheet" ? FullscreenSheet : Drawer;
   return (
+    <ElevatedContext.Provider value={elevated}>
     <ModeContext.Provider value={mode}>
       <Root open={open} onOpenChange={onOpenChange}>
         {children}
       </Root>
     </ModeContext.Provider>
+    </ElevatedContext.Provider>
   );
 }
 ResponsiveDialog.displayName = "ResponsiveDialog";
@@ -73,10 +79,11 @@ export function ResponsiveDialogContent({
   children: React.ReactNode;
 }) {
   const mode = React.useContext(ModeContext);
+  const layer = React.useContext(ElevatedContext) ? "z-[90]" : undefined;
   if (mode === "sheet") {
     return (
       // Forms and previews follow the app's light/dark theme, unlike the always-dark media viewer.
-      <FullscreenSheetContent className="bg-background text-foreground" onClick={onClick}>
+      <FullscreenSheetContent className={cn("bg-background text-foreground", layer)} onClick={onClick}>
         <div className="flex items-center justify-end px-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
           <FullscreenSheetClose asChild>
             <SheetIconButton aria-label="Close" className="text-foreground hover:bg-foreground/10 active:bg-foreground/15">
@@ -92,7 +99,7 @@ export function ResponsiveDialogContent({
   }
   // The dialog's width classes do not apply to a full-width drawer, so only the dialog gets them.
   return mode === "drawer" ? (
-    <DrawerContent className="max-h-[90vh]" onClick={onClick}>
+    <DrawerContent className="max-h-[90vh]" layerClassName={layer} onClick={onClick}>
       <div
         className="flex min-h-0 flex-col gap-4 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
        
@@ -101,7 +108,7 @@ export function ResponsiveDialogContent({
       </div>
     </DrawerContent>
   ) : (
-    <DialogContent className={className} onClick={onClick}>
+    <DialogContent className={className} layerClassName={layer} onClick={onClick}>
       {children}
     </DialogContent>
   );

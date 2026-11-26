@@ -2,7 +2,13 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { StatusViewer } from "@/components/status/StatusViewer";
-import { fetchStatusViewers, markStatusViewed, replyToStatus, setStatusLiked } from "@/lib/statusApi";
+import {
+  fetchStatusViewers,
+  markStatusViewed,
+  replyToStatus,
+  replyToStatusWithVoice,
+  setStatusLiked,
+} from "@/lib/statusApi";
 import { toast } from "@/lib/toast";
 import type { StatusClient, StatusGroup } from "@/lib/types/status";
 
@@ -22,8 +28,27 @@ jest.mock("@/lib/statusApi", () => ({
   markStatusViewed: jest.fn().mockResolvedValue(undefined),
   setStatusLiked: jest.fn(),
   replyToStatus: jest.fn(),
+  replyToStatusWithVoice: jest.fn(),
   fetchStatusViewers: jest.fn(),
 }));
+
+const mockVoice = {
+  recording: false,
+  paused: false,
+  processing: false,
+  seconds: 0,
+  previewUrl: null as string | null,
+  start: jest.fn(),
+  stop: jest.fn(),
+  pause: jest.fn(),
+  resume: jest.fn(),
+  cancel: jest.fn(),
+};
+jest.mock("@/hooks/useVoiceRecorder", () => ({
+  MAX_VOICE_SECONDS: 300,
+  useVoiceRecorder: () => mockVoice,
+}));
+jest.mock("@/app/providers/SocketProvider", () => ({ useSocket: () => ({ emit: jest.fn() }) }));
 
 const status = (over: Partial<StatusClient> = {}): StatusClient => ({
   _id: "s1",
@@ -299,5 +324,47 @@ describe("StatusViewer: replying", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe("StatusViewer: voice replies", () => {
+  beforeEach(() => {
+    mockVoice.recording = false;
+    mockVoice.processing = false;
+    mockVoice.start.mockResolvedValue(null);
+    (replyToStatusWithVoice as jest.Mock).mockResolvedValue({ chatId: "chat-1" });
+  });
+
+  it("offers a mic when the box is empty, and starts recording", async () => {
+    setup([group(status())]);
+    await userEvent.click(screen.getByRole("button", { name: "Record a voice reply" }));
+    expect(mockVoice.start).toHaveBeenCalled();
+  });
+
+  it("hides the mic once there are words to send", async () => {
+    setup([group(status())]);
+    await userEvent.type(screen.getByLabelText("Reply to Ada Lovelace"), "hi");
+    expect(screen.queryByRole("button", { name: "Record a voice reply" })).toBeNull();
+  });
+
+  it("sends the recording as a reply and offers to open the chat", async () => {
+    const file = new File(["x"], "voice-note-1-3s.mp3", { type: "audio/mpeg" });
+    mockVoice.recording = true;
+    mockVoice.stop.mockResolvedValue(file);
+    setup([group(status())]);
+    await userEvent.click(screen.getByRole("button", { name: "Send voice note" }));
+    await waitFor(() =>
+      expect(replyToStatusWithVoice).toHaveBeenCalledWith(expect.objectContaining({ statusId: "s1", file }))
+    );
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Voice reply sent", expect.anything()));
+  });
+
+  it("shows the reason when the reply is refused", async () => {
+    mockVoice.recording = true;
+    mockVoice.stop.mockResolvedValue(new File(["x"], "voice-note-1-3s.mp3", { type: "audio/mpeg" }));
+    (replyToStatusWithVoice as jest.Mock).mockRejectedValue(new Error("This status is no longer available"));
+    setup([group(status())]);
+    await userEvent.click(screen.getByRole("button", { name: "Send voice note" }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("This status is no longer available"));
   });
 });

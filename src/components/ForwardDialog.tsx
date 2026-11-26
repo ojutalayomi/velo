@@ -98,7 +98,7 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
           .catch(() => "Couldn't add to status")
       : Promise.resolve(null);
 
-    type ChatOutcome = { sent: boolean; error?: string };
+    type ChatOutcome = { sent: boolean; error?: string; failedCount?: number; firstFailure?: string };
     const chatsDone: Promise<ChatOutcome> =
       chatIds.length === 0
         ? Promise.resolve({ sent: false })
@@ -116,10 +116,7 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
                   resolve({ sent: false, error: result.error ?? failed[0]?.error ?? "Could not forward messages" });
                   return;
                 }
-                if (failed.length > 0) {
-                  toast.warning(`Forwarded, but ${failed.length} chat(s) failed`, { description: failed[0]?.error });
-                }
-                resolve({ sent: true });
+                resolve({ sent: true, failedCount: failed.length, firstFailure: failed[0]?.error });
               }
             );
           });
@@ -132,15 +129,24 @@ const ForwardForm: React.FC<Props> = ({ messageIds, onOpenChange, onForwarded })
     const sentStatus = toStatus && !statusError;
     // Stay open when nothing went through, so the user can retry.
     if (!chats.sent && !sentStatus) return;
-    toast.success(
-      chats.sent && sentStatus
-        ? "Forwarded and added to your status"
-        : sentStatus
-          ? "Added to your status"
-          : messageIds.length === 1
-            ? "Message forwarded"
-            : "Messages forwarded"
-    );
+    // One message about the whole send: a warning if anything was left out, otherwise a success.
+    const failedChats = chats.failedCount ?? 0;
+    if (failedChats > 0) {
+      toast.warning(
+        `${sentStatus ? "Added to your status, but " : "Forwarded, but "}${failedChats} chat${failedChats === 1 ? "" : "s"} failed`,
+        { description: chats.firstFailure }
+      );
+    } else {
+      toast.success(
+        chats.sent && sentStatus
+          ? "Forwarded and added to your status"
+          : sentStatus
+            ? "Added to your status"
+            : messageIds.length === 1
+              ? "Message forwarded"
+              : "Messages forwarded"
+      );
+    }
     onForwarded();
     onOpenChange(false);
   };

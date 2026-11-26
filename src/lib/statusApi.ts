@@ -1,3 +1,4 @@
+import { generateObjectId, timeFormatter } from "@/lib/utils";
 import type { StatusCreateInput, StatusGroup, StatusViewerDetail } from "@/lib/types/status";
 
 async function parseStatusResponse(res: Response) {
@@ -92,4 +93,57 @@ export async function replyToStatus(
     })
   )) as { data: { chatId: string; messageId: string } };
   return body.data;
+}
+
+type SocketLike = { emit: (event: string, payload: unknown) => unknown };
+
+/**
+ * Reply to a status with a voice note. The server first checks you may reply and finds the DM;
+ * the recording then goes over the socket like any chat message, carrying the status it answers.
+ */
+export async function replyToStatusWithVoice(params: {
+  socket: SocketLike | null | undefined;
+  statusId: string;
+  file: File;
+  sender: { id: string; name: string; username: string; displayPicture: string; verified: boolean };
+}): Promise<{ chatId: string }> {
+  const { socket, statusId, file, sender } = params;
+  if (!socket) throw new Error("You're offline. Try again when you're connected.");
+
+  const body = (await parseStatusResponse(
+    await fetch(`/api/statuses/${statusId}/reply-chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+  )) as { data: { chatId: string; receiverId: string } };
+  const { chatId, receiverId } = body.data;
+
+  const data = Array.from(new Uint8Array(await file.arrayBuffer()));
+  socket.emit("chatMessage", {
+    _id: generateObjectId(),
+    chatId,
+    receiverId,
+    sender,
+    content: "",
+    timestamp: new Date().toISOString(),
+    chatType: "DM",
+    messageType: "VoiceNote",
+    reactions: [],
+    attachments: [
+      {
+        key: `${timeFormatter()}/${file.name}`,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: new Date(file.lastModified).toISOString(),
+        data,
+      },
+    ],
+    quotedMessageId: "",
+    status: "sent",
+    mentions: [],
+    // Only the id: the socket server builds the status card itself.
+    statusReply: { statusId },
+  });
+  return { chatId };
 }

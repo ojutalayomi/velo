@@ -244,6 +244,16 @@ const chatSlice = createSlice({
     setSettings: (state, action: PayloadAction<ChatSetting>) => {
       state.settings = action.payload;
     },
+    /** Changes some of one chat's settings (mute, wallpaper); the persisted copy follows. */
+    patchChatSettings: (
+      state,
+      action: PayloadAction<{ chatId: string; updates: Partial<NewChatSettings> }>
+    ) => {
+      const { chatId, updates } = action.payload;
+      const current = state.settings?.[chatId];
+      if (!current) return;
+      state.settings = { ...state.settings, [chatId]: { ...current, ...updates } };
+    },
     addSetting: (state, action: PayloadAction<{ [key: string]: NewChatSettings }>) => {
       state.settings = { ...state.settings, ...action.payload };
     },
@@ -283,6 +293,7 @@ export const {
   markMessagesRead,
   deleteMessage,
   setSettings,
+  patchChatSettings,
   addSetting,
   setLoading,
   setError,

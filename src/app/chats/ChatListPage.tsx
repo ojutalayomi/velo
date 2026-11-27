@@ -1,5 +1,5 @@
 "use client";
-import { Check, CheckCheck, Ellipsis, Info, MessageSquareText, Phone, Pin, Video } from "lucide-react";
+import { BellOff, Check, CheckCheck, Ellipsis, Info, MessageSquareText, Phone, Pin, Video } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useRef, useState } from "react";
@@ -180,6 +180,7 @@ const Card: React.FC<Props> = ({ chat }) => {
   const [blockOpen, setBlockOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const { userdata } = useUser();
+  const muted = useSelector((state: RootState) => state.chat.settings?.[chat.id]?.isMuted === true);
   // Only a one-to-one chat has a single person to block or report; a group is reported as a whole.
   const otherId = chat.type === "DM" ? chat.participants.find((id) => id !== userdata._id) : undefined;
 
@@ -515,6 +516,7 @@ const Card: React.FC<Props> = ({ chat }) => {
                     {chat.unread}
                   </div>
                 )}
+                {muted && <BellOff size={16} className="text-gray-400" aria-label="Muted" />}
                 {chat.pinned && (
                   <Pin
                     size={16}

@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
 import { verifyToken } from "@/lib/auth";
+import { isValidWallpaper } from "@/lib/chatWallpaper";
 import { MongoDBClient } from "@/lib/mongodb";
 
 // Only per-user preferences, each with a validator
@@ -9,7 +10,8 @@ const SETTING_VALIDATORS: Record<string, (v: unknown) => boolean> = {
   notificationSound: (v) => typeof v === "string" && v.length <= 200,
   notificationVolume: (v) =>
     typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 100,
-  wallpaper: (v) => typeof v === "string" && v.length <= 200,
+  // Nothing, a built-in preset, or an image in our own storage: never an arbitrary link or data URL.
+  wallpaper: isValidWallpaper,
   theme: (v) => v === "light" || v === "dark",
 };
 

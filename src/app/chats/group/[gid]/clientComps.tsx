@@ -15,6 +15,10 @@ import { useUser } from "@/app/providers/UserProvider";
 import { CallButton, useOptionalCall } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
 import ReportDialog from "@/components/ReportDialog";
+import WallpaperPicker from "@/components/chat/WallpaperPicker";
+import { wallpaperStyle } from "@/lib/chatWallpaper";
+import { saveChatSettings } from "@/lib/chatSettingsApi";
+import { patchChatSettings } from "@/redux/chatSlice";
 import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -148,6 +152,21 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const chatSettings = useSelector((state: RootState) => state.chat.settings?.[gid]);
+  const muted = chatSettings?.isMuted === true;
+  const toggleMute = async () => {
+    const next = !muted;
+    const error = await saveChatSettings({
+      dispatch,
+      patch: patchChatSettings,
+      chatId: gid,
+      previous: { isMuted: muted },
+      updates: { isMuted: next },
+    });
+    if (error) toast.error(error);
+    else toast(next ? `Notifications muted for ${convo?.name ?? "this group"}` : "Notifications on again");
+  };
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -437,8 +456,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         router.push(`/chats/group/${gid}?${currParams.toString()}`, { scroll: false });
       },
     },
-    { id: 3, name: "Mute notifications", action: () => console.log("Archived") },
-    { id: 4, name: "Wallpaper", action: () => console.log("Hidden") },
+    { id: 3, name: muted ? "Unmute notifications" : "Mute notifications", action: () => void toggleMute() },
+    { id: 4, name: "Wallpaper", action: () => setWallpaperOpen(true) },
     // Deleting a group removes it for everyone, so only admins are offered it (with a confirmation).
     ...(convo?.adminIds?.includes(String(userdata._id))
       ? [{ id: 5, name: "Delete group", action: () => setDeleteOpen(true) }]
@@ -698,6 +717,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         ref={messageBoxRef}
         onScroll={handleScroll}
         className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-12 pt-4"
+        style={wallpaperStyle(chatSettings?.wallpaper)}
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
           {load ? (
@@ -833,6 +853,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           router.replace("/chats");
         }}
       />
+      <WallpaperPicker chatId={gid} open={wallpaperOpen} onOpenChange={setWallpaperOpen} />
       <ReportDialog
         open={reportOpen}
         onOpenChange={setReportOpen}

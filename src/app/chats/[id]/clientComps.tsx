@@ -16,6 +16,10 @@ import { useUser } from "@/app/providers/UserProvider";
 import { CallButton } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
 import ReportDialog from "@/components/ReportDialog";
+import WallpaperPicker from "@/components/chat/WallpaperPicker";
+import { wallpaperStyle } from "@/lib/chatWallpaper";
+import { saveChatSettings } from "@/lib/chatSettingsApi";
+import { patchChatSettings } from "@/redux/chatSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -151,6 +155,21 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const chatSettings = useSelector((state: RootState) => state.chat.settings?.[pid]);
+  const muted = chatSettings?.isMuted === true;
+  const toggleMute = async () => {
+    const next = !muted;
+    const error = await saveChatSettings({
+      dispatch,
+      patch: patchChatSettings,
+      chatId: pid,
+      previous: { isMuted: muted },
+      updates: { isMuted: next },
+    });
+    if (error) toast.error(error);
+    else toast(next ? `Notifications muted for ${convo?.name ?? "this chat"}` : "Notifications on again");
+  };
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [isTextareaDisabled, setIsTextareaDisabled] = useState(false);
@@ -553,8 +572,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         router.push(`/chats/${pid}?${currParams.toString()}`, { scroll: false });
       },
     },
-    { id: 3, name: "Mute notifications", action: () => console.log("Mute notifications") },
-    { id: 4, name: "Wallpaper", action: () => console.log("Wallpaper") },
+    { id: 3, name: muted ? "Unmute notifications" : "Mute notifications", action: () => void toggleMute() },
+    { id: 4, name: "Wallpaper", action: () => setWallpaperOpen(true) },
     // Deleting removes the chat on the server for everyone in it, so confirm first.
     { id: 5, name: "Delete", action: () => setDeleteOpen(true) },
     // Your own "you" chat has nobody to report.
@@ -796,6 +815,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       <div
         ref={messageBoxRef}
         className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-12 pt-4"
+        style={wallpaperStyle(chatSettings?.wallpaper)}
         onScroll={handleScroll}
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
@@ -911,6 +931,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       )}
       {children}
 
+      <WallpaperPicker chatId={pid} open={wallpaperOpen} onOpenChange={setWallpaperOpen} />
       {reportedId && (
         <ReportDialog
           open={reportOpen}

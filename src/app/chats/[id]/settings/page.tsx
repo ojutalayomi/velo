@@ -2,7 +2,13 @@
 import { Archive, BellOff, BellRing, Image as ImageIcon, Loader2, Moon, Pin, Sun } from "lucide-react";
 import { useParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+
+import WallpaperPicker from "@/components/chat/WallpaperPicker";
+import { saveChatSettings } from "@/lib/chatSettingsApi";
+import { parseWallpaper, wallpaperStyle } from "@/lib/chatWallpaper";
+import { toast } from "@/lib/toast";
+import { patchChatSettings } from "@/redux/chatSlice";
 
 import {
   RowButton,
@@ -50,6 +56,8 @@ const ChatSettingsPage: React.FC = () => {
   );
   const [chat, setChat] = useState<ChatDataClient | "i">("i");
   const [chatSettings, setChatSettings] = useState<NewChatSettings | undefined>(undefined);
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const dispatch = useDispatch();
 
   const convo = useMemo(
     () => conversations?.find((c) => c.id === id) as ConvoType | undefined,
@@ -82,6 +90,21 @@ const ChatSettingsPage: React.FC = () => {
   }, [id, convoLoading, settings]);
 
   const handleSettingsChange = async (field: keyof ChatSettings, value: any) => {
+    if (chatSettings && field === "isMuted") {
+      setChatSettings({ ...chatSettings, isMuted: value });
+      const error = await saveChatSettings({
+        dispatch,
+        patch: patchChatSettings,
+        chatId: id || "",
+        previous: { isMuted: chatSettings.isMuted },
+        updates: { isMuted: value },
+      });
+      if (error) {
+        setChatSettings(chatSettings);
+        toast.error(error);
+      }
+      return;
+    }
     if (chatSettings) {
       setChatSettings({ ...chatSettings, [field]: value });
       const result = await chatSystem.updateChatSettings(id || "", {
@@ -105,6 +128,7 @@ const ChatSettingsPage: React.FC = () => {
 
   return (
     <SettingsShell title="Chat settings" onBack={() => navigate()}>
+      <WallpaperPicker chatId={id || ""} open={wallpaperOpen} onOpenChange={setWallpaperOpen} />
       {convo && (
         <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-xs dark:border-neutral-800 dark:bg-neutral-800">
           <div className="relative mx-auto mb-3 size-fit">
@@ -207,39 +231,16 @@ const ChatSettingsPage: React.FC = () => {
           description="Background image for this chat"
         >
           <div className="flex shrink-0 items-center gap-3">
-            {chatSettings.wallpaper?.startsWith("data:image") && (
+            {parseWallpaper(chatSettings.wallpaper).kind !== "none" && (
               <div
-                className="size-10 rounded-lg border border-gray-200 bg-cover bg-center dark:border-neutral-600"
-                style={{ backgroundImage: `url(${chatSettings.wallpaper})` }}
+                className="size-10 rounded-lg border border-gray-200 dark:border-neutral-600"
+                style={wallpaperStyle(chatSettings.wallpaper)}
               />
             )}
-            <label htmlFor="wallpaper" className="cursor-pointer">
-              <RowButton tabIndex={-1} className="pointer-events-none">
-                {chatSettings.wallpaper ? "Change" : "Upload"}
-              </RowButton>
-            </label>
+            <RowButton onClick={() => setWallpaperOpen(true)}>
+              {chatSettings.wallpaper ? "Change" : "Choose"}
+            </RowButton>
           </div>
-          <input
-            id="wallpaper"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file && file.size <= 5 * 1024 * 1024) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                  if (event.target?.result) {
-                    handleSettingsChange("wallpaper", event.target.result as string);
-                  }
-                };
-                reader.readAsDataURL(file);
-              } else {
-                alert("File size must be 5MB or less");
-                e.target.value = "";
-              }
-            }}
-          />
         </SettingsRow>
         <SettingsRow icon={Moon} tone="purple" title="Theme" description="Appearance for this chat">
           <div className="flex shrink-0 rounded-lg bg-gray-100 p-0.5 dark:bg-neutral-900">

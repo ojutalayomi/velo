@@ -37,6 +37,8 @@ import { Switch } from "@/components/ui";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Statuser } from "@/components/VerificationComponent";
 import { useNavigateWithHistory } from "@/hooks/useNavigateWithHistory";
+import { saveChatSettings } from "@/lib/chatSettingsApi";
+import { patchChatSettings } from "@/redux/chatSlice";
 import ChatRepository from "@/lib/class/ChatRepository";
 import ChatSystem from "@/lib/class/chatSystem";
 import { ChatSettings, MessageAttributes, NewChatSettings } from "@/lib/types/type";
@@ -200,7 +202,17 @@ const ChatSettingsPage: React.FC = () => {
     if (chatSettings) {
       setChatSettings({ ...chatSettings, [field]: value });
       if (field === "isMuted") {
-        await chatSystem.updateChatSettings(gid as string, { isMuted: value });
+        const error = await saveChatSettings({
+          dispatch,
+          patch: patchChatSettings,
+          chatId: gid as string,
+          previous: { isMuted: chatSettings.isMuted },
+          updates: { isMuted: value },
+        });
+        if (error) {
+          setChatSettings(chatSettings);
+          toast.error(error);
+        }
         return;
       } else if (field === "isPinned") {
         dispatch(updateConversation({ id: gid as string, updates: { pinned: value } }));

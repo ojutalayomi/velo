@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { StatusComposer } from "@/components/status/StatusComposer";
+import { resetStatusRoute } from "@/hooks/useStatusRoute";
 import { createStatus } from "@/lib/statusApi";
 
 const mockDispatch = jest.fn();
@@ -46,6 +47,8 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  resetStatusRoute();
+  window.history.replaceState(null, "", "/home");
   jest.clearAllMocks();
   (createStatus as jest.Mock).mockResolvedValue([group]);
   mockVoice.start.mockResolvedValue(null);
@@ -153,5 +156,22 @@ describe("voice status", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Record again" }));
     expect(screen.queryByTestId("player")).toBeNull();
     expect(share()).toBeDisabled();
+  });
+});
+
+describe("StatusComposer: the /status address", () => {
+  it("shows /status while open, and closes when the person goes back", async () => {
+    const onOpenChange = setup();
+    expect(window.location.pathname).toBe("/status");
+    act(() => window.history.back());
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(window.location.pathname).toBe("/home");
+  });
+
+  it("leaves /status when closed with the dialog's own close button", async () => {
+    const onOpenChange = setup();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(window.location.pathname).toBe("/home");
   });
 });

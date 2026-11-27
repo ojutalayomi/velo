@@ -15,6 +15,15 @@ interface UtilsState {
   toggleMediaDialog: boolean;
   selectedMessages: string[];
   onlineUsers: string[];
+  /** A group message the person chose to answer in private, waiting for the chat page to pick it up. */
+  pendingPrivateReply: PendingPrivateReply | null;
+}
+
+export interface PendingPrivateReply {
+  /** The group message being answered. */
+  messageId: string;
+  /** The chat page it is for: a DM id, or `new:<userId>` when there is no DM yet. */
+  target: string;
 }
 
 const initialState: UtilsState = {
@@ -22,6 +31,7 @@ const initialState: UtilsState = {
   toggleMediaDialog: false,
   selectedMessages: [],
   onlineUsers: [],
+  pendingPrivateReply: null,
 };
 
 const utilSlice = createSlice({
@@ -30,6 +40,9 @@ const utilSlice = createSlice({
   reducers: {
     setToggleDialog: (state, action: PayloadAction<boolean>) => {
       state.toggleDialog = action.payload;
+    },
+    setPendingPrivateReply: (state, action: PayloadAction<PendingPrivateReply | null>) => {
+      state.pendingPrivateReply = action.payload;
     },
     setOnlineUsers: (state, action: PayloadAction<string[]>) => {
       state.onlineUsers = action.payload;
@@ -65,6 +78,7 @@ const utilSlice = createSlice({
 export const {
   setToggleDialog,
   setOnlineUsers,
+  setPendingPrivateReply,
   setToggleMediaDialog,
   setSelectedMessages,
   addSelectedMessage,

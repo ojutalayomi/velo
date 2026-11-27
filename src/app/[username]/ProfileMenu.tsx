@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { setUserMuted } from "@/lib/userRelations";
 import { RootState } from "@/redux/store";
 
 export default function ProfileMenu({
@@ -32,6 +33,7 @@ export default function ProfileMenu({
   const userdata = useSelector((state: RootState) => state.user.userdata);
   const [blocked, setBlocked] = useState(false);
   const [blockBusy, setBlockBusy] = useState(false);
+  const [muted, setMuted] = useState(false);
   const canBlock = profileId !== userdata._id;
 
   const refreshBlockState = async () => {
@@ -41,13 +43,24 @@ export default function ProfileMenu({
       if (!response.ok) return;
       const body = (await response.json()) as { blockedUserIds?: string[] };
       setBlocked(Boolean(body.blockedUserIds?.includes(profileId)));
+      const mutes = await fetch("/api/mutes");
+      if (mutes.ok) {
+        const mutedBody = (await mutes.json()) as { mutedUserIds?: string[] };
+        setMuted(Boolean(mutedBody.mutedUserIds?.includes(profileId)));
+      }
     } catch {
       // Menu still works without the current block state.
     }
   };
 
-  const handleMute = () => {
-    toast(`Muted @${username}`);
+  const handleMute = async () => {
+    const error = await setUserMuted(profileId, !muted);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setMuted(!muted);
+    toast(muted ? `Unmuted @${username}` : `Muted @${username}`);
   };
   const handleBlock = async () => {
     if (blockBusy) return;
@@ -104,7 +117,7 @@ export default function ProfileMenu({
             onClick={handleMute}
             className="w-full rounded px-3 py-2 text-left hover:bg-muted"
           >
-            Mute
+            {muted ? "Unmute" : "Mute"}
           </button>
           <button
             onClick={handleBlock}
@@ -165,7 +178,7 @@ export default function ProfileMenu({
         {canBlock && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleMute}>Mute</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleMute}>{muted ? "Unmute" : "Mute"}</DropdownMenuItem>
             <DropdownMenuItem onClick={handleBlock} disabled={blockBusy}>
               {blocked ? "Unblock" : "Block"}
             </DropdownMenuItem>

@@ -5,6 +5,7 @@ import { pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { buildRankingStages } from "@/lib/feedRanking";
 import { getFollowedIds } from "@/lib/followedIds";
+import { excludeAuthors, getHiddenAuthorIds } from "@/lib/hiddenAuthors";
 import { MongoDBClient } from "@/lib/mongodb";
 import { withAuthors } from "@/lib/postAuthors";
 import type { Payload, PostSchema } from "@/lib/types/type";
@@ -30,9 +31,12 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const latest = req.query.sort === "latest";
     const followedIds = !latest && user ? await getFollowedIds(db, user._id.toString()) : [];
 
+    const hiddenIds = user ? await getHiddenAuthorIds(db, user._id.toString()) : [];
+
     const { posts: pagePosts, hasMore } = await fetchPostsPage(db, skip, pageLimit, {
       ranked: !latest,
       followedIds,
+      hiddenIds,
     });
 
     if (user) {
@@ -53,7 +57,7 @@ async function fetchPostsPage(
   db: MongoDBClient,
   skip: number,
   limit: number,
-  opts: { ranked: boolean; followedIds: string[] }
+  opts: { ranked: boolean; followedIds: string[]; hiddenIds: string[] }
 ) {
   const fetchLimit = limit + 1;
 
@@ -64,7 +68,7 @@ async function fetchPostsPage(
         pipeline: [],
       },
     },
-    { $match: { hidden: { $ne: true } } }, // hidden by an admin
+    { $match: { hidden: { $ne: true }, ...excludeAuthors(opts.hiddenIds) } }, // hidden by an admin, blocked or muted
     ...(opts.ranked
       ? buildRankingStages("forYou", { followedIds: opts.followedIds })
       : [{ $sort: { TimeOfPost: -1 } }]),

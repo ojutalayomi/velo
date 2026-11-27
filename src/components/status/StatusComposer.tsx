@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { useStatusRoute } from "@/hooks/useStatusRoute";
 import { ImagePlus, Loader2, Mic, Plus, Send, Type, X } from "lucide-react";
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/lib/toast";
@@ -236,9 +237,16 @@ export const StatusComposer = ({
     }
   };
 
+  // While the composer is open the address bar reads /status, so Back closes it. Leaving by the X
+  // button steps back through the history too, and lands in the same place as the Back button.
+  const leave = () => {
+    if (!posting) resetComposer();
+    onOpenChange(false);
+  };
+  const exit = useStatusRoute(open, leave);
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen && !posting) resetComposer();
-    onOpenChange(nextOpen);
+    if (nextOpen) onOpenChange(true);
+    else exit();
   };
 
   const bg = statusBackground(background);

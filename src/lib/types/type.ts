@@ -647,6 +647,13 @@ export interface BlockedUserSchema {
   createdAt: string;
 }
 
+export interface MutedUserSchema {
+  _id: ObjectId;
+  muterId: string;
+  mutedId: string;
+  createdAt: string;
+}
+
 export interface AnnouncementSchema {
   _id: ObjectId;
   title: string;

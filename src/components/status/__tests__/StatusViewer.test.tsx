@@ -1,7 +1,8 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { StatusViewer } from "@/components/status/StatusViewer";
+import { resetStatusRoute } from "@/hooks/useStatusRoute";
 import {
   fetchStatusViewers,
   markStatusViewed,
@@ -84,6 +85,17 @@ function setup(groups: StatusGroup[], onClose = jest.fn()) {
 }
 
 beforeAll(() => {
+  // jsdom has no PointerEvent, so synthetic pointer events would arrive without coordinates.
+  if (!window.PointerEvent) {
+    class PointerEventPolyfill extends MouseEvent {
+      pointerId: number;
+      constructor(type: string, init: PointerEventInit = {}) {
+        super(type, init);
+        this.pointerId = init.pointerId ?? 0;
+      }
+    }
+    window.PointerEvent = PointerEventPolyfill as unknown as typeof PointerEvent;
+  }
   window.matchMedia = ((query: string) =>
     ({
       matches: false,
@@ -100,6 +112,8 @@ beforeAll(() => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockUserId = "me";
+  resetStatusRoute();
+  window.history.replaceState(null, "", "/home");
 });
 
 describe("StatusViewer: what it shows", () => {
@@ -211,7 +225,7 @@ describe("StatusViewer: moving and pausing", () => {
     await userEvent.click(screen.getByRole("button", { name: "Next status" }));
     expect(screen.getByText("Second")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Next status" }));
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
   it("moves with the arrow keys", async () => {
@@ -366,5 +380,69 @@ describe("StatusViewer: voice replies", () => {
     setup([group(status())]);
     await userEvent.click(screen.getByRole("button", { name: "Send voice note" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("This status is no longer available"));
+  });
+});
+
+describe("StatusViewer: the /status address", () => {
+  const one = () => [group(status({ _id: "a", text: "First" }))];
+
+  it("puts /status in the address bar while it is open, and takes it out when it closes", async () => {
+    const onClose = setup(one());
+    expect(window.location.pathname).toBe("/status");
+    await userEvent.click(screen.getByRole("button", { name: "Close status" }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(window.location.pathname).toBe("/home");
+  });
+
+  it("closes when the person goes back", async () => {
+    const onClose = setup(one());
+    expect(window.location.pathname).toBe("/status");
+    act(() => window.history.back());
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(window.location.pathname).toBe("/home");
+  });
+
+  it("gives the address back when it is removed some other way", async () => {
+    const { unmount } = render(
+      <StatusViewer groups={one()} initialGroupIndex={0} initialStatusIndex={0} onClose={jest.fn()} />
+    );
+    expect(window.location.pathname).toBe("/status");
+    unmount();
+    await waitFor(() => expect(window.location.pathname).toBe("/home"));
+  });
+});
+
+describe("StatusViewer: dragging down", () => {
+  const drag = (viewer: HTMLElement, to: number, from = 100) => {
+    fireEvent.pointerDown(viewer, { pointerId: 1, button: 0, clientX: 150, clientY: from });
+    fireEvent.pointerMove(viewer, { pointerId: 1, clientX: 152, clientY: to });
+    fireEvent.pointerUp(viewer, { pointerId: 1, clientX: 152, clientY: to });
+  };
+
+  it("closes and leaves /status when pulled far enough down", async () => {
+    const onClose = setup([group(status())]);
+    drag(screen.getByTestId("status-viewer"), 320);
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(window.location.pathname).toBe("/home");
+  });
+
+  it("springs back, and stays open, when the pull is short", async () => {
+    const onClose = setup([group(status())]);
+    const viewer = screen.getByTestId("status-viewer");
+    drag(viewer, 150);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(viewer.style.transform).toBe("");
+    expect(window.location.pathname).toBe("/status");
+  });
+
+  it("does not treat a sideways swipe as a drag", async () => {
+    const onClose = setup([group(status())]);
+    const viewer = screen.getByTestId("status-viewer");
+    fireEvent.pointerDown(viewer, { pointerId: 1, button: 0, clientX: 40, clientY: 100 });
+    fireEvent.pointerMove(viewer, { pointerId: 1, clientX: 300, clientY: 160 });
+    fireEvent.pointerUp(viewer, { pointerId: 1, clientX: 300, clientY: 160 });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

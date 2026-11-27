@@ -25,6 +25,7 @@ import { VoiceRecorderBar } from "@/components/chat/VoiceRecorderBar";
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useStatusRoute } from "@/hooks/useStatusRoute";
 import {
   FullscreenSheet,
   FullscreenSheetContent,
@@ -57,6 +58,10 @@ import { useAppDispatch } from "@/redux/hooks";
 import { markViewedLocal, removeStatus, setStatusLikes } from "@/redux/statusSlice";
 
 /** One tap on these sends the emoji as a reply. */
+/** How far down a finger must move before it counts as a drag, and how far to close. */
+const DRAG_START_PX = 8;
+const DRAG_CLOSE_PX = 120;
+
 const QUICK_REPLIES = ["❤️", "😂", "😮", "😢", "👏", "🔥"];
 
 /** How long a photo or text status stays up (video and voice run for their own length). */
@@ -97,7 +102,7 @@ export const StatusViewer = ({
   groups,
   initialGroupIndex,
   initialStatusIndex,
-  onClose,
+  onClose: onCloseProp,
   onViewed,
 }: {
   groups: StatusGroup[];
@@ -110,6 +115,13 @@ export const StatusViewer = ({
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { userdata } = useUser();
+  // While the viewer is up the address bar reads /status, so Back closes it. Every way out goes
+  // through `onClose` below, which steps back through the history.
+  const onClose = useStatusRoute(true, onCloseProp);
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef<{ id: number; x: number; y: number; active: boolean } | null>(null);
+  const didDrag = useRef(false);
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [statusIndex, setStatusIndex] = useState(Math.max(0, initialStatusIndex));
   const [progress, setProgress] = useState(0);
@@ -335,13 +347,54 @@ export const StatusViewer = ({
 
 
   const startHold = (event: React.PointerEvent) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("[data-no-hold]")) return;
+    if (event.button !== 0) return;
+    // A drag down closes the viewer from anywhere on it, controls included, so remember where it began.
+    drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, active: false };
+    didDrag.current = false;
+    if ((event.target as HTMLElement).closest("[data-no-hold]")) return;
     holdStartedAt.current = Date.now();
     setHolding(true);
   };
-  const endHold = () => setHolding(false);
-  // A press that was a hold, not a tap, must not also move to the next status.
-  const tapped = () => Date.now() - holdStartedAt.current < 250;
+  const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
+    const start = drag.current;
+    if (!start || start.id !== event.pointerId) return;
+    const dy = event.clientY - start.y;
+    const dx = event.clientX - start.x;
+    if (!start.active) {
+      // Mostly downward and past a few pixels: this is a drag, not a tap or a hold.
+      if (dy < DRAG_START_PX || Math.abs(dx) > dy) return;
+      start.active = true;
+      didDrag.current = true;
+      setDragging(true);
+      setHolding(true);
+      // Keep receiving moves when the finger leaves the screen edge, without touching clicks that never drag.
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    }
+    setDragY(Math.max(0, dy));
+  };
+  const endHold = (event?: React.PointerEvent<HTMLElement>) => {
+    const start = drag.current;
+    drag.current = null;
+    if (start?.active) {
+      setDragging(false);
+      const farEnough = dragY > DRAG_CLOSE_PX;
+      if (farEnough) {
+        // Slide the rest of the way off the screen, then leave.
+        setDragY(window.innerHeight);
+        setTimeout(onClose, 150);
+      } else {
+        setDragY(0);
+        setHolding(false);
+      }
+      if (event && event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      return;
+    }
+    setHolding(false);
+  };
+  // A press that was a hold or a drag, not a tap, must not also move to the next status.
+  const tapped = () => !didDrag.current && Date.now() - holdStartedAt.current < 250;
 
   return (
     <FullscreenSheet open onOpenChange={(open) => !open && onClose()}>
@@ -349,10 +402,19 @@ export const StatusViewer = ({
         className="z-80 items-center justify-center bg-black"
         aria-describedby={undefined}
         onPointerDown={startHold}
+        onPointerMove={moveDrag}
         onPointerUp={endHold}
         onPointerCancel={endHold}
-        onPointerLeave={endHold}
+        onPointerLeave={(event) => !drag.current?.active && endHold(event)}
         initialFocus={false}
+        data-testid="status-viewer"
+        style={{
+          // Vertical touches belong to the drag, not to the page scrolling behind.
+          touchAction: "none",
+          transform: dragY ? `translateY(${dragY}px)` : undefined,
+          opacity: dragY ? Math.max(0.4, 1 - dragY / 600) : undefined,
+          transition: dragging ? "none" : "transform 150ms ease-out, opacity 150ms ease-out",
+        }}
       >
         <FullscreenSheetTitle className="sr-only">
           {isOwner ? "Your status" : `Status from ${group.user.name}`}

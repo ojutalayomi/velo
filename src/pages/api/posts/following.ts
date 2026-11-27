@@ -4,6 +4,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyToken } from "@/lib/auth";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { buildRankingStages } from "@/lib/feedRanking";
+import { getHiddenAuthorIds } from "@/lib/hiddenAuthors";
 import { MongoDBClient, FollowersSchema } from "@/lib/mongodb";
 import { withAuthors } from "@/lib/postAuthors";
 import type { Payload, PostSchema } from "@/lib/types/type";
@@ -40,7 +41,11 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       });
     }
 
-    const followedIds = followedDocs.map((d: FollowersSchema) => d.followedId);
+    // Anyone the user blocked or muted stays out of the following feed too.
+    const hiddenIds = await getHiddenAuthorIds(db, payload._id);
+    const followedIds = followedDocs
+      .map((d: FollowersSchema) => d.followedId)
+      .filter((id) => !hiddenIds.includes(id));
 
     const { posts, hasMore } = await fetchFollowingPostsPage(
       db,

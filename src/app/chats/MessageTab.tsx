@@ -16,11 +16,14 @@ import {
   Plus,
   Pin,
   PinOff,
+  MessageSquareReply,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
-import React, { memo, TouchEvent, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { privateReplyBlockReason, privateReplyRoute } from "@/lib/privateReply";
+import React, { memo, TouchEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSelector, useStore } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
@@ -67,7 +70,7 @@ import {
   messageDeletion,
   SENDER_DELETED_CONTENT,
 } from "@/lib/messageDeletion";
-import { addSelectedMessage, removeSelectedMessage } from "@/redux/utilsSlice";
+import { addSelectedMessage, removeSelectedMessage, setPendingPrivateReply } from "@/redux/utilsSlice";
 
 import { useSwipeToReply } from "@/hooks/useSwipeToReply";
 import { canForward, canQuote } from "@/lib/messageActions";
@@ -104,6 +107,8 @@ type Option = {
 
 const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props) => {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const store = useStore<RootState>();
   const { userdata } = useUser();
   const [open, setOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -208,6 +213,20 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
     enabled: quotable && selectedMessages.length === 0,
     onTrigger: quoteMessage,
   });
+  // Group messages from other members can be answered in a one-to-one chat with the sender.
+  const canReplyPrivately = privateReplyBlockReason(message, userdata._id) === null;
+  const replyPrivately = () => {
+    openOptions(false);
+    setOpen(false);
+    const blocked = privateReplyBlockReason(message, userdata._id);
+    if (blocked) {
+      toast.error(blocked);
+      return;
+    }
+    const { route, target } = privateReplyRoute(store.getState().chat.conversations, userdata._id, senderId);
+    dispatch(setPendingPrivateReply({ messageId: String(message._id), target }));
+    router.push(route);
+  };
   const isPinned = Boolean(pins?.some((p) => p.messageId === String(message._id)));
   const pinAllowed =
     Boolean(socket) &&
@@ -235,6 +254,9 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   };
   const optionss: Option[] = [
     ...(quotable ? [{ icon: TextQuote, text: "Quote", onClick: quoteMessage }] : []),
+    ...(canReplyPrivately
+      ? [{ icon: MessageSquareReply, text: "Reply privately", onClick: replyPrivately }]
+      : []),
     {
       icon: Copy,
       text: isCopied ? "Copied!" : "Copy message",
@@ -727,14 +749,14 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
   const { userdata } = useUser();
   const messages = useSelector((state: RootState) => state.chat.messages);
 
-  const Messages = messages?.filter((msg) => {
-    return msg.chatId === message.chatId;
-  });
-
-  const quotedMessageId = Messages?.find((m) => (m._id as string) === message.quotedMessageId);
-  const profiles = useSelector(
-    (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.profiles
+  // The quoted message is usually in this chat, but a private reply quotes one from the group it
+  // came from, so look it up among all the messages.
+  const quotedMessageId = messages?.find((m) => (m._id as string) === message.quotedMessageId);
+  const fromOtherChat = Boolean(quotedMessageId && quotedMessageId.chatId !== message.chatId);
+  const quotedChat = useSelector((state: RootState) =>
+    state.chat.conversations.find((c) => c.id === quotedMessageId?.chatId)
   );
+  const profiles = quotedChat?.profiles;
 
   const handleQuoteClick = () => {
     const messageElement = document.getElementById(message.quotedMessageId as string);
@@ -777,6 +799,9 @@ const QuoteComponent = ({ message, senderId }: { message: MessageAttributes; sen
             className={`text-xs font-medium ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-300"}`}
           >
             {resolveSender(quotedMessageId?.sender, profiles)?.name || ""}
+            {fromOtherChat && quotedChat?.name ? (
+              <span className="font-normal opacity-70"> · in {quotedChat.name}</span>
+            ) : null}
           </span>
           <span
             className={`line-clamp-2 text-xs ${senderId === userdata._id ? "text-slate-700 dark:text-slate-300" : "text-gray-700 dark:text-gray-400"}`}

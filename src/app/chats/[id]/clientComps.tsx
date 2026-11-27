@@ -42,7 +42,8 @@ import {
 import { useAppDispatch } from "@/redux/hooks";
 import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
-import { clearSelectedMessages } from "@/redux/utilsSlice";
+import { privateReplyQuote } from "@/lib/privateReply";
+import { clearSelectedMessages, setPendingPrivateReply } from "@/redux/utilsSlice";
 
 import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { socketAuthHeaders } from "@/lib/socketToken";
@@ -92,7 +93,14 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const loadingMoreMessages = useSelector((state: RootState) => state.chat.loadingMoreMessages);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const { settings: userSettings } = useSelector((state: RootState) => state.user);
-  const [quote, setQuote] = useState<QuoteProp>(initialQuoteState);
+  // Coming from "Reply privately" on a group message: open with that message quoted.
+  const pendingPrivateReply = useSelector((state: RootState) => state.utils.pendingPrivateReply);
+  const [quote, setQuote] = useState<QuoteProp>(
+    () => privateReplyQuote(pendingPrivateReply, params?.id ?? "", messages) ?? initialQuoteState
+  );
+  useEffect(() => {
+    if (pendingPrivateReply?.target === params?.id) dispatch(setPendingPrivateReply(null));
+  }, [dispatch, params?.id, pendingPrivateReply]);
   const [time, setTime] = useState("");
   const [load, setLoading] = useState<boolean>();
   const [err, setError] = useState<boolean>();

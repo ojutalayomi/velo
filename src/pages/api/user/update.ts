@@ -9,7 +9,7 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 const USERNAME_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 const RESERVED_USERNAMES = new Set([
   "home", "explore", "chats", "compose", "accounts", "general", "notifications",
-  "bookmarks", "api", "settings", "edit", "admin", "login", "signup", "logout",
+  "bookmarks", "api", "settings", "edit", "admin", "login", "signup", "logout", "status",
 ]);
 
 type Validator = (_value: unknown) => string | null; // returns an error message or null

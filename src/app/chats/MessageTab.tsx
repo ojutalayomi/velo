@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
-import React, { memo, TouchEvent, useEffect, useState } from "react";
+import React, { memo, TouchEvent, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -109,7 +109,8 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   const [isCopied, setIsCopied] = useState(false);
   const [options, openOptions] = useState<boolean>(false);
   const [messageContent, setMessageContent] = useState<string>(message.content.replace("≤≤≤", ""));
-  const [time] = useState<string>(updateLiveTime("chat-time", message.timestamp));
+  // Formatting a time with Intl is slow; do it once per message, not on every render.
+  const time = useMemo(() => updateLiveTime("chat-time", message.timestamp), [message.timestamp]);
   const socket = useSocket();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const adminIds = useSelector(

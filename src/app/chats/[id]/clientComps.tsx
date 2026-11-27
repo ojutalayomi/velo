@@ -782,7 +782,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
       <div
         ref={messageBoxRef}
-        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto overscroll-contain px-2 pb-12 pt-4"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-12 pt-4"
         onScroll={handleScroll}
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">

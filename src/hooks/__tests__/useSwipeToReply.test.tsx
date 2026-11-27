@@ -30,12 +30,13 @@ const swipe = (el: Element, from: [number, number], to: [number, number]) => {
 };
 
 describe("useSwipeToReply", () => {
-  it("quotes on a long swipe to the right and stops the page scrolling sideways", () => {
+  it("quotes on a long swipe to the right without blocking scrolling", () => {
     const onTrigger = jest.fn();
     const { getByTestId } = render(<Row onTrigger={onTrigger} />);
     const move = swipe(getByTestId("text"), [100, 200], [100 + SWIPE_THRESHOLD + 30, 204]);
     expect(onTrigger).toHaveBeenCalledTimes(1);
-    expect(move.defaultPrevented).toBe(true);
+    // Passive listener: it never cancels the browser's own scrolling.
+    expect(move.defaultPrevented).toBe(false);
   });
 
   it("follows the finger and shows the icon while swiping", () => {

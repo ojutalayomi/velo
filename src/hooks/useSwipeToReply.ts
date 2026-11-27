@@ -24,7 +24,7 @@ function scrollsSideways(node: HTMLElement | null, root: HTMLElement): boolean {
  * Attach `rowRef` to the message row and `iconRef` to a reply icon inside it. The row follows the
  * finger with some resistance, the icon fades in, and letting go past the threshold calls
  * `onTrigger`. Vertical scrolling is untouched: the gesture only starts when the movement is
- * mostly sideways. Works for touch only; on a desktop the message menu has "Quote".
+ * mostly sideways. The scrolling container must have `overflow-x: hidden`. Works for touch only; on a desktop the message menu has "Quote".
  */
 export function useSwipeToReply({
   enabled,
@@ -91,8 +91,6 @@ export function useSwipeToReply({
         else return;
       }
 
-      // Take over from the browser's own scrolling now that this is clearly a sideways swipe.
-      if (event.cancelable) event.preventDefault();
       const past = Math.max(dx - SWIPE_THRESHOLD, 0);
       pulled = Math.min(dx <= 0 ? 0 : Math.min(dx, SWIPE_THRESHOLD) + past * 0.3, MAX_PULL);
       if (!armed && pulled >= SWIPE_THRESHOLD) {
@@ -119,8 +117,10 @@ export function useSwipeToReply({
     };
 
     row.addEventListener("touchstart", onStart, { passive: true });
-    // Not passive: stopping the page from scrolling sideways needs preventDefault.
-    row.addEventListener("touchmove", onMove, { passive: false });
+    // Passive, so the browser never has to wait for this handler before it scrolls the list. There
+    // is nothing to preventDefault: the message list has `overflow-x: hidden`, so a sideways drag
+    // doesn't pan the page.
+    row.addEventListener("touchmove", onMove, { passive: true });
     row.addEventListener("touchend", onEnd);
     row.addEventListener("touchcancel", onEnd);
     return () => {

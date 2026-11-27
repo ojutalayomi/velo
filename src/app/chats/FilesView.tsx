@@ -104,10 +104,10 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
               >
                 <CachedMedia url={m.url} kind="image">
                   {(src, save) => (
-                    <img src={src} alt={m.name} onLoad={save} className="size-full object-cover" />
+                    <img src={src} alt={m.name} onLoad={save} loading="lazy" decoding="async" className="size-full object-cover" />
                   )}
                 </CachedMedia>
-                <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-xs">
+                <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
                   {updateLiveTime("chat-time", m.uploadedAt)}
                 </span>
               </button>
@@ -122,10 +122,10 @@ const MediaCollage = ({ media, voiceNote = false }: MediaCollageProps) => {
             >
               <CachedMedia url={media[3].url} kind="image">
                 {(src, save) => (
-                  <img src={src} alt={media[3].name} onLoad={save} className="size-full object-cover" />
+                  <img src={src} alt={media[3].name} onLoad={save} loading="lazy" decoding="async" className="size-full object-cover" />
                 )}
               </CachedMedia>
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-semibold text-white backdrop-blur-xs">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-xl font-semibold text-white">
                 +{excess}
               </div>
             </button>

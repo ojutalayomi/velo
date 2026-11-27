@@ -443,11 +443,6 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
         ]
       : []),
     {
-      icon: <Save size={18} />,
-      text: "Save post",
-      onClick: () => handleClick("bookmarked"),
-    },
-    {
       icon: <Share size={18} />,
       text: "Share post via…",
       onClick: async () => {

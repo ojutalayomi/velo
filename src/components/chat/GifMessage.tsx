@@ -12,6 +12,7 @@ export function GifMessage({ item, sticker }: { item: KlipyItem; sticker: boolea
         src={item.url}
         alt={item.title || (sticker ? "Sticker" : "GIF")}
         loading="lazy"
+        decoding="async"
         width={item.width}
         height={item.height}
         className="block h-auto w-full rounded-lg"

@@ -6,6 +6,7 @@ import { getMarkdownPreference } from "@/hooks/useMarkdownPreference";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useMessageListScroll } from "@/hooks/useMessageListScroll";
 import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "@/lib/toast";
@@ -497,45 +498,35 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   }, [Messages]);
 
 
-  const handleScroll = () => {
-    if (messageBoxRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messageBoxRef.current;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px threshold
-      atBottomRef.current = isNearBottom;
-      setShowScrollButton(!isNearBottom);
-
-      if (scrollTop < 120 && visibleCount < Messages.length) {
-        const box = messageBoxRef.current;
-        const prevSH = scrollHeight;
-        const prevST = scrollTop;
-        setVisibleCount((c) => c + REVEAL_STEP);
-        requestAnimationFrame(() => {
-          box.scrollTop = prevST + (box.scrollHeight - prevSH);
-        });
-        return;
-      }
-
-      if (
-        scrollTop < 120 &&
-        messagesHasMore &&
-        !loadingMoreMessages &&
-        scrollHeight > clientHeight + 40
-      ) {
-        const now = Date.now();
-        if (now - olderLoadThrottleRef.current < 900) return;
-        olderLoadThrottleRef.current = now;
-        const box = messageBoxRef.current;
-        const prevSH = scrollHeight;
-        const prevST = scrollTop;
-        void (async () => {
-          await dispatch(fetchMoreChatMessages() as never);
-          requestAnimationFrame(() => {
-            box.scrollTop = prevST + (box.scrollHeight - prevSH);
-          });
-        })();
-      }
+  const loadOlder = (box: HTMLDivElement) => {
+    const prevSH = box.scrollHeight;
+    const prevST = box.scrollTop;
+    const keepPosition = () => {
+      // Runs after the older rows are in the DOM, while scrolling is idle.
+      box.scrollTop = prevST + (box.scrollHeight - prevSH);
+    };
+    if (visibleCount < Messages.length) {
+      setVisibleCount((c) => c + REVEAL_STEP);
+      requestAnimationFrame(keepPosition);
+      return;
+    }
+    if (messagesHasMore && !loadingMoreMessages && box.scrollHeight > box.clientHeight + 40) {
+      const now = Date.now();
+      if (now - olderLoadThrottleRef.current < 900) return;
+      olderLoadThrottleRef.current = now;
+      void (async () => {
+        await dispatch(fetchMoreChatMessages() as never);
+        requestAnimationFrame(keepPosition);
+      })();
     }
   };
+
+  const handleScroll = useMessageListScroll({
+    boxRef: messageBoxRef,
+    atBottomRef,
+    onNearBottomChange: (near) => setShowScrollButton(!near),
+    loadOlder,
+  });
 
   const scrollToBottom = () => {
     if (messageBoxRef.current) {

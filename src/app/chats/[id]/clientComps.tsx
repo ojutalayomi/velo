@@ -8,6 +8,7 @@ import { getMarkdownPreference } from "@/hooks/useMarkdownPreference";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChevronDown, EllipsisVertical, Loader2, MessageSquare } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useMessageListScroll } from "@/hooks/useMessageListScroll";
 import React, { Fragment, JSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -621,46 +622,35 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     }
   };
 
-  const handleScroll = () => {
-    const box = messageBoxRef.current;
-    if (!box) return;
-    const { scrollTop, scrollHeight, clientHeight } = box;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    atBottomRef.current = isNearBottom;
-    setShowScrollButton(!isNearBottom);
-
-    if (scrollTop < 120 && visibleCount < Messages.length) {
-      const prevSH = box.scrollHeight;
-      const prevST = box.scrollTop;
+  const loadOlder = (box: HTMLDivElement) => {
+    const prevSH = box.scrollHeight;
+    const prevST = box.scrollTop;
+    const keepPosition = () => {
+      // Runs after the older rows are in the DOM, while scrolling is idle.
+      box.scrollTop = prevST + (box.scrollHeight - prevSH);
+    };
+    if (visibleCount < Messages.length) {
       setVisibleCount((c) => c + REVEAL_STEP);
-      requestAnimationFrame(() => {
-        const b = messageBoxRef.current;
-        if (b) b.scrollTop = prevST + (b.scrollHeight - prevSH);
-      });
+      requestAnimationFrame(keepPosition);
       return;
     }
-
-    if (
-      scrollTop < 120 &&
-      messagesHasMore &&
-      !loadingMoreMessages &&
-      scrollHeight > clientHeight + 40
-    ) {
+    if (messagesHasMore && !loadingMoreMessages && box.scrollHeight > box.clientHeight + 40) {
       const now = Date.now();
       if (now - olderLoadThrottleRef.current < 900) return;
       olderLoadThrottleRef.current = now;
-      const prevSH = box.scrollHeight;
-      const prevST = box.scrollTop;
       void (async () => {
         await dispatch(fetchMoreChatMessages() as never);
-        requestAnimationFrame(() => {
-          const b = messageBoxRef.current;
-          if (!b) return;
-          b.scrollTop = prevST + (b.scrollHeight - prevSH);
-        });
+        requestAnimationFrame(keepPosition);
       })();
     }
   };
+
+  const handleScroll = useMessageListScroll({
+    boxRef: messageBoxRef,
+    atBottomRef,
+    onNearBottomChange: (near) => setShowScrollButton(!near),
+    loadOlder,
+  });
 
   // Skips deleted-message placeholders, which would otherwise match words like "deleted".
   const searchResults = useMemo(() => {

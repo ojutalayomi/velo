@@ -117,7 +117,8 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
   // Formatting a time with Intl is slow; do it once per message, not on every render.
   const time = useMemo(() => updateLiveTime("chat-time", message.timestamp), [message.timestamp]);
   const socket = useSocket();
-  const { selectedMessages } = useSelector((state: RootState) => state.utils);
+  // Select just this slice: the rest of `utils` (online users...) changes often and must not re-render every row.
+  const selectedMessages = useSelector((state: RootState) => state.utils.selectedMessages);
   const adminIds = useSelector(
     (state: RootState) => state.chat.conversations.find((c) => c.id === message.chatId)?.adminIds
   );

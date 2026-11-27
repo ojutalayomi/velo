@@ -13,6 +13,16 @@ export async function getMutedUserIds(muterId: string): Promise<string[]> {
   return rows.map((row) => row.mutedId);
 }
 
+/** Who the user muted, and when, for the list in settings. */
+export async function listMuted(muterId: string): Promise<{ id: string; createdAt: string }[]> {
+  const db = await new MongoDBClient().init();
+  const rows = await db
+    .mutedUsers()
+    .find({ muterId }, { projection: { _id: 0, mutedId: 1, createdAt: 1 } })
+    .toArray();
+  return rows.map((row) => ({ id: row.mutedId, createdAt: row.createdAt ?? "" }));
+}
+
 export async function muteUser(muterId: string, mutedId: string): Promise<void> {
   const db = await new MongoDBClient().init();
   await ensureMuteIndexes(db);

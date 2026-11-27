@@ -38,7 +38,7 @@ describe("/api/mutes", () => {
   it("needs a signed-in user", async () => {
     (getSessionUserId as jest.Mock).mockResolvedValue(null);
     expect((await POST(post({ userId: other }))).status).toBe(401);
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new Request("http://x/api/mutes"))).status).toBe(401);
   });
 
   it("mutes another account once, however many times it is asked", async () => {
@@ -64,6 +64,40 @@ describe("/api/mutes", () => {
     const res = await DELETE(new Request(`http://x/api/mutes?userId=${other}`, { method: "DELETE" }));
     expect(await res.json()).toEqual({ success: true, muted: false });
     expect(mutedUsers.deleteOne).toHaveBeenCalledWith({ muterId: me, mutedId: other });
+  });
+});
+
+describe("/api/mutes?details=1", () => {
+  const ada = new ObjectId();
+  const bo = new ObjectId();
+  const gone = new ObjectId().toString();
+
+  it("lists the muted accounts, newest first, leaving out accounts that no longer exist", async () => {
+    mutedUsers.find.mockReturnValue(
+      rows([
+        { mutedId: ada.toString(), createdAt: "2026-11-01T00:00:00.000Z" },
+        { mutedId: bo.toString(), createdAt: "2026-11-20T00:00:00.000Z" },
+        { mutedId: gone, createdAt: "2026-11-25T00:00:00.000Z" },
+      ])
+    );
+    (mockDb as unknown as { users: () => unknown }).users = () => ({
+      find: () => rows([
+        { _id: ada, name: "Ada L", username: "ada", displayPicture: "a.png", verified: true },
+        { _id: bo, firstname: "Bo", lastname: "Peep", username: "bo" },
+      ]),
+    });
+    const res = await GET(new Request("http://x/api/mutes?details=1"));
+    const body = await res.json();
+    expect(body.users.map((u: { username: string }) => u.username)).toEqual(["bo", "ada"]);
+    expect(body.users[0]).toMatchObject({ name: "Bo Peep", displayPicture: "", verified: false });
+    expect(body.users[1]).toMatchObject({ name: "Ada L", verified: true });
+    expect(body.mutedUserIds).toEqual([bo.toString(), ada.toString()]);
+    (mockDb as unknown as { users: () => unknown }).users = () => users;
+  });
+
+  it("still answers with just the ids by default", async () => {
+    mutedUsers.find.mockReturnValue(rows([{ mutedId: "a" }]));
+    expect(await (await GET(new Request("http://x/api/mutes"))).json()).toEqual({ mutedUserIds: ["a"] });
   });
 });
 

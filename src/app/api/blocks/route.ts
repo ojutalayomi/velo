@@ -2,8 +2,9 @@ import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/auth";
-import { blockUser, getBlockedUserIds, unblockUser } from "@/lib/blocks";
+import { blockUser, getBlockedUserIds, listBlocked, unblockUser } from "@/lib/blocks";
 import { MongoDBClient } from "@/lib/mongodb";
+import { relatedUsers } from "@/lib/relatedUsers";
 
 async function resolveTargetUserId(request: Request): Promise<string | null> {
   const url = new URL(request.url);
@@ -15,10 +16,17 @@ async function resolveTargetUserId(request: Request): Promise<string | null> {
   return fromBody || null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  // `?details=1` adds the accounts themselves, for the blocked list in settings.
+  if (new URL(request.url).searchParams.get("details") === "1") {
+    const db = await new MongoDBClient().init();
+    const users = await relatedUsers(db, await listBlocked(userId));
+    return NextResponse.json({ blockedUserIds: users.map((user) => user._id), users });
   }
 
   const blockedUserIds = await getBlockedUserIds(userId);

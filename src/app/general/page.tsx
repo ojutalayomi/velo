@@ -1,5 +1,5 @@
 "use client";
-import { Bell, HelpCircle, LockKeyhole, LogIn, LogOut, Moon, UserRound } from "lucide-react";
+import { Bell, HelpCircle, LockKeyhole, LogIn, LogOut, Moon, ShieldBan, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -73,6 +73,12 @@ const SettingsPage = () => {
             label="Privacy and security"
             description="Visibility, passkeys and signed-in devices"
             href="/account/privacy-security"
+          />
+          <SettingsRow
+            icon={<ShieldBan size={20} />}
+            label="Muted and blocked"
+            description="See and undo the accounts you've muted or blocked"
+            href="/account/blocked-muted"
           />
         </SettingsGroup>
 

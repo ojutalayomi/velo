@@ -16,6 +16,16 @@ export async function getBlockedUserIds(blockerId: string): Promise<string[]> {
   return rows.map((row) => row.blockedId);
 }
 
+/** Who the user blocked, and when, for the list in settings. */
+export async function listBlocked(blockerId: string): Promise<{ id: string; createdAt: string }[]> {
+  const db = await new MongoDBClient().init();
+  const rows = await db
+    .blockedUsers()
+    .find({ blockerId }, { projection: { _id: 0, blockedId: 1, createdAt: 1 } })
+    .toArray();
+  return rows.map((row) => ({ id: row.blockedId, createdAt: row.createdAt ?? "" }));
+}
+
 export async function blockUser(blockerId: string, blockedId: string): Promise<void> {
   const db = await new MongoDBClient().init();
   await ensureBlockIndexes(db);

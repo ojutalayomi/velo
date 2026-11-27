@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
-import { getMutedUserIds, muteUser, unmuteUser } from "@/lib/mutes";
+import { getMutedUserIds, listMuted, muteUser, unmuteUser } from "@/lib/mutes";
+import { relatedUsers } from "@/lib/relatedUsers";
 
 async function resolveTargetUserId(request: Request): Promise<string | null> {
   const url = new URL(request.url);
@@ -15,10 +16,17 @@ async function resolveTargetUserId(request: Request): Promise<string | null> {
   return fromBody || null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  // `?details=1` adds the accounts themselves, for the muted list in settings.
+  if (new URL(request.url).searchParams.get("details") === "1") {
+    const db = await new MongoDBClient().init();
+    const users = await relatedUsers(db, await listMuted(userId));
+    return NextResponse.json({ mutedUserIds: users.map((user) => user._id), users });
   }
 
   return NextResponse.json({ mutedUserIds: await getMutedUserIds(userId) });

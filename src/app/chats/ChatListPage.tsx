@@ -327,20 +327,24 @@ const Card: React.FC<Props> = ({ chat }) => {
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (isMobile) {
-      longPressTimeout.current = setTimeout(() => {
-        setDrawerOpen(true);
-        void refreshBlocked();
-      }, 1000);
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (isMobile && longPressTimeout.current) {
+  const cancelLongPress = () => {
+    if (longPressTimeout.current) {
       clearTimeout(longPressTimeout.current);
       longPressTimeout.current = null;
     }
+  };
+
+  // React bubbles touches from the drawer (a portal) up to this card, so only touches that really
+  // land on the card may start the timer. Otherwise tapping the drawer's backdrop to close it
+  // starts a timer whose end never arrives, and the drawer reopens a second later.
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile || drawerOpen || !e.currentTarget.contains(e.target as Node)) return;
+    cancelLongPress();
+    longPressTimeout.current = setTimeout(() => {
+      longPressTimeout.current = null;
+      setDrawerOpen(true);
+      void refreshBlocked();
+    }, 1000);
   };
 
   const handleEllipsisClick = (e: React.MouseEvent) => {
@@ -363,7 +367,9 @@ const Card: React.FC<Props> = ({ chat }) => {
           )}
           onContextMenu={handleContextMenu}
           onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          onTouchEnd={cancelLongPress}
+          onTouchMove={cancelLongPress}
+          onTouchCancel={cancelLongPress}
         >
           {/* Dropdown/Drawer menu button */}
           {/* Always render dropdown, but only open when dropdownOpen is true */}
@@ -406,6 +412,7 @@ const Card: React.FC<Props> = ({ chat }) => {
             <Drawer
               open={drawerOpen}
               onOpenChange={(open) => {
+                cancelLongPress();
                 setDrawerOpen(open);
                 if (open) void refreshBlocked();
               }}

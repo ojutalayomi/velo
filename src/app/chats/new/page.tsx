@@ -35,7 +35,8 @@ import { showChat } from "@/redux/navigationSlice";
 import { RootState } from "@/redux/store";
 import { UserDataPartial } from "@/redux/userSlice";
 import { convoPreviewUpdate } from "@/lib/chatPreview";
-import { clearSelectedMessages } from "@/redux/utilsSlice";
+import { privateReplyQuote } from "@/lib/privateReply";
+import { clearSelectedMessages, setPendingPrivateReply } from "@/redux/utilsSlice";
 import { formatNo, timeFormatter } from "@/templates/PostProps";
 
 import ChatTextarea from "../ChatTextarea";
@@ -91,7 +92,16 @@ const ChatPage = () => {
   const { newGroupMembers } = useSelector((state: RootState) => state.chat);
   const { onlineUsers } = useSelector((state: RootState) => state.utils);
   const { groupDisplayPicture } = useGlobalFileStorage();
-  const [quote, setQuote] = useState<QuoteProp>(initialQuoteState);
+  // Coming from "Reply privately" on a group message: open with that message quoted.
+  const pendingPrivateReply = useSelector((state: RootState) => state.utils.pendingPrivateReply);
+  const chatMessages = useSelector((state: RootState) => state.chat.messages);
+  const replyTarget = `new:${otherId}`;
+  const [quote, setQuote] = useState<QuoteProp>(
+    () => privateReplyQuote(pendingPrivateReply, replyTarget, chatMessages) ?? initialQuoteState
+  );
+  useEffect(() => {
+    if (pendingPrivateReply?.target === replyTarget) dispatch(setPendingPrivateReply(null));
+  }, [dispatch, replyTarget, pendingPrivateReply]);
   const [load, setLoading] = useState<boolean>();
   const [newMessage, setNewMessage] = useState("");
   const [newPerson, setNewPerson] = useState<UserData | undefined>();

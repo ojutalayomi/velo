@@ -25,6 +25,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
+import ReportDialog from "@/components/ReportDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/lib/toast";
+import { setUserBlocked } from "@/lib/userRelations";
 import { useOptionalCall } from "@/components/call/callContext";
 import { Statuser } from "@/components/VerificationComponent";
 import type { CallType } from "@/lib/call/callState";
@@ -164,7 +177,35 @@ const Card: React.FC<Props> = ({ chat }) => {
   const [isHidden, setIsHidden] = useState(false);
   const [isUnread, setIsUnread] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const { userdata } = useUser();
+  // Only a one-to-one chat has a single person to block or report; a group is reported as a whole.
+  const otherId = chat.type === "DM" ? chat.participants.find((id) => id !== userdata._id) : undefined;
+
+  /** Whether this DM's other person is blocked, read when the menu opens so the label is true. */
+  const refreshBlocked = async () => {
+    if (!otherId) return;
+    try {
+      const response = await fetch("/api/blocks");
+      if (!response.ok) return;
+      const body = (await response.json()) as { blockedUserIds?: string[] };
+      setIsBlocked(Boolean(body.blockedUserIds?.includes(otherId)));
+    } catch {
+      // The menu still works; the label just may not reflect an existing block.
+    }
+  };
+
+  const changeBlock = async (block: boolean) => {
+    if (!otherId) return;
+    const error = await setUserBlocked(otherId, block);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setIsBlocked(block);
+    toast(block ? `Blocked ${chat.name}.` : `Unblocked ${chat.name}.`);
+  };
   const router = useRouter();
   const dispatch = useAppDispatch();
   const time = formatChatTime(chat.lastUpdated);
@@ -174,7 +215,8 @@ const Card: React.FC<Props> = ({ chat }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const options = [
+  type CardOption = { id: number; name: string; action: () => void };
+  const options: CardOption[] = [
     {
       id: 1,
       name: isPinned ? "Unpin" : "Pin",
@@ -200,10 +242,26 @@ const Card: React.FC<Props> = ({ chat }) => {
       name: isUnread ? "Mark as read" : "Mark as unread",
       action: () => setIsUnread(!isUnread),
     },
-    { id: 6, name: isBlocked ? "Unblock" : "Block", action: () => setIsBlocked(!isBlocked) },
-  ] as const;
+    ...(otherId
+      ? [{ id: 6, name: isBlocked ? "Unblock" : "Block", action: () => {} }]
+      : []),
+    ...(otherId || chat.type === "Group" ? [{ id: 7, name: "Report", action: () => {} }] : []),
+  ];
 
-  const handleOption = (option: (typeof options)[number]) => {
+  const handleOption = (option: CardOption) => {
+    // Block and report open their own dialogs; they don't need the socket.
+    if (option.name === "Block") {
+      setBlockOpen(true);
+      return;
+    }
+    if (option.name === "Unblock") {
+      void changeBlock(false);
+      return;
+    }
+    if (option.name === "Report") {
+      setReportOpen(true);
+      return;
+    }
     // Deleting removes the chat on the server for everyone in it, so it needs a confirmation
     // first; the dialog does the deleting and updates the list when the server agrees.
     if (option.name === "Delete") {
@@ -264,6 +322,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     e.preventDefault();
     if (!isMobile) {
       setDropdownOpen(true);
+      void refreshBlocked();
     }
   };
 
@@ -271,6 +330,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     if (isMobile) {
       longPressTimeout.current = setTimeout(() => {
         setDrawerOpen(true);
+        void refreshBlocked();
       }, 1000);
     }
   };
@@ -286,6 +346,7 @@ const Card: React.FC<Props> = ({ chat }) => {
     e.preventDefault();
     e.stopPropagation();
     setDropdownOpen(true);
+    void refreshBlocked();
   };
 
   return (
@@ -306,7 +367,13 @@ const Card: React.FC<Props> = ({ chat }) => {
           {/* Dropdown/Drawer menu button */}
           {/* Always render dropdown, but only open when dropdownOpen is true */}
           {!isMobile && (
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+            <DropdownMenu
+              open={dropdownOpen}
+              onOpenChange={(open) => {
+                setDropdownOpen(open);
+                if (open) void refreshBlocked();
+              }}
+            >
               <DropdownMenuTrigger asChild>
                 <button
                   className="pointer-events-none absolute right-0 mr-4 overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 dark:border-zinc-900 dark:bg-black"
@@ -335,7 +402,13 @@ const Card: React.FC<Props> = ({ chat }) => {
           )}
           {/* Only render drawer on mobile, open on long-press */}
           {isMobile && (
-            <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <Drawer
+              open={drawerOpen}
+              onOpenChange={(open) => {
+                setDrawerOpen(open);
+                if (open) void refreshBlocked();
+              }}
+            >
               <DrawerTrigger asChild>
                 <span className="hidden"> {/* No visible trigger, open via long-press */}</span>
               </DrawerTrigger>
@@ -475,6 +548,30 @@ const Card: React.FC<Props> = ({ chat }) => {
         onOpenChange={setDeleteOpen}
         onDeleted={() => dispatch(deleteConversation(chat.id))}
       />
+      <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block {chat.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Their posts will stop showing in your feeds. You can unblock them any time from Settings, under
+              Muted and blocked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void changeBlock(true)}>Block</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {(otherId || chat.type === "Group") && (
+        <ReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          type={chat.type === "Group" ? "group" : "user"}
+          targetId={chat.type === "Group" ? chat.id : (otherId as string)}
+          title={`Report ${chat.name}`}
+        />
+      )}
     </>
   );
 };

@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import ReportDialog from "@/components/ReportDialog";
 import { setUserMuted } from "@/lib/userRelations";
 import { RootState } from "@/redux/store";
 
@@ -34,6 +35,8 @@ export default function ProfileMenu({
   const [blocked, setBlocked] = useState(false);
   const [blockBusy, setBlockBusy] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const canBlock = profileId !== userdata._id;
 
   const refreshBlockState = async () => {
@@ -84,7 +87,9 @@ export default function ProfileMenu({
     }
   };
   const handleReport = () => {
-    toast(`Reported @${username}`);
+    // The menu closes first, so the report form is not stacked on top of an open drawer.
+    setMenuOpen(false);
+    setReportOpen(true);
   };
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/${username}`);
@@ -137,55 +142,73 @@ export default function ProfileMenu({
     </div>
   );
 
+  const reportDialog = (
+    <ReportDialog
+      open={reportOpen}
+      onOpenChange={setReportOpen}
+      type="user"
+      targetId={profileId}
+      title={`Report @${username}`}
+    />
+  );
+
   if (isMobile) {
     return (
-      <Drawer
-        onOpenChange={(open) => {
-          if (open) refreshBlockState();
-        }}
-      >
-        <DrawerTrigger asChild>
-          <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
-            <Ellipsis className="size-6" />
-          </button>
-        </DrawerTrigger>
-        <DrawerContent aria-describedby="Options" aria-labelledby="Options">
-          <DrawerHeader className="hidden text-left">
-            <DrawerTitle className="text-left">Options</DrawerTitle>
-            <DrawerDescription className="text-left">Options</DrawerDescription>
-          </DrawerHeader>
-          {mobileMenuItems}
-        </DrawerContent>
-      </Drawer>
+      <>
+        <Drawer
+          open={menuOpen}
+          onOpenChange={(open) => {
+            setMenuOpen(open);
+            if (open) refreshBlockState();
+          }}
+        >
+          <DrawerTrigger asChild>
+            <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
+              <Ellipsis className="size-6" />
+            </button>
+          </DrawerTrigger>
+          <DrawerContent aria-describedby="Options" aria-labelledby="Options">
+            <DrawerHeader className="hidden text-left">
+              <DrawerTitle className="text-left">Options</DrawerTitle>
+              <DrawerDescription className="text-left">Options</DrawerDescription>
+            </DrawerHeader>
+            {mobileMenuItems}
+          </DrawerContent>
+        </Drawer>
+        {reportDialog}
+      </>
     );
   }
 
   // Desktop: use DropdownMenu as before
   return (
-    <DropdownMenu
-      onOpenChange={(open) => {
-        if (open) refreshBlockState();
-      }}
-    >
-      <DropdownMenuTrigger asChild>
-        <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
-          <Ellipsis className="size-6" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem onClick={handleShare}>Share profile via…</DropdownMenuItem>
-        <DropdownMenuItem onClick={handleCopyLink}>Copy link to profile</DropdownMenuItem>
-        {canBlock && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleMute}>{muted ? "Unmute" : "Mute"}</DropdownMenuItem>
-            <DropdownMenuItem onClick={handleBlock} disabled={blockBusy}>
-              {blocked ? "Unblock" : "Block"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleReport}>Report</DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          if (open) refreshBlockState();
+        }}
+      >
+        <DropdownMenuTrigger asChild>
+          <button className="overflow-hidden rounded-full border-2 border-zinc-200 bg-white p-1 dark:border-zinc-900 dark:bg-black">
+            <Ellipsis className="size-6" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={handleShare}>Share profile via…</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleCopyLink}>Copy link to profile</DropdownMenuItem>
+          {canBlock && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleMute}>{muted ? "Unmute" : "Mute"}</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleBlock} disabled={blockBusy}>
+                {blocked ? "Unblock" : "Block"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleReport}>Report</DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {reportDialog}
+    </>
   );
 }

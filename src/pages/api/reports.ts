@@ -18,7 +18,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const reporterId = String(payload._id);
 
     const { type, targetId, targetUserId, reason, details } = req.body || {};
-    if (type !== "post" && type !== "user") {
+    if (type !== "post" && type !== "user" && type !== "group") {
       return res.status(400).json({ message: "Invalid report type" });
     }
     if (typeof targetId !== "string" || !targetId || targetId.length > 100) {
@@ -35,6 +35,13 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     }
 
     const db = await new MongoDBClient().init();
+
+    // A group can only be reported by someone who is in it.
+    if (type === "group") {
+      const member = await db.chatParticipants().findOne({ chatId: targetId, userId: reporterId }, { projection: { _id: 1 } });
+      if (!member) return res.status(403).json({ message: "You can only report a group you are in" });
+    }
+
     const reports = (await db.getDb()).collection<ReportDoc>("Reports");
 
     // One report per reporter per target.

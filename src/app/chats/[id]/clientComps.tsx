@@ -15,6 +15,7 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { CallButton } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
+import ReportDialog from "@/components/ReportDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -149,6 +150,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const olderLoadThrottleRef = useRef(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const { files: attachments, clearFiles } = useGlobalFileStorage();
   const { selectedMessages } = useSelector((state: RootState) => state.utils);
   const [isTextareaDisabled, setIsTextareaDisabled] = useState(false);
@@ -536,6 +538,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     // Only the URL drives this; depending on searchQuery would reset what the user is typing.
   }, [searchParams]);
 
+  const reportedId = convo?.participants?.find((id) => id !== userdata._id);
+
   const OnOpenSettings = () => router.push(`/chats/${pid}/settings`)
 
   const options = [
@@ -553,7 +557,8 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     { id: 4, name: "Wallpaper", action: () => console.log("Wallpaper") },
     // Deleting removes the chat on the server for everyone in it, so confirm first.
     { id: 5, name: "Delete", action: () => setDeleteOpen(true) },
-    { id: 6, name: "Report", action: () => console.log("Blocked") },
+    // Your own "you" chat has nobody to report.
+    ...(reportedId ? [{ id: 6, name: "Report", action: () => setReportOpen(true) }] : []),
     {
       id: 7,
       name: convo?.pinned ? "Unpin" : "Pin",
@@ -906,6 +911,15 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       )}
       {children}
 
+      {reportedId && (
+        <ReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          type="user"
+          targetId={reportedId}
+          title={`Report ${convo?.name ?? "this person"}`}
+        />
+      )}
       <DeleteChatDialog
         chatId={pid}
         name={convo?.name ?? "this person"}

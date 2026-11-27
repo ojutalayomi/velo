@@ -9,7 +9,7 @@ import { REPORT_REASONS, ReportStatus } from "@/lib/reports";
 
 interface Row {
   _id: string;
-  type: "post" | "user";
+  type: "post" | "user" | "group";
   targetId: string;
   targetUserId?: string;
   targetUsername?: string;
@@ -121,6 +121,7 @@ export default function ReportsQueue() {
                 <p className="text-xs text-gray-500">
                   {new Date(r.time).toLocaleString()} · reporter {r.reporterId.slice(-6)}
                   {r.type === "post" && ` · post ${r.targetId.slice(0, 12)}`}
+                  {r.type === "group" && ` · group ${r.targetId.slice(-6)}`}
                 </p>
               </div>
               {status === "open" && (

@@ -14,6 +14,7 @@ import { useSocket } from "@/app/providers/SocketProvider";
 import { useUser } from "@/app/providers/UserProvider";
 import { CallButton, useOptionalCall } from "@/components/call";
 import DeleteChatDialog from "@/components/DeleteChatDialog";
+import ReportDialog from "@/components/ReportDialog";
 import LeaveGroupDialog from "@/components/LeaveGroupDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -146,6 +147,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [searchFocus, setSearchFocus] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     dispatch(showChat(""));
@@ -441,7 +443,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     ...(convo?.adminIds?.includes(String(userdata._id))
       ? [{ id: 5, name: "Delete group", action: () => setDeleteOpen(true) }]
       : []),
-    { id: 6, name: "Report", action: () => console.log("Blocked") },
+    { id: 6, name: "Report", action: () => setReportOpen(true) },
     {
       id: 7,
       name: !convo?.pinned ? "Pin" : "Unpin",
@@ -830,6 +832,13 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           dispatch(deleteConversation(gid));
           router.replace("/chats");
         }}
+      />
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        type="group"
+        targetId={gid}
+        title={`Report ${convo?.name ?? "this group"}`}
       />
       <DeleteChatDialog
         chatId={gid}

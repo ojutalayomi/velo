@@ -9,7 +9,7 @@ export const REPORT_REASONS = [
 
 export type ReportReason = (typeof REPORT_REASONS)[number]["value"];
 export type ReportStatus = "open" | "resolved" | "dismissed";
-export type ReportType = "post" | "user";
+export type ReportType = "post" | "user" | "group";
 
 export interface ReportDoc {
   _id?: string;

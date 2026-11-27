@@ -14,9 +14,11 @@ import { REPORT_REASONS, ReportReason } from "@/lib/reports";
 interface ReportDialogProps {
   open: boolean;
   onOpenChange: (_open: boolean) => void;
-  type: "post" | "user";
+  type: "post" | "user" | "group";
   targetId: string;
   targetUserId?: string;
+  /** Overrides the heading, e.g. "Report @ada". */
+  title?: string;
 }
 
 export default function ReportDialog({
@@ -25,6 +27,7 @@ export default function ReportDialog({
   type,
   targetId,
   targetUserId,
+  title,
 }: ReportDialogProps) {
   const [reason, setReason] = useState<ReportReason | "">("");
   const [details, setDetails] = useState("");
@@ -55,7 +58,7 @@ export default function ReportDialog({
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent onClick={(e) => e.stopPropagation()}>
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>Report {type}</ResponsiveDialogTitle>
+          <ResponsiveDialogTitle>{title ?? `Report ${type}`}</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
         <div className="flex flex-col gap-2">
           {REPORT_REASONS.map((r) => (

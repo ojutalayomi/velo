@@ -21,7 +21,7 @@ import {
 import { toast } from "@/lib/toast";
 import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
 import { privateReplyBlockReason, privateReplyRoute } from "@/lib/privateReply";
-import React, { memo, TouchEvent, useEffect, useState } from "react";
+import React, { memo, TouchEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useStore } from "react-redux";
 

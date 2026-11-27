@@ -46,7 +46,7 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 
 import { convoPreviewUpdate } from "@/lib/chatPreview";
 import { socketAuthHeaders } from "@/lib/socketToken";
-import { chatDraftKey, useDraft } from "@/hooks/useDraft";
+import { chatDraftKey, readDraft, useDraftSetter } from "@/hooks/useDraft";
 import { TypingBubble } from "../TypingIndicator";
 import ChatTextarea from "../ChatTextarea";
 import { DateGroup, getDayKey } from "@/app/chats/DateDivider";
@@ -102,7 +102,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     params?.id === "me"
       ? (conversations.find((c) => c.type === "Personal")?.id as string)
       : (params?.id as string);
-  const [newMessage, setNewMessage] = useDraft(chatDraftKey(pid ?? ""));
+  // The draft is read when sending and watched only by ChatTextarea, so typing doesn't re-render this
+  // whole page (and its message list) on every keystroke.
+  const draftKey = chatDraftKey(pid ?? "");
+  const setNewMessage = useDraftSetter(draftKey);
   const socket = useSocket();
   const convo = conversations?.find((c) => c.id === pid) as ConvoType;
   const [isPinned, setIsPinned] = useState(convo?.pinned);
@@ -284,6 +287,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     override?: { content: string; messageType: MessageType },
     options?: SendOptions
   ) => {
+    const newMessage = readDraft(draftKey);
     if (!override && newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
@@ -778,7 +782,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
       <div
         ref={messageBoxRef}
-        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-xs"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto overscroll-contain px-2 pb-12 pt-4"
         onScroll={handleScroll}
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
@@ -884,7 +888,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       ) : (
         <ChatTextarea
           quote={quote}
-          newMessage={newMessage}
           chatId={pid}
           setNewMessage={setNewMessage}
           handleSendMessage={handleSendMessage}

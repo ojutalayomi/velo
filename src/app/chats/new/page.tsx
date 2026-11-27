@@ -569,7 +569,7 @@ const ChatPage = () => {
 
       <div
         ref={messageBoxRef}
-        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-xs"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto overscroll-contain px-2 pb-12 pt-4"
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
           {load ? (

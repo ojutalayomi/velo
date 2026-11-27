@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { canPinMessages, pinBlockReason } from "@/lib/pinRules";
-import React, { TouchEvent, useEffect, useState } from "react";
+import React, { memo, TouchEvent, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useSocket } from "@/app/providers/SocketProvider";
@@ -651,7 +651,10 @@ const MessageTab = ({ message, setQuote, onClick, isFirstInGroup = true }: Props
 };
 
 MessageTab.displayName = "MessageTab";
-export default MessageTab;
+
+// The chat page re-renders for typing indicators, the scroll button and so on; a row only needs to
+// re-render when its own message changes.
+export default memo(MessageTab);
 
 const ReactionSection = ({
   message,

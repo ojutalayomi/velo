@@ -63,6 +63,7 @@ import { MOBILE_QUERY } from "@/components/ui/responsive-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMediaQuery } from "usehooks-ts";
 import { useGlobalFileStorage } from "@/hooks/useFileStorage";
+import { chatDraftKey, useDraftValue } from "@/hooks/useDraft";
 import { useMentionPicker } from "@/hooks/useMentionPicker";
 import { klipyEnabled, reportKlipyShare } from "@/lib/klipy";
 import { setMarkdownPreference, useMarkdownPreference } from "@/hooks/useMarkdownPreference";
@@ -80,6 +81,22 @@ import { useAppDispatch } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { setToggleDialog } from "@/redux/utilsSlice";
 
+/** Phones and tablets (a coarse primary pointer) get Enter as a newline key. */
+const TOUCH_QUERY = "(pointer: coarse)";
+
+/**
+ * Whether this keydown should send the message. Enter sends on a desktop keyboard (not with Shift,
+ * and never while an IME is composing text); on touch devices only Ctrl/Cmd+Enter does, so the
+ * on-screen Enter key can start a new line.
+ */
+export function shouldSendOnEnter(
+  e: Pick<React.KeyboardEvent, "key" | "shiftKey" | "ctrlKey" | "metaKey" | "nativeEvent">,
+  isTouch: boolean
+) {
+  if (e.key !== "Enter" || e.shiftKey || e.nativeEvent?.isComposing) return false;
+  return isTouch ? e.ctrlKey || e.metaKey : true;
+}
+
 type Message = {
   _id: string;
   senderId: string;
@@ -93,7 +110,8 @@ type QuoteProp = {
 
 interface ChatTextareaProps {
   quote: QuoteProp;
-  newMessage: string;
+  /** Controlled text. Leave it out to use the saved draft for `chatId`. */
+  newMessage?: string;
   disabled?: boolean;
   chatId?: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
@@ -109,7 +127,7 @@ interface ChatTextareaProps {
 
 const ChatTextarea = ({
   quote,
-  newMessage,
+  newMessage: newMessageProp,
   disabled,
   chatId,
   setNewMessage,
@@ -121,6 +139,8 @@ const ChatTextarea = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const draft = useDraftValue(chatDraftKey(chatId ?? ""));
+  const newMessage = newMessageProp ?? draft;
   const { userdata } = useSelector((state: RootState) => state.user);
   const groupInfo = useSelector((state: RootState) =>
     state.chat.conversations.find((convo) => convo.id === chatId)
@@ -281,17 +301,19 @@ const ChatTextarea = ({
     [handleTyping, handleInput]
   );
 
-  // Memoize onKeyDown handler
+  // On a phone's on-screen keyboard Enter starts a new line and the Send button sends; on a
+  // desktop keyboard Enter sends and Shift+Enter starts a new line.
+  const isTouch = useMediaQuery(TOUCH_QUERY);
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter") {
-        if (newMessage.trim().length > 0) {
-          handleSendWithMentions(quote.message?._id);
-          dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
-        }
+      if (!shouldSendOnEnter(e, isTouch)) return;
+      e.preventDefault(); // otherwise the newline lands in the box as the message is cleared
+      if (newMessage.trim().length > 0) {
+        handleSendWithMentions(quote.message?._id);
+        dispatch(setToggleDialog(false)); // Explicitly set to false rather than toggle
       }
     },
-    [newMessage, handleSendWithMentions, quote.message?._id, dispatch]
+    [isTouch, newMessage, handleSendWithMentions, quote.message?._id, dispatch]
   );
 
   // Memoize className to prevent re-renders
@@ -488,6 +510,7 @@ const ChatTextarea = ({
               ref={textAreaRef}
               getDetails={handleGetDetails}
               onKeyDown={handleKeyDown}
+              enterKeyHint={isTouch ? "enter" : "send"}
               fontFamily="myCustomFont, myCustomFont Fallback"
               className={textAreaClassName}
               textareaClassName="caret-black! dark:caret-white! placeholder:text-black! dark:placeholder:text-slate-200!"
@@ -715,6 +738,7 @@ const UploadDialog = ({
   const dispatch = useAppDispatch();
   const { toggleDialog } = useSelector((state: RootState) => state.utils);
   const { files: attachments, setFiles, clearFiles } = useGlobalFileStorage();
+  const isTouch = useMediaQuery(TOUCH_QUERY);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // One object URL per File, cached so renders reuse it. URLs are revoked only once the
@@ -911,12 +935,11 @@ const UploadDialog = ({
                 }}
                 fontFamily="myCustomFont, myCustomFont Fallback"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    if (e.shiftKey) return; // Allow new line when Shift+Enter
-                    e.preventDefault();
-                    if (canSend) send();
-                  }
+                  if (!shouldSendOnEnter(e, isTouch)) return;
+                  e.preventDefault();
+                  if (canSend) send();
                 }}
+                enterKeyHint={isTouch ? "enter" : "send"}
                 className="flex-1 resize-none rounded-2xl border-none bg-zinc-800 px-4 py-2 pr-11 text-sm text-slate-100! focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-zinc-900"
                 textareaClassName="caret-white! placeholder:text-slate-400!"
               />

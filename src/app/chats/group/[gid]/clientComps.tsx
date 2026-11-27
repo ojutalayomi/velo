@@ -43,7 +43,7 @@ import { clearSelectedMessages } from "@/redux/utilsSlice";
 
 import { resolveSender } from "@/lib/senderProfile";
 import { convoPreviewUpdate } from "@/lib/chatPreview";
-import { chatDraftKey, useDraft } from "@/hooks/useDraft";
+import { chatDraftKey, readDraft, useDraftSetter } from "@/hooks/useDraft";
 import { TypingBubble, typingLabel } from "../../TypingIndicator";
 import ChatTextarea from "../../ChatTextarea";
 import { canSendMessage } from "@/lib/chatPermissions";
@@ -109,7 +109,10 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const gid = params?.gid as string;
   const callCtx = useOptionalCall();
   const liveCall = callCtx?.groupCalls[gid];
-  const [newMessage, setNewMessage] = useDraft(chatDraftKey(gid ?? ""));
+  // The draft is read when sending and watched only by ChatTextarea, so typing doesn't re-render this
+  // whole page (and its message list) on every keystroke.
+  const draftKey = chatDraftKey(gid ?? "");
+  const setNewMessage = useDraftSetter(draftKey);
   const convo = conversations?.find((c) => c.id === gid) as ConvoType;
   const messagesHasMore = useSelector((state: RootState) => state.chat.messagesHasMore);
   const loadingMoreMessages = useSelector((state: RootState) => state.chat.loadingMoreMessages);
@@ -239,6 +242,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     override?: { content: string; messageType: MessageType },
     options?: SendOptions
   ) => {
+    const newMessage = readDraft(draftKey);
     if (!override && newMessage.trim() === "" && attachments.length === 0) {
       return; // Don't send empty messages or messages without attachments
     }
@@ -691,7 +695,7 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       <div
         ref={messageBoxRef}
         onScroll={handleScroll}
-        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto px-2 pb-12 pt-4 backdrop-blur-xs"
+        className="flex flex-1 scroll-pt-20 flex-col overflow-y-auto overscroll-contain px-2 pb-12 pt-4"
       >
         <div className="relative flex cursor-pointer flex-col items-center gap-2">
           {load ? (
@@ -807,7 +811,6 @@ const ChatPage = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       ) : (
         <ChatTextarea
           quote={quote}
-          newMessage={newMessage}
           chatId={gid}
           setNewMessage={setNewMessage}
           handleSendMessage={handleSendMessage}

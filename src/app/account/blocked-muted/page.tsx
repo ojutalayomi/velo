@@ -38,8 +38,8 @@ export default function BlockedMutedPage() {
   const [lists, setLists] = useState<Record<RelationKind, ListState>>({ muted: EMPTY, blocked: EMPTY });
   const [busy, setBusy] = useState<string | null>(null);
 
-  const load = useCallback(async (kind: RelationKind) => {
-    setLists((current) => ({ ...current, [kind]: { ...current[kind], loading: true, error: null } }));
+  // Both lists start out "loading", so the first fetch only sets state once it has an answer.
+  const fetchList = useCallback(async (kind: RelationKind) => {
     try {
       const users = await fetchRelatedUsers(kind);
       setLists((current) => ({ ...current, [kind]: { users, loading: false, error: null } }));
@@ -49,10 +49,28 @@ export default function BlockedMutedPage() {
     }
   }, []);
 
+  const reload = useCallback(
+    (kind: RelationKind) => {
+      setLists((current) => ({ ...current, [kind]: { ...current[kind], loading: true, error: null } }));
+      void fetchList(kind);
+    },
+    [fetchList]
+  );
+
   useEffect(() => {
-    void load("muted");
-    void load("blocked");
-  }, [load]);
+    let alive = true;
+    for (const kind of ["muted", "blocked"] as const) {
+      fetchRelatedUsers(kind)
+        .then((users) => alive && setLists((current) => ({ ...current, [kind]: { users, loading: false, error: null } })))
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : "Couldn't load this list. Try again.";
+          if (alive) setLists((current) => ({ ...current, [kind]: { users: [], loading: false, error: message } }));
+        });
+    }
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const change = async (kind: RelationKind, user: RelatedUser, on: boolean) => {
     const apply = kind === "muted" ? setUserMuted : setUserBlocked;
@@ -78,7 +96,7 @@ export default function BlockedMutedPage() {
         onClick: () => {
           void change(kind, user, true).then((undoError) => {
             if (undoError) toast.error(undoError);
-            else void load(kind);
+            else reload(kind);
           });
         },
       },
@@ -125,7 +143,7 @@ export default function BlockedMutedPage() {
           ) : state.error ? (
             <div role="alert" className="rounded-2xl border p-4 text-sm dark:border-zinc-800">
               <p className="mb-3">{state.error}</p>
-              <Button variant="outline" onClick={() => void load(tab)}>
+              <Button variant="outline" onClick={() => reload(tab)}>
                 Try again
               </Button>
             </div>

@@ -55,7 +55,19 @@ import { ClientPostSchema } from "@/lib/types/type";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { emitPostRemoved, emitPostRestored } from "@/lib/postEvents";
-import { addPost, deletePost, updatePost } from "@/redux/postsSlice";
+import { removeFollowingPostsByAuthor } from "@/redux/followingFeedSlice";
+import { addPost, deletePost, removePostsByAuthor, updatePost } from "@/redux/postsSlice";
+import { setUserBlocked, setUserMuted } from "@/lib/userRelations";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RootState } from "@/redux/store";
 
 import PostMaker from "./PostMaker";
@@ -350,6 +362,30 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
   }, [dispatch, socket]);
 
   const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const relationBusyRef = useRef(false);
+
+  /** Mute or block this post's author, then take their posts out of the feeds on screen. */
+  const changeRelation = async (kind: "mute" | "block") => {
+    if (relationBusyRef.current || !data.UserId) return;
+    relationBusyRef.current = true;
+    try {
+      const error = await (kind === "mute" ? setUserMuted : setUserBlocked)(data.UserId, true);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      dispatch(removePostsByAuthor(data.UserId));
+      dispatch(removeFollowingPostsByAuthor(data.UserId));
+      toast(
+        kind === "mute"
+          ? `Muted @${data.Username}. Their posts won't show in your feeds.`
+          : `Blocked @${data.Username}.`
+      );
+    } finally {
+      relationBusyRef.current = false;
+    }
+  };
 
   const handleActivePost = (route: string) => {
     const id = route.split("/").at(-1);
@@ -526,12 +562,12 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           {
             icon: <MessageCircleX size={18} />,
             text: `Mute @${data.Username}`,
-            onClick: () => {},
+            onClick: () => void changeRelation("mute"),
           },
           {
             icon: <ShieldX size={18} />,
             text: `Block @${data.Username}`,
-            onClick: () => {},
+            onClick: () => setBlockOpen(true),
           },
           {
             icon: <Flag size={18} />,
@@ -805,6 +841,20 @@ const PostCard = ({ postData, showMedia = true }: PostComponentProps) => {
           </button>
         </div>
       </div>
+      <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block @{data.Username}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Their posts will stop showing in your feeds. You can unblock them any time from their profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void changeRelation("block")}>Block</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <ReportDialog
         open={reportOpen}
         onOpenChange={setReportOpen}

@@ -92,6 +92,10 @@ const postsSlice = createSlice({
         (post) => post._id !== action.payload && post.PostID !== action.payload
       );
     },
+    /** The viewer blocked or muted this author: none of their posts stay in the feed. */
+    removePostsByAuthor: (state, action: PayloadAction<string>) => {
+      state.posts = state.posts.filter((post) => post.UserId !== action.payload);
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
@@ -128,6 +132,7 @@ export const {
   updatePost,
   updatePosts,
   deletePost,
+  removePostsByAuthor,
   setLoading,
   setError,
   setPostPreview,

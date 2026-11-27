@@ -76,11 +76,15 @@ const followingFeedSlice = createSlice({
         return post;
       });
     },
+    removeFollowingPostsByAuthor: (state, action: PayloadAction<string>) => {
+      state.posts = state.posts.filter((post) => post.UserId !== action.payload);
+    },
   },
 });
 
 export const {
   initFollowingFeedPage,
+  removeFollowingPostsByAuthor,
   appendFollowingFeedPage,
   setFollowingFeedLoadingMore,
   setFollowingLoading,

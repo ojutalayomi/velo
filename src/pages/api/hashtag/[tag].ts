@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { addInteractionFlags } from "@/lib/apiUtils";
 import { pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
+import { getHiddenAuthorIds } from "@/lib/hiddenAuthors";
 import { MongoDBClient } from "@/lib/mongodb";
 import { fetchPostsByCaptionMatch } from "@/lib/postSearch";
 import type { Payload } from "@/lib/types/type";
@@ -30,11 +31,13 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
     const { limit: pageLimit, skip } = parsePaging(req);
 
     const db = await new MongoDBClient().init();
+    const excludeAuthorIds = payload?._id ? await getHiddenAuthorIds(db, payload._id) : [];
     const { posts, hasMore } = await fetchPostsByCaptionMatch(db, {
       kind: "hashtag",
       term: tag,
       skip,
       limit: pageLimit,
+      excludeAuthorIds,
     });
 
     if (payload?._id && posts.length > 0) {

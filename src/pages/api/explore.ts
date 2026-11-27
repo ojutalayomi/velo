@@ -6,6 +6,7 @@ import { pagingMeta, parsePaging } from "@/lib/apiPagination";
 import { verifyToken } from "@/lib/auth";
 import { buildRankingStages } from "@/lib/feedRanking";
 import { IMAGE_URL_PATTERN } from "@/lib/mediaType";
+import { excludeAuthors, getHiddenAuthorIds } from "@/lib/hiddenAuthors";
 import { MongoDBClient } from "@/lib/mongodb";
 import type { Payload, PostSchema } from "@/lib/types/type";
 
@@ -29,7 +30,8 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       return res.status(400).json({ message: "filter must be one of all, photos, videos, popular, hot" });
     }
 
-    const { posts, hasMore } = await fetchExplorePosts(db, skip, pageLimit, filter);
+    const hiddenIds = payload?._id ? await getHiddenAuthorIds(db, payload._id) : [];
+    const { posts, hasMore } = await fetchExplorePosts(db, skip, pageLimit, filter, hiddenIds);
 
     if (payload?._id) {
       await addInteractionFlags(db, posts as any, payload._id);
@@ -58,12 +60,17 @@ async function fetchExplorePosts(
   db: MongoDBClient,
   skip: number,
   limit: number,
-  filter: ExploreFilter
+  filter: ExploreFilter,
+  hiddenIds: string[]
 ) {
   const fetchLimit = limit + 1;
 
   // Only posts that have at least one media item
-  const match: Record<string, unknown> = { "Image.0": { $exists: true }, hidden: { $ne: true } };
+  const match: Record<string, unknown> = {
+    "Image.0": { $exists: true },
+    hidden: { $ne: true },
+    ...excludeAuthors(hiddenIds),
+  };
   if (filter === "photos") {
     match["Image.0"] = { $exists: true, $regex: IMAGE_URL_PATTERN, $options: "i" };
   } else if (filter === "videos") {

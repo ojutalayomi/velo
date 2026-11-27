@@ -1,3 +1,4 @@
+import { excludeAuthors } from "@/lib/hiddenAuthors";
 import type { MongoDBClient } from "@/lib/mongodb";
 import { withAuthors } from "@/lib/postAuthors";
 import type { ClientPostSchema, PostSchema } from "@/lib/types/type";
@@ -31,6 +32,8 @@ export async function fetchPostsByCaptionMatch(
     term: string;
     skip: number;
     limit: number;
+    /** Authors the viewer blocked or muted. */
+    excludeAuthorIds?: string[];
   }
 ): Promise<{ posts: ClientPostSchema[]; hasMore: boolean }> {
   const pattern = buildCaptionRegex(opts.kind, opts.term);
@@ -44,6 +47,7 @@ export async function fetchPostsByCaptionMatch(
       Visibility: "everyone",
       hidden: { $ne: true },
       Caption: { $regex: pattern, $options: "i" },
+      ...excludeAuthors(opts.excludeAuthorIds ?? []),
     },
   };
 

@@ -8,6 +8,7 @@ import {
   AnnouncementSchema,
   AttachmentSchema,
   BlockedUserSchema,
+  MutedUserSchema,
   ChatDataServer,
   ChatInviteSchema,
   ChatParticipant,
@@ -291,6 +292,14 @@ export class MongoDBClient {
    */
   blockedUsers() {
     return this.db.collection<BlockedUserSchema>("Blocked_Users");
+  }
+
+  /**
+   * Gets the accounts a user has muted: their posts stay out of the muter's feeds, nothing else changes.
+   * @returns Collection of mute rows
+   */
+  mutedUsers() {
+    return this.db.collection<MutedUserSchema>("Muted_Users");
   }
 
   /**

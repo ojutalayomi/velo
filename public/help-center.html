@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Velo Help Center</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+  /* Layout: full-width search hero, then a centred 960px column. Views: home, category, article, search. */
+  @font-face { font-family: "Raleway"; src: url("/fonts/Raleway-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Raleway"; src: url("/fonts/Raleway-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+  @font-face { font-family: "Raleway"; src: url("/fonts/Raleway-SemiBold.ttf") format("truetype"); font-weight: 600 700; font-display: swap; }
+  /* Tokens mirror the app: zinc neutrals from globals.css, brand #ff6257 from tailwind.config.ts, Raleway, 0.5rem radius. */
+  :root {
+    --bg: #ffffff; --alt: #f8f9fb; --fg: #09090b; --muted: #5b5b66; --line: #e4e4e7;
+    --brand: #ff6257; --accent: #d6402f; --accent-soft: #fff0ee;
+    --hero-from: #ff6257; --hero-to: #ff8f86; --hero-fg: #ffffff;
+    --ok: #12795a; --radius: 12px;
+    --font: "Raleway", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #09090b; --alt: #131316; --fg: #fafafa; --muted: #a1a1aa; --line: #27272a;
+      --brand: #ff6257; --accent: #ff7b71; --accent-soft: #2a1614;
+      --hero-from: #c9372d; --hero-to: #e0564c; --ok: #4fd1a5; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #09090b; --alt: #131316; --fg: #fafafa; --muted: #a1a1aa; --line: #27272a;
+    --brand: #ff6257; --accent: #ff7b71; --accent-soft: #2a1614;
+    --hero-from: #c9372d; --hero-to: #e0564c; --ok: #4fd1a5; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--font); }
+  a { color: var(--accent); }
+  .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .col { max-width: 960px; margin: 0 auto; }
+
+  /* top bar */
+  .top { border-bottom: 1px solid var(--line); background: var(--bg); }
+  .top .col { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 56px; }
+  .brand { font-weight: 700; font-size: 18px; color: var(--fg); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+  .brand b { background: var(--brand); color: #fff; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 16px; }
+  .brand span { color: var(--muted); font-weight: 500; }
+  .top a.link { color: var(--muted); font-size: 14px; text-decoration: none; }
+
+  /* hero */
+  .hero { background: linear-gradient(135deg, var(--hero-from), var(--hero-to)); color: var(--hero-fg); padding-block: 48px 52px; }
+  .hero h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.15; margin: 0 0 20px; font-weight: 700; text-wrap: balance; }
+  .hero.small { padding-block: 24px 28px; }
+  .hero.small h1 { display: none; }
+  .search { position: relative; max-width: 620px; }
+  .search input {
+    width: 100%; font: inherit; font-size: 17px; padding: 14px 18px 14px 48px; border-radius: 999px;
+    border: 2px solid transparent; box-shadow: 0 2px 12px rgba(0,0,0,.12); background: #fff; color: #09090b;
+  }
+  .search input:focus { outline: none; border-color: var(--accent); }
+  .search svg { position: absolute; left: 14px; top: 15px; width: 20px; height: 20px; stroke: #5a6279; fill: none; stroke-width: 2; }
+  .hint { color: var(--hero-fg); font-size: 14px; margin: 12px 0 0; }
+  .hint a { color: var(--hero-fg); font-weight: 600; }
+
+  main { padding-block: 32px 64px; }
+  h2 { font-size: 22px; line-height: 1.25; margin: 0 0 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .card {
+    display: block; text-decoration: none; color: var(--fg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px; background: var(--bg); min-width: 0;
+  }
+  .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  figure { margin: 20px 0; max-width: 720px; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--alt); }
+  figcaption { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .card .ic { width: 40px; height: 40px; border-radius: 999px; background: var(--accent-soft); display: grid; place-items: center; margin-bottom: 12px; }
+  .card svg { width: 20px; height: 20px; stroke: var(--brand); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .card h3 { margin: 0 0 4px; font-size: 16px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+  .card small { color: var(--muted); font-size: 13px; display: block; margin-top: 8px; }
+
+  .band { background: var(--alt); padding: 24px; margin-top: 40px; border-radius: 16px; }
+  .list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); overflow: hidden; }
+  .list li + li { border-top: 1px solid var(--line); }
+  .list a { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; text-decoration: none; color: var(--fg); }
+  .list a:hover, .list a:focus-visible { background: var(--alt); outline: none; color: var(--accent); }
+  .list a span.c { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .empty { color: var(--muted); padding: 24px 0; }
+
+  .crumbs { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+  .crumbs a { color: var(--muted); }
+  .crumbs i { margin-inline: 6px; font-style: normal; }
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; }
+  .side { position: sticky; top: 16px; align-self: start; font-size: 14px; }
+  .side h4 { margin: 0 0 8px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .side ul { list-style: none; margin: 0 0 24px; padding: 0; }
+  .side a { display: block; padding: 6px 10px; border-radius: 6px; text-decoration: none; color: var(--fg); }
+  .side a:hover { background: var(--alt); }
+  .side a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; gap: 0; } .side { display: none; } }
+
+  article h1 { font-size: clamp(26px, 5vw, 32px); line-height: 1.2; margin: 0 0 8px; text-wrap: balance; }
+  article .meta { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  article h2 { font-size: 19px; margin: 28px 0 8px; }
+  article p, article li { max-width: 68ch; }
+  article ol, article ul { padding-left: 22px; }
+  article li { margin-bottom: 6px; }
+  .note { background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; margin: 16px 0; max-width: 68ch; font-size: 15px; }
+  .note b { display: block; margin-bottom: 2px; }
+  code { font-size: .9em; background: var(--alt); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; }
+  .vote { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .vote button {
+    font: inherit; font-size: 14px; padding: 6px 16px; border-radius: 999px; cursor: pointer;
+    background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+  }
+  .vote button:hover, .vote button:focus-visible { border-color: var(--brand); outline: none; }
+  .vote .thanks { color: var(--ok); font-weight: 600; }
+  .related { margin-top: 32px; }
+  .related h2 { font-size: 16px; margin: 0 0 8px; }
+
+  footer { border-top: 1px solid var(--line); background: var(--alt); padding-block: 28px; color: var(--muted); font-size: 14px; }
+  footer .col { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+
+<body>
+<div class="top gutter">
+  <div class="col">
+    <a class="brand" href="#"><b>V</b>Velo <span>Help Center</span></a>
+    <a class="link" href="#c-troubleshooting">Troubleshooting</a>
+  </div>
+</div>
+
+<div class="hero gutter" id="hero">
+  <div class="col">
+    <h1>How can we help?</h1>
+    <form class="search" role="search" id="searchForm">
+      <label class="sr" for="q">Search the Help Center</label>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" type="search" placeholder="Search for help, for example: mute a chat" autocomplete="off">
+    </form>
+    <p class="hint" id="hint">Popular: <a href="#a-passkeys">Passkeys</a>, <a href="#a-mute-chat">Mute a chat</a>, <a href="#a-no-notifications">Notifications not working</a></p>
+  </div>
+</div>
+
+<main class="gutter"><div class="col" id="view"></div></main>
+
+<footer class="gutter">
+  <div class="col">
+    <span>Velo Help Center</span>
+    <span>Can't find an answer? Send feedback from the app: Help and support, then Feedback.</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var ICONS = {
+    play: '<polygon points="5 3 19 12 5 21 5 3"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+    compass: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    chat: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+    phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    ring: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/>',
+    bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'
+  };
+
+  var CATS = [
+    { id: 'getting-started', icon: 'play', title: 'Getting started', desc: 'Create an account, sign in and install the app.' },
+    { id: 'posts', icon: 'edit', title: 'Posts and the feed', desc: 'Write posts, polls and comments, and save bookmarks.' },
+    { id: 'explore', icon: 'compass', title: 'Explore and search', desc: 'Find people, topics, hashtags and places.' },
+    { id: 'profile', icon: 'user', title: 'Your profile', desc: 'Edit your profile and manage who you follow.' },
+    { id: 'messaging', icon: 'chat', title: 'Chats and groups', desc: 'Direct messages, group chats and voice notes.' },
+    { id: 'calls', icon: 'phone', title: 'Voice and video calls', desc: 'Start calls and fix call problems.' },
+    { id: 'statuses', icon: 'ring', title: 'Statuses', desc: 'Share updates that disappear after 24 hours.' },
+    { id: 'notifications', icon: 'bell', title: 'Notifications', desc: 'Choose what you hear about, and when.' },
+    { id: 'safety', icon: 'shield', title: 'Privacy and safety', desc: 'Mute, block and report.' },
+    { id: 'troubleshooting', icon: 'help', title: 'Troubleshooting', desc: 'Offline use, permissions and common fixes.' }
+  ];
+
+  var A = [
+    /* Getting started */
+    { id: 'create-account', shot: ['sign-up.png', 'The Velo sign-up page.'], cat: 'getting-started', title: 'Create a Velo account', pop: 1,
+      rel: ['sign-in', 'passkeys', 'install-app'],
+      body: '<p>You can sign up with an email address or with a Google or Facebook account.</p><h2>Sign up with email</h2><ol><li>Open the sign-up page and enter your name, email address and a password.</li><li>Open the confirmation email we send you and follow the link.</li><li>Choose a username to finish setting up your account.</li></ol><div class="note"><b>Your username</b>Your username is your profile address, for example <code>/yourname</code>. Some names are reserved and cannot be used.</div><h2>Sign up with Google or Facebook</h2><ol><li>On the sign-up page, choose Continue with Google or Continue with Facebook.</li><li>Review the permissions and confirm.</li><li>Choose a username if you are asked.</li></ol>' },
+    { id: 'sign-in', shot: ['sign-in.png', 'The sign-in page. Choose Google, enter your username or email, or use a passkey.'], cat: 'getting-started', title: 'Sign in to Velo',
+      rel: ['passkeys', 'reset-password', 'create-account'],
+      body: '<p>You can sign in with a password, with a connected Google or Facebook account, or with a passkey.</p><ol><li>Open the sign-in page.</li><li>Choose your method and follow the prompts.</li></ol><p>If you cannot sign in, see <a href="#a-reset-password">Reset your password</a>.</p>' },
+    { id: 'passkeys', shot: ['sign-in.png', 'Choose Sign in with Passkey under the password form.'], cat: 'getting-started', title: 'Sign in with a passkey', pop: 1,
+      rel: ['sign-in', 'devices'],
+      body: '<p>A passkey lets you sign in with your fingerprint, face or device PIN. There is no password to remember or type, and passkeys cannot be reused on a fake site.</p><h2>Add a passkey</h2><ol><li>Sign in, then open your account settings and choose Privacy and security.</li><li>Choose Add a passkey.</li><li>Confirm with your device when prompted.</li></ol><h2>Remove a passkey</h2><ol><li>Open Privacy and security.</li><li>Find the passkey in the list and choose Delete.</li></ol><div class="note"><b>Keep another way in</b>Make sure you have a password or a second passkey before you remove one, so you do not lock yourself out.</div>' },
+    { id: 'reset-password', cat: 'getting-started', title: 'Reset your password',
+      rel: ['sign-in', 'passkeys'],
+      body: '<ol><li>On the sign-in page, choose Forgot password.</li><li>Enter the email address on your account.</li><li>Open the email we send you and follow the link.</li><li>Choose a new password.</li></ol><p>If the email does not arrive, check your spam folder and confirm you used the address on your account.</p>' },
+    { id: 'install-app', cat: 'getting-started', title: 'Install Velo on your phone or computer',
+      rel: ['create-account', 'offline'],
+      body: '<p>Velo is a web app that you can install, so it opens in its own window with its own icon.</p><ol><li>Open Velo in a supported browser.</li><li>Choose Install, or Add to Home Screen, from the browser menu.</li><li>Confirm.</li></ol><p>Once installed, recent chats are available offline. See <a href="#a-offline">Use Velo without a connection</a>.</p>' },
+
+    /* Posts */
+    { id: 'create-post', cat: 'posts', title: 'Create a post',
+      rel: ['polls', 'drafts', 'share-quote'],
+      body: '<ol><li>Tap Compose.</li><li>Write your post.</li><li>Optionally add photos or video, a poll, or a location.</li><li>Choose Post.</li></ol><p>If you paste a link, Velo shows a preview card with the page title and image.</p>' },
+    { id: 'polls', cat: 'posts', title: 'Add a poll to a post',
+      rel: ['create-post'],
+      body: '<ol><li>In the composer, choose the poll option.</li><li>Enter your question and the answers.</li><li>Post it.</li></ol><p>People vote from the post. You can see the totals on the post itself.</p>' },
+    { id: 'drafts', cat: 'posts', title: 'Save and finish a draft',
+      rel: ['create-post'],
+      body: '<p>If you close the composer with unfinished text, Velo keeps it as a draft.</p><ol><li>Open the composer.</li><li>Choose Drafts.</li><li>Pick a draft to continue, or delete it.</li></ol>' },
+    { id: 'comments', cat: 'posts', title: 'Comment on a post',
+      rel: ['share-quote', 'report'],
+      body: '<ol><li>Tap the comment icon under a post.</li><li>The comments open in a drawer, so you do not leave the feed.</li><li>Write your comment and send it.</li></ol><p>To report a comment, open its menu and choose Report. See <a href="#a-report">Report something</a>.</p>' },
+    { id: 'share-quote', cat: 'posts', title: 'Share or quote a post',
+      rel: ['comments', 'create-post'],
+      body: '<p>Share sends a post to your followers as it is. Quote lets you add your own words above it.</p><ol><li>Tap the share icon under the post.</li><li>Choose Share or Quote.</li><li>If you quote, write your caption and post.</li></ol><p>The original author is notified when you share or quote their post.</p>' },
+    { id: 'bookmarks', cat: 'posts', title: 'Save posts with bookmarks',
+      rel: ['create-post'],
+      body: '<ol><li>Tap the bookmark icon under a post to save it.</li><li>Open Bookmarks to see everything you saved.</li><li>Use the search box on that page to find a saved post.</li></ol><p>Tap the bookmark icon again to remove a post.</p><div class="note"><b>Private</b>Only you can see your bookmarks.</div>' },
+    { id: 'following-feed', cat: 'posts', title: 'See only people you follow',
+      rel: ['follow'],
+      body: '<p>Your home page mixes posts from across Velo. To see only accounts you follow, switch to the following view at the top of the home page.</p>' },
+
+    /* Explore */
+    { id: 'search', shot: ['search.png', 'The Search page. Type a term and press Enter to search post captions.'], cat: 'explore', title: 'Search for people and posts',
+      rel: ['trending', 'follow'],
+      body: '<ol><li>Open Search or Explore.</li><li>Type a name, username or keyword.</li><li>Choose a result.</li></ol>' },
+    { id: 'trending', cat: 'explore', title: 'Trending topics and hashtags',
+      rel: ['search', 'locations'],
+      body: '<p>Trending lists the topics people are posting about right now. Tap a topic or hashtag to open a page with every post that uses it.</p><p>To join in, add the hashtag to your own post, for example <code>#velo</code>.</p>' },
+    { id: 'locations', cat: 'explore', title: 'Browse posts by location',
+      rel: ['create-post', 'trending'],
+      body: '<p>When someone tags a place on a post, you can open that place to see other posts from it.</p><ol><li>Open Locations from Explore.</li><li>Choose a place.</li></ol><p>To tag a location on your own post, choose the location option in the composer.</p>' },
+
+    /* Profile */
+    { id: 'edit-profile', cat: 'profile', title: 'Edit your profile',
+      rel: ['follow', 'create-account'],
+      body: '<ol><li>Open your profile.</li><li>Choose Edit.</li><li>Change your name, bio or photo.</li><li>Save.</li></ol><p>Your username can be changed from Personal info in account settings.</p>' },
+    { id: 'follow', cat: 'profile', title: 'Follow and unfollow people',
+      rel: ['following-feed', 'mute-user'],
+      body: '<p>Follow someone to see their posts in your following feed.</p><ol><li>Open their profile.</li><li>Tap Follow. Tap again to unfollow.</li></ol><p>You can open the Followers and Following lists on any profile. The person is notified when you follow them.</p>' },
+
+    /* Messaging */
+    { id: 'start-chat', cat: 'messaging', title: 'Start a chat',
+      rel: ['message-options', 'group-chats'],
+      body: '<ol><li>Open Chats and choose New chat.</li><li>Pick one person for a direct message, or several for a group.</li><li>Type your message and send.</li></ol><p>You can send text, photos, videos, files, voice notes, GIFs, your location and contact cards.</p>' },
+    { id: 'message-options', cat: 'messaging', title: 'React, reply, edit, forward and delete messages',
+      rel: ['pin-message', 'reply-privately'],
+      body: '<p>Open a message\'s menu to:</p><ul><li><b>React</b> with an emoji.</li><li><b>Reply</b> to quote it.</li><li><b>Edit</b> a message you sent.</li><li><b>Forward</b> it to other chats.</li><li><b>Delete</b> it.</li></ul>' },
+    { id: 'voice-notes', cat: 'messaging', title: 'Send and play voice notes',
+      rel: ['start-chat', 'permissions'],
+      body: '<ol><li>In a chat, hold the microphone button and speak.</li><li>Release to send, or slide away to cancel.</li></ol><p>To play a voice note, tap it. Tap the speed button to play faster or slower.</p><p>Your browser must have microphone access. See <a href="#a-permissions">Allow permissions</a>.</p>' },
+    { id: 'view-once', cat: 'messaging', title: 'Send a photo or video that opens once',
+      rel: ['start-chat'],
+      body: '<ol><li>Pick a photo or video to send.</li><li>Turn on View once.</li><li>Send it.</li></ol><p>The recipient can open it a single time, and then it is no longer available.</p><div class="note"><b>Keep in mind</b>The recipient could still photograph their screen. Only send what you are comfortable sharing.</div>' },
+    { id: 'pin-message', cat: 'messaging', title: 'Pin a message',
+      rel: ['message-options'],
+      body: '<ol><li>Open the message\'s menu.</li><li>Choose Pin.</li></ol><p>Pinned messages appear in a bar at the top of the chat. To unpin, open the menu again and choose Unpin. In a group, who can pin depends on the group\'s settings.</p>' },
+    { id: 'group-chats', cat: 'messaging', title: 'Create and manage a group',
+      rel: ['invite-link', 'reply-privately', 'mute-chat'],
+      body: '<h2>Create a group</h2><ol><li>Choose New chat and select more than one person.</li><li>Name the group and add a photo if you like.</li><li>Create it.</li></ol><h2>Manage members</h2><ol><li>Open the group and choose its settings.</li><li>Add members, remove members or make someone an admin.</li></ol><h2>Leave a group</h2><p>Open the group\'s settings and choose Leave group. Other members are told that you left.</p>' },
+    { id: 'invite-link', cat: 'messaging', title: 'Invite people with a link',
+      rel: ['group-chats'],
+      body: '<ol><li>Open the group\'s settings.</li><li>Choose Invite link and copy it.</li><li>Send it to the people you want to invite.</li></ol><p>Anyone who opens the link can join the group, so share it carefully. If a link gets passed around too widely, ask a group admin to turn it off.</p>' },
+    { id: 'reply-privately', cat: 'messaging', title: 'Reply privately to a group message',
+      rel: ['group-chats', 'message-options'],
+      body: '<p>Reply privately moves the conversation out of the group and into a direct message with that person.</p><ol><li>Open the menu on their group message.</li><li>Choose Reply privately.</li><li>Your direct message opens with their message quoted. Write your reply and send.</li></ol>' },
+    { id: 'mute-chat', cat: 'messaging', title: 'Mute a chat and change its look', pop: 1,
+      rel: ['group-chats', 'no-notifications'],
+      body: '<h2>Mute</h2><ol><li>Open the chat\'s settings.</li><li>Turn on Mute.</li></ol><p>Muted chats stop sending you push notifications. Messages still arrive. Muting only affects you; nobody else is told.</p><h2>Wallpaper and theme</h2><ol><li>In the chat\'s settings, open Wallpaper.</li><li>Choose a preset or a picture.</li></ol><p>Each chat can have its own wallpaper and theme, and they are only visible to you.</p>' },
+    { id: 'read-receipts', cat: 'messaging', title: 'What message ticks mean',
+      rel: ['start-chat'],
+      body: '<ul><li><b>Sent:</b> your message reached Velo.</li><li><b>Delivered:</b> it reached the other person\'s device.</li><li><b>Read:</b> they opened the chat and saw it.</li></ul><p>A message that has not been sent yet, for example because you are offline, stays in the outbox and is sent when you reconnect.</p>' },
+
+    /* Calls */
+    { id: 'make-call', cat: 'calls', title: 'Start a voice or video call',
+      rel: ['call-problems', 'permissions'],
+      body: '<ol><li>Open a chat.</li><li>Tap the voice or video call button.</li><li>Wait for the other person to answer.</li></ol><p>Group chats support group calls. Calls, including missed calls, appear in the chat history. Your browser asks for microphone and camera access the first time.</p>' },
+    { id: 'call-problems', cat: 'calls', title: 'Fix call problems', pop: 1,
+      rel: ['permissions', 'make-call'],
+      body: '<h2>The other person cannot hear or see me</h2><ul><li>Allow microphone and camera access for Velo in your browser. See <a href="#a-permissions">Allow permissions</a>.</li><li>Check that no other app is using the camera or microphone.</li></ul><h2>The call will not connect</h2><ul><li>Check your internet connection, then try again.</li><li>Switch from Wi-Fi to mobile data, or the other way round. Some networks block calls.</li></ul><h2>The call is choppy</h2><ul><li>Turn off video to save bandwidth.</li><li>Move closer to your router, or close other apps that use the network.</li></ul>' },
+
+    /* Statuses */
+    { id: 'post-status', cat: 'statuses', title: 'Post a status',
+      rel: ['status-views', 'status-reply'],
+      body: '<p>A status is an update that disappears after 24 hours.</p><ol><li>Open Status and choose Add.</li><li>Pick a photo, a video, a text card with a background, or record a voice note.</li><li>Post it.</li></ol><p>To remove a status early, open it and choose Delete.</p>' },
+    { id: 'status-views', cat: 'statuses', title: 'See who viewed your status',
+      rel: ['post-status'],
+      body: '<ol><li>Open your own status.</li><li>Swipe up, or choose the viewers count.</li></ol><p>You see who viewed it and who liked it.</p>' },
+    { id: 'status-reply', cat: 'statuses', title: 'Like, reply to or forward a status',
+      rel: ['post-status', 'start-chat'],
+      body: '<ul><li><b>Like:</b> tap the heart.</li><li><b>Reply:</b> write a message at the bottom. It arrives in your chat with that person, with the status quoted.</li><li><b>Forward:</b> send a status you can see to another chat.</li></ul>' },
+
+    /* Notifications */
+    { id: 'push-on', cat: 'notifications', title: 'Turn push notifications on or off',
+      rel: ['notification-types', 'no-notifications'],
+      body: '<ol><li>Open Notifications settings.</li><li>Turn on Push notifications.</li><li>Allow notifications when your browser asks.</li></ol><p>You can turn them off in the same place. Push notifications work on each device separately, so repeat the steps on every device you use.</p>' },
+    { id: 'notification-types', cat: 'notifications', title: 'What you are notified about',
+      rel: ['push-on', 'mute-chat'],
+      body: '<p>The Notifications page collects follows, likes, comments, mentions, shares and quotes. Messages and calls come through chats.</p><p>In Notifications settings you can choose which kinds of activity send you a push.</p><ul><li>Muted chats do not send pushes.</li><li>People you have blocked do not notify you.</li><li>If you are already looking at Velo, you do not get a duplicate push.</li></ul>' },
+    { id: 'no-notifications', cat: 'notifications', title: 'I am not getting notifications', pop: 1,
+      rel: ['push-on', 'mute-chat', 'permissions'],
+      body: '<p>Work through these checks in order.</p><ol><li>Open Notifications settings and confirm Push notifications is on for this device.</li><li>Check your browser\'s site settings and make sure notifications are allowed for Velo. See <a href="#a-permissions">Allow permissions</a>.</li><li>Check that the chat is not muted. See <a href="#a-mute-chat">Mute a chat</a>.</li><li>Check that your device is not in Do Not Disturb or battery saver mode.</li><li>Sign out and back in, then turn push notifications on again.</li></ol>' },
+
+    /* Safety */
+    { id: 'mute-user', cat: 'safety', title: 'Mute an account',
+      rel: ['block-user', 'muted-list'],
+      body: '<p>Muting hides someone\'s posts from your feed. They are not told, and they can still see and interact with your posts.</p><ol><li>Open their profile or one of their posts.</li><li>Open the menu and choose Mute.</li></ol>' },
+    { id: 'block-user', cat: 'safety', title: 'Block an account',
+      rel: ['mute-user', 'muted-list', 'report'],
+      body: '<p>Blocking stops the person from interacting with you, and hides each of you from the other\'s feed.</p><ol><li>Open their profile.</li><li>Open the menu and choose Block.</li><li>Confirm.</li></ol><p>You can unblock at any time from your blocked list.</p>' },
+    { id: 'muted-list', cat: 'safety', title: 'See and undo muted and blocked accounts',
+      rel: ['mute-user', 'block-user'],
+      body: '<ol><li>Open your account settings.</li><li>Choose Blocked and muted.</li><li>Tap Undo next to an account to unmute or unblock it.</li></ol>' },
+    { id: 'report', cat: 'safety', title: 'Report something',
+      rel: ['block-user', 'comments'],
+      body: '<p>You can report a post, an account or a group if it breaks the rules or makes you feel unsafe.</p><ol><li>Open the menu on the post, profile or group.</li><li>Choose Report.</li><li>Select the reason and add details if you can.</li><li>Submit.</li></ol><p>Reports go to Velo\'s moderators. The person you report is not told that it was you.</p><div class="note"><b>In immediate danger?</b>Contact your local emergency services first. Reporting on Velo is not an emergency service.</div>' },
+    { id: 'devices', cat: 'safety', title: 'Review where you are signed in',
+      rel: ['passkeys', 'reset-password'],
+      body: '<ol><li>Open your account settings and choose Privacy and security.</li><li>Look at the list of devices.</li></ol><p>If you see a device you do not recognise, change your password straight away.</p>' },
+
+    /* Troubleshooting */
+    { id: 'offline', cat: 'troubleshooting', title: 'Use Velo without a connection',
+      rel: ['install-app', 'read-receipts'],
+      body: '<p>Velo keeps recent chats on your device. Without a connection you can:</p><ul><li>Read recent chats.</li><li>Write messages. They wait in the outbox and send automatically when you are back online.</li></ul><p>The feed and explore need a connection, so they may not load.</p>' },
+    { id: 'permissions', cat: 'troubleshooting', title: 'Allow permissions (notifications, microphone, camera, location)',
+      rel: ['no-notifications', 'call-problems', 'voice-notes'],
+      body: '<p>Velo asks your browser for permission the first time it needs a feature. If you chose Block, change it like this:</p><ol><li>Open your browser\'s site settings for Velo. This is usually under the lock or tune icon in the address bar.</li><li>Set the permission you need to Allow.</li><li>Reload the page.</li></ol><ul><li><b>Notifications:</b> push notifications.</li><li><b>Microphone:</b> voice notes and calls.</li><li><b>Camera:</b> video calls and taking photos.</li><li><b>Location:</b> tagging a place on a post.</li></ul>' },
+    { id: 'page-wont-load', cat: 'troubleshooting', title: 'A page will not load or looks wrong',
+      rel: ['offline', 'permissions'],
+      body: '<ol><li>Check your internet connection.</li><li>Reload the page.</li><li>Update your browser to the latest version.</li><li>Close other Velo tabs, then reload.</li><li>If it still fails, send feedback from Help and support and tell us which page, what you expected and what happened.</li></ol>' },
+    { id: 'send-feedback', cat: 'troubleshooting', title: 'Contact us and send feedback',
+      rel: ['page-wont-load'],
+      body: '<ol><li>Open Help and support from the app.</li><li>Choose Feedback.</li><li>Describe what happened. Include the page you were on and what you expected.</li></ol>' }
+  ];
+
+  var byId = {}; A.forEach(function (a) { a.text = (a.title + ' ' + a.body.replace(/<[^>]+>/g, ' ')).toLowerCase(); byId[a.id] = a; });
+  var catById = {}; CATS.forEach(function (c) { catById[c.id] = c; });
+  function inCat(id) { return A.filter(function (a) { return a.cat === id; }); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function icon(name) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + '</svg>'; }
+
+  var view = document.getElementById('view'), hero = document.getElementById('hero'), q = document.getElementById('q');
+  var voted = {};
+
+  function articleLink(a, showCat) {
+    return '<li><a href="#a-' + a.id + '"><span>' + esc(a.title) + '</span>' + (showCat ? '<span class="c">' + esc(catById[a.cat].title) + '</span>' : '') + '</a></li>';
+  }
+
+  function home() {
+    var h = '<h2>Browse by topic</h2><div class="grid">';
+    CATS.forEach(function (c) {
+      var n = inCat(c.id).length;
+      h += '<a class="card" href="#c-' + c.id + '"><div class="ic">' + icon(c.icon) + '</div><h3>' + esc(c.title) + '</h3><p>' + esc(c.desc) + '</p><small>' + n + ' article' + (n === 1 ? '' : 's') + '</small></a>';
+    });
+    h += '</div><div class="band"><h2>Popular articles</h2><ul class="list">';
+    A.filter(function (a) { return a.pop; }).forEach(function (a) { h += articleLink(a, true); });
+    h += '</ul></div>';
+    view.innerHTML = h;
+  }
+
+  function category(id) {
+    var c = catById[id];
+    var h = '<div class="crumbs"><a href="#">Help Center</a><i>/</i>' + esc(c.title) + '</div><div class="layout">' + side(id, null) + '<div><h1 style="margin:0 0 4px;font-size:30px">' + esc(c.title) + '</h1><p style="color:var(--muted);margin:0 0 20px">' + esc(c.desc) + '</p><ul class="list">';
+    inCat(id).forEach(function (a) { h += articleLink(a, false); });
+    h += '</ul></div></div>';
+    view.innerHTML = h;
+  }
+
+  function side(catId, artId) {
+    var h = '<nav class="side" aria-label="Help topics"><h4>Topics</h4><ul>';
+    CATS.forEach(function (c) { h += '<li><a href="#c-' + c.id + '"' + (c.id === catId ? ' aria-current="page"' : '') + '>' + esc(c.title) + '</a></li>'; });
+    return h + '</ul></nav>';
+  }
+
+  function article(id) {
+    var a = byId[id], c = catById[a.cat];
+    var h = '<div class="crumbs"><a href="#">Help Center</a><i>/</i><a href="#c-' + c.id + '">' + esc(c.title) + '</a></div><div class="layout">' + side(c.id, id) + '<article><h1>' + esc(a.title) + '</h1><div class="meta">' + esc(c.title) + '</div>' + (a.shot ? '<figure><img src="/help/' + a.shot[0] + '" alt="' + esc(a.shot[1]) + '" loading="lazy"><figcaption>' + esc(a.shot[1]) + '</figcaption></figure>' : '') + a.body;
+    h += '<div class="vote" id="vote">' + (voted[id] ? '<span class="thanks">Thanks for your feedback.</span>' : '<span>Was this article helpful?</span><button data-v="yes">Yes</button><button data-v="no">No</button>') + '</div>';
+    if (a.rel && a.rel.length) {
+      h += '<div class="related"><h2>Related articles</h2><ul class="list">';
+      a.rel.forEach(function (r) { if (byId[r]) h += articleLink(byId[r], false); });
+      h += '</ul></div>';
+    }
+    h += '</article></div>';
+    view.innerHTML = h;
+    var vote = document.getElementById('vote');
+    vote.addEventListener('click', function (e) {
+      var v = e.target.getAttribute && e.target.getAttribute('data-v');
+      if (!v) return;
+      voted[id] = v;
+      vote.innerHTML = v === 'yes' ? '<span class="thanks">Thanks for your feedback.</span>' : '<span class="thanks">Sorry about that.</span><span>Try the related articles below, or <a href="#a-send-feedback">contact us</a>.</span>';
+    });
+  }
+
+  function results(term) {
+    var words = term.toLowerCase().split(/\s+/).filter(Boolean);
+    var hits = A.map(function (a) {
+      var s = 0;
+      words.forEach(function (w) { if (a.title.toLowerCase().indexOf(w) > -1) s += 3; else if (a.text.indexOf(w) > -1) s += 1; else s -= 100; });
+      return { a: a, s: s };
+    }).filter(function (x) { return x.s > 0; }).sort(function (x, y) { return y.s - x.s; });
+    var h = '<h2>' + hits.length + ' result' + (hits.length === 1 ? '' : 's') + ' for "' + esc(term) + '"</h2>';
+    if (!hits.length) h += '<p class="empty">No articles match. Try different words, or <a href="#">browse by topic</a>.</p>';
+    else { h += '<ul class="list">'; hits.forEach(function (x) { h += articleLink(x.a, true); }); h += '</ul>'; }
+    view.innerHTML = h;
+  }
+
+  function route() {
+    var hash = location.hash.replace(/^#/, '');
+    var m;
+    q.value = '';
+    hero.classList.toggle('small', !!hash);
+    window.scrollTo(0, 0);
+    if ((m = /^a-(.+)$/.exec(hash)) && byId[m[1]]) { article(m[1]); document.title = byId[m[1]].title + ' | Velo Help Center'; return; }
+    if ((m = /^c-(.+)$/.exec(hash)) && catById[m[1]]) { category(m[1]); document.title = catById[m[1]].title + ' | Velo Help Center'; return; }
+    document.title = 'Velo Help Center';
+    home();
+  }
+
+  q.addEventListener('input', function () {
+    var t = q.value.trim();
+    hero.classList.add('small');
+    if (t) results(t); else { if (location.hash) route(); else { hero.classList.remove('small'); home(); } }
+  });
+  document.getElementById('searchForm').addEventListener('submit', function (e) { e.preventDefault(); });
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>
+</body>
+</html>

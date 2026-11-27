@@ -198,7 +198,7 @@ const HelpSupportPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <a
-              href="#documentation"
+              href="/help-center.html"
               className="flex items-center gap-2 p-4 bg-gray-50 dark:bg-neutral-700 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-600 transition-colors"
             >
               <FileText className="w-5 h-5 text-blue-500" />

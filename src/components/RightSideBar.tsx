@@ -34,7 +34,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
       setLoading(true);
     }, 100);
     axiosApi("/api")
-      .get("/users?getSuggestions=true&limit=10")
+      .get("/users?getSuggestions=true&limit=5")
       .then((suggestionsRes) => {
         const root = suggestionsRes.data as { data?: SocialMediaUser[] };
         const rows = root?.data ?? [];
@@ -70,7 +70,7 @@ const RightSideBar = ({ className, ...props }: { className?: string; props?: HTM
   return (
     <div
       className={cn(
-        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") ? "hidden!" : ""} max-h-screen overflow-auto border-l min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
+        `${pathname?.includes("/accounts") || pathname?.includes("/chats") || pathname?.includes("/compose") || pathname?.includes("/admin") ? "hidden!" : ""} max-h-screen overflow-auto border-l min-h-screen hidden md:block w-2/5 dark:bg-zinc-900 dark:text-slate-200 bg-gray-50`,
         className
       )}
       {...props}

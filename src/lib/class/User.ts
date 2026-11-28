@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import { NextApiResponse } from "next";
 import { UAParser } from "ua-parser-js";
 
+import { hasBotHandle } from "../botAccount";
 import { MongoDBClient } from "../mongodb";
 import { ChatParticipant, ChatType, NewChatSettings } from "../types/type";
 import { PasskeyChallenge, PasskeyCredential } from "../types/passkey";
@@ -129,16 +130,17 @@ export class SocialMediaUser implements UserSchema {
     this.accountType = data.accountType || this.inferAccountType(data);
   }
 
-  // A helper function to infer the account type
+  // Only runs for accounts with no stored accountType. Explicit signals only, never loose substrings.
   private inferAccountType(data: UserSchema): AccountType {
-    if (data.name.toLowerCase().includes("bot") || data.username.toLowerCase().includes("bot")) {
+    const aiBotId = process.env.AI_BOT_USER_ID;
+    if ((aiBotId && String(data._id) === aiBotId) || hasBotHandle(data.name, data.username)) {
       return AccountType.BOT;
-    } else if (data.verified && data.website) {
+    }
+    if (data.verified && data.website) {
       // A common pattern for brands/public figures
       return AccountType.ORGANIZATION;
-    } else {
-      return AccountType.HUMAN;
     }
+    return AccountType.HUMAN;
   }
 
   /**

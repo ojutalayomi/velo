@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import { SocialMediaUser } from "@/lib/class/User";
 import { generateEmailHtml } from "@/lib/email";
 import { MongoDBClient } from "@/lib/mongodb";
+import { AccountSuspendedError, SUSPENDED_MESSAGE } from "@/lib/suspension";
 import { timeFormatter } from "@/templates/PostProps";
 
 const transporter = nodemailer.createTransport({
@@ -65,6 +66,9 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
     res.status(200).json(user.getClientSafeData());
   } catch (error) {
+    if (error instanceof AccountSuspendedError) {
+      return res.status(403).json({ error: SUSPENDED_MESSAGE, code: "suspended" });
+    }
     console.error("An error occurred:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }

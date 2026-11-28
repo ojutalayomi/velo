@@ -3,6 +3,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { logAdminAction, requireAdmin } from "@/lib/admin";
 import { MongoDBClient } from "@/lib/mongodb";
+import { emitViaSocketServer } from "@/lib/socket";
+import { clearSuspensionCache } from "@/lib/suspension";
 
 const PAGE_SIZE = 20;
 const ACTIONS = {
@@ -63,6 +65,20 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
 
       const set = ACTIONS[action as keyof typeof ACTIONS];
       await users.updateOne({ _id: target._id }, { $set: set });
+
+      if (action === "suspend" || action === "unsuspend") {
+        clearSuspensionCache(id);
+      }
+      if (action === "suspend") {
+        // End every signed-in device, then tell the socket server to drop the live connections.
+        await db.tokens().deleteMany({ userId: id });
+        try {
+          await emitViaSocketServer(admin._id, "account:suspended", { userId: id });
+        } catch (error) {
+          // Best effort: the session and sign-in checks already lock them out.
+          console.error("Could not tell the socket server about the suspension:", error);
+        }
+      }
       await logAdminAction({
         adminId: admin._id,
         action,

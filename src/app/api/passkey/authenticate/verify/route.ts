@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { AccountSuspendedError, SUSPENDED_MESSAGE } from "@/lib/suspension";
 import { NextRequest, NextResponse } from "next/server";
 import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 
@@ -127,6 +128,9 @@ export async function POST(request: NextRequest) {
       user: user.getClientSafeData(),
     });
   } catch (error) {
+    if (error instanceof AccountSuspendedError) {
+      return NextResponse.json({ message: SUSPENDED_MESSAGE, code: "suspended" }, { status: 403 });
+    }
     console.error("Error verifying authentication:", error);
     return NextResponse.json({ message: "Failed to verify authentication" }, { status: 500 });
   }

@@ -1,4 +1,5 @@
 import { jwtVerify } from "jose";
+import { AccountSuspendedError, SUSPENDED_MESSAGE } from "@/lib/suspension";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -115,6 +116,9 @@ export async function POST(request: NextRequest) {
       redirectTo: backTo || "/home",
     });
   } catch (error: any) {
+    if (error instanceof AccountSuspendedError) {
+      return NextResponse.json({ error: SUSPENDED_MESSAGE, code: "suspended" }, { status: 403 });
+    }
     console.error("Provider consent update error:", error);
     if (error.code === "ERR_JWT_EXPIRED") {
       return NextResponse.json({ error: "Token has expired" }, { status: 400 });

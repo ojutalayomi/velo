@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 
-import { verifyToken } from "@/lib/auth";
+import { verifyTokenIgnoringSuspension } from "@/lib/auth";
 import { MongoDBClient } from "@/lib/mongodb";
 
 interface Payload {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const payload = (await verifyToken(token)) as unknown as Payload;
+    const payload = (await verifyTokenIgnoringSuspension(token)) as unknown as Payload;
 
     const db = await new MongoDBClient().init();
 
@@ -55,7 +55,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (user.suspended) {
-      return NextResponse.json({ error: "Account suspended" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Account suspended", code: "suspended" },
+        { status: 403, headers: { "Cache-Control": "no-store" } }
+      );
     }
 
     // Only an explicit `false` is unconfirmed; accounts created before this

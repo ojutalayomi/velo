@@ -8,11 +8,13 @@ import GoogleProvider from "next-auth/providers/google";
 import { v4 as uuidv4 } from "uuid";
 
 import { MongoDBClient } from "@/lib/mongodb";
+import { isUserSuspended } from "@/lib/suspension";
 
 import { SocialMediaUser, UserSchema } from "./class/User";
 import { AccountType } from "./types/user";
 
-export async function verifyToken(token: string) {
+/** Checks the signature and expiry only. Use `verifyToken` unless a suspended user must be told why. */
+export async function verifyTokenIgnoringSuspension(token: string) {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
@@ -21,6 +23,13 @@ export async function verifyToken(token: string) {
     console.error("Token verification error:", error);
     return null;
   }
+}
+
+/** The session payload, or null when the token is bad, expired, or belongs to a suspended account. */
+export async function verifyToken(token: string) {
+  const payload = await verifyTokenIgnoringSuspension(token);
+  if (payload && typeof payload._id === "string" && (await isUserSuspended(payload._id))) return null;
+  return payload;
 }
 
 /** Reads the `velo_12` session cookie and returns the authenticated user id. */

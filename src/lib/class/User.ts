@@ -6,6 +6,7 @@ import { UAParser } from "ua-parser-js";
 
 import { hasBotHandle } from "../botAccount";
 import { MongoDBClient } from "../mongodb";
+import { AccountSuspendedError, isUserSuspended } from "../suspension";
 import { ChatParticipant, ChatType, NewChatSettings } from "../types/type";
 import { PasskeyChallenge, PasskeyCredential } from "../types/passkey";
 import { User, Theme, AccountType } from "../types/user";
@@ -311,6 +312,9 @@ export class SocialMediaUser implements UserSchema {
     res?: NextApiResponse,
     setCookie?: (name: string, value: string, options: any) => void
   ) {
+    // Every way of signing in ends here, so this is the one place that refuses a suspended account.
+    if (await isUserSuspended(this._id.toString(), { fresh: true })) throw new AccountSuspendedError();
+
     const tokenCollection = db.tokens();
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const token = await new SignJWT({ _id: this._id.toString() })

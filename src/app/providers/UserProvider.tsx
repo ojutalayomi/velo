@@ -13,8 +13,11 @@ import {
 import { useSelector } from "react-redux";
 import { toast } from "@/lib/toast";
 
+import SuspendedScreen from "@/components/SuspendedScreen";
+import { clearChatCache } from "@/lib/chatCache";
 import { networkMonitor, NetworkStatus } from "@/lib/network";
-import { readCachedUser, writeCachedUser } from "@/lib/userCache";
+import { SUSPENDED_EVENT } from "@/lib/suspendedEvent";
+import { clearCachedUser, readCachedUser, writeCachedUser } from "@/lib/userCache";
 import { UserData } from "@/lib/types/user";
 import { delay } from "@/lib/utils";
 import { fetchChats } from "@/redux/chatSlice";
@@ -39,6 +42,7 @@ type FetchOutcome =
   | { kind: "ok"; data: UserData }
   | { kind: "rate_limited" }
   | { kind: "login_required" }
+  | { kind: "suspended" }
   | { kind: "email_unconfirmed"; email: string };
 
 const UserContext = createContext<UseUserReturn | undefined>(undefined);
@@ -50,6 +54,7 @@ async function requestUser(): Promise<FetchOutcome> {
   const body = await response.json();
 
   if (response.ok) return { kind: "ok", data: body };
+  if (body?.code === "suspended") return { kind: "suspended" };
   if (body?.message === "Too many requests") return { kind: "rate_limited" };
   if (body?.message === "login") return { kind: "login_required" };
   if (body?.code === "email_unconfirmed") return { kind: "email_unconfirmed", email: body.email };
@@ -78,6 +83,7 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [suspended, setSuspended] = useState(false);
 
   const fetchedRef = useRef(false);
   // The user on screen came from an old saved copy (opened offline); refresh it once online.
@@ -86,6 +92,21 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Follow the connection, not just its state at mount: a page opened offline must pick the user
   // up when the network returns.
   useEffect(() => networkMonitor.subscribe(setNetworkStatus), []);
+
+  // Suspended: nothing about this account may stay on the device, and the session ends.
+  const handleSuspended = useCallback(() => {
+    fetchedRef.current = true;
+    clearCachedUser();
+    void clearChatCache();
+    void fetch("/api/logout", { method: "POST" }).catch(() => {});
+    setSuspended(true);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(SUSPENDED_EVENT, handleSuspended);
+    return () => window.removeEventListener(SUSPENDED_EVENT, handleSuspended);
+  }, [handleSuspended]);
 
   // One fetch attempt. Resolves to true when the caller should try again
   // (after a rate-limit wait), false otherwise.
@@ -129,6 +150,10 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           retryAfterRateLimit = true;
           break;
 
+        case "suspended":
+          handleSuspended();
+          break;
+
         case "email_unconfirmed":
           fetchedRef.current = true;
           router.push(`/accounts/confirm-email/pending?email=${encodeURIComponent(outcome.email)}`);
@@ -163,7 +188,7 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
 
     return retryAfterRateLimit;
-  }, [dispatch, router]);
+  }, [dispatch, router, handleSuspended]);
 
   const fetchUser = useCallback(async () => {
     while (await loadUser()) {
@@ -246,6 +271,8 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     () => ({ userdata, loading, error, refetchUser }),
     [userdata, loading, error, refetchUser]
   );
+
+  if (suspended) return <SuspendedScreen />;
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

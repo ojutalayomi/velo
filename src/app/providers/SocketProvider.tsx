@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import io, { Socket } from "socket.io-client";
 
 import { useUser } from "@/app/providers/UserProvider";
+import { announceSuspended } from "@/lib/suspendedEvent";
 import { networkMonitor, NetworkStatus } from "@/lib/network";
 import { getSocketToken } from "@/lib/socketToken";
 import { useAppDispatch } from "@/redux/hooks";
@@ -84,7 +85,19 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       // console.log('Disconnected:', reason);
     });
 
+    // An admin suspended this account while it was online.
+    socketIo.on("accountSuspended", () => {
+      socketIo.disconnect();
+      announceSuspended();
+    });
+
     socketIo.on("connect_error", (err: any) => {
+      // The server refused the connection because the account is suspended: stop retrying.
+      if (err?.data?.code === "suspended") {
+        socketIo.disconnect();
+        announceSuspended();
+        return;
+      }
       // console.error('Connection Error:', err);
       if (err.message.includes("P: websocket error at tt.onError")) {
         socketIo.emit("register", userId); // Emit 'register' event with user's ID

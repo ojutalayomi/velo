@@ -4,6 +4,7 @@ import React from "react";
 import { Provider } from "react-redux";
 
 import UserProvider, { useUser } from "@/app/providers/UserProvider";
+import { announceSuspended } from "@/lib/suspendedEvent";
 import { writeCachedUser } from "@/lib/userCache";
 import signupReducer from "@/redux/signupSlice";
 import userReducer from "@/redux/userSlice";
@@ -25,6 +26,7 @@ jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }))
 jest.mock("@/app/providers/SocketProvider", () => ({ useSocket: () => null }));
 jest.mock("@/redux/chatSlice", () => ({ fetchChats: jest.fn() }));
 jest.mock("@/lib/toast", () => ({ toast: { error: jest.fn() } }));
+jest.mock("@/lib/chatCache", () => ({ clearChatCache: jest.fn().mockResolvedValue(undefined) }));
 
 const fetchMock = jest.fn();
 
@@ -153,5 +155,34 @@ describe("UserProvider offline", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(screen.getByTestId("user")).toHaveTextContent("none");
+  });
+});
+
+describe("UserProvider suspended account", () => {
+  const suspendedResponse = { ok: false, json: async () => ({ error: "Account suspended", code: "suspended" }) };
+
+  it("shows the suspended screen, forgets the saved user and ends the session", async () => {
+    savedUser("someone", 10 * 60 * 1000); // expired for the online check, so the server is asked
+    fetchMock.mockResolvedValue(suspendedResponse);
+
+    mount();
+
+    expect(await screen.findByText("Your account has been suspended")).toBeInTheDocument();
+    expect(screen.queryByTestId("user")).toBeNull();
+    expect(localStorage.getItem("userData")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith("/api/logout", { method: "POST" });
+    // It is a verdict, not a glitch: no retries.
+    expect(fetchMock.mock.calls.filter(([url]) => url === "/api/getuser")).toHaveLength(1);
+  });
+
+  it("switches to the suspended screen when told while the app is open", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ _id: "live-user", name: "L" }) });
+    mount();
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("live-user"));
+
+    act(() => announceSuspended());
+
+    expect(await screen.findByText("Your account has been suspended")).toBeInTheDocument();
+    expect(localStorage.getItem("userData")).toBeNull();
   });
 });
